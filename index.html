@@ -71,7 +71,7 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
 .barbtn{font-size:13px;color:var(--muted)}
 /* fewer tools: one row with the everyday ones */
 header.compact h1,header.compact #color,header.compact .boxtools,header.compact #layout,header.compact #clear,header.compact .hint,
-header.compact #fmtbar > :not([data-cmd="insertUnorderedList"]):not(#hlBtn){display:none!important}
+header.compact #fmtbar > :not([data-cmd="insertUnorderedList"]):not(#hlBtn):not(#undoBtn):not(#redoBtn){display:none!important}
 header.compact .fmtbar{width:auto;order:3}
 header.compact .spacer{display:none}
 header.compact .bar{max-width:1200px;flex-wrap:wrap}
@@ -79,6 +79,7 @@ header.compact label.btn{order:1}
 header.compact #tools{order:2}
 header.compact .savewrap{order:4}
 header.compact #notesToggle{order:5}
+header.compact #readBtn{order:5}
 header.compact #lessBtn{order:6;margin-left:auto}
 header.compact #hideBar{order:7}
 header.compact #status{order:8}
@@ -88,14 +89,25 @@ header.barhidden{display:none}
 .showbar:hover{opacity:1}
 .blankpage{aspect-ratio:16/9;max-width:100%;display:flex;flex-direction:column}
 .blankpage > .content{flex:1}
-.cardbar{position:absolute;top:8px;right:8px;z-index:6;display:flex;gap:6px}
-.cardbar button{font:12px var(--ui);padding:4px 10px;border-radius:999px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 1px 4px rgba(0,0,0,.15);cursor:pointer}
-.cardbar button:hover{border-color:var(--accent);color:var(--accent)}
-.cardbar button.sure{background:#c62828;color:#fff;border-color:#c62828}
+.slide.target-page{outline:3px solid var(--accent);outline-offset:3px}
+.slide.target-page.target-del{outline-color:#c62828}
+#delPageBtn.sure{background:#c62828;color:#fff;border-color:#c62828}
+.fmtbar button:disabled{opacity:.4;cursor:default}
 .fmtbar button{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:30px;padding:0 8px;font-size:13px}
 .fmtbar .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
 .fmtbar .hl{background:#fff176;color:#1b2330;padding:0 3px;border-radius:2px;font-weight:600}
-.mine ul,.mine ol{margin:.15em 0;padding-left:1.4em}
+.mine ul,.mine ol{margin:.15em 0;padding-left:var(--ind,1.4em)}
+/* each list level gets its own bullet (a chosen bullet style on a list wins) */
+.mine ul{list-style-type:disc}
+.mine :is(ul,ol) ul{list-style-type:circle}
+.mine :is(ul,ol) :is(ul,ol) ul{list-style-type:square}
+.mine :is(ul,ol) :is(ul,ol) :is(ul,ol) ul{list-style-type:disc}
+.mine ol{list-style-type:decimal}
+.mine :is(ul,ol) ol{list-style-type:lower-alpha}
+.mine :is(ul,ol) :is(ul,ol) ol{list-style-type:lower-roman}
+.mine :is(ul,ol) :is(ul,ol) :is(ul,ol) ol{list-style-type:decimal}
+.mine blockquote{margin:0 0 0 var(--ind,1.4em)!important;padding:0!important;border:none!important}
+.fmtbar select{height:30px;padding:0 6px;font-size:13px}
 .mine li{display:list-item}
 .boxtools{display:flex;align-items:center;gap:6px;padding-left:6px;border-left:1px solid var(--line);font-size:13px;color:var(--muted)}
 .boxtools label{display:flex;align-items:center;gap:4px;cursor:pointer}
@@ -157,6 +169,36 @@ main.clean .notebox > *{display:none!important}
 .mine:focus{box-shadow:0 0 0 2px var(--accent)}
 .mine:empty::before{content:"type here";opacity:.45}
 
+/* pin a note so it stays open */
+.g-pin{right:42px;top:-10px;width:22px;height:22px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font:11px/1 var(--ui);user-select:none;-webkit-user-select:none;filter:grayscale(1)}
+.notebox.inline > .g-pin{right:16px}
+.notebox.pinned > .g-pin{opacity:1;filter:none;background:var(--accent);border-color:var(--accent)}
+.notebox.pinned > .g-min{display:none}
+/* minimised note icons can be dragged aside; a dashed line points back to the spot */
+.notebox.collapsed > .note-chip{translate:var(--cdx,0px) var(--cdy,0px);touch-action:none}
+.notebox.chip-drag > .note-chip{cursor:grabbing;opacity:1}
+.notebox.collapsed.chip-moved::before{content:"";position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:#c9a400;pointer-events:none;z-index:3}
+.notebox.collapsed.chip-moved::after{content:"";position:absolute;left:0;top:0;width:var(--cl,0px);border-top:1.5px dashed #c9a400;transform-origin:0 0;rotate:var(--ca,0deg);pointer-events:none;z-index:3}
+/* study mode: read only, notes can still be opened and minimised */
+main.reading .grip:not(.g-min):not(.g-pin){display:none!important}
+main.reading .slide,main.reading .strip,main.reading .tl,main.reading .mine{cursor:auto}
+main.reading .mine:empty::before{content:none}
+body.reading #tools,body.reading #fmtbar,body.reading #clear{display:none!important}
+#readBtn[aria-pressed="true"]{background:var(--accent);color:var(--surface);border-color:var(--accent)}
+/* alignment guides while moving or resizing a note box */
+.guide{position:fixed;z-index:60;pointer-events:none;border:0 solid #e5398f}
+.guide.v{width:0;border-left-width:1px}
+.guide.h{height:0;border-top-width:1px}
+/* pictures, videos and sound in notes */
+.media{display:inline-block;position:relative;max-width:100%;vertical-align:bottom;line-height:0;margin:2px 0;cursor:pointer}
+.media > img,.media > video{display:block;width:100%;height:auto;margin:0!important;max-width:100%}
+.media > audio{display:block;width:100%;min-width:200px}
+.slide .media-sel{outline:3px solid var(--accent)!important;outline-offset:2px}
+.slide img.blk:not(.formula){cursor:pointer}
+main.reading .slide img.blk{cursor:auto}
+.mediabar{position:fixed;z-index:45;display:flex;flex-wrap:wrap;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.2);max-width:calc(100vw - 24px)}
+.mediabar button{font-size:12px;padding:4px 8px}
+.mediabar .danger{color:#c62828}
 .empty{text-align:center;padding:60px 16px;color:var(--muted)}
 .empty h2{font-family:var(--display);color:var(--ink);font-size:26px;margin:0 0 8px;text-wrap:balance}
 .empty p{max-width:54ch;margin:0 auto 14px;line-height:1.5}
@@ -183,6 +225,8 @@ main.clean .notebox > *{display:none!important}
       <button id="i" title="Italic"><i>I</i></button>
       <button id="u" title="Underline"><u>U</u></button>
       <button id="fBtn" title="Insert a formula into the note">∑ Formula</button>
+      <button id="mediaBtn" title="Insert a picture, video or sound into the note">🖼 Media</button>
+      <input id="mediaFile" type="file" accept="image/*,video/*,audio/*" multiple hidden>
       <span class="boxtools" title="The note's box">
         <label for="bOutline"><input type="checkbox" id="bOutline" checked> Outline</label>
         <input type="color" id="bBorder" value="#9aa3b2" aria-label="Outline colour" title="Outline colour">
@@ -213,17 +257,40 @@ main.clean .notebox > *{display:none!important}
       </div>
     </span>
     <button id="notesToggle" hidden>Hide notes</button>
+    <button id="readBtn" aria-pressed="false" title="Study mode: read without changing anything by accident. Notes can still be opened and minimised.">📖 Study mode</button>
     <button id="clear">Clear all</button>
     <button id="lessBtn" class="barbtn" title="Show only the everyday tools">Fewer tools</button>
     <button id="hideBar" class="barbtn" title="Hide the toolbar">Hide toolbar</button>
     <div class="tools fmtbar" id="fmtbar">
-      <button data-cmd="undo" title="Undo (Ctrl+Z)">↶</button>
-      <button data-cmd="redo" title="Redo (Ctrl+Y)">↷</button>
+      <button id="undoBtn" title="Back: undo the last change (Ctrl+Z)" disabled>↶</button>
+      <button id="redoBtn" title="Forward: redo the change you undid (Ctrl+Y)" disabled>↷</button>
       <span class="sep"></span>
       <button data-cmd="insertUnorderedList" title="Bullet list"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="3" cy="4" r="1" fill="currentColor"/><circle cx="3" cy="8" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><path d="M6 4h8M6 8h8M6 12h8"/></svg></button>
       <button data-cmd="insertOrderedList" title="Numbered list"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><text x="0.5" y="6" font-size="5" fill="currentColor" stroke="none">1</text><text x="0.5" y="13" font-size="5" fill="currentColor" stroke="none">2</text><path d="M6 4h8M6 11h8"/></svg></button>
       <button data-cmd="outdent" title="Decrease indent (Shift+Tab)"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h12M7 6.5h7M7 10h7M2 13h12M5 6l-3 2 3 2"/></svg></button>
       <button data-cmd="indent" title="Increase indent (Tab)"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h12M7 6.5h7M7 10h7M2 13h12M2 6l3 2-3 2"/></svg></button>
+      <select id="listStyle" aria-label="Bullet style" title="Bullet style for the list you are in (each sub-level has its own style)">
+        <option value="" disabled selected>Bullets…</option>
+        <option value="auto">Automatic (per level)</option>
+        <option value="disc">● Round</option>
+        <option value="circle">○ Hollow</option>
+        <option value="square">■ Square</option>
+        <option value="arrow">➤ Arrow</option>
+        <option value="check">✓ Tick</option>
+        <option value="star">★ Star</option>
+        <option value="dash">– Dash</option>
+        <option value="decimal">1. 2. 3.</option>
+        <option value="lower-alpha">a. b. c.</option>
+        <option value="upper-alpha">A. B. C.</option>
+        <option value="lower-roman">i. ii. iii.</option>
+        <option value="upper-roman">I. II. III.</option>
+      </select>
+      <select id="indentSize" aria-label="Indent size" title="How far each indent (and each sub-bullet) moves in, for this note">
+        <option value="0.8em">Indent: Narrow</option>
+        <option value="1.4em" selected>Indent: Normal</option>
+        <option value="2.5em">Indent: Wide</option>
+        <option value="4em">Indent: Extra wide</option>
+      </select>
       <span class="sep"></span>
       <button data-cmd="justifyLeft" title="Align left"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h12M2 6.5h8M2 10h12M2 13.5h8"/></svg></button>
       <button data-cmd="justifyCenter" title="Centre"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h12M4 6.5h8M2 10h12M4 13.5h8"/></svg></button>
@@ -237,7 +304,8 @@ main.clean .notebox > *{display:none!important}
       <input type="color" id="hlColor" value="#fff176" aria-label="Highlight colour" title="Highlight colour">
       <button data-cmd="removeFormat" title="Clear formatting of the selected words">Clear format</button>
       <span class="sep"></span>
-      <button id="addPageBtn" title="Add a blank page after the page you are working on">+ Blank page</button>
+      <button id="addPageBtn" title="Add a blank page after the current page (the one you last clicked)">+ Page after</button>
+      <button id="delPageBtn" title="Remove the current page (the one you last clicked)">Remove page</button>
     </div>
     <div class="hint" id="hint"></div>
     <div id="status" aria-live="polite"></div>
@@ -290,6 +358,8 @@ const COLORS = ['#1f4fd1','#c62828','#2e7d32','#7b1fa2','#d35400','#1d1d1f'];
 const SIZES = [14,16,18,20,24,28,32,40];
 let style = {font:'Caveat', size:24, color:'#1f4fd1'};
 let active = null, savedRange = null, slideCount = 0;
+let reading = false;          // study mode: read only
+try { reading = localStorage.getItem('study-mode') === '1'; } catch {}
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const status = t => $('#status').textContent = t || '';
 
@@ -306,7 +376,8 @@ function showStyle(s){
 }
 function hint(){
   $('#hint').textContent = !active
-    ? 'On a PDF page, point at a spot and press “+ Add note here”; the page opens up between the lines. You can select and copy the page text. Drag a note’s edges to resize it, or its ✥ handle to move it. The style above is used for new notes.'
+    ? (reading ? 'Study mode: reading only. Click a ✎ icon to open a note, or a note’s – to minimise it. Press “Back to editing” to make changes.'
+      : 'On a PDF page, point at a spot and press “+ Add note here”; the page opens up between the lines. You can select and copy the page text. Drag a note’s edges to resize it, or its ✥ handle to move it; pink lines show when it lines up with other notes. 📌 keeps a note open. The style above is used for new notes.')
     : savedRange && !savedRange.collapsed ? 'Styling: the selected words.' : 'Styling: this whole note. Select words to style only those.';
 }
 showStyle(style); hint();
@@ -316,10 +387,10 @@ document.addEventListener('selectionchange', () => {
   const sel = getSelection(); if (!sel.rangeCount) return;
   const r = sel.getRangeAt(0), n = r.commonAncestorContainer;
   const el = (n.nodeType === 1 ? n : n.parentElement)?.closest('.mine');
-  if (el) { active = el; savedRange = r.cloneRange(); showStyle(noteStyle(el)); const nb = el.closest('.notebox'); if (nb) showBox(boxOf(nb)); hint(); }
+  if (el) { active = el; savedRange = r.cloneRange(); showStyle(noteStyle(el)); const nb = el.closest('.notebox'); if (nb) showBox(boxOf(nb)); $('#indentSize').value = el.style.getPropertyValue('--ind').trim() || '1.4em'; hint(); }
 });
 document.addEventListener('mousedown', e => {
-  if (!e.target.closest('.mine, .notebox, .gappill, header, .fpanel')) { active = null; savedRange = null; showStyle(style); hint(); }
+  if (!e.target.closest('.mine, .notebox, .gappill, header, .fpanel, .mediabar')) { active = null; savedRange = null; showStyle(style); hint(); }
 });
 function noteStyle(el){
   return {font: el.style.fontFamily.split(',')[0].replace(/"/g,'').trim() || style.font,
@@ -367,6 +438,39 @@ $('#fmtbar').addEventListener('click', e => {
   const s = getSelection(); savedRange = s.rangeCount ? s.getRangeAt(0).cloneRange() : savedRange;
   saveSoon();
 });
+// bullet styles: applied to the list the cursor is in (a new list is started if there is none)
+const LIST_CSS = {disc: 'disc', circle: 'circle', square: 'square', arrow: '"➤ "', check: '"✓ "', star: '"★ "', dash: '"– "',
+  decimal: 'decimal', 'lower-alpha': 'lower-alpha', 'upper-alpha': 'upper-alpha', 'lower-roman': 'lower-roman', 'upper-roman': 'upper-roman'};
+function listAtSel(){
+  const n = getSelection().anchorNode, el = n && (n.nodeType === 1 ? n : n.parentElement);
+  const l = el && el.closest('ul, ol'); return l && active.contains(l) ? l : null;
+}
+$('#listStyle').onchange = e => {
+  const v = e.target.value; e.target.value = '';
+  if (!active || !document.body.contains(active)) { status('Click inside a note first, then choose the bullet style.'); return; }
+  if (active.tagName === 'SPAN') { status('Lists work in notes on their own line, not notes inside a sentence.'); return; }
+  restoreSel();
+  const ordered = /decimal|alpha|roman/.test(v);
+  let list = listAtSel();
+  if (!list) { document.execCommand('styleWithCSS', false, false); document.execCommand(ordered ? 'insertOrderedList' : 'insertUnorderedList'); list = listAtSel(); }
+  if (!list) return;
+  if (v !== 'auto' && ordered !== (list.tagName === 'OL')) {      // swap bullets <-> numbers, keeping the cursor
+    const sel = getSelection(), keep = [sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset];
+    const n = document.createElement(ordered ? 'ol' : 'ul');
+    for (const a of list.attributes) n.setAttribute(a.name, a.value);
+    while (list.firstChild) n.append(list.firstChild);
+    list.replaceWith(n); list = n;
+    try { sel.setBaseAndExtent(...keep); } catch {}
+  }
+  list.style.listStyleType = v === 'auto' ? '' : LIST_CSS[v];
+  if (!list.getAttribute('style')) list.removeAttribute('style');
+  const sel = getSelection(); savedRange = sel.rangeCount ? sel.getRangeAt(0).cloneRange() : savedRange;
+  saveSoon();
+};
+$('#indentSize').onchange = e => {
+  if (!active || !document.body.contains(active)) { status('Click inside a note first, then choose the indent size.'); return; }
+  active.style.setProperty('--ind', e.target.value); restoreSel(); saveSoon();
+};
 $('#hlColor').oninput = e => { $('#hlBtn .hl').style.background = e.target.value; };
 ['b','i','u'].forEach(id => $('#' + id).onclick = () => {
   if (!active) return; restoreSel();
@@ -394,17 +498,19 @@ function caretAt(x, y){
 // a note box with handles on its right edge, bottom edge and corner, like a text box in Word
 // minimise a note to a small tab (like a comment in Word), or open it again
 function setCollapsed(box, on){
+  if (on && box.classList.contains('pinned')) return;
   box.classList.toggle('collapsed', on);
   const chip = box.querySelector(':scope > .note-chip');
   if (on && chip) {
     const t = (box.querySelector('.mine')?.innerText || '').trim().replace(/\s+/g, ' ') || 'Note';
     chip.textContent = '✎';
-    chip.title = t.length > 300 ? t.slice(0, 300) + '…' : t;
-    chip.setAttribute('aria-label', 'Show note: ' + chip.title);
+    const short = t.length > 300 ? t.slice(0, 300) + '…' : t;
+    chip.title = short + '\n\nClick to open · drag to move this icon aside';
+    chip.setAttribute('aria-label', 'Show note: ' + short);
   }
 }
 function updateNotesBtn(){
-  const boxes = [...main.querySelectorAll('.notebox')];
+  const boxes = [...main.querySelectorAll('.notebox:not(.pinned)')];
   const btn = $('#notesToggle');
   btn.hidden = !boxes.length;
   btn.textContent = boxes.some(b => !b.classList.contains('collapsed')) ? 'Hide notes' : 'Show notes';
@@ -422,6 +528,49 @@ function spreadChips(){
     chip.style.setProperty('--ci', i);
     placed.push({card, i, top: r.top, left: r.left});
   }
+  main.querySelectorAll('.notebox.collapsed.chip-moved').forEach(chipLine);
+}
+// drag a minimised note's icon out of the way; a dashed line points back to the words it belongs to
+function setChipOffset(box, x, y){
+  const moved = Math.hypot(x, y) >= 6;
+  box.classList.toggle('chip-moved', moved);
+  if (moved) { box.style.setProperty('--cdx', x.toFixed(1) + 'px'); box.style.setProperty('--cdy', y.toFixed(1) + 'px'); chipLine(box); }
+  else ['--cdx', '--cdy', '--cl', '--ca'].forEach(v => box.style.removeProperty(v));
+}
+function chipLine(box){
+  const chip = box.querySelector(':scope > .note-chip'); if (!chip) return;
+  const z = zoomOf(box) || 1, br = box.getBoundingClientRect(), cr = chip.getBoundingClientRect();
+  const dx = (cr.left + cr.width / 2 - br.left) / z, dy = (cr.top + cr.height / 2 - br.top) / z;
+  box.style.setProperty('--cl', Math.max(0, Math.hypot(dx, dy) - cr.width / 2 / z).toFixed(1) + 'px');
+  box.style.setProperty('--ca', (Math.atan2(dy, dx) * 180 / Math.PI).toFixed(1) + 'deg');
+}
+function startChipDrag(chip, e){
+  const box = chip.parentElement, z = zoomOf(box) || 1, sx = e.clientX, sy = e.clientY;
+  const ox = parseFloat(box.style.getPropertyValue('--cdx')) || 0, oy = parseFloat(box.style.getPropertyValue('--cdy')) || 0;
+  let moved = false;
+  try { chip.setPointerCapture(e.pointerId); } catch {}
+  const move = ev => {
+    const dx = ev.clientX - sx, dy = ev.clientY - sy;
+    if (!moved && Math.hypot(dx, dy) < 4) return;
+    moved = true; box.classList.add('chip-drag');
+    box.classList.add('chip-moved'); box.style.setProperty('--cdx', (ox + dx / z).toFixed(1) + 'px'); box.style.setProperty('--cdy', (oy + dy / z).toFixed(1) + 'px'); chipLine(box);
+  };
+  const up = ev => {
+    chip.removeEventListener('pointermove', move); chip.removeEventListener('pointerup', up); chip.removeEventListener('pointercancel', up);
+    box.classList.remove('chip-drag');
+    if (!moved) return;
+    swallowClick = true; setTimeout(() => { swallowClick = false; }, 600);
+    setChipOffset(box, ox + (ev.clientX - sx) / z, oy + (ev.clientY - sy) / z);
+    saveSoon();
+  };
+  chip.addEventListener('pointermove', move); chip.addEventListener('pointerup', up); chip.addEventListener('pointercancel', up);
+}
+function togglePin(box){
+  const on = !box.classList.contains('pinned');
+  box.classList.toggle('pinned', on);
+  const g = box.querySelector(':scope > .g-pin'); if (g) g.title = on ? 'Unpin: let this note be minimised again' : 'Pin to page: keep this note open';
+  status(on ? 'Pinned: this note stays open until you unpin it (📌).' : 'Unpinned.');
+  updateNotesBtn(); saveSoon();
 }
 function addGrips(box){
   box.querySelectorAll(':scope > .grip, :scope > .note-chip').forEach(g => g.remove());
@@ -431,6 +580,8 @@ function addGrips(box){
   }
   const mn = document.createElement('span'); mn.className = 'grip g-min'; mn.dataset.dir = 'min'; mn.textContent = '–';
   mn.title = 'Minimise this note'; mn.setAttribute('aria-hidden', 'true'); box.append(mn);
+  const pin = document.createElement('span'); pin.className = 'grip g-pin'; pin.dataset.dir = 'pin'; pin.textContent = '📌';
+  pin.title = box.classList.contains('pinned') ? 'Unpin: let this note be minimised again' : 'Pin to page: keep this note open'; pin.setAttribute('aria-hidden', 'true'); box.append(pin);
   const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'note-chip'; chip.title = 'Show this note';
   box.append(chip);
   if (box.classList.contains('collapsed')) setCollapsed(box, true);
@@ -454,7 +605,7 @@ function makeBox(inline){
 }
 // notes made before resizing existed get a box and handles too
 function upgradeNotes(){
-  main.querySelectorAll('.notebox').forEach(b => { if (b.style.height) { b.style.minHeight = b.style.height; b.style.height = ''; } if ((!b.classList.contains('inline') && (!b.querySelector(':scope > .g-move') || !b.querySelector(':scope > .g-float'))) || !b.querySelector(':scope > .note-chip')) addGrips(b); });
+  main.querySelectorAll('.notebox').forEach(b => { if (b.style.height) { b.style.minHeight = b.style.height; b.style.height = ''; } if ((!b.classList.contains('inline') && (!b.querySelector(':scope > .g-move') || !b.querySelector(':scope > .g-float'))) || !b.querySelector(':scope > .note-chip') || !b.querySelector(':scope > .g-pin')) addGrips(b); });
   main.querySelectorAll('.mine').forEach(el => {
     if (el.parentElement?.classList.contains('notebox')) { if (!el.parentElement.querySelector(':scope > .g-e')) addGrips(el.parentElement); return; }
     const inline = el.tagName === 'SPAN';
@@ -468,7 +619,14 @@ function addBlockNote(after, slide){
   focusNote(el);
 }
 main.addEventListener('pointerdown', e => {
+  const chip = e.target.closest('.note-chip');
+  if (chip && e.button === 0) return startChipDrag(chip, e);
   const g = e.target.closest('.grip'); if (!g) return;
+  if (reading && !['min', 'pin'].includes(g.dataset.dir)) return;
+  if (g.dataset.dir === 'pin') {
+    e.preventDefault(); e.stopPropagation(); swallowClick = true; setTimeout(() => { swallowClick = false; }, 600);
+    togglePin(g.parentElement); return;
+  }
   if (g.dataset.dir === 'float') {
     e.preventDefault(); e.stopPropagation(); swallowClick = true; setTimeout(() => { swallowClick = false; }, 600);
     toggleFloat(g.parentElement); return;
@@ -483,21 +641,34 @@ main.addEventListener('pointerdown', e => {
   const box = g.parentElement, r = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, dir = g.dataset.dir || 'se';
   const holder = box.closest('.content, .slide') || box.parentElement;
   const max = holder.getBoundingClientRect().right - r.left, bz = zoomOf(box);
+  const {xs, ys} = snapTargets(box);
   g.setPointerCapture(e.pointerId);
   const move = ev => {
-    if (dir.includes('e')) box.style.width = Math.round(Math.max(60 * bz, Math.min(max, r.width + ev.clientX - sx)) / bz) + 'px';
-    if (dir.includes('s')) { box.style.height = ''; box.style.minHeight = Math.round(Math.max(30 * bz, r.height + ev.clientY - sy) / bz) + 'px'; }
+    const lines = [];
+    let w = r.width + ev.clientX - sx, h = r.height + ev.clientY - sy;
+    if (dir.includes('e')) {               // line the right edge up with other boxes' edges
+      const s = snapAxis([r.left + w], xs); if (s) { w += s.d; lines.push(...s.hits.map(t => ({x: t.v, a: Math.min(r.top, t.r.top), b: Math.max(r.top + h, t.r.bottom)}))); }
+      box.style.width = Math.round(Math.max(60 * bz, Math.min(max, w)) / bz) + 'px';
+    }
+    if (dir.includes('s')) {
+      const s = snapAxis([r.top + h], ys); if (s) { h += s.d; lines.push(...s.hits.map(t => ({y: t.v, a: Math.min(r.left, t.r.left), b: Math.max(r.left + w, t.r.right)}))); }
+      box.style.height = ''; box.style.minHeight = Math.round(Math.max(30 * bz, h) / bz) + 'px';
+    }
+    showGuides(lines);
   };
-  const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); saveSoon(); };
+  const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); hideGuides(); saveSoon(); };
   g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
 });
 let swallowClick = false;
 main.addEventListener('click', e => {
   if (swallowClick) { swallowClick = false; return; }
-  const fx = e.target.closest('.formula'); if (fx && fx.closest('.mine')) { openFormula(fx); return; }
   const chip = e.target.closest('.note-chip');
-  if (chip) { const box = chip.parentElement; setCollapsed(box, false); afterNotesToggle(); const m = box.querySelector('.mine'); if (m) focusNote(m); return; }
-  if (e.target.closest('.mine, .notebox, .gappill, .cardbar, details, summary, .slide-label, a')) return;
+  if (chip) { const box = chip.parentElement; setCollapsed(box, false); afterNotesToggle(); const m = box.querySelector('.mine'); if (m && !reading) focusNote(m); return; }
+  if (reading) return;
+  const fx = e.target.closest('.formula'); if (fx && fx.closest('.mine')) { openFormula(fx); return; }
+  const media = e.target.closest('.media') || (e.target.tagName === 'IMG' && !e.target.closest('.mine, details, .formula') && e.target.closest('.slide') ? e.target : null);
+  if (media) { selectMedia(media); return; }
+  if (e.target.closest('.mine, .notebox, .gappill, details, summary, .slide-label, a')) return;
   const strip = e.target.closest('.strip');
   if (strip) { if (!getSelection().toString()) showGap(strip, e.clientY); return; }
   const slide = e.target.closest('.slide'); if (!slide || slide.classList.contains('pagecard')) return;
@@ -523,7 +694,7 @@ main.addEventListener('click', e => {
 main.addEventListener('keydown', e => {
   const note = e.target.closest?.('.mine'); if (!note) return;
   const sel = getSelection(), n = sel.anchorNode, inLi = n && (n.nodeType === 1 ? n : n.parentElement).closest('li') && note.contains(n);
-  if (e.key === 'Tab' && inLi) { e.preventDefault(); document.execCommand(e.shiftKey ? 'outdent' : 'indent'); saveSoon(); return; }
+  if (e.key === 'Tab' && (inLi || note.tagName === 'DIV')) { e.preventDefault(); document.execCommand('styleWithCSS', false, false); document.execCommand(e.shiftKey ? 'outdent' : 'indent'); saveSoon(); return; }
   if (e.key === 'Enter' && !inLi) { e.preventDefault(); document.execCommand('insertLineBreak'); }
 });
 main.addEventListener('input', saveSoon);
@@ -531,7 +702,7 @@ document.addEventListener('focusout', e => {
   const el = e.target.closest?.('.mine'); if (!el) return;
   setTimeout(() => {
     if (document.activeElement === el || $('header').contains(document.activeElement)) return;
-    if (!el.textContent.trim() && !el.querySelector('img')) { const t = el.closest('.notebox') || el, p = t.parentNode; t.remove(); p && p.normalize(); mergeStrips(p); if (active === el) active = null; saveSoon(); }
+    if (!el.textContent.trim() && !el.querySelector('img, .media')) { const t = el.closest('.notebox') || el, p = t.parentNode; t.remove(); p && p.normalize(); mergeStrips(p); if (active === el) active = null; saveSoon(); }
   }, 0);
 });
 
@@ -845,14 +1016,12 @@ main.addEventListener('mousemove', e => {
   requestAnimationFrame(() => {
     moveQueued = false;
     if (e.target.closest('.gappill')) return;
-    const strip = e.target.closest('.strip');
+    const strip = !reading && e.target.closest('.strip');
     if (strip) showGap(strip, e.clientY); else hideGap();
   });
 });
 main.addEventListener('mouseleave', hideGap);
-// ---------- add a blank page (for longer notes) or remove a page ----------
-const cardBar = document.createElement('div'); cardBar.className = 'cardbar';
-cardBar.innerHTML = '<button type="button" data-act="add" title="Add a blank page after this one">+ Page after</button><button type="button" data-act="remove" title="Remove this page">Remove page</button>';
+// ---------- add a blank page (for longer notes) or remove a page, from the toolbar ----------
 function blankPage(){
   const s = document.createElement('section'); s.className = 'slide blankpage';
   const content = document.createElement('div'); content.className = 'content'; s.append(content);
@@ -867,35 +1036,42 @@ function addPageAfter(card){
   page.scrollIntoView({block: 'center', behavior: 'smooth'});
   focusNote(note); updateNotesBtn(); saveSoon();
 }
-main.addEventListener('mouseover', e => {
-  if (e.target.closest('.cardbar')) return;
-  const card = e.target.closest('.slide');
-  if (card && cardBar.parentElement !== card) { resetRemove(); card.append(cardBar); }
-});
-main.addEventListener('mouseleave', () => { cardBar.remove(); resetRemove(); });
-cardBar.addEventListener('mousedown', e => e.preventDefault());
+// the page you are working on: the one with the note you are in, else the one you last clicked (if on screen), else the one in the middle of the screen
+let lastCard = null;
+main.addEventListener('pointerdown', e => { const c = e.target.closest('.slide'); if (c) lastCard = c; }, true);
+function currentCard(){
+  const a = active && document.body.contains(active) ? active.closest('.slide') : null; if (a) return a;
+  if (lastCard && lastCard.isConnected) { const r = lastCard.getBoundingClientRect(); if (r.bottom > 0 && r.top < innerHeight) return lastCard; }
+  const mid = innerHeight / 2; let best = null;
+  for (const c of main.querySelectorAll('.slide')) { const r = c.getBoundingClientRect(); const d = r.top > mid ? r.top - mid : r.bottom < mid ? mid - r.bottom : 0; if (!best || d < best.d) best = {c, d}; }
+  return best && best.c;
+}
+// show which page the buttons will act on
+function markPage(on, del){
+  main.querySelectorAll('.target-page').forEach(c => c.classList.remove('target-page', 'target-del'));
+  const c = on && currentCard(); if (c) c.classList.add('target-page', ...(del ? ['target-del'] : []));
+}
+const delBtn = $('#delPageBtn');
 let removeTimer = null;
-function resetRemove(){ clearTimeout(removeTimer); const b = cardBar.querySelector('[data-act=remove]'); b.textContent = 'Remove page'; b.classList.remove('sure'); }
-cardBar.addEventListener('click', e => {
-  e.stopPropagation();
-  const b = e.target.closest('button'); if (!b) return;
-  const card = cardBar.parentElement; if (!card) return;
-  if (b.dataset.act === 'add') { cardBar.remove(); addPageAfter(card); return; }
-  if (!b.classList.contains('sure')) { b.textContent = 'Remove? Click again'; b.classList.add('sure'); removeTimer = setTimeout(resetRemove, 3000); return; }
-  cardBar.remove(); resetRemove(); hideGap();
+function resetRemove(){ clearTimeout(removeTimer); delBtn.textContent = 'Remove page'; delBtn.classList.remove('sure'); }
+for (const [b, del] of [[$('#addPageBtn'), false], [delBtn, true]]) {
+  b.addEventListener('mouseenter', () => markPage(true, del)); b.addEventListener('focus', () => markPage(true, del));
+  b.addEventListener('mouseleave', () => { if (!delBtn.classList.contains('sure')) markPage(false); }); b.addEventListener('blur', () => markPage(false));
+}
+$('#addPageBtn').onclick = () => { markPage(false); addPageAfter(currentCard()); };
+delBtn.onclick = () => {
+  const card = currentCard();
+  if (!card) { status('There is no page to remove.'); return; }
+  if (!delBtn.classList.contains('sure')) {
+    delBtn.textContent = 'Remove? Click again'; delBtn.classList.add('sure'); markPage(true, true);
+    removeTimer = setTimeout(() => { resetRemove(); markPage(false); }, 3000); return;
+  }
+  resetRemove(); markPage(false); hideGap(); clearMediaSel();
+  if (active && card.contains(active)) { active = null; savedRange = null; }
   card.remove();
   if (!main.querySelector('.slide')) { main.innerHTML = ''; showEmpty(); }
   if (LAYOUTS[layout]) paginateView();
-  updateNotesBtn(); saveSoon();
-});
-$('#addPageBtn').onclick = () => {
-  let card = active && document.body.contains(active) ? active.closest('.slide') : null;
-  if (!card) {          // the page nearest the middle of the screen
-    const mid = innerHeight / 2; let best = null;
-    for (const c of main.querySelectorAll('.slide')) { const r = c.getBoundingClientRect(); const d = r.top > mid ? r.top - mid : r.bottom < mid ? mid - r.bottom : 0; if (!best || d < best.d) best = {c, d}; }
-    card = best && best.c;
-  }
-  addPageAfter(card);
+  updateNotesBtn(); saveSoon(); status('Page removed. Press ↶ (Back) to bring it back.');
 };
 
 // put an existing note box at a spot on a page (page units from the top)
@@ -956,15 +1132,61 @@ function toggleFloat(box){
   if (LAYOUTS[layout]) paginateView();
   placeFloats(); spreadChips(); saveSoon();
 }
+// ---------- alignment guides: lines show (and snap to) edges and centres of the other note boxes on the page ----------
+const SNAP = 6, guideEls = [];
+function snapTargets(box, extra){
+  const card = box.closest('.slide'), xs = [], ys = [];
+  if (!card) return {xs, ys};
+  for (const o of card.querySelectorAll('.notebox:not(.collapsed)')) {
+    if (o === box || box.contains(o) || o.contains(box)) continue;
+    const r = o.getBoundingClientRect(); if (!r.width || !r.height) continue;
+    xs.push({v: r.left, r}, {v: r.right, r}, {v: (r.left + r.right) / 2, r});
+    ys.push({v: r.top, r}, {v: r.bottom, r}, {v: (r.top + r.bottom) / 2, r});
+  }
+  if (extra) { xs.push(...(extra.xs || [])); ys.push(...(extra.ys || [])); }
+  return {xs, ys};
+}
+// edges: the moving box's edge positions; returns the nudge that lines the nearest one up, and every target it then meets
+function snapAxis(edges, targets){
+  let best = null;
+  for (const e of edges) for (const t of targets) { const d = t.v - e; if (Math.abs(d) <= (t.tol || SNAP) && (!best || Math.abs(d) < Math.abs(best))) best = d; }
+  if (best === null) return null;
+  const hits = targets.filter(t => edges.some(e => Math.abs(e + best - t.v) < 0.75));
+  return {d: best, hits};
+}
+function showGuides(lines){
+  hideGuides();
+  for (const l of lines) {
+    const g = document.createElement('div');
+    if (l.x != null) { g.className = 'guide v'; Object.assign(g.style, {left: l.x + 'px', top: l.a + 'px', height: Math.max(1, l.b - l.a) + 'px'}); }
+    else { g.className = 'guide h'; Object.assign(g.style, {top: l.y + 'px', left: l.a + 'px', width: Math.max(1, l.b - l.a) + 'px'}); }
+    document.body.append(g); guideEls.push(g);
+  }
+}
+function hideGuides(){ guideEls.splice(0).forEach(g => g.remove()); }
+// the guide lines for a box at rect b that met these targets
+const vLines = (hits, b) => hits.map(t => ({x: t.v, a: Math.min(b.top, t.r.top), b: Math.max(b.bottom, t.r.bottom)}));
+const hLines = (hits, b) => hits.map(t => ({y: t.v, a: Math.min(b.left, t.r.left), b: Math.max(b.right, t.r.right)}));
 function startFloatMove(box, g, e){
-  const card = box.parentElement, br0 = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY;
+  const card = box.parentElement, br0 = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, z = zoomOf(box) || 1;
+  const cr0 = card.getBoundingClientRect(), whole = {left: cr0.left, right: cr0.right, top: cr0.top, bottom: cr0.bottom};
+  const {xs, ys} = snapTargets(box, {xs: [{v: (cr0.left + cr0.right) / 2, r: whole}]});
+  let ddx = 0, ddy = 0;
   g.setPointerCapture(e.pointerId); box.classList.add('moving');
-  const move = ev => { box.style.translate = `${ev.clientX - sx}px ${ev.clientY - sy}px`; };
+  const move = ev => {
+    ddx = ev.clientX - sx; ddy = ev.clientY - sy;
+    const l = br0.left + ddx, t = br0.top + ddy, w = br0.width, h = br0.height;
+    const sxr = snapAxis([l, l + w / 2, l + w], xs), syr = snapAxis([t, t + h / 2, t + h], ys);
+    if (sxr) ddx += sxr.d; if (syr) ddy += syr.d;
+    const b = {left: br0.left + ddx, right: br0.right + ddx, top: br0.top + ddy, bottom: br0.bottom + ddy};
+    showGuides([...(sxr ? vLines(sxr.hits, b) : []), ...(syr ? hLines(syr.hits, b) : [])]);
+    box.style.translate = `${ddx / z}px ${ddy / z}px`;
+  };
   const up = ev => {
     g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up);
-    box.style.translate = ''; box.classList.remove('moving');
+    box.style.translate = ''; box.classList.remove('moving'); hideGuides();
     const cr = card.getBoundingClientRect(), s = zoomOf(card) || 1;
-    const nl = br0.left + ev.clientX - sx, nt = br0.top + ev.clientY - sy;
+    const nl = br0.left + ddx, nt = br0.top + ddy;
     box.dataset.px = Math.max(0, Math.min(1 - br0.width / cr.width, (nl - cr.left) / cr.width)).toFixed(4);
     if (card.classList.contains('pagecard')) {
       const strips = [...card.querySelectorAll(':scope > .strip')];
@@ -986,13 +1208,18 @@ function startMove(box, g, e){
   const contentW = pr.width - padL - ((parseFloat(ps.paddingRight) || 0) + (parseFloat(ps.borderRightWidth) || 0)) * pz;
   const r0 = box.getBoundingClientRect(), w = r0.width;
   const startLeft = r0.left - pr.left - padL;
-  const sx = e.clientX, sy = e.clientY;
-  let target = null;
+  const sx = e.clientX, sy = e.clientY, z = zoomOf(box) || 1;
+  const cL = pr.left + padL, whole = {left: cL, right: cL + contentW, top: pr.top, bottom: pr.bottom};
+  const {xs} = snapTargets(box, {xs: [{v: cL, r: whole}, {v: cL + contentW, r: whole}, {v: cL + contentW / 2, r: whole, tol: 18}]});
+  let target = null, sdx = 0;
   g.setPointerCapture(e.pointerId);
   box.classList.add('moving');
   const move = ev => {
-    const dx = ev.clientX - sx, dy = ev.clientY - sy;
-    box.style.translate = `${dx}px ${dy}px`;
+    let dx = ev.clientX - sx; const dy = ev.clientY - sy;
+    const l = r0.left + dx, sr = snapAxis([l, l + w / 2, l + w], xs);
+    sdx = sr ? sr.d : 0; dx += sdx;
+    showGuides(sr ? vLines(sr.hits, {left: r0.left + dx, right: r0.right + dx, top: r0.top + dy, bottom: r0.bottom + dy}) : []);
+    box.style.translate = `${dx / z}px ${dy / z}px`;
     target = null;
     if (Math.abs(dy) > 20) {
       const under = document.elementsFromPoint(ev.clientX, ev.clientY).filter(el => !box.contains(el));
@@ -1008,8 +1235,8 @@ function startMove(box, g, e){
   };
   const up = ev => {
     g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up);
-    box.style.translate = ''; box.classList.remove('moving'); hideGap();
-    let left = Math.max(0, Math.min(contentW - w, startLeft + (ev.clientX - sx)));
+    box.style.translate = ''; box.classList.remove('moving'); hideGap(); hideGuides();
+    let left = Math.max(0, Math.min(contentW - w, startLeft + (ev.clientX - sx) + sdx));
     if (Math.abs(left + w / 2 - contentW / 2) < 18) left = (contentW - w) / 2;   // snap to the centre
     const frac = contentW > 0 ? left / contentW : 0;
     if (target) {
@@ -1129,7 +1356,7 @@ $('#clear').onclick = () => {
   const b = $('#clear');
   if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Remove everything?'; setTimeout(() => { b.dataset.sure = ''; b.textContent = 'Clear all'; }, 3000); return; }
   b.dataset.sure = ''; b.textContent = 'Clear all';
-  main.innerHTML = ''; slideCount = 0; showEmpty(); paginateView(); saveSoon();
+  main.innerHTML = ''; slideCount = 0; clearMediaSel(); active = null; savedRange = null; showEmpty(); paginateView(); saveSoon();
 };
 function showEmpty(){ main.append($('#emptyTpl').content.cloneNode(true)); }
 
@@ -1142,11 +1369,16 @@ function saveSoon(){
   placeFloats();
   paginateSoon(); updateNotesBtn();
   clearTimeout(timer);
-  timer = setTimeout(() => {
-    put('doc', main.querySelector('.empty') ? '' : currentDoc());
-    put('style', style); put('count', slideCount);
-  }, 500);
+  timer = setTimeout(saveNow, 500);
 }
+function saveNow(){
+  timer = null;
+  const doc = main.querySelector('.empty') ? '' : currentDoc();
+  put('doc', doc); put('style', style); put('count', slideCount);
+  snapshot(doc);
+}
+// save straight away if a save is waiting (e.g. before going Back)
+function flushSave(){ if (timer) { clearTimeout(timer); saveNow(); } }
 
 /* ================= download to your device ================= */
 function notebookName(){
@@ -1156,6 +1388,8 @@ function notebookName(){
 function currentDoc(){
   const c = main.cloneNode(true);
   c.querySelectorAll('.gapline, .gappill, .empty, .cardbar').forEach(x => x.remove());
+  c.querySelectorAll('.media-sel, .target-page').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del'));
+  c.querySelectorAll('.mine').forEach(x => { x.contentEditable = 'true'; });
   flatten(c);
   return c.innerHTML;
 }
@@ -1188,7 +1422,7 @@ function loadNotebook(data, replace){
   if (replace) { main.innerHTML = data.doc || ''; slideCount = data.count || 0; }
   else { main.querySelector('.empty')?.remove(); main.insertAdjacentHTML('beforeend', data.doc || ''); }
   main.querySelectorAll('.slide-label, .gapline, .gappill').forEach(e => e.remove());
-  upgradeNotes();
+  upgradeNotes(); applyReadMode();
   if (!main.children.length) showEmpty();
   paginateView();
 }
@@ -1216,6 +1450,10 @@ async function paintCard(card, scale){
     const ir = im.getBoundingClientRect(); if (!ir.width || !im.complete) continue;
     try { ctx.drawImage(im, ir.left - ox, ir.top - oy, ir.width, ir.height); } catch {}
   }
+  for (const vd of card.querySelectorAll('video')) {          // a video shows the frame on screen
+    const vr = vd.getBoundingClientRect(); if (!vr.width || vd.readyState < 2) continue;
+    try { ctx.drawImage(vd, vr.left - ox, vr.top - oy, vr.width, vr.height); } catch {}
+  }
   ctx.lineWidth = 1;
   const seen = c => c && c !== 'transparent' && !/rgba\(.*,\s*0\)$/.test(c);
   for (const n of card.querySelectorAll('.mine')) {
@@ -1239,7 +1477,7 @@ async function paintCard(card, scale){
     const first = document.createTreeWalker(li, NodeFilter.SHOW_TEXT, {acceptNode: t => t.data.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP}).nextNode();
     const lr = li.getBoundingClientRect(); if (!lr.width) continue;
     const fs = parseFloat(ls.fontSize) * zoomOf(li);
-    let mark = ls.listStyleType === 'decimal' ? (([...li.parentElement.children].filter(x => x.tagName === 'LI').indexOf(li) + (+li.parentElement.getAttribute('start') || 1)) + '.') : (ls.listStyleType === 'circle' ? '◦' : ls.listStyleType === 'square' ? '▪' : '•');
+    const mark = listMark(li, ls.listStyleType);
     let top = lr.top, h = fs * 1.2;
     if (first) { const rr = document.createRange(); rr.selectNodeContents(first); const fr = rr.getClientRects()[0]; if (fr) { top = fr.top; h = fr.height; } }
     ctx.font = `${ls.fontStyle} ${ls.fontWeight} ${fs.toFixed(2)}px ${ls.fontFamily}`; ctx.fillStyle = ls.color;
@@ -1282,6 +1520,14 @@ async function paintCard(card, scale){
     try { const im = await loadImg('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml)); ctx.drawImage(im, r.left - ox, r.top - oy, r.width, r.height); } catch {}
   }
   return c;
+}
+function listMark(li, t){
+  if (/^["']/.test(t)) return t.slice(1, -1).trim();
+  const n = [...li.parentElement.children].filter(x => x.tagName === 'LI').indexOf(li) + (+li.parentElement.getAttribute('start') || 1);
+  if (/alpha|latin/.test(t)) { let s = '', k = n; while (k > 0) { k--; s = String.fromCharCode(97 + k % 26) + s; k = Math.floor(k / 26); } return (t.startsWith('upper') ? s.toUpperCase() : s) + '.'; }
+  if (/roman/.test(t)) { let s = '', k = n; for (const [v, r] of [[1000,'m'],[900,'cm'],[500,'d'],[400,'cd'],[100,'c'],[90,'xc'],[50,'l'],[40,'xl'],[10,'x'],[9,'ix'],[5,'v'],[4,'iv'],[1,'i']]) while (k >= v) { s += r; k -= v; } return (t.startsWith('upper') ? s.toUpperCase() : s) + '.'; }
+  if (/decimal/.test(t)) return n + '.';
+  return t === 'circle' ? '◦' : t === 'square' ? '▪' : '•';
 }
 const utf16 = t => '<FEFF' + [...String(t)].map(ch => { let h = ''; for (let i = 0; i < ch.length; i++) h += ch.charCodeAt(i).toString(16).padStart(4, '0'); return h; }).join('').toUpperCase() + '>';
 function makePdf(pages){
@@ -1575,6 +1821,151 @@ $('#fInsert').onclick = () => {
 };
 $('#fBtn').onclick = () => openFormula(null);
 
+// ================= pictures, videos and sound =================
+function readAsUrl(file){ return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(file); }); }
+let mediaTarget = null;
+$('#mediaBtn').onclick = () => {
+  mediaTarget = active && document.body.contains(active) ? {note: active, range: savedRange && savedRange.cloneRange()} : null;
+  if (!mediaTarget && !main.querySelector('.slide')) { status('Open your slides first (or add a page), then insert media.'); return; }
+  $('#mediaFile').click();
+};
+$('#mediaFile').onchange = async e => {
+  const files = [...e.target.files]; e.target.value = '';
+  if (!files.length) return;
+  let {note, range} = mediaTarget || {};
+  if (!note || !document.body.contains(note)) {        // no note picked: start one on the current page
+    const card = currentCard(); if (!card) return;
+    const {box, el} = makeBox();
+    if (card.classList.contains('pagecard')) card.append(box); else (card.querySelector('.content') || card).append(box);
+    note = el; range = null;
+  }
+  const nodes = [];
+  for (const f of files) {
+    const kind = f.type.split('/')[0];
+    if (!['image', 'video', 'audio'].includes(kind)) { status(`“${f.name}” isn't a picture, video or sound file.`); continue; }
+    if (f.size > 40e6) status(`“${f.name}” is large, so saving may be slow.`);
+    const url = await readAsUrl(f);
+    const wrap = document.createElement('span'); wrap.className = 'media'; wrap.contentEditable = 'false'; wrap.title = 'Click to select (resize or remove)';
+    const m = document.createElement(kind === 'image' ? 'img' : kind);
+    m.src = url;
+    if (kind === 'image') { m.alt = f.name; try { const im = await loadImg(url); wrap.style.width = `min(100%, ${im.naturalWidth}px)`; } catch {} }
+    else { m.controls = true; m.preload = 'metadata'; wrap.style.width = kind === 'video' ? 'min(100%, 480px)' : 'min(100%, 320px)'; }
+    wrap.append(m); nodes.push(wrap);
+  }
+  if (!nodes.length) return;
+  const frag = document.createDocumentFragment();
+  nodes.forEach(n => frag.append(n, document.createTextNode(' ')));
+  const last = frag.lastChild;
+  if (range && note.contains(range.startContainer)) { range.deleteContents(); range.insertNode(frag); } else note.append(frag);
+  note.focus();
+  const r = document.createRange(); r.setStartAfter(last); r.collapse(true);
+  const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+  active = note; savedRange = r.cloneRange();
+  updateNotesBtn(); saveSoon(); status('');
+};
+// click a picture, video or sound (yours or one in the slides) to select it: resize it, add a note under it, or remove it
+const mediaBar = document.createElement('div'); mediaBar.className = 'mediabar'; mediaBar.hidden = true;
+mediaBar.innerHTML = '<button type="button" data-w="25%">Small</button><button type="button" data-w="50%">Medium</button><button type="button" data-w="75%">Large</button><button type="button" data-w="100%">Full width</button><button type="button" data-act="note">+ Note below</button><button type="button" data-act="remove" class="danger">Remove</button>';
+document.body.append(mediaBar);
+let mediaSel = null;
+function selectMedia(el){
+  clearMediaSel();
+  mediaSel = el; el.classList.add('media-sel');
+  mediaBar.querySelector('[data-act=note]').hidden = !!el.closest('.mine') || !el.closest('.slide:not(.pagecard)');
+  mediaBar.hidden = false; placeMediaBar();
+}
+function clearMediaSel(){ if (mediaSel) mediaSel.classList.remove('media-sel'); mediaSel = null; mediaBar.hidden = true; }
+function placeMediaBar(){
+  if (!mediaSel) return;
+  if (!mediaSel.isConnected) { clearMediaSel(); return; }
+  const r = mediaSel.getBoundingClientRect(), h = mediaBar.offsetHeight || 36, w = mediaBar.offsetWidth || 300;
+  mediaBar.style.left = Math.max(12, Math.min(innerWidth - w - 12, r.left)) + 'px';
+  mediaBar.style.top = (r.bottom + h + 12 < innerHeight ? r.bottom + 8 : Math.max(8, r.top - h - 8)) + 'px';
+}
+addEventListener('scroll', () => requestAnimationFrame(placeMediaBar), {passive: true});
+addEventListener('resize', () => requestAnimationFrame(placeMediaBar));
+function removeMedia(){
+  if (!mediaSel) return;
+  const el = mediaSel, note = el.closest('.mine'); clearMediaSel();
+  const nx = el.nextSibling; if (note && nx && nx.nodeType === 3 && nx.data === ' ') nx.remove();
+  el.remove();
+  status('Removed. Press ↶ (Back) to bring it back.');
+  if (note && !note.textContent.trim() && !note.querySelector('img, .media')) focusNote(note);
+  saveSoon();
+}
+mediaBar.addEventListener('mousedown', e => e.preventDefault());
+mediaBar.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || !mediaSel) return;
+  if (b.dataset.w) { mediaSel.style.width = b.dataset.w; if (mediaSel.tagName === 'IMG') mediaSel.style.maxWidth = '100%'; placeMediaBar(); saveSoon(); return; }
+  if (b.dataset.act === 'remove') return removeMedia();
+  if (b.dataset.act === 'note') { const el = mediaSel, slide = el.closest('.slide'); clearMediaSel(); let blk = el.closest('.blk') || el; while (blk.nextElementSibling?.classList.contains('notebox')) blk = blk.nextElementSibling; addBlockNote(blk, slide); }
+});
+document.addEventListener('mousedown', e => { if (mediaSel && !e.target.closest('.mediabar') && !mediaSel.contains(e.target)) clearMediaSel(); });
+document.addEventListener('keydown', e => {
+  if (!mediaSel) return;
+  if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); removeMedia(); }
+  else if (e.key === 'Escape') clearMediaSel();
+}, true);
+
+// ================= study mode: read only =================
+function applyReadMode(){
+  main.classList.toggle('reading', reading); document.body.classList.toggle('reading', reading);
+  main.querySelectorAll('.mine').forEach(el => { el.contentEditable = reading ? 'false' : 'true'; });
+  const b = $('#readBtn'); b.setAttribute('aria-pressed', reading); b.textContent = reading ? '✎ Back to editing' : '📖 Study mode';
+  updateUndoBtns();
+}
+$('#readBtn').onclick = () => {
+  reading = !reading;
+  try { localStorage.setItem('study-mode', reading ? '1' : '0'); } catch {}
+  if (reading) { if (document.activeElement?.closest?.('.mine')) document.activeElement.blur(); active = null; savedRange = null; hideGap(); clearMediaSel(); fPanel.hidden = true; }
+  applyReadMode(); hint();
+  status(reading ? 'Study mode: nothing can be changed by accident. You can still open and minimise notes.' : '');
+};
+
+// ================= Back / Forward: undo and redo any change =================
+// whole-document snapshots; big pictures are stored once and referred to by a short key
+const hist = {stack: [], i: -1, keys: new Map(), blobs: new Map()};
+const packDoc = d => d.replace(/data:[^"'&)\s]{1500,}/g, u => { let k = hist.keys.get(u); if (!k) { k = '@@media' + hist.keys.size + '@@'; hist.keys.set(u, k); hist.blobs.set(k, u); } return k; });
+const unpackDoc = d => d.replace(/@@media\d+@@/g, k => hist.blobs.get(k) || k);
+function snapshot(doc){
+  const d = packDoc(doc);
+  if (d === hist.stack[hist.i]) return;
+  hist.stack.length = hist.i + 1; hist.stack.push(d);
+  if (hist.stack.length > 100) hist.stack.shift();
+  hist.i = hist.stack.length - 1; updateUndoBtns();
+}
+function resetHistory(doc){ hist.stack = []; hist.i = -1; snapshot(doc); }
+function updateUndoBtns(){ $('#undoBtn').disabled = reading || hist.i <= 0; $('#redoBtn').disabled = reading || hist.i >= hist.stack.length - 1; }
+function stepHistory(by){
+  if (reading) return;
+  flushSave();
+  const j = hist.i + by; if (j < 0 || j >= hist.stack.length) return;
+  hist.i = j;
+  const scrollY = window.scrollY;
+  hideGap(); clearMediaSel(); hideGuides(); fPanel.hidden = true;
+  active = null; savedRange = null;
+  main.innerHTML = unpackDoc(hist.stack[j]);
+  if (!main.children.length) showEmpty();
+  upgradeNotes(); applyReadMode();
+  paginateView(); window.scrollTo(0, scrollY);
+  hist.stack[j] = packDoc(main.querySelector('.empty') ? '' : currentDoc());   // so the next save doesn't count as a new change
+  updateUndoBtns(); updateNotesBtn(); hint(); saveSoon();
+}
+$('#undoBtn').onclick = () => stepHistory(-1);
+$('#redoBtn').onclick = () => stepHistory(1);
+$('#undoBtn').addEventListener('mousedown', e => e.preventDefault()); $('#redoBtn').addEventListener('mousedown', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+  if (e.target.closest?.('input, textarea, select')) return;
+  const k = e.key.toLowerCase();
+  if (k === 'z' && !e.shiftKey) { e.preventDefault(); stepHistory(-1); }
+  else if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); stepHistory(1); }
+});
+// the browser's own Undo / Redo (Edit menu, right-click) uses the same history
+document.addEventListener('beforeinput', e => {
+  if (e.inputType === 'historyUndo' || e.inputType === 'historyRedo') { e.preventDefault(); stepHistory(e.inputType === 'historyUndo' ? -1 : 1); }
+});
+
 // toolbar size: all tools, fewer tools, or hidden
 function setBar(mode){
   const h = $('header');
@@ -1610,16 +2001,16 @@ saveMenu.addEventListener('click', async e => {
   }
 });
 
-showEmpty();
+showEmpty(); resetHistory(''); applyReadMode(); hint();
 (async () => {
   db = await openDb();
   const emb = document.getElementById('notebook-data');
-  if (emb) { try { loadNotebook(JSON.parse(emb.textContent), true); saveSoon(); return; } catch {} }
+  if (emb) { try { loadNotebook(JSON.parse(emb.textContent), true); resetHistory(currentDoc()); saveSoon(); return; } catch {} }
   if (!db) return;
   const [d, s, n] = await Promise.all([get('doc'), get('style'), get('count')]);
   if (s) { style = s; showStyle(style); }
-  if (d) { main.innerHTML = d; slideCount = n || 0; main.querySelectorAll('.slide-label').forEach(e => e.remove()); upgradeNotes(); }
-  requestAnimationFrame(() => { main.querySelectorAll('.strip').forEach(measureStrip); paginateView(); });
+  if (d) { main.innerHTML = d; slideCount = n || 0; main.querySelectorAll('.slide-label').forEach(e => e.remove()); upgradeNotes(); applyReadMode(); }
+  requestAnimationFrame(() => { main.querySelectorAll('.strip').forEach(measureStrip); paginateView(); updateNotesBtn(); resetHistory(main.querySelector('.empty') ? '' : currentDoc()); });
 })();
 </script>
 
