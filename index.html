@@ -207,7 +207,7 @@ main.reading .slide img.blk{cursor:auto}
 ::highlight(spell){text-decoration:underline wavy #e53935;text-decoration-thickness:1.5px;text-underline-offset:2px;text-decoration-skip-ink:none}
 .spellmenu{position:fixed;z-index:47;min-width:190px;max-width:280px;padding:4px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.2);display:flex;flex-direction:column;font:14px var(--ui)}
 .spellmenu button{all:unset;box-sizing:border-box;padding:7px 10px;border-radius:5px;cursor:pointer;overflow-wrap:anywhere}
-.spellmenu button:hover,.spellmenu button:focus-visible{background:var(--bg)}
+.spellmenu button:hover,.spellmenu button:focus-visible,.spellmenu button.kb{background:var(--bg)}
 .spellmenu button.sug{font-weight:600}
 .spellmenu .none{padding:7px 10px;color:var(--muted);font-style:italic}
 .spellmenu hr{border:none;border-top:1px solid var(--line);margin:4px 2px}
@@ -2386,7 +2386,7 @@ function spellNote(note, all){
     try { r.setStart(...posAt(parts, m.index, false)); r.setEnd(...posAt(parts, m.index + m[0].length, true)); } catch { continue; }
     // the word you are still typing isn't marked until you move on from it
     if (typing && r.comparePoint(typing.startContainer, typing.startOffset) === 0) continue;
-    found.push({range: r, word: w});
+    found.push({range: r, word: w, at: m.index});
   }
   if (found.length) spellRanges.set(note, found);
 }
@@ -2421,12 +2421,42 @@ document.body.append(spellMenu);
 let spellHitNow = null;
 function spellHit(note, x, y){
   spellNote(note, true); paintSpell();          // include the word the cursor is in (right-clicking puts it there)
-  for (const h of spellRanges.get(note) || []) for (const r of h.range.getClientRects()) if (x >= r.left - 1 && x <= r.right + 1 && y >= r.top - 2 && y <= r.bottom + 2) return {...h, note};
+  for (const h of spellRanges.get(note) || []) for (const r of h.range.getClientRects()) if (x >= r.left - 1 && x <= r.right + 1 && y >= r.top - 2 && y <= r.bottom + 2) return {word: h.word, at: h.at, note};
   return null;
 }
+// find the marked word again right now: the page may have been re-laid out (or edited) since the menu opened,
+// which leaves any remembered position stale, so look it up by its place in the note's text
+function hitRange(hit){
+  if (!hit.note.isConnected) return null;
+  const {text, parts} = noteText(hit.note); if (!parts.length) return null;
+  const re = new RegExp('(^|[^A-Za-zÀ-ÖØ-öø-ÿ\'’])(' + hit.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/'/g, "['’]") + ')(?![A-Za-zÀ-ÖØ-öø-ÿ])', 'g');
+  let best = null;
+  for (const m of text.matchAll(re)) { const at = m.index + m[1].length; if (!best || Math.abs(at - hit.at) < Math.abs(best - hit.at)) best = at; }
+  if (best === null) return null;
+  const r = document.createRange();
+  try { r.setStart(...posAt(parts, best, false)); r.setEnd(...posAt(parts, best + hit.word.length, true)); } catch { return null; }
+  return r;
+}
+function fixWord(hit, w){
+  const note = hit.note, sel = getSelection();
+  let r = hitRange(hit);
+  if (!r) { status('That word has changed, so it can’t be replaced.'); return; }
+  note.focus({preventScroll: true});
+  sel.removeAllRanges(); sel.addRange(r);
+  const before = note.textContent;
+  let done = false;
+  try { done = document.execCommand('insertText', false, w) && note.textContent !== before; } catch { done = false; }   // like typing it: Back can undo it
+  if (!done && note.textContent === before && (r = hitRange(hit))) {         // the browser wouldn't do it: replace the text directly
+    r.deleteContents(); const t = document.createTextNode(w); r.insertNode(t); note.normalize?.();
+    const c = document.createRange(); c.setStartAfter(t.isConnected ? t : note.lastChild || note); c.collapse(true);
+    sel.removeAllRanges(); sel.addRange(c);
+    note.dispatchEvent(new Event('input', {bubbles: true}));
+  }
+  active = note; savedRange = sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
+}
 function openSpellMenu(hit, x, y){
-  spellHitNow = hit;
-  const btn = (cls, label, act) => { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = label; b.dataset.act = act; b.setAttribute('role', 'menuitem'); return b; };
+  spellHitNow = hit; spellAt = {x, y};
+  const btn = (cls, label, act) => { const b = document.createElement('button'); b.type = 'button'; b.tabIndex = -1; b.className = cls; b.textContent = label; b.dataset.act = act; b.setAttribute('role', 'menuitem'); return b; };
   spellMenu.replaceChildren(Object.assign(document.createElement('div'), {className: 'none', textContent: 'Looking for suggestions…'}));
   spellMenu.append(document.createElement('hr'), btn('', `Add “${hit.word}” to dictionary`, 'add'), btn('', 'Ignore', 'ignore'));
   spellMenu.hidden = false; placeSpellMenu(x, y);
@@ -2436,39 +2466,62 @@ function openSpellMenu(hit, x, y){
     const head = spellMenu.querySelector('.none'); if (!head) return;
     if (!sug.length) head.textContent = 'No suggestions';
     else head.replaceWith(...sug.map(w => { const b = btn('sug', w, 'fix'); b.dataset.w = w; return b; }));
-    placeSpellMenu(x, y);
-    spellMenu.querySelector('button')?.focus({preventScroll: true});
+    placeSpellMenu(spellAt.x, spellAt.y);
   }, 10);
 }
+let spellAt = null;
 function placeSpellMenu(x, y){
   const w = spellMenu.offsetWidth, h = spellMenu.offsetHeight;
   spellMenu.style.left = Math.max(8, Math.min(innerWidth - w - 8, x)) + 'px';
   spellMenu.style.top = (y + h + 8 < innerHeight ? y + 6 : Math.max(8, y - h - 6)) + 'px';
 }
 function closeSpellMenu(){ spellMenu.hidden = true; spellHitNow = null; }
-spellMenu.addEventListener('mousedown', e => e.preventDefault());
-spellMenu.addEventListener('click', e => {
-  const b = e.target.closest('button'), hit = spellHitNow; if (!b || !hit) return;
+function spellAct(b){
+  const hit = spellHitNow; if (!b || !hit || !b.dataset.act) return;
   closeSpellMenu();
-  if (b.dataset.act === 'fix') {
-    const sel = getSelection(); hit.note.focus({preventScroll: true});
-    sel.removeAllRanges(); sel.addRange(hit.range);
-    document.execCommand('insertText', false, b.dataset.w);      // like typing it: Back can undo it
-    active = hit.note; savedRange = sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
-  } else {
+  if (b.dataset.act === 'fix') fixWord(hit, b.dataset.w);
+  else {
     const lw = hit.word.toLowerCase();
     if (b.dataset.act === 'add') { userWords.add(lw); saveUserWords(); status(`“${hit.word}” added to your dictionary.`); }
     else ignoredWords.add(lw);
     spellCache = new Map(); spellAll();
+    hit.note.focus({preventScroll: true});
   }
+}
+// act on pointer down (focus never leaves the note, and nothing can hide the menu before the choice registers);
+// the click that follows is swallowed. A click with no pointer down first (keyboard, screen readers) acts too.
+let spellPressed = false;
+spellMenu.addEventListener('mousedown', e => e.preventDefault());
+spellMenu.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  if (e.button !== 0) return;
+  const b = e.target.closest('button'); if (!b) return;
+  spellPressed = true; setTimeout(() => { spellPressed = false; }, 700);
+  // the menu closes now, so the click that ends this press would land on the page underneath: ignore it
+  swallowClick = true; setTimeout(() => { swallowClick = false; }, 700);
+  spellAct(b);
 });
-spellMenu.addEventListener('keydown', e => {
-  const items = [...spellMenu.querySelectorAll('button')], i = items.indexOf(document.activeElement);
-  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus(); }
-  if (e.key === 'Escape') { e.preventDefault(); const n = spellHitNow?.note; closeSpellMenu(); n?.focus(); }
-});
+spellMenu.addEventListener('click', e => { if (spellPressed) { spellPressed = false; return; } spellAct(e.target.closest('button')); });
+// keyboard: arrows to move, Enter to choose, Escape to close; the cursor stays in the note meanwhile
+document.addEventListener('keydown', e => {
+  if (spellMenu.hidden) return;
+  const items = [...spellMenu.querySelectorAll('button')], i = items.findIndex(b => b.classList.contains('kb'));
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault(); e.stopPropagation();
+    items.forEach(b => b.classList.remove('kb'));
+    items[(i + (e.key === 'ArrowDown' ? 1 : i < 0 ? 0 : -1) + items.length) % items.length]?.classList.add('kb');
+  } else if (e.key === 'Enter' && i >= 0) { e.preventDefault(); e.stopPropagation(); spellAct(items[i]); }
+  else if (e.key === 'Escape' || e.key === 'Tab') { if (e.key === 'Escape') e.preventDefault(); closeSpellMenu(); }
+  else if (!['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) closeSpellMenu();      // typing carries on as normal
+}, true);
 document.addEventListener('mousedown', e => { if (!spellMenu.hidden && !spellMenu.contains(e.target)) closeSpellMenu(); });
-addEventListener('scroll', () => { if (!spellMenu.hidden) closeSpellMenu(); }, {passive: true});
+// the menu stays with its word when the page scrolls (it closes only if the word scrolls out of sight)
+addEventListener('scroll', () => requestAnimationFrame(() => {
+  if (spellMenu.hidden || !spellHitNow) return;
+  const r = hitRange(spellHitNow), q = r && r.getBoundingClientRect();
+  if (!q || q.bottom < 0 || q.top > innerHeight) { closeSpellMenu(); return; }
+  spellAt = {x: q.left + Math.min(q.width / 2, 20), y: q.bottom}; placeSpellMenu(spellAt.x, spellAt.y);
+}), {passive: true});
 main.addEventListener('contextmenu', e => {
   if (!spellDict || reading) return;
   const note = e.target.closest('.mine'); if (!note) return;
