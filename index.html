@@ -554,7 +554,7 @@ $('#hlColor').oninput = e => { $('#hlBtn .hl').style.background = e.target.value
 /* ================= adding your notes ================= */
 function makeNote(tag){
   const el = document.createElement(tag);
-  el.className = 'mine'; el.contentEditable = 'true'; el.spellcheck = nativeSpell();
+  el.className = 'mine'; el.contentEditable = 'true'; spellAttrs(el);
   el.style.fontFamily = fontCss(style.font); el.style.fontSize = style.size + 'px'; el.style.color = style.color;
   return el;
 }
@@ -2175,19 +2175,42 @@ const spellHl = canHighlight ? new Highlight() : null;
 if (spellHl) CSS.highlights.set('spell', spellHl);
 const spellRanges = new Map();          // note -> [{range, word}]
 // the browser's own spell check is used only when ours can't run (an older browser, or no internet for the dictionary)
-function nativeSpell(){ return spellLang !== 'off' && (!canHighlight || spellFailed); }
+// until our dictionary is ready (and whenever it can't be used), the browser's own spell check does the job, so checking never pauses
+function nativeSpell(){ return spellLang !== 'off' && !spellDict; }
+function spellAttrs(el){
+  const native = nativeSpell();
+  if (el.spellcheck !== native) el.spellcheck = native;
+  if (spellLang === 'off') el.removeAttribute('lang'); else if (el.lang !== spellLang) el.lang = spellLang;
+}
+// files are kept in the browser's cache storage after the first visit, so later visits (and offline use) start at once
+async function spellFetch(url){
+  let cache = null;
+  try { cache = window.caches ? await caches.open('btl-spell-v1') : null; } catch { cache = null; }
+  const hit = cache && await cache.match(url).catch(() => null);
+  if (hit) return hit.text();
+  const r = await fetch(url); if (!r.ok) throw new Error(r.status);
+  if (cache) cache.put(url, r.clone()).catch(() => {});
+  return r.text();
+}
+let spellRetry = 0;
 function loadSpell(){
-  if (spellLang === 'off' || !canHighlight) return Promise.resolve(null);
+  if (spellLang === 'off' || !canHighlight || spellDict) return Promise.resolve(spellDict);
   const lang = spellLang;
   return spellLoading || (spellLoading = (async () => {
     try {
-      if (!window.Typo) await loadScript(SPELL_LIB);
+      if (!window.Typo) {
+        const u = URL.createObjectURL(new Blob([await spellFetch(SPELL_LIB)], {type: 'text/javascript'}));
+        try { await loadScript(u); } finally { URL.revokeObjectURL(u); }
+      }
       const [base, code] = SPELL_DICTS[lang];
-      const [aff, dic] = await Promise.all(['.aff', '.dic'].map(x => fetch(base + x).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })));
+      const [aff, dic] = await Promise.all([spellFetch(base + '.aff'), spellFetch(base + '.dic')]);
       await new Promise(r => setTimeout(r, 0));
-      if (lang !== spellLang) return null;
-      spellDict = new Typo(code, aff, dic); spellFailed = false; spellCache = new Map();
-    } catch (err) { console.warn('Spell check dictionary could not load', err); spellFailed = true; spellDict = null; }
+      if (lang === spellLang) { spellDict = new Typo(code, aff, dic); spellFailed = false; spellCache = new Map(); spellRetry = 0; }
+    } catch (err) {
+      console.warn('Spell check dictionary could not load; using the browser spell check', err);
+      spellFailed = true; spellDict = null;
+      if (spellRetry++ < 3) setTimeout(loadSpell, 5000 * spellRetry);       // try again later (e.g. back online)
+    }
     spellLoading = null; spellAll();
     return spellDict;
   })());
@@ -2249,8 +2272,7 @@ function spellSoon(note){ spellQueue.add(note); clearTimeout(spellTimer); spellT
 function spellAllSoon(){ clearTimeout(spellAllTimer); spellAllTimer = setTimeout(spellAll, 60); }
 function spellAll(){
   clearTimeout(spellAllTimer);
-  const native = nativeSpell();
-  main.querySelectorAll('.mine').forEach(n => { if (n.spellcheck !== native) n.spellcheck = native; });
+  main.querySelectorAll('.mine').forEach(spellAttrs);
   spellRanges.clear();
   if (spellDict && !reading && spellLang !== 'off') main.querySelectorAll('.mine').forEach(n => spellNote(n));
   paintSpell();
@@ -2260,6 +2282,7 @@ document.addEventListener('selectionchange', () => { if (spellDict && active && 
 const spellSel = $('#spellLang'); spellSel.value = spellLang;
 spellSel.onchange = () => {
   spellLang = spellSel.value; try { localStorage.setItem('spell-lang', spellLang); } catch {}
+  document.documentElement.lang = spellLang === 'off' ? 'en' : spellLang; spellRetry = 0;
   spellDict = null; spellFailed = false; spellLoading = null; spellCache = new Map();
   spellAll(); loadSpell();
   if (active && document.body.contains(active)) restoreSel();
@@ -2366,7 +2389,16 @@ function spellSuggest(dict, word, max = 6){
   return [...seen].sort((x, y) => x[1] - y[1] || Math.abs(x[0].length - lower.length) - Math.abs(y[0].length - lower.length)).slice(0, max).map(([w]) => keepCase(w));
 }
 
-setTimeout(loadSpell, 800);
+// as soon as you click into a note: make sure its spell checking is on and up to date
+main.addEventListener('focusin', e => {
+  const note = e.target.closest?.('.mine'); if (!note || reading) return;
+  const native = nativeSpell(); spellAttrs(note);
+  if (native) { note.spellcheck = false; void note.offsetHeight; note.spellcheck = true; }     // wakes the browser's checker for this box
+  else if (spellDict) { spellNote(note); paintSpell(); }
+  else loadSpell();
+});
+document.documentElement.lang = spellLang === 'off' ? 'en' : spellLang;
+loadSpell();                 // start straight away; the browser checks spelling until it's ready
 
 // ================= Back / Forward: undo and redo any change =================
 // whole-document snapshots; big pictures are stored once and referred to by a short key
