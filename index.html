@@ -723,14 +723,14 @@ main.addEventListener('pointerdown', e => {
   const {xs, ys} = snapTargets(box);
   g.setPointerCapture(e.pointerId);
   const move = ev => {
-    const lines = [];
+    const lines = [], free = noSnap(ev);
     let w = r.width + ev.clientX - sx, h = r.height + ev.clientY - sy;
     if (dir.includes('e')) {               // line the right edge up with other boxes' edges
-      const s = snapAxis([r.left + w], xs); if (s) { w += s.d; lines.push(...s.hits.map(t => ({x: t.v, a: Math.min(r.top, t.r.top), b: Math.max(r.top + h, t.r.bottom)}))); }
+      const s = free ? null : snapAxis([r.left + w], xs); if (s) { w += s.d; lines.push(...s.hits.map(t => ({x: t.v, a: Math.min(r.top, t.r.top), b: Math.max(r.top + h, t.r.bottom)}))); }
       box.style.width = Math.round(Math.max(60 * bz, Math.min(max, w)) / bz) + 'px';
     }
     if (dir.includes('s')) {
-      const s = snapAxis([r.top + h], ys); if (s) { h += s.d; lines.push(...s.hits.map(t => ({y: t.v, a: Math.min(r.left, t.r.left), b: Math.max(r.left + w, t.r.right)}))); }
+      const s = free ? null : snapAxis([r.top + h], ys); if (s) { h += s.d; lines.push(...s.hits.map(t => ({y: t.v, a: Math.min(r.left, t.r.left), b: Math.max(r.left + w, t.r.right)}))); }
       box.style.height = ''; box.style.minHeight = Math.round(Math.max(30 * bz, h) / bz) + 'px';
     }
     showGuides(lines);
@@ -1176,18 +1176,20 @@ function placeFloats(root){
     const s = zoomOf(card) || 1, cr = card.getBoundingClientRect(), py = +box.dataset.py || 0;
     if (card.classList.contains('pagecard')) {
       const strips = [...card.querySelectorAll(':scope > .strip')];
-      const st = strips.find(x => py >= +x.dataset.y0 && py < +x.dataset.y1) || strips[strips.length - 1];
+      const atEnd = box.dataset.pe === '1';      // anchored to the bottom of the piece of page that ends at py
+      const st = (atEnd && strips.find(x => Math.abs(+x.dataset.y1 - py) < 0.02)) || strips.find(x => py >= +x.dataset.y0 && py < +x.dataset.y1) || strips[strips.length - 1];
       if (!st) continue;
       const y0 = +st.dataset.y0, y1 = +st.dataset.y1, sr = st.getBoundingClientRect();
-      box.style.top = ((sr.top - cr.top + (py - y0) / (y1 - y0) * sr.height) / s).toFixed(1) + 'px';
-    } else box.style.top = py.toFixed(1) + 'px';
-    box.style.left = ((+box.dataset.px || 0) * 100).toFixed(3) + '%';
+      box.style.top = ((sr.top - cr.top + (Math.min(py, y1) - y0) / (y1 - y0) * sr.height) / s + (+box.dataset.oy || 0)).toFixed(2) + 'px';
+    } else box.style.top = py.toFixed(2) + 'px';
+    box.style.left = ((+box.dataset.px || 0) * 100).toFixed(4) + '%';
   }
 }
 function toggleFloat(box){
   const card = box.closest('.slide'); if (!card) return;
   const isPage = card.classList.contains('pagecard'), s = zoomOf(card) || 1;
   const cr = card.getBoundingClientRect(), br = box.getBoundingClientRect();
+  delete box.dataset.oy; delete box.dataset.pe;
   if (!box.classList.contains('floating')) {
     box.dataset.px = Math.max(0, (br.left - cr.left) / cr.width).toFixed(4);
     if (isPage) {
@@ -1214,7 +1216,15 @@ function toggleFloat(box){
   placeFloats(); spreadChips(); saveSoon();
 }
 // ---------- alignment guides: lines show (and snap to) edges and centres of the other note boxes on the page ----------
-const SNAP = 6, guideEls = [];
+// snapping is a soft suggestion: only within a few pixels, and holding Alt or Shift while dragging turns it off
+const SNAP = 3, guideEls = [];
+const noSnap = ev => !!(ev && (ev.altKey || ev.shiftKey));
+// while dragging, pressing or letting go of Alt / Shift updates the snapping straight away
+function snapKeys(redo){
+  const on = e => { if (e.key === 'Alt' || e.key === 'Shift') { if (e.key === 'Alt') e.preventDefault(); redo(e); } };
+  addEventListener('keydown', on, true); addEventListener('keyup', on, true);
+  return () => { removeEventListener('keydown', on, true); removeEventListener('keyup', on, true); };
+}
 function snapTargets(box, extra){
   const card = box.closest('.slide'), xs = [], ys = [];
   if (!card) return {xs, ys};
@@ -1252,32 +1262,43 @@ function startFloatMove(box, g, e){
   const card = box.parentElement, br0 = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, z = zoomOf(box) || 1;
   const cr0 = card.getBoundingClientRect(), whole = {left: cr0.left, right: cr0.right, top: cr0.top, bottom: cr0.bottom};
   const {xs, ys} = snapTargets(box, {xs: [{v: (cr0.left + cr0.right) / 2, r: whole}]});
-  let ddx = 0, ddy = 0;
+  const w = br0.width, h = br0.height;
+  let last = e, nl = br0.left, nt = br0.top;          // where the box is shown, which is exactly where it is dropped
   g.setPointerCapture(e.pointerId); box.classList.add('moving');
   const move = ev => {
-    ddx = ev.clientX - sx; ddy = ev.clientY - sy;
-    const l = br0.left + ddx, t = br0.top + ddy, w = br0.width, h = br0.height;
-    const sxr = snapAxis([l, l + w / 2, l + w], xs), syr = snapAxis([t, t + h / 2, t + h], ys);
-    if (sxr) ddx += sxr.d; if (syr) ddy += syr.d;
-    const b = {left: br0.left + ddx, right: br0.right + ddx, top: br0.top + ddy, bottom: br0.bottom + ddy};
-    showGuides([...(sxr ? vLines(sxr.hits, b) : []), ...(syr ? hLines(syr.hits, b) : [])]);
-    box.style.translate = `${ddx / z}px ${ddy / z}px`;
+    last = {clientX: ev.clientX ?? last.clientX, clientY: ev.clientY ?? last.clientY, altKey: ev.altKey, shiftKey: ev.shiftKey};
+    let l = br0.left + last.clientX - sx, t = br0.top + last.clientY - sy;
+    const free = noSnap(last);
+    const sxr = free ? null : snapAxis([l, l + w / 2, l + w], xs), syr = free ? null : snapAxis([t, t + h / 2, t + h], ys);
+    if (sxr) l += sxr.d; if (syr) t += syr.d;
+    l = Math.max(cr0.left, Math.min(cr0.right - w, l)); t = Math.max(cr0.top, t);      // stay on the page
+    nl = l; nt = t;
+    const b = {left: l, right: l + w, top: t, bottom: t + h};
+    showGuides([...(sxr ? vLines(sxr.hits.filter(x => Math.abs(x.v - l) < 0.75 || Math.abs(x.v - l - w / 2) < 0.75 || Math.abs(x.v - l - w) < 0.75), b) : []),
+                ...(syr ? hLines(syr.hits.filter(x => Math.abs(x.v - t) < 0.75 || Math.abs(x.v - t - h / 2) < 0.75 || Math.abs(x.v - t - h) < 0.75), b) : [])]);
+    box.style.translate = `${(l - br0.left) / z}px ${(t - br0.top) / z}px`;
   };
+  const unkeys = snapKeys(k => move({altKey: k.altKey, shiftKey: k.shiftKey}));
   const up = ev => {
-    g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up);
-    box.style.translate = ''; box.classList.remove('moving'); hideGuides();
+    if (ev.type === 'pointerup') move(ev);
+    g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); unkeys();
+    box.classList.remove('moving'); hideGuides();
+    if (ev.type === 'pointercancel') { box.style.translate = ''; return; }
     const cr = card.getBoundingClientRect(), s = zoomOf(card) || 1;
-    const nl = br0.left + ddx, nt = br0.top + ddy;
-    box.dataset.px = Math.max(0, Math.min(1 - br0.width / cr.width, (nl - cr.left) / cr.width)).toFixed(4);
+    box.dataset.px = ((nl - cr.left) / cr.width).toFixed(5);
+    delete box.dataset.oy; delete box.dataset.pe;
     if (card.classList.contains('pagecard')) {
-      const strips = [...card.querySelectorAll(':scope > .strip')];
-      let st = strips.find(x => { const r = x.getBoundingClientRect(); return nt >= r.top && nt < r.bottom; });
-      if (!st) st = nt < cr.top + 1 ? strips[0] : strips[strips.length - 1];
-      if (st) {
-        const r = st.getBoundingClientRect(), y0 = +st.dataset.y0, y1 = +st.dataset.y1;
-        box.dataset.py = Math.max(0, Math.min(y1 - 0.01, y0 + (nt - r.top) / r.height * (y1 - y0))).toFixed(2);
+      const strips = [...card.querySelectorAll(':scope > .strip')].map(x => ({x, r: x.getBoundingClientRect(), y0: +x.dataset.y0, y1: +x.dataset.y1}));
+      const on = strips.find(q => nt >= q.r.top && nt < q.r.bottom);
+      if (on) box.dataset.py = (on.y0 + (nt - on.r.top) / on.r.height * (on.y1 - on.y0)).toFixed(3);
+      else if (strips.length) {
+        // beside the page pieces (e.g. next to a note between lines): hang it below the piece above, by the exact distance
+        const above = strips.filter(q => q.r.bottom <= nt).pop();
+        if (above) { box.dataset.py = above.y1; box.dataset.pe = '1'; box.dataset.oy = ((nt - above.r.bottom) / s).toFixed(2); }
+        else { box.dataset.py = strips[0].y0; box.dataset.oy = ((nt - strips[0].r.top) / s).toFixed(2); }
       }
-    } else box.dataset.py = Math.max(0, (nt - cr.top) / s).toFixed(1);
+    } else box.dataset.py = ((nt - cr.top) / s).toFixed(2);
+    box.style.translate = '';
     placeFloats(); spreadChips(); saveSoon();
   };
   g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
@@ -1291,34 +1312,45 @@ function startMove(box, g, e){
   const startLeft = r0.left - pr.left - padL;
   const sx = e.clientX, sy = e.clientY, z = zoomOf(box) || 1;
   const cL = pr.left + padL, whole = {left: cL, right: cL + contentW, top: pr.top, bottom: pr.bottom};
-  const {xs} = snapTargets(box, {xs: [{v: cL, r: whole}, {v: cL + contentW, r: whole}, {v: cL + contentW / 2, r: whole, tol: 18}]});
-  let target = null, sdx = 0;
+  const {xs} = snapTargets(box, {xs: [{v: cL, r: whole}, {v: cL + contentW, r: whole}, {v: cL + contentW / 2, r: whole}]});
+  let target = null, left = startLeft, last = e;      // left: where the box is shown across the page, which is exactly where it is dropped
   g.setPointerCapture(e.pointerId);
   box.classList.add('moving');
   const move = ev => {
-    let dx = ev.clientX - sx; const dy = ev.clientY - sy;
-    const l = r0.left + dx, sr = snapAxis([l, l + w / 2, l + w], xs);
-    sdx = sr ? sr.d : 0; dx += sdx;
-    showGuides(sr ? vLines(sr.hits, {left: r0.left + dx, right: r0.right + dx, top: r0.top + dy, bottom: r0.bottom + dy}) : []);
-    box.style.translate = `${dx / z}px ${dy / z}px`;
-    target = null;
-    if (Math.abs(dy) > 20) {
-      const under = document.elementsFromPoint(ev.clientX, ev.clientY).filter(el => !box.contains(el));
-      const strip = under.map(el => el.closest('.strip')).find(Boolean);
-      if (strip) { showGap(strip, ev.clientY); gapPill.remove(); target = {card: strip.closest('.pagecard'), y: pending.y}; return; }
-      hideGap();
-      const slide = under.map(el => el.closest('.slide')).find(Boolean);
-      if (slide && !slide.classList.contains('pagecard')) {
-        const blocks = [...slide.querySelectorAll('.blk')].filter(b => !box.contains(b) && b.getBoundingClientRect().top < ev.clientY);
-        target = {after: blocks.pop() || null, slide};
-      }
-    } else hideGap();
+    last = {clientX: ev.clientX ?? last.clientX, clientY: ev.clientY ?? last.clientY, altKey: ev.altKey, shiftKey: ev.shiftKey};
+    const dy = last.clientY - sy;
+    let l = r0.left + last.clientX - sx;
+    const sr = noSnap(last) ? null : snapAxis([l, l + w / 2, l + w], xs);
+    if (sr) l += sr.d;
+    left = Math.max(0, Math.min(contentW - w, l - cL));           // stay inside the page
+    const dx = cL + left - r0.left, b = {left: cL + left, right: cL + left + w, top: r0.top + dy, bottom: r0.bottom + dy};
+    if (ev.clientY != null) {                 // a mouse move, not only Alt / Shift: find the line it would move to
+      target = null;
+      if (Math.abs(dy) > 20) {
+        const under = document.elementsFromPoint(ev.clientX, ev.clientY).filter(el => !box.contains(el));
+        const strip = under.map(el => el.closest('.strip')).find(Boolean);
+        if (strip) { showGap(strip, ev.clientY); gapPill.remove(); target = {card: strip.closest('.pagecard'), y: pending.y}; }
+        else {
+          hideGap();
+          const slide = under.map(el => el.closest('.slide')).find(Boolean);
+          if (slide && !slide.classList.contains('pagecard')) {
+            const blocks = [...slide.querySelectorAll('.blk')].filter(b => !box.contains(b) && b.getBoundingClientRect().top < ev.clientY);
+            target = {after: blocks.pop() || null, slide};
+          }
+        }
+      } else hideGap();
+    }
+    // a small drag up or down keeps the note on its own line, so it is shown there too (no jump when you let go)
+    const vy = target ? dy : 0;
+    showGuides(sr ? vLines(sr.hits.filter(x => [b.left, b.left + w / 2, b.right].some(v => Math.abs(x.v - v) < 0.75)), {...b, top: r0.top + vy, bottom: r0.bottom + vy}) : []);
+    box.style.translate = `${dx / z}px ${vy / z}px`;
   };
+  const unkeys = snapKeys(k => move({altKey: k.altKey, shiftKey: k.shiftKey}));
   const up = ev => {
-    g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up);
+    if (ev.type === 'pointerup') move(ev);
+    g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); unkeys();
     box.style.translate = ''; box.classList.remove('moving'); hideGap(); hideGuides();
-    let left = Math.max(0, Math.min(contentW - w, startLeft + (ev.clientX - sx) + sdx));
-    if (Math.abs(left + w / 2 - contentW / 2) < 18) left = (contentW - w) / 2;   // snap to the centre
+    if (ev.type === 'pointercancel') return;
     const frac = contentW > 0 ? left / contentW : 0;
     if (target) {
       const from = box.parentNode; box.remove(); mergeStrips(from);
@@ -1326,7 +1358,7 @@ function startMove(box, g, e){
       else if (target.after) target.after.after(box);
       else (target.slide.querySelector('.content') || target.slide).prepend(box);
     }
-    box.style.marginLeft = (frac * 100).toFixed(2) + '%';
+    box.style.marginLeft = (frac * 100).toFixed(4) + '%';
     saveSoon();
   };
   g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
