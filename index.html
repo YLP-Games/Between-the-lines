@@ -181,7 +181,12 @@ main.clean .notebox > *{display:none!important}
 /* pin a note so it stays open */
 .g-pin{right:42px;top:-10px;width:22px;height:22px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font:11px/1 var(--ui);user-select:none;-webkit-user-select:none;filter:grayscale(1)}
 .notebox.inline > .g-pin{right:16px}
-.notebox.pinned > .g-pin{opacity:1;filter:none;background:var(--accent);border-color:var(--accent)}
+.notebox.pinned > .g-pin{filter:none;background:var(--accent);border-color:var(--accent)}
+/* the pin shows only while you point at its note (pinned or not); hidden, it can't be clicked by accident */
+.notebox > .g-pin,.notebox:focus-within > .g-pin{opacity:0;visibility:hidden;transition:opacity .15s,visibility .15s}
+.notebox:hover > .g-pin{opacity:1;visibility:visible}
+/* touch screens can't hover: there it shows while you're in that note */
+@media (hover:none){.notebox > .g-pin{opacity:0;visibility:hidden}.notebox:focus-within > .g-pin{opacity:1;visibility:visible}}
 .notebox.pinned > .g-min{display:none}
 /* minimised note icons can be dragged aside; a dashed line points back to the spot */
 .notebox.collapsed > .note-chip{translate:var(--cdx,0px) var(--cdy,0px);touch-action:none}
