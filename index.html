@@ -9,6 +9,7 @@
 <title>Between the Slides</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Patrick+Hand&family=Kalam:wght@400;700&family=Nunito:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,700;1,400&family=Courier+Prime:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
 <style>
 /* Layout: one centred column of white slide cards holding the extracted text; sticky toolbar on top */
 :root{
@@ -62,8 +63,26 @@ details.orig img{border:1px solid #d3d9e3}
 /* your notes */
 .mine{outline:none;border-radius:3px;font-family:Caveat,cursive;font-size:24px;color:#1f4fd1;cursor:text;line-height:1.3}
 .slide img.formula{max-width:100%;margin:.3em 0}
-span.mine{padding:0 .2em;background:transparent;border:1px solid #9aa3b2}
-div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5em;background:transparent;border:1px solid #9aa3b2}
+span.mine{padding:0 .2em;background:var(--nb-fill, transparent);border:1px solid var(--nb-border, #9aa3b2)}
+div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5em;background:var(--nb-fill, transparent);border:1px solid var(--nb-border, #9aa3b2)}
+.notebox.no-outline > .mine{border-color:transparent}
+.notebox.no-outline:not(:hover):not(:focus-within) > .mine{box-shadow:none}
+.boxtools{display:flex;align-items:center;gap:6px;padding-left:6px;border-left:1px solid var(--line);font-size:13px;color:var(--muted)}
+.boxtools label{display:flex;align-items:center;gap:4px;cursor:pointer}
+#bNoFill[aria-pressed="true"]{outline:2px solid var(--accent)}
+.formula{display:inline-block;cursor:pointer;padding:0 2px;border-radius:3px}
+.formula:hover{background:rgba(39,71,201,.1)}
+.formula .katex{font-size:1em}
+.fpanel{position:fixed;z-index:40;right:max(16px, env(safe-area-inset-right, 0px));bottom:max(16px, env(safe-area-inset-bottom, 0px));width:min(440px, calc(100vw - 32px));background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.25);padding:12px;display:flex;flex-direction:column;gap:8px}
+.fhead{display:flex;justify-content:space-between;align-items:center;font-weight:600}
+.fhead button{border:none;background:transparent;font-size:18px;padding:2px 8px}
+#fInput{font:15px ui-monospace,Menlo,Consolas,monospace;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.fkeys{display:flex;flex-wrap:wrap;gap:4px}
+.fkeys button{min-width:34px;padding:4px 6px;font-size:14px}
+.fpreview{min-height:56px;display:flex;align-items:center;justify-content:center;background:#fff;color:#1b2330;border:1px solid var(--line);border-radius:6px;padding:8px;font-size:22px;overflow-x:auto}
+.fhint{font-size:13px;color:#8a94a3}
+.fhelp{font-size:12px;color:var(--muted);line-height:1.4}
+.factions{display:flex;justify-content:flex-end}
 .pagecard{padding:0;overflow:hidden;background:#fff}
 .strip{position:relative;overflow:hidden;width:100%;max-width:100%;background-image:var(--pg);background-size:100% auto;background-repeat:no-repeat;cursor:text;font-size:0;color:transparent;container-type:inline-size}
 .tl{position:absolute;white-space:pre;line-height:1;transform-origin:0 0;color:transparent;font-family:Arial,Helvetica,sans-serif;cursor:text}
@@ -133,6 +152,13 @@ main.clean .notebox > *{display:none!important}
       <button id="b" title="Bold"><b>B</b></button>
       <button id="i" title="Italic"><i>I</i></button>
       <button id="u" title="Underline"><u>U</u></button>
+      <button id="fBtn" title="Insert a formula into the note">∑ Formula</button>
+      <span class="boxtools" title="The note's box">
+        <label for="bOutline"><input type="checkbox" id="bOutline" checked> Outline</label>
+        <input type="color" id="bBorder" value="#9aa3b2" aria-label="Outline colour" title="Outline colour">
+        <label for="bFill">Fill <input type="color" id="bFill" value="#fff8c4" aria-label="Fill colour"></label>
+        <button id="bNoFill" title="No fill" aria-pressed="true">No fill</button>
+      </span>
     </div>
     <span class="spacer"></span>
     <select id="layout" aria-label="Page layout" title="Page layout">
@@ -164,6 +190,27 @@ main.clean .notebox > *{display:none!important}
 </header>
 
 <main id="main"></main>
+
+<div class="fpanel" id="formulaPanel" hidden>
+  <div class="fhead">Formula <button id="fClose" aria-label="Close">×</button></div>
+  <input id="fInput" autocomplete="off" spellcheck="false" placeholder="e.g.  w_i = (P_i)/(sum_(i=1)^N P_i)">
+  <div class="fkeys" id="fKeys">
+    <button data-ins="()/()" data-back="4" title="Fraction">a/b</button>
+    <button data-ins="^()" data-back="1" title="Power">x²</button>
+    <button data-ins="_()" data-back="1" title="Small low letter">xᵢ</button>
+    <button data-ins="sqrt()" data-back="1" title="Square root">√</button>
+    <button data-ins="sum_(i=1)^N " title="Sum">Σ</button>
+    <button data-ins="()" data-back="1" title="Brackets">( )</button>
+    <button data-ins="±">±</button><button data-ins="×">×</button><button data-ins="÷">÷</button><button data-ins="·">·</button>
+    <button data-ins="≤">≤</button><button data-ins="≥">≥</button><button data-ins="≠">≠</button><button data-ins="≈">≈</button>
+    <button data-ins="∞">∞</button><button data-ins="→">→</button><button data-ins="%">%</button>
+    <button data-ins="α">α</button><button data-ins="β">β</button><button data-ins="σ">σ</button><button data-ins="μ">μ</button>
+    <button data-ins="Δ">Δ</button><button data-ins="π">π</button><button data-ins="θ">θ</button><button data-ins="λ">λ</button><button data-ins="ρ">ρ</button>
+  </div>
+  <div class="fpreview" id="fPreview"></div>
+  <div class="fhelp">Type <b>/</b> for a fraction (use brackets for longer parts: <b>(a+b)/(c+d)</b>), <b>^</b> for a power, <b>_</b> for a small low letter, <b>sqrt()</b>, <b>sum</b>. Press Enter to insert.</div>
+  <div class="factions"><button id="fInsert" class="primary">Insert</button></div>
+</div>
 
 <template id="emptyTpl">
   <div class="empty">
@@ -211,10 +258,10 @@ document.addEventListener('selectionchange', () => {
   const sel = getSelection(); if (!sel.rangeCount) return;
   const r = sel.getRangeAt(0), n = r.commonAncestorContainer;
   const el = (n.nodeType === 1 ? n : n.parentElement)?.closest('.mine');
-  if (el) { active = el; savedRange = r.cloneRange(); showStyle(noteStyle(el)); hint(); }
+  if (el) { active = el; savedRange = r.cloneRange(); showStyle(noteStyle(el)); const nb = el.closest('.notebox'); if (nb) showBox(boxOf(nb)); hint(); }
 });
 document.addEventListener('mousedown', e => {
-  if (!e.target.closest('.mine, .notebox, .gappill, header')) { active = null; savedRange = null; showStyle(style); hint(); }
+  if (!e.target.closest('.mine, .notebox, .gappill, header, .fpanel')) { active = null; savedRange = null; showStyle(style); hint(); }
 });
 function noteStyle(el){
   return {font: el.style.fontFamily.split(',')[0].replace(/"/g,'').trim() || style.font,
@@ -330,6 +377,7 @@ function makeBox(inline){
   const box = document.createElement(inline ? 'span' : 'div'); box.className = inline ? 'notebox inline' : 'notebox';
   const el = makeNote(inline ? 'span' : 'div');
   box.append(el); addGrips(box);
+  if (!inline || boxStyle.fill || !boxStyle.outline || boxStyle.border !== '#9aa3b2') applyBoxVars(box, boxStyle);
   return {box, el};
 }
 // notes made before resizing existed get a box and handles too
@@ -374,6 +422,7 @@ main.addEventListener('pointerdown', e => {
 let swallowClick = false;
 main.addEventListener('click', e => {
   if (swallowClick) { swallowClick = false; return; }
+  const fx = e.target.closest('.formula'); if (fx && fx.closest('.mine')) { openFormula(fx); return; }
   const chip = e.target.closest('.note-chip');
   if (chip) { const box = chip.parentElement; setCollapsed(box, false); afterNotesToggle(); const m = box.querySelector('.mine'); if (m) focusNote(m); return; }
   if (e.target.closest('.mine, .notebox, .gappill, details, summary, .slide-label, a')) return;
@@ -1044,9 +1093,14 @@ async function paintCard(card, scale){
     const ir = im.getBoundingClientRect(); if (!ir.width || !im.complete) continue;
     try { ctx.drawImage(im, ir.left - ox, ir.top - oy, ir.width, ir.height); } catch {}
   }
-  ctx.strokeStyle = '#9aa3b2'; ctx.lineWidth = 1;
+  ctx.lineWidth = 1;
+  const seen = c => c && c !== 'transparent' && !/rgba\(.*,\s*0\)$/.test(c);
   for (const n of card.querySelectorAll('.mine')) {
-    for (const nr of n.getClientRects()) ctx.strokeRect(nr.left - ox + .5, nr.top - oy + .5, nr.width - 1, nr.height - 1);
+    const ns = getComputedStyle(n);
+    for (const nr of n.getClientRects()) {
+      if (seen(ns.backgroundColor)) { ctx.fillStyle = ns.backgroundColor; ctx.fillRect(nr.left - ox, nr.top - oy, nr.width, nr.height); }
+      if (seen(ns.borderTopColor) && parseFloat(ns.borderTopWidth) > 0) { ctx.strokeStyle = ns.borderTopColor; ctx.strokeRect(nr.left - ox + .5, nr.top - oy + .5, nr.width - 1, nr.height - 1); }
+    }
   }
   ctx.strokeStyle = '#c9d0db';
   for (const td of card.querySelectorAll('td, th')) { const tr = td.getBoundingClientRect(); ctx.strokeRect(tr.left - ox, tr.top - oy, tr.width, tr.height); }
@@ -1055,7 +1109,7 @@ async function paintCard(card, scale){
   const range = document.createRange();
   for (let t = walker.nextNode(); t; t = walker.nextNode()) {
     const el = t.parentElement;
-    if (!el || !t.data.trim() || el.closest('.tl, .grip, .gappill, .gapline, summary, details:not([open])')) continue;
+    if (!el || !t.data.trim() || el.closest('.tl, .grip, .gappill, .gapline, .katex-mathml, .note-chip, summary, details:not([open])')) continue;
     const cs = getComputedStyle(el);
     if (cs.visibility === 'hidden' || cs.color === 'transparent' || cs.color === 'rgba(0, 0, 0, 0)') continue;
     ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${(parseFloat(cs.fontSize) * zoomOf(el)).toFixed(2)}px ${cs.fontFamily}`;
@@ -1070,6 +1124,17 @@ async function paintCard(card, scale){
       ctx.fillText(w[0], wr.left - ox, y);
       if (underline) ctx.fillRect(wr.left - ox, y + 2, wr.width, Math.max(1, parseFloat(cs.fontSize) / 16));
     }
+  }
+  // formulas: fraction lines and drawn symbols (square roots, big brackets)
+  for (const fl of card.querySelectorAll('.formula .frac-line')) {
+    const r = fl.getBoundingClientRect(); if (!r.width) continue;
+    ctx.fillStyle = getComputedStyle(fl).borderBottomColor; ctx.fillRect(r.left - ox, r.top - oy, r.width, Math.max(1, r.height));
+  }
+  for (const sv of card.querySelectorAll('.formula svg')) {
+    const r = sv.getBoundingClientRect(); if (!r.width || !r.height) continue;
+    const col = getComputedStyle(sv).color;
+    const xml = new XMLSerializer().serializeToString(sv).replace(/currentColor/g, col).replace('<svg', sv.getAttribute('xmlns') ? '<svg' : '<svg xmlns="http://www.w3.org/2000/svg"').replace('<svg', `<svg fill="${col}"`);
+    try { const im = await loadImg('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml)); ctx.drawImage(im, r.left - ox, r.top - oy, r.width, r.height); } catch {}
   }
   return c;
 }
@@ -1229,6 +1294,141 @@ $('#notesToggle').onclick = () => {
   boxes.forEach(b => setCollapsed(b, hide));
   afterNotesToggle();
 };
+// ================= box outline & fill =================
+let boxStyle = {outline: true, border: '#9aa3b2', fill: ''};
+try { const b = JSON.parse(localStorage.getItem('box-style') || 'null'); if (b) boxStyle = Object.assign(boxStyle, b); } catch {}
+function applyBoxVars(box, b){
+  box.classList.toggle('no-outline', !b.outline);
+  box.style.setProperty('--nb-border', b.border);
+  if (b.fill) box.style.setProperty('--nb-fill', b.fill); else box.style.removeProperty('--nb-fill');
+}
+function boxOf(b){
+  return {outline: !b.classList.contains('no-outline'), border: b.style.getPropertyValue('--nb-border').trim() || '#9aa3b2', fill: b.style.getPropertyValue('--nb-fill').trim()};
+}
+function showBox(b){
+  $('#bOutline').checked = b.outline; $('#bBorder').value = b.border.startsWith('#') ? b.border : '#9aa3b2';
+  $('#bFill').value = b.fill && b.fill.startsWith('#') ? b.fill : '#fff8c4';
+  $('#bNoFill').setAttribute('aria-pressed', !b.fill);
+}
+function setBox(kind, value){
+  const box = active && document.body.contains(active) ? active.closest('.notebox') : null;
+  const b = box ? boxOf(box) : boxStyle;
+  if (kind === 'outline') b.outline = value;
+  if (kind === 'border') { b.border = value; b.outline = true; }
+  if (kind === 'fill') b.fill = value;
+  if (box) applyBoxVars(box, b);
+  else { boxStyle = b; try { localStorage.setItem('box-style', JSON.stringify(boxStyle)); } catch {} }
+  showBox(b); saveSoon();
+}
+$('#bOutline').onchange = e => setBox('outline', e.target.checked);
+$('#bBorder').oninput = e => setBox('border', e.target.value);
+$('#bFill').oninput = e => setBox('fill', e.target.value);
+$('#bNoFill').onclick = () => setBox('fill', '');
+showBox(boxStyle);
+
+// ================= formulas =================
+// plain typing like  w_i = P_i / sum_(i=1)^N P_i   becomes a proper formula
+const GREEK = 'alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi pi rho sigma tau upsilon phi chi psi omega Gamma Delta Theta Lambda Xi Pi Sigma Upsilon Phi Psi Omega'.split(' ');
+function toTex(src){
+  if (/\\[a-zA-Z]/.test(src)) return src;                 // already written as LaTeX
+  const s = src; let i = 0;
+  const wrap = it => it.paren ? `\\left(${it.tex}\\right)` : it.tex;
+  function operand(bare){
+    while (s[i] === ' ') i++;
+    if (i >= s.length) return null;
+    let it, ch = s[i];
+    const two = s.slice(i, i + 2);
+    if (ch === '(') { i++; const inner = seq(c => c === ')'); if (s[i] === ')') i++; it = {tex: inner, paren: true}; }
+    else if (/[A-Za-z]/.test(ch)) {
+      let w = ''; while (i < s.length && /[A-Za-z]/.test(s[i])) w += s[i++];
+      if (w === 'sqrt') { while (s[i] === ' ') i++; const a = s[i] === '(' ? operand() : operand(); it = {tex: `\\sqrt{${a ? a.tex : ''}}`}; }
+      else if (['sum', 'prod', 'int', 'lim', 'log', 'ln', 'exp', 'max', 'min', 'sin', 'cos', 'tan'].includes(w)) it = {tex: '\\' + w + ' '};
+      else if (w === 'inf') it = {tex: '\\infty '};
+      else if (GREEK.includes(w)) it = {tex: '\\' + w + ' '};
+      else it = {tex: w};
+    }
+    else if (/[0-9.]/.test(ch)) { let n = ''; while (i < s.length && /[0-9.,]/.test(s[i])) n += s[i++]; it = {tex: n}; }
+    else if (['>=', '<=', '!=', '+-', '~=', '->'].includes(two)) { i += 2; it = {tex: {'>=': '\\ge ', '<=': '\\le ', '!=': '\\ne ', '+-': '\\pm ', '~=': '\\approx ', '->': '\\to '}[two]}; }
+    else if (ch === ')') return null;
+    else { i++; it = {tex: ch === '*' ? '\\times ' : '%#&{}$'.includes(ch) ? '\\' + ch : ch}; }
+    // small low (_) and raised (^) parts
+    for (;;) {
+      if (bare) break;
+      while (s[i] === ' ' && (s[i + 1] === '_' || s[i + 1] === '^')) i++;
+      if (s[i] !== '_' && s[i] !== '^') break;
+      const op = s[i++]; const a = operand(true);
+      it = {tex: `${wrap(it)}${op}{${a ? a.tex : ''}}`};
+    }
+    return it;
+  }
+  function seq(stop){
+    const items = [];
+    for (;;) {
+      while (s[i] === ' ') i++;
+      if (i >= s.length || stop(s[i])) break;
+      if (s[i] === '/' && items.length) { i++; const num = items.pop(), den = operand(); items.push({tex: `\\frac{${num.tex}}{${den ? den.tex : ''}}`}); continue; }
+      const it = operand(); if (!it) { i++; continue; }
+      items.push(it);
+    }
+    return items.map(wrap).join(' ');
+  }
+  return seq(() => false);
+}
+let katexReady = null, editingFormula = null, formulaRange = null;
+function loadKatex(){
+  if (window.katex) return Promise.resolve();
+  return katexReady || (katexReady = loadScript('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js'));
+}
+function renderFormula(src, el){
+  try { katex.render(toTex(src), el, {throwOnError: false, strict: false, output: 'html'}); }
+  catch { el.textContent = src; }
+}
+const fPanel = $('#formulaPanel'), fInput = $('#fInput'), fPreview = $('#fPreview');
+async function openFormula(existing){
+  editingFormula = existing || null;
+  if (!existing) {
+    if (!active || !document.body.contains(active) || !savedRange) { status('Click inside a note first, then press ∑ Formula.'); return; }
+    formulaRange = savedRange.cloneRange();
+  }
+  fInput.value = existing ? existing.dataset.src || '' : '';
+  $('#fInsert').textContent = existing ? 'Update' : 'Insert';
+  fPanel.hidden = false; fInput.focus();
+  fPreview.textContent = 'Loading…';
+  try { await loadKatex(); updatePreview(); } catch { fPreview.textContent = 'Formulas need an internet connection the first time.'; }
+}
+function updatePreview(){
+  if (!window.katex) return;
+  if (!fInput.value.trim()) { fPreview.innerHTML = '<span class="fhint">Your formula shows here</span>'; return; }
+  renderFormula(fInput.value, fPreview);
+}
+fInput.addEventListener('input', updatePreview);
+fInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#fInsert').click(); } if (e.key === 'Escape') fPanel.hidden = true; });
+$('#fKeys').addEventListener('click', e => {
+  const k = e.target.closest('button'); if (!k) return;
+  const ins = k.dataset.ins, back = +(k.dataset.back || 0);
+  const a = fInput.selectionStart, b = fInput.selectionEnd;
+  fInput.setRangeText(ins, a, b, 'end');
+  fInput.selectionStart = fInput.selectionEnd = fInput.selectionEnd - back;
+  fInput.focus(); updatePreview();
+});
+$('#fClose').onclick = () => { fPanel.hidden = true; };
+$('#fInsert').onclick = () => {
+  const src = fInput.value.trim(); if (!src || !window.katex) return;
+  if (editingFormula) {
+    editingFormula.dataset.src = src; renderFormula(src, editingFormula);
+  } else if (formulaRange) {
+    const f = document.createElement('span');
+    f.className = 'formula'; f.contentEditable = 'false'; f.dataset.src = src; f.title = 'Click to edit this formula';
+    renderFormula(src, f);
+    const note = formulaRange.startContainer.nodeType === 1 ? formulaRange.startContainer.closest?.('.mine') : formulaRange.startContainer.parentElement?.closest('.mine');
+    formulaRange.deleteContents(); formulaRange.insertNode(f);
+    const space = document.createTextNode(' '); f.after(space);
+    if (note) { note.focus(); const r = document.createRange(); r.setStartAfter(space); r.collapse(true); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }
+  }
+  fPanel.hidden = true; editingFormula = null; formulaRange = null; saveSoon();
+};
+$('#fBtn').onclick = () => openFormula(null);
+
 const saveMenu = $('#saveMenu');
 $('#save').onclick = e => { e.stopPropagation(); saveMenu.hidden = !saveMenu.hidden; $('#save').setAttribute('aria-expanded', !saveMenu.hidden); };
 document.addEventListener('click', e => { if (!e.target.closest('.savewrap')) { saveMenu.hidden = true; $('#save').setAttribute('aria-expanded', 'false'); } });
