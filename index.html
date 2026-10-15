@@ -65,15 +65,17 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
 .notebox:hover > .mine{box-shadow:0 0 0 1px var(--accent)}
 .grip{position:absolute;width:12px;height:12px;background:#fff;border:2px solid var(--accent);border-radius:2px;box-sizing:border-box;touch-action:none;z-index:3;opacity:0;transition:opacity .15s}
 .notebox:hover > .grip,.notebox:focus-within > .grip{opacity:1}
-@media (hover:none){.grip{opacity:1;width:16px;height:16px}}
+.g-move{left:-10px;top:-10px;width:22px;height:22px;border-radius:50%;cursor:move;display:flex;align-items:center;justify-content:center;font:13px/1 var(--ui);color:var(--accent);user-select:none;-webkit-user-select:none}
+.notebox.moving{opacity:.9;z-index:6}
+.notebox.moving > .mine{box-shadow:0 6px 18px rgba(0,0,0,.22);background:rgba(255,255,255,.85)}
+@media (hover:none){.grip{opacity:1;width:16px;height:16px}.g-move{width:26px;height:26px}}
 .g-se{right:0;bottom:0;cursor:nwse-resize}
 .g-e{right:0;top:50%;transform:translateY(-50%);cursor:ew-resize}
 .g-s{bottom:0;left:50%;transform:translateX(-50%);cursor:ns-resize}
 .notebox.inline > .g-s{display:none}
 .pagecard > div.mine{margin:0 14px;padding:8px 14px}
-.pagecard > .notebox{margin:4px 0;padding:0 14px}
+.pagecard > .notebox{margin:4px 14px;width:calc(100% - 28px);max-width:calc(100% - 28px)}
 .pagecard > .notebox > .mine{padding:8px 22px 8px 14px}
-.pagecard > .notebox > .g-e,.pagecard > .notebox > .g-se{right:14px}
 .mine:focus{box-shadow:0 0 0 2px var(--accent)}
 .mine:empty::before{content:"type here";opacity:.45}
 
@@ -146,7 +148,7 @@ function showStyle(s){
 }
 function hint(){
   $('#hint').textContent = !active
-    ? 'On a PDF page, point at a spot and press “+ Add note here”; the page opens up between the lines. You can select and copy the page text. Drag a note’s corner to resize it. The style above is used for new notes.'
+    ? 'On a PDF page, point at a spot and press “+ Add note here”; the page opens up between the lines. You can select and copy the page text. Drag a note’s edges to resize it, or its ✥ handle to move it. The style above is used for new notes.'
     : savedRange && !savedRange.collapsed ? 'Styling: the selected words.' : 'Styling: this whole note. Select words to style only those.';
 }
 showStyle(style); hint();
@@ -220,6 +222,11 @@ function caretAt(x, y){
 // a note box with handles on its right edge, bottom edge and corner, like a text box in Word
 function addGrips(box){
   box.querySelectorAll(':scope > .grip').forEach(g => g.remove());
+  if (!box.classList.contains('inline')) {
+    const m = document.createElement('span'); m.className = 'grip g-move'; m.dataset.dir = 'move'; m.textContent = '✥';
+    m.title = 'Drag to move this note'; m.setAttribute('aria-hidden', 'true');
+    box.append(m);
+  }
   for (const d of ['e', 's', 'se']) {
     const g = document.createElement('span'); g.className = 'grip g-' + d; g.dataset.dir = d;
     g.title = d === 'e' ? 'Drag to change the width' : d === 's' ? 'Drag to change the height' : 'Drag to resize';
@@ -234,7 +241,7 @@ function makeBox(inline){
 }
 // notes made before resizing existed get a box and handles too
 function upgradeNotes(){
-  main.querySelectorAll('.notebox').forEach(b => { if (b.style.height) { b.style.minHeight = b.style.height; b.style.height = ''; } });
+  main.querySelectorAll('.notebox').forEach(b => { if (b.style.height) { b.style.minHeight = b.style.height; b.style.height = ''; } if (!b.classList.contains('inline') && !b.querySelector(':scope > .g-move')) addGrips(b); });
   main.querySelectorAll('.mine').forEach(el => {
     if (el.parentElement?.classList.contains('notebox')) { if (!el.parentElement.querySelector(':scope > .g-e')) addGrips(el.parentElement); return; }
     const inline = el.tagName === 'SPAN';
@@ -249,6 +256,7 @@ function addBlockNote(after, slide){
 }
 main.addEventListener('pointerdown', e => {
   const g = e.target.closest('.grip'); if (!g) return;
+  if (g.dataset.dir === 'move') return startMove(g.parentElement, g, e);
   e.preventDefault();
   const box = g.parentElement, r = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, dir = g.dataset.dir || 'se';
   const holder = box.closest('.content, .slide') || box.parentElement;
@@ -601,6 +609,62 @@ main.addEventListener('mousemove', e => {
   });
 });
 main.addEventListener('mouseleave', hideGap);
+// put an existing note box at a spot on a page (page units from the top)
+function insertBoxAt(card, y, box){
+  const strips = [...card.querySelectorAll(':scope > .strip')];
+  const inside = strips.find(s => +s.dataset.y0 < y && y < +s.dataset.y1);
+  if (inside) {
+    const y0 = +inside.dataset.y0, y1 = +inside.dataset.y1;
+    if (y - y0 < 3) inside.before(box); else if (y1 - y < 3) inside.after(box);
+    else inside.replaceWith(makeStrip(card, y0, y), box, makeStrip(card, y, y1));
+    return;
+  }
+  const above = strips.filter(s => +s.dataset.y1 <= y + 3).pop();
+  if (above) above.after(box); else card.prepend(box);
+}
+// drag a note: sideways to place it across the page (snaps to the centre), up or down to move it between other lines
+function startMove(box, g, e){
+  const parent = box.parentElement, ps = getComputedStyle(parent);
+  const padL = parseFloat(ps.paddingLeft) || 0, contentW = parent.clientWidth - padL - (parseFloat(ps.paddingRight) || 0);
+  const r0 = box.getBoundingClientRect(), w = r0.width;
+  const startLeft = r0.left - parent.getBoundingClientRect().left - parent.clientLeft - padL;
+  const sx = e.clientX, sy = e.clientY;
+  let target = null;
+  g.setPointerCapture(e.pointerId);
+  box.classList.add('moving');
+  const move = ev => {
+    const dx = ev.clientX - sx, dy = ev.clientY - sy;
+    box.style.translate = `${dx}px ${dy}px`;
+    target = null;
+    if (Math.abs(dy) > 20) {
+      const under = document.elementsFromPoint(ev.clientX, ev.clientY).filter(el => !box.contains(el));
+      const strip = under.map(el => el.closest('.strip')).find(Boolean);
+      if (strip) { showGap(strip, ev.clientY); gapPill.remove(); target = {card: strip.closest('.pagecard'), y: pending.y}; return; }
+      hideGap();
+      const slide = under.map(el => el.closest('.slide')).find(Boolean);
+      if (slide && !slide.classList.contains('pagecard')) {
+        const blocks = [...slide.querySelectorAll('.blk')].filter(b => !box.contains(b) && b.getBoundingClientRect().top < ev.clientY);
+        target = {after: blocks.pop() || null, slide};
+      }
+    } else hideGap();
+  };
+  const up = ev => {
+    g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up);
+    box.style.translate = ''; box.classList.remove('moving'); hideGap();
+    let left = Math.max(0, Math.min(contentW - w, startLeft + (ev.clientX - sx)));
+    if (Math.abs(left + w / 2 - contentW / 2) < 18) left = (contentW - w) / 2;   // snap to the centre
+    const frac = contentW > 0 ? left / contentW : 0;
+    if (target) {
+      const from = box.parentNode; box.remove(); mergeStrips(from);
+      if (target.card) insertBoxAt(target.card, target.y, box);
+      else if (target.after) target.after.after(box);
+      else (target.slide.querySelector('.content') || target.slide).prepend(box);
+    }
+    box.style.marginLeft = (frac * 100).toFixed(2) + '%';
+    saveSoon();
+  };
+  g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
+}
 function insertAt(strip, y){
   const card = strip.closest('.pagecard'); const y0 = +strip.dataset.y0, y1 = +strip.dataset.y1;
   const {box, el} = makeBox();
