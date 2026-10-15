@@ -38,7 +38,7 @@ input[type=color]{width:30px;height:30px;padding:0;border:1px solid var(--line);
 .savemenu small{color:var(--muted);font-size:12px}
 main.paged{max-width:none;align-items:center;gap:24px}
 .sheet{width:var(--sheet-w);min-height:var(--sheet-h);background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.18);padding:48px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;flex-shrink:0;color:#1b2330}
-.sheet > .slide{box-shadow:none;border-radius:0;flex-shrink:0}
+.sheet > .slide{box-shadow:none;border-radius:0;flex-shrink:0;align-self:center;width:100%}
 .sheet > .file-head{margin:0;color:#1b2330}
 .sheet > .cont{margin-top:0}
 .savemenu .layout{display:flex;flex-direction:column;gap:4px;padding:6px 10px 8px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:2px}
@@ -79,11 +79,14 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
 .notebox:hover > .grip,.notebox:focus-within > .grip{opacity:1}
 .g-min{right:-10px;top:-10px;width:22px;height:22px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font:700 15px/1 var(--ui);color:var(--accent);user-select:none;-webkit-user-select:none}
 .note-chip{display:none}
-.notebox.collapsed{display:block;width:auto!important;min-height:0!important;margin-left:0}
-.notebox.inline.collapsed{display:inline-block;vertical-align:middle}
+.notebox.collapsed{display:block;position:relative;width:0!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:visible}
+.notebox.inline.collapsed{display:inline-block;vertical-align:top}
 .notebox.collapsed > .mine,.notebox.collapsed > .grip{display:none}
-.notebox.collapsed > .note-chip{display:inline-flex;align-items:center;max-width:280px;font:12px/1.3 var(--ui);color:#5a4500;background:#fff3b8;border:1px solid #e0c34a;border-radius:4px;padding:3px 8px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pagecard > .notebox.collapsed{margin:2px 14px}
+.notebox.collapsed > .note-chip{display:flex;align-items:center;justify-content:center;position:absolute;z-index:4;left:-24px;top:-10px;width:20px;height:20px;padding:0;border-radius:50%;
+  font:11px/1 var(--ui);color:#5a4500;background:#ffd54a;border:1px solid #c9a400;box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer;opacity:.9}
+.notebox.collapsed > .note-chip:hover{opacity:1;transform:scale(1.15)}
+.pagecard > .notebox.collapsed > .note-chip{left:4px}
+.notebox.inline.collapsed > .note-chip{left:-3px;top:-.7em;width:15px;height:15px;font-size:9px}
 main.clean .notebox{height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden;width:auto!important}
 main.clean .notebox > *{display:none!important}
 .g-move{left:-10px;top:-10px;width:22px;height:22px;border-radius:50%;cursor:move;display:flex;align-items:center;justify-content:center;font:13px/1 var(--ui);color:var(--accent);user-select:none;-webkit-user-select:none}
@@ -271,7 +274,9 @@ function setCollapsed(box, on){
   const chip = box.querySelector(':scope > .note-chip');
   if (on && chip) {
     const t = (box.querySelector('.mine')?.innerText || '').trim().replace(/\s+/g, ' ') || 'Note';
-    chip.textContent = '✎ ' + (t.length > 40 ? t.slice(0, 40) + '…' : t);
+    chip.textContent = '✎';
+    chip.title = t.length > 300 ? t.slice(0, 300) + '…' : t;
+    chip.setAttribute('aria-label', 'Show note: ' + chip.title);
   }
 }
 function updateNotesBtn(){
@@ -327,11 +332,11 @@ main.addEventListener('pointerdown', e => {
   e.preventDefault();
   const box = g.parentElement, r = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, dir = g.dataset.dir || 'se';
   const holder = box.closest('.content, .slide') || box.parentElement;
-  const max = holder.getBoundingClientRect().right - r.left;
+  const max = holder.getBoundingClientRect().right - r.left, bz = zoomOf(box);
   g.setPointerCapture(e.pointerId);
   const move = ev => {
-    if (dir.includes('e')) box.style.width = Math.round(Math.max(60, Math.min(max, r.width + ev.clientX - sx)) / viewZoom) + 'px';
-    if (dir.includes('s')) { box.style.height = ''; box.style.minHeight = Math.round(Math.max(30, r.height + ev.clientY - sy) / viewZoom) + 'px'; }
+    if (dir.includes('e')) box.style.width = Math.round(Math.max(60 * bz, Math.min(max, r.width + ev.clientX - sx)) / bz) + 'px';
+    if (dir.includes('s')) { box.style.height = ''; box.style.minHeight = Math.round(Math.max(30 * bz, r.height + ev.clientY - sy) / bz) + 'px'; }
   };
   const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); saveSoon(); };
   g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
@@ -704,10 +709,11 @@ function insertBoxAt(card, y, box){
 }
 // drag a note: sideways to place it across the page (snaps to the centre), up or down to move it between other lines
 function startMove(box, g, e){
-  const parent = box.parentElement, ps = getComputedStyle(parent);
-  const padL = parseFloat(ps.paddingLeft) || 0, contentW = parent.clientWidth - padL - (parseFloat(ps.paddingRight) || 0);
+  const parent = box.parentElement, ps = getComputedStyle(parent), pz = zoomOf(parent), pr = parent.getBoundingClientRect();
+  const padL = ((parseFloat(ps.paddingLeft) || 0) + (parseFloat(ps.borderLeftWidth) || 0)) * pz;
+  const contentW = pr.width - padL - ((parseFloat(ps.paddingRight) || 0) + (parseFloat(ps.borderRightWidth) || 0)) * pz;
   const r0 = box.getBoundingClientRect(), w = r0.width;
-  const startLeft = r0.left - parent.getBoundingClientRect().left - parent.clientLeft - padL;
+  const startLeft = r0.left - pr.left - padL;
   const sx = e.clientX, sy = e.clientY;
   let target = null;
   g.setPointerCapture(e.pointerId);
@@ -951,7 +957,7 @@ async function paintCard(card, scale){
     if (!el || !t.data.trim() || el.closest('.tl, .grip, .gappill, .gapline, summary, details:not([open])')) continue;
     const cs = getComputedStyle(el);
     if (cs.visibility === 'hidden' || cs.color === 'transparent' || cs.color === 'rgba(0, 0, 0, 0)') continue;
-    ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${(parseFloat(cs.fontSize) * zoomOf(el)).toFixed(2)}px ${cs.fontFamily}`;
     ctx.fillStyle = cs.color; ctx.textBaseline = 'alphabetic';
     const underline = /underline/.test(cs.textDecorationLine || cs.textDecoration);
     for (const w of t.data.matchAll(/\S+/g)) {
@@ -1043,6 +1049,8 @@ let viewZoom = 1, pageTimer = null;
 const pxSize = ([pw, ph]) => [Math.round(pw * 96 / 72), Math.round(ph * 96 / 72)];   // points to screen pixels
 const SHEET_MARGIN = 48, SHEET_GAP = 14;
 // undo the sheets: back to one list of headings and slides, with split slides joined up again
+// how much an element is shrunk on screen by the page view and slide fitting
+function zoomOf(el){ let z = 1; for (let n = el; n && n.style; n = n.parentElement) { const v = parseFloat(n.style.zoom); if (v) z *= v; } return z; }
 function flatten(root){
   const sheets = [...root.querySelectorAll(':scope > .sheet')];
   if (sheets.length) {
@@ -1055,6 +1063,7 @@ function flatten(root){
     if (prev && prev.dataset.pid && prev.dataset.pid === c.dataset.pid) { while (c.firstChild) prev.append(c.firstChild); c.remove(); mergeStrips(prev); }
     else c.classList.remove('cont');
   }
+  root.querySelectorAll(':scope > .slide').forEach(c => { c.style.zoom = ''; c.style.width = ''; });
 }
 function measureStrip(s){
   s.querySelectorAll('.tl').forEach(sp => {
@@ -1078,46 +1087,26 @@ function paginateView(){
     main.style.setProperty('--sheet-w', W + 'px'); main.style.setProperty('--sheet-h', H + 'px');
     const avail = document.documentElement.clientWidth - 32;
     viewZoom = Math.min(1, avail / W); main.style.zoom = viewZoom === 1 ? '' : viewZoom;
+    // like Default: each slide (with its notes) gets its own sheet, shrunk to fit if it is too big
     const z = viewZoom, ROOM = (H - 2 * SHEET_MARGIN) * z;
     const items = [...main.children];
     items.forEach(i => i.remove());
-    let sheet = null;
-    const newSheet = () => { sheet = document.createElement('div'); sheet.className = 'sheet'; main.append(sheet); };
-    const used = () => { const last = sheet.lastElementChild; return last ? last.getBoundingClientRect().bottom - sheet.getBoundingClientRect().top - SHEET_MARGIN * z : 0; };
-    newSheet();
+    let pendingHead = [];
     for (const it of items) {
-      if (it.classList.contains('pagecard') && !it.dataset.pid) it.dataset.pid = Math.random().toString(36).slice(2, 10);
-      const before = used();
+      if (!it.classList.contains('slide')) { pendingHead.push(it); continue; }
+      const sheet = document.createElement('div'); sheet.className = 'sheet'; main.append(sheet);
+      pendingHead.forEach(h => sheet.append(h)); pendingHead = [];
+      it.style.width = (W - 2 * SHEET_MARGIN) + 'px';
       sheet.append(it);
-      if (used() <= ROOM) continue;
-      if (!it.classList.contains('pagecard')) { if (before > 0) { newSheet(); sheet.append(it); } continue; }
-      // the slide doesn't fit: keep what fits on this sheet and carry the rest over, breaking at a gap between lines
-      let card = it;
-      for (let guard = 0; guard < 50 && used() > ROOM; guard++) {
-        const top = card.getBoundingClientRect().top, room = ROOM - (top - sheet.getBoundingClientRect().top - SHEET_MARGIN * z);
-        let cut = null;
-        for (const k of [...card.children]) {
-          const r = k.getBoundingClientRect();
-          if (r.bottom - top <= room) continue;
-          if (k.classList.contains('strip')) {
-            const y0 = +k.dataset.y0, y1 = +k.dataset.y1, scale = r.height / (y1 - y0);
-            const limit = y0 + (room - (r.top - top)) / scale;
-            const gaps = JSON.parse(card.dataset.gaps || '[]').map(([a, b]) => (a + b) / 2).filter(g => g > y0 + 4 && g < limit);
-            if (gaps.length) { const g = gaps.pop(); const a = makeStrip(card, y0, g), b = makeStrip(card, g, y1); k.replaceWith(a, b); cut = b; }
-            else cut = k;
-          } else cut = k;
-          break;
-        }
-        if (!cut) break;
-        if (cut === card.firstElementChild) {             // nothing of this slide fits here: move it all to a new sheet
-          if (sheet.firstElementChild === card) break;
-          newSheet(); sheet.append(card); continue;
-        }
-        const rest = card.cloneNode(false); rest.classList.add('cont');
-        for (let x = cut; x; ) { const nx = x.nextElementSibling; rest.append(x); x = nx; }
-        newSheet(); sheet.append(rest); card = rest;
+      const headH = it.getBoundingClientRect().top - sheet.getBoundingClientRect().top - SHEET_MARGIN * z;
+      const room = ROOM - Math.max(0, headH) - 2 * z;
+      for (let k = 0, f = 1; k < 4; k++) {
+        const h = it.getBoundingClientRect().height;
+        if (h <= room + 0.5 || h <= 0) break;
+        f = f * room / h; it.style.zoom = f.toFixed(4);
       }
     }
+    if (pendingHead.length) { const sheet = document.createElement('div'); sheet.className = 'sheet'; main.append(sheet); pendingHead.forEach(h => sheet.append(h)); }
     main.querySelectorAll('.strip').forEach(measureStrip);
   }
   window.scrollTo(0, scrollY);
