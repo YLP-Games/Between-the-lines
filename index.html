@@ -82,11 +82,11 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
 .notebox.collapsed{display:block;position:relative;width:0!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:visible}
 .notebox.inline.collapsed{display:inline-block;vertical-align:top}
 .notebox.collapsed > .mine,.notebox.collapsed > .grip{display:none}
-.notebox.collapsed > .note-chip{display:flex;align-items:center;justify-content:center;position:absolute;z-index:4;left:-24px;top:-10px;width:20px;height:20px;padding:0;border-radius:50%;
+.notebox.collapsed > .note-chip{display:flex;align-items:center;justify-content:center;position:absolute;z-index:4;left:calc(-24px + var(--ci, 0) * 23px);top:-10px;width:20px;height:20px;padding:0;border-radius:50%;
   font:11px/1 var(--ui);color:#5a4500;background:#ffd54a;border:1px solid #c9a400;box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer;opacity:.9}
 .notebox.collapsed > .note-chip:hover{opacity:1;transform:scale(1.15)}
-.pagecard > .notebox.collapsed > .note-chip{left:4px}
-.notebox.inline.collapsed > .note-chip{left:-3px;top:-.7em;width:15px;height:15px;font-size:9px}
+.pagecard > .notebox.collapsed > .note-chip{left:calc(4px + var(--ci, 0) * 23px)}
+.notebox.inline.collapsed > .note-chip{left:calc(-3px + var(--ci, 0) * 17px);top:-.7em;width:15px;height:15px;font-size:9px}
 main.clean .notebox{height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden;width:auto!important}
 main.clean .notebox > *{display:none!important}
 .g-move{left:-10px;top:-10px;width:22px;height:22px;border-radius:50%;cursor:move;display:flex;align-items:center;justify-content:center;font:13px/1 var(--ui);color:var(--accent);user-select:none;-webkit-user-select:none}
@@ -285,7 +285,20 @@ function updateNotesBtn(){
   btn.hidden = !boxes.length;
   btn.textContent = boxes.some(b => !b.classList.contains('collapsed')) ? 'Hide notes' : 'Show notes';
 }
-function afterNotesToggle(){ updateNotesBtn(); if (LAYOUTS[layout]) paginateView(); saveSoon(); }
+function afterNotesToggle(){ updateNotesBtn(); if (LAYOUTS[layout]) paginateView(); spreadChips(); saveSoon(); }
+// minimised notes at (nearly) the same spot get their icons side by side instead of on top of each other
+function spreadChips(){
+  const placed = [];
+  for (const box of main.querySelectorAll('.notebox.collapsed')) {
+    const chip = box.querySelector(':scope > .note-chip'); if (!chip) continue;
+    chip.style.setProperty('--ci', 0);
+    const r = box.getBoundingClientRect(), card = box.closest('.slide');
+    let i = 0;
+    while (placed.some(p => p.card === card && p.i === i && Math.abs(p.top - r.top) < 22 && Math.abs(p.left - r.left) < 30)) i++;
+    chip.style.setProperty('--ci', i);
+    placed.push({card, i, top: r.top, left: r.left});
+  }
+}
 function addGrips(box){
   box.querySelectorAll(':scope > .grip, :scope > .note-chip').forEach(g => g.remove());
   const mn = document.createElement('span'); mn.className = 'grip g-min'; mn.dataset.dir = 'min'; mn.textContent = '–';
@@ -327,7 +340,11 @@ function addBlockNote(after, slide){
 }
 main.addEventListener('pointerdown', e => {
   const g = e.target.closest('.grip'); if (!g) return;
-  if (g.dataset.dir === 'min') { e.preventDefault(); setCollapsed(g.parentElement, true); afterNotesToggle(); return; }
+  if (g.dataset.dir === 'min') {
+    e.preventDefault(); e.stopPropagation(); swallowClick = true; setTimeout(() => { swallowClick = false; }, 600);
+    const box = g.parentElement; if (box.contains(document.activeElement)) document.activeElement.blur();
+    setCollapsed(box, true); afterNotesToggle(); return;
+  }
   if (g.dataset.dir === 'move') return startMove(g.parentElement, g, e);
   e.preventDefault();
   const box = g.parentElement, r = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, dir = g.dataset.dir || 'se';
@@ -341,13 +358,15 @@ main.addEventListener('pointerdown', e => {
   const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); saveSoon(); };
   g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
 });
+let swallowClick = false;
 main.addEventListener('click', e => {
+  if (swallowClick) { swallowClick = false; return; }
   const chip = e.target.closest('.note-chip');
   if (chip) { const box = chip.parentElement; setCollapsed(box, false); afterNotesToggle(); const m = box.querySelector('.mine'); if (m) focusNote(m); return; }
   if (e.target.closest('.mine, .notebox, .gappill, details, summary, .slide-label, a')) return;
   const strip = e.target.closest('.strip');
   if (strip) { if (!getSelection().toString()) showGap(strip, e.clientY); return; }
-  const slide = e.target.closest('.slide'); if (!slide) return;
+  const slide = e.target.closest('.slide'); if (!slide || slide.classList.contains('pagecard')) return;
   let blk = e.target.closest('.blk');
   if (!blk || e.target.tagName === 'IMG') {
     if (!blk) { const all = [...slide.querySelectorAll('.blk')].filter(b => b.getBoundingClientRect().top < e.clientY); blk = all.pop() || null; }
@@ -1109,6 +1128,7 @@ function paginateView(){
     if (pendingHead.length) { const sheet = document.createElement('div'); sheet.className = 'sheet'; main.append(sheet); pendingHead.forEach(h => sheet.append(h)); }
     main.querySelectorAll('.strip').forEach(measureStrip);
   }
+  spreadChips();
   window.scrollTo(0, scrollY);
   if (focused && focused.isConnected && focused.classList?.contains('mine')) {
     focused.focus({preventScroll: true});
