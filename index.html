@@ -570,11 +570,19 @@ function setCollapsed(box, on){
     chip.setAttribute('aria-label', 'Show note: ' + short);
   }
 }
+// Hide notes / Show notes: pinned notes always stay open, so only the others decide what the button does
+function notesBtnMode(){
+  const boxes = [...main.querySelectorAll('.notebox')];
+  if (boxes.some(b => b.classList.contains('collapsed'))) {
+    // something is minimised: show everything, unless every unpinned note is already open
+    return boxes.some(b => !b.classList.contains('pinned') && !b.classList.contains('collapsed')) ? 'hide' : 'show';
+  }
+  return boxes.some(b => !b.classList.contains('pinned')) ? 'hide' : null;
+}
 function updateNotesBtn(){
-  const boxes = [...main.querySelectorAll('.notebox:not(.pinned)')];
-  const btn = $('#notesToggle');
-  btn.hidden = !boxes.length;
-  btn.textContent = boxes.some(b => !b.classList.contains('collapsed')) ? 'Hide notes' : 'Show notes';
+  const btn = $('#notesToggle'), mode = notesBtnMode();
+  btn.hidden = !mode; btn.dataset.mode = mode || '';
+  btn.textContent = mode === 'show' ? 'Show notes' : 'Hide notes';
 }
 function afterNotesToggle(){ updateNotesBtn(); if (LAYOUTS[layout]) paginateView(); spreadChips(); saveSoon(); }
 // minimised notes at (nearly) the same spot get their icons side by side instead of on top of each other
@@ -1752,10 +1760,12 @@ let resizeTimer = null;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (LAYOUTS[layout]) paginateView(); else { placeFloats(); spreadChips(); } }, 250); });
 
 $('#notesToggle').onclick = () => {
-  const boxes = [...main.querySelectorAll('.notebox')];
-  const hide = boxes.some(b => !b.classList.contains('collapsed'));
-  if (document.activeElement?.closest?.('.notebox')) document.activeElement.blur();
-  boxes.forEach(b => setCollapsed(b, hide));
+  const hide = notesBtnMode() === 'hide';            // do exactly what the button says
+  if (hide && document.activeElement?.closest?.('.notebox')) document.activeElement.blur();
+  for (const b of main.querySelectorAll('.notebox')) {
+    if (hide) setCollapsed(b, true);                  // pinned notes stay open
+    else b.classList.remove('collapsed');             // every note opens, pinned or not
+  }
   afterNotesToggle();
 };
 // ================= box outline & fill =================
