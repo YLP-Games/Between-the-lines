@@ -67,6 +67,12 @@ span.mine{padding:0 .2em;background:var(--nb-fill, transparent);border:1px solid
 div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5em;background:var(--nb-fill, transparent);border:1px solid var(--nb-border, #9aa3b2)}
 .notebox.no-outline > .mine{border-color:transparent}
 .notebox.no-outline:not(:hover):not(:focus-within) > .mine{box-shadow:none}
+.fmtbar{width:100%;gap:4px}
+.fmtbar button{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:30px;padding:0 8px;font-size:13px}
+.fmtbar .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
+.fmtbar .hl{background:#fff176;color:#1b2330;padding:0 3px;border-radius:2px;font-weight:600}
+.mine ul,.mine ol{margin:.15em 0;padding-left:1.4em}
+.mine li{display:list-item}
 .boxtools{display:flex;align-items:center;gap:6px;padding-left:6px;border-left:1px solid var(--line);font-size:13px;color:var(--muted)}
 .boxtools label{display:flex;align-items:center;gap:4px;cursor:pointer}
 #bNoFill[aria-pressed="true"]{outline:2px solid var(--accent)}
@@ -184,6 +190,27 @@ main.clean .notebox > *{display:none!important}
     </span>
     <button id="notesToggle" hidden>Hide notes</button>
     <button id="clear">Clear all</button>
+    <div class="tools fmtbar" id="fmtbar">
+      <button data-cmd="undo" title="Undo (Ctrl+Z)">↶</button>
+      <button data-cmd="redo" title="Redo (Ctrl+Y)">↷</button>
+      <span class="sep"></span>
+      <button data-cmd="insertUnorderedList" title="Bullet list"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="3" cy="4" r="1" fill="currentColor"/><circle cx="3" cy="8" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><path d="M6 4h8M6 8h8M6 12h8"/></svg></button>
+      <button data-cmd="insertOrderedList" title="Numbered list"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><text x="0.5" y="6" font-size="5" fill="currentColor" stroke="none">1</text><text x="0.5" y="13" font-size="5" fill="currentColor" stroke="none">2</text><path d="M6 4h8M6 11h8"/></svg></button>
+      <button data-cmd="outdent" title="Decrease indent (Shift+Tab)"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h12M7 6.5h7M7 10h7M2 13h12M5 6l-3 2 3 2"/></svg></button>
+      <button data-cmd="indent" title="Increase indent (Tab)"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h12M7 6.5h7M7 10h7M2 13h12M2 6l3 2-3 2"/></svg></button>
+      <span class="sep"></span>
+      <button data-cmd="justifyLeft" title="Align left"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h12M2 6.5h8M2 10h12M2 13.5h8"/></svg></button>
+      <button data-cmd="justifyCenter" title="Centre"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h12M4 6.5h8M2 10h12M4 13.5h8"/></svg></button>
+      <button data-cmd="justifyRight" title="Align right"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h12M6 6.5h8M2 10h12M6 13.5h8"/></svg></button>
+      <span class="sep"></span>
+      <button data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+      <button data-cmd="superscript" title="Superscript">x<sup>2</sup></button>
+      <button data-cmd="subscript" title="Subscript">x<sub>2</sub></button>
+      <span class="sep"></span>
+      <button data-cmd="hiliteColor" id="hlBtn" title="Highlight the selected words"><span class="hl">ab</span></button>
+      <input type="color" id="hlColor" value="#fff176" aria-label="Highlight colour" title="Highlight colour">
+      <button data-cmd="removeFormat" title="Clear formatting of the selected words">Clear format</button>
+    </div>
     <div class="hint" id="hint"></div>
     <div id="status" aria-live="polite"></div>
   </div>
@@ -198,6 +225,8 @@ main.clean .notebox > *{display:none!important}
     <button data-ins="()/()" data-back="4" title="Fraction">a/b</button>
     <button data-ins="^()" data-back="1" title="Power">x²</button>
     <button data-ins="_()" data-back="1" title="Small low letter">xᵢ</button>
+    <button data-ins="_()^()" data-back="4" title="Small low letter and power">xᵢⁿ</button>
+    <button data-ins="*" title="Star, e.g. Q*">x*</button>
     <button data-ins="sqrt()" data-back="1" title="Square root">√</button>
     <button data-ins="sum_(i=1)^N " title="Sum">Σ</button>
     <button data-ins="()" data-back="1" title="Brackets">( )</button>
@@ -296,6 +325,20 @@ $('#font').onchange = e => apply('font', e.target.value);
 $('#size').onchange = e => apply('size', +e.target.value);
 $('#color').oninput = e => apply('color', e.target.value);
 $('#swatches').onclick = e => { const c = e.target.dataset?.c; if (c) apply('color', c); };
+// Word-style formatting for the note you are writing in
+$('#fmtbar').addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });
+$('#fmtbar').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-cmd]'); if (!btn) return;
+  const cmd = btn.dataset.cmd;
+  if (!active || !document.body.contains(active)) { status('Click inside a note first, then choose the formatting.'); return; }
+  if (/List|indent|outdent|justify/.test(cmd) && active.tagName === 'SPAN') { status('Lists, indents and alignment work in notes on their own line, not notes inside a sentence.'); return; }
+  restoreSel();
+  document.execCommand('styleWithCSS', false, cmd === 'hiliteColor');
+  document.execCommand(cmd, false, cmd === 'hiliteColor' ? $('#hlColor').value : null);
+  const s = getSelection(); savedRange = s.rangeCount ? s.getRangeAt(0).cloneRange() : savedRange;
+  saveSoon();
+});
+$('#hlColor').oninput = e => { $('#hlBtn .hl').style.background = e.target.value; };
 ['b','i','u'].forEach(id => $('#' + id).onclick = () => {
   if (!active) return; restoreSel();
   document.execCommand({b:'bold', i:'italic', u:'underline'}[id]); saveSoon();
@@ -449,7 +492,10 @@ main.addEventListener('click', e => {
   focusNote(el);
 });
 main.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && e.target.closest?.('.mine')) { e.preventDefault(); document.execCommand('insertLineBreak'); }
+  const note = e.target.closest?.('.mine'); if (!note) return;
+  const sel = getSelection(), n = sel.anchorNode, inLi = n && (n.nodeType === 1 ? n : n.parentElement).closest('li') && note.contains(n);
+  if (e.key === 'Tab' && inLi) { e.preventDefault(); document.execCommand(e.shiftKey ? 'outdent' : 'indent'); saveSoon(); return; }
+  if (e.key === 'Enter' && !inLi) { e.preventDefault(); document.execCommand('insertLineBreak'); }
 });
 main.addEventListener('input', saveSoon);
 document.addEventListener('focusout', e => {
@@ -1104,6 +1150,25 @@ async function paintCard(card, scale){
   }
   ctx.strokeStyle = '#c9d0db';
   for (const td of card.querySelectorAll('td, th')) { const tr = td.getBoundingClientRect(); ctx.strokeRect(tr.left - ox, tr.top - oy, tr.width, tr.height); }
+  // highlighted words inside notes
+  for (const h of card.querySelectorAll('.mine span, .mine font, .mine mark')) {
+    const bg = getComputedStyle(h).backgroundColor;
+    if (!seen(bg)) continue;
+    ctx.fillStyle = bg; for (const hr of h.getClientRects()) ctx.fillRect(hr.left - ox, hr.top - oy, hr.width, hr.height);
+  }
+  // list bullets and numbers
+  for (const li of card.querySelectorAll('li')) {
+    const ls = getComputedStyle(li); if (ls.display !== 'list-item' || ls.listStyleType === 'none') continue;
+    const first = document.createTreeWalker(li, NodeFilter.SHOW_TEXT, {acceptNode: t => t.data.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP}).nextNode();
+    const lr = li.getBoundingClientRect(); if (!lr.width) continue;
+    const fs = parseFloat(ls.fontSize) * zoomOf(li);
+    let mark = ls.listStyleType === 'decimal' ? (([...li.parentElement.children].filter(x => x.tagName === 'LI').indexOf(li) + (+li.parentElement.getAttribute('start') || 1)) + '.') : (ls.listStyleType === 'circle' ? '◦' : ls.listStyleType === 'square' ? '▪' : '•');
+    let top = lr.top, h = fs * 1.2;
+    if (first) { const rr = document.createRange(); rr.selectNodeContents(first); const fr = rr.getClientRects()[0]; if (fr) { top = fr.top; h = fr.height; } }
+    ctx.font = `${ls.fontStyle} ${ls.fontWeight} ${fs.toFixed(2)}px ${ls.fontFamily}`; ctx.fillStyle = ls.color;
+    const w = ctx.measureText(mark).width;
+    ctx.fillText(mark, lr.left - ox - w - fs * 0.35, top - oy + h * 0.78);
+  }
   // text, word by word, exactly where the browser laid it out
   const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
   const range = document.createRange();
@@ -1114,7 +1179,9 @@ async function paintCard(card, scale){
     if (cs.visibility === 'hidden' || cs.color === 'transparent' || cs.color === 'rgba(0, 0, 0, 0)') continue;
     ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${(parseFloat(cs.fontSize) * zoomOf(el)).toFixed(2)}px ${cs.fontFamily}`;
     ctx.fillStyle = cs.color; ctx.textBaseline = 'alphabetic';
-    const underline = /underline/.test(cs.textDecorationLine || cs.textDecoration);
+    const deco = [];
+    for (let d = el; d && d !== card; d = d.parentElement) deco.push(getComputedStyle(d).textDecorationLine || '');
+    const underline = deco.some(x => /underline/.test(x)), strike = deco.some(x => /line-through/.test(x));
     for (const w of t.data.matchAll(/\S+/g)) {
       range.setStart(t, w.index); range.setEnd(t, w.index + w[0].length);
       const rects = range.getClientRects(); if (!rects.length) continue;
@@ -1123,6 +1190,7 @@ async function paintCard(card, scale){
       const y = wr.top - oy + (wr.height - (asc + desc)) / 2 + asc;
       ctx.fillText(w[0], wr.left - ox, y);
       if (underline) ctx.fillRect(wr.left - ox, y + 2, wr.width, Math.max(1, parseFloat(cs.fontSize) / 16));
+      if (strike) ctx.fillRect(wr.left - ox, y - asc * 0.32, wr.width, Math.max(1, parseFloat(cs.fontSize) / 16));
     }
   }
   // formulas: fraction lines and drawn symbols (square roots, big brackets)
@@ -1350,10 +1418,11 @@ function toTex(src){
     else if (/[0-9.]/.test(ch)) { let n = ''; while (i < s.length && /[0-9.,]/.test(s[i])) n += s[i++]; it = {tex: n}; }
     else if (['>=', '<=', '!=', '+-', '~=', '->'].includes(two)) { i += 2; it = {tex: {'>=': '\\ge ', '<=': '\\le ', '!=': '\\ne ', '+-': '\\pm ', '~=': '\\approx ', '->': '\\to '}[two]}; }
     else if (ch === ')') return null;
-    else { i++; it = {tex: ch === '*' ? '\\times ' : '%#&{}$'.includes(ch) ? '\\' + ch : ch}; }
+    else { i++; it = {tex: ch === '*' ? '\\ast ' : '%#&{}$'.includes(ch) ? '\\' + ch : ch}; }
     // small low (_) and raised (^) parts
     for (;;) {
       if (bare) break;
+      if (s[i] === '*' && (i + 1 >= s.length || /[\s_^)=+\-/,]/.test(s[i + 1]))) { i++; it = {tex: `${wrap(it)}^{\\ast}`}; continue; }   // Q* = Q with a star
       while (s[i] === ' ' && (s[i + 1] === '_' || s[i + 1] === '^')) i++;
       if (s[i] !== '_' && s[i] !== '^') break;
       const op = s[i++]; const a = operand(true);
