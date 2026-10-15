@@ -68,6 +68,12 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
 .notebox.no-outline > .mine{border-color:transparent}
 .notebox.no-outline:not(:hover):not(:focus-within) > .mine{box-shadow:none}
 .fmtbar{width:100%;gap:4px}
+.blankpage{aspect-ratio:16/9;max-width:100%;display:flex;flex-direction:column}
+.blankpage > .content{flex:1}
+.cardbar{position:absolute;top:8px;right:8px;z-index:6;display:flex;gap:6px}
+.cardbar button{font:12px var(--ui);padding:4px 10px;border-radius:999px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 1px 4px rgba(0,0,0,.15);cursor:pointer}
+.cardbar button:hover{border-color:var(--accent);color:var(--accent)}
+.cardbar button.sure{background:#c62828;color:#fff;border-color:#c62828}
 .fmtbar button{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:30px;padding:0 8px;font-size:13px}
 .fmtbar .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
 .fmtbar .hl{background:#fff176;color:#1b2330;padding:0 3px;border-radius:2px;font-weight:600}
@@ -210,6 +216,8 @@ main.clean .notebox > *{display:none!important}
       <button data-cmd="hiliteColor" id="hlBtn" title="Highlight the selected words"><span class="hl">ab</span></button>
       <input type="color" id="hlColor" value="#fff176" aria-label="Highlight colour" title="Highlight colour">
       <button data-cmd="removeFormat" title="Clear formatting of the selected words">Clear format</button>
+      <span class="sep"></span>
+      <button id="addPageBtn" title="Add a blank page after the page you are working on">+ Blank page</button>
     </div>
     <div class="hint" id="hint"></div>
     <div id="status" aria-live="polite"></div>
@@ -468,7 +476,7 @@ main.addEventListener('click', e => {
   const fx = e.target.closest('.formula'); if (fx && fx.closest('.mine')) { openFormula(fx); return; }
   const chip = e.target.closest('.note-chip');
   if (chip) { const box = chip.parentElement; setCollapsed(box, false); afterNotesToggle(); const m = box.querySelector('.mine'); if (m) focusNote(m); return; }
-  if (e.target.closest('.mine, .notebox, .gappill, details, summary, .slide-label, a')) return;
+  if (e.target.closest('.mine, .notebox, .gappill, .cardbar, details, summary, .slide-label, a')) return;
   const strip = e.target.closest('.strip');
   if (strip) { if (!getSelection().toString()) showGap(strip, e.clientY); return; }
   const slide = e.target.closest('.slide'); if (!slide || slide.classList.contains('pagecard')) return;
@@ -821,6 +829,54 @@ main.addEventListener('mousemove', e => {
   });
 });
 main.addEventListener('mouseleave', hideGap);
+// ---------- add a blank page (for longer notes) or remove a page ----------
+const cardBar = document.createElement('div'); cardBar.className = 'cardbar';
+cardBar.innerHTML = '<button type="button" data-act="add" title="Add a blank page after this one">+ Page after</button><button type="button" data-act="remove" title="Remove this page">Remove page</button>';
+function blankPage(){
+  const s = document.createElement('section'); s.className = 'slide blankpage';
+  const content = document.createElement('div'); content.className = 'content'; s.append(content);
+  const {box, el} = makeBox(); content.append(box);
+  return {page: s, note: el};
+}
+function addPageAfter(card){
+  const {page, note} = blankPage();
+  if (card) card.after(page);
+  else { main.querySelector('.empty')?.remove(); main.append(page); }
+  if (LAYOUTS[layout]) paginateView();
+  page.scrollIntoView({block: 'center', behavior: 'smooth'});
+  focusNote(note); updateNotesBtn(); saveSoon();
+}
+main.addEventListener('mouseover', e => {
+  if (e.target.closest('.cardbar')) return;
+  const card = e.target.closest('.slide');
+  if (card && cardBar.parentElement !== card) { resetRemove(); card.append(cardBar); }
+});
+main.addEventListener('mouseleave', () => { cardBar.remove(); resetRemove(); });
+cardBar.addEventListener('mousedown', e => e.preventDefault());
+let removeTimer = null;
+function resetRemove(){ clearTimeout(removeTimer); const b = cardBar.querySelector('[data-act=remove]'); b.textContent = 'Remove page'; b.classList.remove('sure'); }
+cardBar.addEventListener('click', e => {
+  e.stopPropagation();
+  const b = e.target.closest('button'); if (!b) return;
+  const card = cardBar.parentElement; if (!card) return;
+  if (b.dataset.act === 'add') { cardBar.remove(); addPageAfter(card); return; }
+  if (!b.classList.contains('sure')) { b.textContent = 'Remove? Click again'; b.classList.add('sure'); removeTimer = setTimeout(resetRemove, 3000); return; }
+  cardBar.remove(); resetRemove(); hideGap();
+  card.remove();
+  if (!main.querySelector('.slide')) { main.innerHTML = ''; showEmpty(); }
+  if (LAYOUTS[layout]) paginateView();
+  updateNotesBtn(); saveSoon();
+});
+$('#addPageBtn').onclick = () => {
+  let card = active && document.body.contains(active) ? active.closest('.slide') : null;
+  if (!card) {          // the page nearest the middle of the screen
+    const mid = innerHeight / 2; let best = null;
+    for (const c of main.querySelectorAll('.slide')) { const r = c.getBoundingClientRect(); const d = r.top > mid ? r.top - mid : r.bottom < mid ? mid - r.bottom : 0; if (!best || d < best.d) best = {c, d}; }
+    card = best && best.c;
+  }
+  addPageAfter(card);
+};
+
 // put an existing note box at a spot on a page (page units from the top)
 function insertBoxAt(card, y, box){
   const strips = [...card.querySelectorAll(':scope > .strip')];
@@ -1078,7 +1134,7 @@ function notebookName(){
 }
 function currentDoc(){
   const c = main.cloneNode(true);
-  c.querySelectorAll('.gapline, .gappill, .empty').forEach(x => x.remove());
+  c.querySelectorAll('.gapline, .gappill, .empty, .cardbar').forEach(x => x.remove());
   flatten(c);
   return c.innerHTML;
 }
@@ -1174,7 +1230,7 @@ async function paintCard(card, scale){
   const range = document.createRange();
   for (let t = walker.nextNode(); t; t = walker.nextNode()) {
     const el = t.parentElement;
-    if (!el || !t.data.trim() || el.closest('.tl, .grip, .gappill, .gapline, .katex-mathml, .note-chip, summary, details:not([open])')) continue;
+    if (!el || !t.data.trim() || el.closest('.tl, .grip, .gappill, .gapline, .cardbar, .katex-mathml, .note-chip, summary, details:not([open])')) continue;
     const cs = getComputedStyle(el);
     if (cs.visibility === 'hidden' || cs.color === 'transparent' || cs.color === 'rgba(0, 0, 0, 0)') continue;
     ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${(parseFloat(cs.fontSize) * zoomOf(el)).toFixed(2)}px ${cs.fontFamily}`;

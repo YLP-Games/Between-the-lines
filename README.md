@@ -6,6 +6,7 @@ A simple web page for taking notes on lecture slides.
 - Point at a spot on a page and press **+ Add note here**. The page opens up at the nearest gap between lines, and you type in your own font, size and colour.
 - Notes sit in clear boxes. Drag a box's edges to resize it, or its ✥ handle to move it across the page (it snaps to the centre) or to another spot between lines, like a text box in Word.
 - Choose each note box's **outline** (on/off and colour) and **fill** colour from the top bar.
+- Add a **blank page** after any slide for longer notes (**+ Page after** on a slide, or **+ Blank page**), and remove pages you don't need.
 - Word-style formatting in notes: undo/redo, bullet and numbered lists (Tab / Shift+Tab to indent), alignment, strikethrough, superscript/subscript, highlighter and clear formatting.
 - **∑ Formula** inserts a formula into a note: type it plainly, e.g. `w_i = (P_i)/(sum_(i=1)^N P_i)` or `Q*_A`, or use the symbol buttons, with a live preview. Click a formula to edit it.
 - Press a note's **⇄** button to float it on top of the page (like "in front of text" in Word), so a small note can sit beside a line without pushing anything apart. Press ⇄ again to put it back between the lines.
