@@ -31,6 +31,11 @@ button:focus-visible,select:focus-visible,label.btn:focus-within{outline:2px sol
 .sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent)}
 input[type=color]{width:30px;height:30px;padding:0;border:1px solid var(--line);border-radius:6px;background:none}
 .hint{width:100%;font-size:12px;color:var(--muted)}
+.savewrap{position:relative}
+.savemenu{position:absolute;right:0;top:calc(100% + 6px);z-index:20;min-width:250px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:6px;display:flex;flex-direction:column;gap:4px}
+.savemenu button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:none;background:transparent;padding:8px 10px;border-radius:6px}
+.savemenu button:hover,.savemenu button:focus-visible{background:var(--bg)}
+.savemenu small{color:var(--muted);font-size:12px}
 .spacer{flex:1}
 main{max-width:960px;margin:0 auto;padding-block:20px 120px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
 
@@ -88,7 +93,7 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
 <header>
   <div class="bar">
     <h1>Between the Slides</h1>
-    <label class="btn primary" for="file">Open file<input id="file" type="file" accept=".pdf,.pptx,.docx,image/*" multiple hidden></label>
+    <label class="btn primary" for="file">Open file<input id="file" type="file" accept=".pdf,.pptx,.docx,.html,image/*" multiple hidden></label>
     <div class="tools" id="tools">
       <select id="font" aria-label="Your font">
         <option value="Caveat">Caveat (handwriting)</option>
@@ -106,6 +111,13 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
       <button id="u" title="Underline"><u>U</u></button>
     </div>
     <span class="spacer"></span>
+    <span class="savewrap">
+      <button id="save" class="primary" aria-haspopup="true" aria-expanded="false">Download ▾</button>
+      <div class="savemenu" id="saveMenu" hidden>
+        <button type="button" data-kind="pdf"><strong>PDF</strong><small>Your pages and notes, to read or print</small></button>
+        <button type="button" data-kind="notebook"><strong>Notebook file</strong><small>Open it later on any device to keep editing</small></button>
+      </div>
+    </span>
     <button id="clear">Clear all</button>
     <div class="hint" id="hint"></div>
     <div id="status" aria-live="polite"></div>
@@ -126,6 +138,8 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
+// a copy of this app, for the downloadable notebook file
+const APP_HTML = (() => { const c = document.body.cloneNode(true); c.querySelector('#notebook-data')?.remove(); const m = c.querySelector('#main'); if (m) m.innerHTML = ''; return c.innerHTML; })();
 const $ = s => document.querySelector(s);
 const main = $('#main');
 const COLORS = ['#1f4fd1','#c62828','#2e7d32','#7b1fa2','#d35400','#1d1d1f'];
@@ -745,6 +759,11 @@ $('#file').onchange = async e => {
   main.querySelector('.empty')?.remove();
   for (const f of picked) {
     const ext = f.name.split('.').pop().toLowerCase();
+    if (ext === 'html' || ext === 'htm') {
+      const data = readNotebookHtml(await f.text());
+      if (data) loadNotebook(data, !main.querySelector('.slide')); else status(`“${f.name}” isn't a notebook file saved from this page.`);
+      continue;
+    }
     const head = document.createElement('h2'); head.className = 'file-head';
     head.textContent = f.name.replace(/\.[^.]+$/, '').replace(/_+/g, ' ').trim();
     main.append(head);
@@ -781,9 +800,161 @@ function saveSoon(){
     put('style', style); put('count', slideCount);
   }, 500);
 }
+
+/* ================= download to your device ================= */
+function notebookName(){
+  const h = main.querySelector('.file-head');
+  return ((h && h.textContent.trim()) || 'My notes').replace(/[\\/:*?"<>|]+/g, ' ').slice(0, 80).trim() || 'My notes';
+}
+function currentDoc(){
+  const c = main.cloneNode(true);
+  c.querySelectorAll('.gapline, .gappill, .empty').forEach(x => x.remove());
+  return c.innerHTML;
+}
+async function saveFile(filename, blob){
+  let dl = null;
+  try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch { dl = null; }
+  if (dl) { await dl.save({filename, data: blob}); return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+// Notebook file: this whole app plus your pages and notes, in one .html file you can open anywhere
+async function downloadNotebook(){
+  const data = JSON.stringify({v: 1, doc: currentDoc(), style, count: slideCount}).replace(/</g, '\\u003c');
+  const html = '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' +
+    '<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>' +
+    `<script id="notebook-data" type="application/json">${data}<\/script>` + APP_HTML + '</body></html>';
+  await saveFile(notebookName() + ' (notes).html', new Blob([html], {type: 'text/html'}));
+}
+function readNotebookHtml(text){
+  const m = text.match(/<script id="notebook-data" type="application\/json">([\s\S]*?)<\/script>/);
+  if (!m) return null;
+  try { return JSON.parse(m[1]); } catch { return null; }
+}
+function loadNotebook(data, replace){
+  if (data.style) { style = data.style; showStyle(style); }
+  if (replace) { main.innerHTML = data.doc || ''; slideCount = data.count || 0; }
+  else { main.querySelector('.empty')?.remove(); main.insertAdjacentHTML('beforeend', data.doc || ''); }
+  main.querySelectorAll('.slide-label, .gapline, .gappill').forEach(e => e.remove());
+  upgradeNotes();
+  if (!main.children.length) showEmpty();
+}
+
+// PDF: each page drawn exactly as you see it, with your notes, one PDF page per slide
+function loadImg(src){ return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
+async function paintCard(card, scale){
+  const r = card.getBoundingClientRect(), ox = r.left, oy = r.top;
+  const c = document.createElement('canvas');
+  c.width = Math.round(r.width * scale); c.height = Math.round(r.height * scale);
+  const ctx = c.getContext('2d'); ctx.scale(scale, scale);
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, r.width, r.height);
+  if (card.classList.contains('pagecard')) {
+    const m = card.style.getPropertyValue('--pg').match(/url\(["']?(.*?)["']?\)$/);
+    if (m) {
+      const img = await loadImg(m[1]), H = +card.dataset.h;
+      for (const s of card.querySelectorAll(':scope > .strip')) {
+        const sr = s.getBoundingClientRect(), y0 = +s.dataset.y0, y1 = +s.dataset.y1;
+        ctx.drawImage(img, 0, y0 / H * img.naturalHeight, img.naturalWidth, (y1 - y0) / H * img.naturalHeight, sr.left - ox, sr.top - oy, sr.width, sr.height);
+      }
+    }
+  }
+  for (const im of card.querySelectorAll('img')) {
+    if (im.closest('details:not([open])')) continue;
+    const ir = im.getBoundingClientRect(); if (!ir.width || !im.complete) continue;
+    try { ctx.drawImage(im, ir.left - ox, ir.top - oy, ir.width, ir.height); } catch {}
+  }
+  ctx.strokeStyle = '#9aa3b2'; ctx.lineWidth = 1;
+  for (const n of card.querySelectorAll('.mine')) {
+    for (const nr of n.getClientRects()) ctx.strokeRect(nr.left - ox + .5, nr.top - oy + .5, nr.width - 1, nr.height - 1);
+  }
+  ctx.strokeStyle = '#c9d0db';
+  for (const td of card.querySelectorAll('td, th')) { const tr = td.getBoundingClientRect(); ctx.strokeRect(tr.left - ox, tr.top - oy, tr.width, tr.height); }
+  // text, word by word, exactly where the browser laid it out
+  const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
+  const range = document.createRange();
+  for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+    const el = t.parentElement;
+    if (!el || !t.data.trim() || el.closest('.tl, .grip, .gappill, .gapline, summary, details:not([open])')) continue;
+    const cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || cs.color === 'transparent' || cs.color === 'rgba(0, 0, 0, 0)') continue;
+    ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    ctx.fillStyle = cs.color; ctx.textBaseline = 'alphabetic';
+    const underline = /underline/.test(cs.textDecorationLine || cs.textDecoration);
+    for (const w of t.data.matchAll(/\S+/g)) {
+      range.setStart(t, w.index); range.setEnd(t, w.index + w[0].length);
+      const rects = range.getClientRects(); if (!rects.length) continue;
+      const wr = rects[0], mt = ctx.measureText(w[0]);
+      const asc = mt.fontBoundingBoxAscent || parseFloat(cs.fontSize) * 0.8, desc = mt.fontBoundingBoxDescent || parseFloat(cs.fontSize) * 0.2;
+      const y = wr.top - oy + (wr.height - (asc + desc)) / 2 + asc;
+      ctx.fillText(w[0], wr.left - ox, y);
+      if (underline) ctx.fillRect(wr.left - ox, y + 2, wr.width, Math.max(1, parseFloat(cs.fontSize) / 16));
+    }
+  }
+  return c;
+}
+function makePdf(pages){
+  const enc = new TextEncoder(), chunks = [], offs = [];
+  let len = 0;
+  const push = d => { const b = typeof d === 'string' ? enc.encode(d) : d; chunks.push(b); len += b.length; };
+  const obj = (num, ...parts) => { offs[num] = len; push(`${num} 0 obj\n`); parts.forEach(push); push('\nendobj\n'); };
+  push('%PDF-1.4\n%âãÏÓ\n');
+  const n = pages.length, total = 2 + n * 3;
+  obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2, `<< /Type /Pages /Kids [${pages.map((_, i) => `${3 + i * 3} 0 R`).join(' ')}] /Count ${n} >>`);
+  pages.forEach((p, i) => {
+    const pg = 3 + i * 3, ct = pg + 1, im = pg + 2;
+    const pw = 595.28, ph = +(pw * p.h / p.w).toFixed(2);
+    const content = `q ${pw} 0 0 ${ph} 0 0 cm /Im0 Do Q`;
+    obj(pg, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /XObject << /Im0 ${im} 0 R >> >> /Contents ${ct} 0 R >>`);
+    obj(ct, `<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+    obj(im, `<< /Type /XObject /Subtype /Image /Width ${p.w} /Height ${p.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${p.jpeg.length} >>\nstream\n`, p.jpeg, '\nendstream');
+  });
+  const xref = len;
+  push(`xref\n0 ${total + 1}\n0000000000 65535 f \n` + offs.slice(1).map(o => String(o).padStart(10, '0') + ' 00000 n \n').join(''));
+  push(`trailer\n<< /Size ${total + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+  return new Blob(chunks, {type: 'application/pdf'});
+}
+async function downloadPdf(){
+  hideGap();
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  try { await document.fonts.ready; } catch {}
+  const cards = [...main.querySelectorAll('.slide')];
+  const pages = [];
+  for (let i = 0; i < cards.length; i++) {
+    status(`Making your PDF: page ${i + 1} of ${cards.length}`);
+    const cv = await paintCard(cards[i], 2);
+    const blob = await new Promise(res => cv.toBlob(res, 'image/jpeg', 0.9));
+    pages.push({w: cv.width, h: cv.height, jpeg: new Uint8Array(await blob.arrayBuffer())});
+  }
+  await saveFile(notebookName() + ' (notes).pdf', makePdf(pages));
+}
+
+const saveMenu = $('#saveMenu');
+$('#save').onclick = e => { e.stopPropagation(); saveMenu.hidden = !saveMenu.hidden; $('#save').setAttribute('aria-expanded', !saveMenu.hidden); };
+document.addEventListener('click', e => { if (!e.target.closest('.savewrap')) { saveMenu.hidden = true; $('#save').setAttribute('aria-expanded', 'false'); } });
+saveMenu.addEventListener('click', async e => {
+  const b = e.target.closest('button[data-kind]'); if (!b) return;
+  saveMenu.hidden = true;
+  if (!main.querySelector('.slide')) { status('Open your slides first, then download.'); return; }
+  try {
+    if (b.dataset.kind === 'pdf') await downloadPdf(); else await downloadNotebook();
+    status('Downloaded. Check your Downloads folder.');
+  } catch (err) {
+    console.error(err);
+    status(err && err.code === 'declined' ? 'Download cancelled.' : 'The download didn’t work. Please try again.');
+  }
+});
+
 showEmpty();
 (async () => {
-  db = await openDb(); if (!db) return;
+  db = await openDb();
+  const emb = document.getElementById('notebook-data');
+  if (emb) { try { loadNotebook(JSON.parse(emb.textContent), true); saveSoon(); return; } catch {} }
+  if (!db) return;
   const [d, s, n] = await Promise.all([get('doc'), get('style'), get('count')]);
   if (s) { style = s; showStyle(style); }
   if (d) { main.innerHTML = d; slideCount = n || 0; main.querySelectorAll('.slide-label').forEach(e => e.remove()); upgradeNotes(); }
