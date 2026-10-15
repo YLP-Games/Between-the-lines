@@ -4,6 +4,8 @@ A simple web page for taking notes on lecture slides.
 
 - Open a **PDF** and each page shows exactly as it is, with background graphics, side bands and slide numbers removed.
 - Point at a spot on a page and press **+ Add note here**. The page opens up at the nearest gap between lines, and you type in your own font, size and colour.
+- Fonts: handwriting styles plus standard fonts (Arial, Helvetica, Calibri, Verdana, Tahoma, Times New Roman, Georgia, Garamond, Courier New and more). Type any **text size** into the size box and press Enter, or pick one from its ▾ list. Select words first to change only those.
+- The note you add or click on always comes to the front, above pinned or floating notes.
 - Notes sit in clear boxes. Drag a box's edges to resize it, or its ✥ handle to move it across the page (it snaps to the centre) or to another spot between lines, like a text box in Word. Pink guide lines show (and snap) when a box's edges or centre line up with another note box.
 - Choose each note box's **outline** (on/off and colour) and **fill** colour from the top bar.
 - Add a **blank page** after the current page for longer notes, or remove pages you don't need, with **+ Page after** and **Remove page** in the toolbar (they act on the page you last clicked, which is outlined when you point at the button).
@@ -11,9 +13,9 @@ A simple web page for taking notes on lecture slides.
 - Word-style formatting in notes: bullet and numbered lists (Tab / Shift+Tab to indent; each sub-level gets its own bullet), a **bullet style** menu (round, hollow, square, arrow, tick, star, dash, 1. 2. 3., a. b. c., A. B. C., i. ii. iii.), an **indent size** menu (narrow to extra wide), alignment, strikethrough, superscript/subscript, highlighter and clear formatting.
 - **∑ Formula** inserts a formula into a note: type it plainly, e.g. `w_i = (P_i)/(sum_(i=1)^N P_i)` or `Q*_A`, or use the symbol buttons, with a live preview. Click a formula to edit it.
 - Press a note's **⇄** button to float it on top of the page (like "in front of text" in Word), so a small note can sit beside a line without pushing anything apart. Press ⇄ again to put it back between the lines.
-- Minimise a note to a small ✎ icon with its **–** button, like a comment in Word: it takes no space, shows the note when you point at it and opens when clicked, or use **Hide notes / Show notes** for all of them at once. Drag a ✎ icon out of the way to see the words underneath; a dashed line points back to the spot it belongs to.
+- Minimise a note to a small ✎ icon with its **–** button, like a comment in Word: it takes no space, shows the note when you point at it and opens when clicked, or use **Hide notes / Show notes** for all of them at once. Drag a ✎ icon out of the way to see the words underneath; it stays where you drop it, and clicking it still opens the note at the spot where you wrote it.
 - **📌 Pin** a note to keep it open: it stays visible (even with Hide notes) until you unpin it.
-- **🖼 Media** inserts pictures, videos and sound into a note. Click a picture or video (yours or one in the slides) to select it, then resize it, add a note under it, or **Remove** it (or press Delete).
+- **🖼 Media** inserts pictures, videos and sound into a note. You can also paste or drop picture files straight into a note. Click a picture or video (in a note or in the slides) to select it, then resize it, add a note under it, or **Remove** it (or press Delete).
 - **📖 Study mode** makes everything read-only so nothing changes by accident while you revise; you can still open and minimise notes.
 - Select and copy text from the PDF pages.
 - **PowerPoint (.pptx)** and **Word (.docx)** files open as text with their formatting, and you can type inside sentences too.

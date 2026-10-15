@@ -31,6 +31,10 @@ button:focus-visible,select:focus-visible,label.btn:focus-within{outline:2px sol
 .sw{width:26px;height:26px;padding:0;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line)}
 .sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent)}
 input[type=color]{width:30px;height:30px;padding:0;border:1px solid var(--line);border-radius:6px;background:none}
+.sizebox{display:inline-flex;align-items:center}
+#sizePick{width:26px;padding:6px 0;appearance:none;-webkit-appearance:none;text-align:center;text-align-last:center;border-radius:0 6px 6px 0;border-left:none}
+#size{border-radius:6px 0 0 6px!important}
+#size{width:56px;font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 6px}
 .hint{width:100%;font-size:12px;color:var(--muted)}
 .savewrap{position:relative}
 .savemenu{position:absolute;right:0;top:calc(100% + 6px);z-index:20;min-width:250px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:6px;display:flex;flex-direction:column;gap:4px}
@@ -45,7 +49,7 @@ main.paged{max-width:none;align-items:center;gap:24px}
 .savemenu .layout{display:flex;flex-direction:column;gap:4px;padding:6px 10px 8px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:2px}
 .savemenu .layout select{width:100%}
 .spacer{flex:1}
-main{max-width:960px;margin:0 auto;padding-block:20px 120px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+main{position:relative;z-index:0;max-width:960px;margin:0 auto;padding-block:20px 120px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
 
 /* slide cards: original content */
 .slide{position:relative;background:var(--card);color:var(--card-ink);border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.15);padding:22px 28px 26px;cursor:text;min-width:0;overflow-wrap:anywhere;line-height:1.35}
@@ -156,7 +160,7 @@ header.barhidden{display:none}
 main.clean .notebox{height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden;width:auto!important}
 main.clean .notebox > *{display:none!important}
 .g-move{left:-10px;top:-10px;width:22px;height:22px;border-radius:50%;cursor:move;display:flex;align-items:center;justify-content:center;font:13px/1 var(--ui);color:var(--accent);user-select:none;-webkit-user-select:none}
-.notebox.moving{opacity:.9;z-index:6}
+.notebox.moving{opacity:.9;z-index:100000!important}
 .notebox.moving > .mine{box-shadow:0 6px 18px rgba(0,0,0,.22);background:rgba(255,255,255,.85)}
 @media (hover:none){.grip{opacity:1;width:16px;height:16px}.g-move{width:26px;height:26px}}
 .g-se{right:0;bottom:0;cursor:nwse-resize}
@@ -177,8 +181,6 @@ main.clean .notebox > *{display:none!important}
 /* minimised note icons can be dragged aside; a dashed line points back to the spot */
 .notebox.collapsed > .note-chip{translate:var(--cdx,0px) var(--cdy,0px);touch-action:none}
 .notebox.chip-drag > .note-chip{cursor:grabbing;opacity:1}
-.notebox.collapsed.chip-moved::before{content:"";position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:#c9a400;pointer-events:none;z-index:3}
-.notebox.collapsed.chip-moved::after{content:"";position:absolute;left:0;top:0;width:var(--cl,0px);border-top:1.5px dashed #c9a400;transform-origin:0 0;rotate:var(--ca,0deg);pointer-events:none;z-index:3}
 /* study mode: read only, notes can still be opened and minimised */
 main.reading .grip:not(.g-min):not(.g-pin){display:none!important}
 main.reading .slide,main.reading .strip,main.reading .tl,main.reading .mine{cursor:auto}
@@ -210,15 +212,37 @@ main.reading .slide img.blk{cursor:auto}
     <h1>Between the Slides</h1>
     <label class="btn primary" for="file">Open file<input id="file" type="file" accept=".pdf,.pptx,.docx,.html,image/*" multiple hidden></label>
     <div class="tools" id="tools">
-      <select id="font" aria-label="Your font">
-        <option value="Caveat">Caveat (handwriting)</option>
-        <option value="Patrick Hand">Patrick Hand</option>
-        <option value="Kalam">Kalam</option>
-        <option value="Nunito">Nunito</option>
-        <option value="Lora">Lora</option>
-        <option value="Courier Prime">Courier Prime</option>
+      <select id="font" aria-label="Font" title="Font">
+        <optgroup label="Handwriting">
+          <option value="Caveat">Caveat (handwriting)</option>
+          <option value="Patrick Hand">Patrick Hand</option>
+          <option value="Kalam">Kalam</option>
+        </optgroup>
+        <optgroup label="Standard fonts">
+          <option value="Arial">Arial</option>
+          <option value="Helvetica">Helvetica</option>
+          <option value="Calibri">Calibri</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Tahoma">Tahoma</option>
+          <option value="Trebuchet MS">Trebuchet MS</option>
+          <option value="Segoe UI">Segoe UI</option>
+          <option value="Nunito">Nunito</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Cambria">Cambria</option>
+          <option value="Garamond">Garamond</option>
+          <option value="Palatino Linotype">Palatino Linotype</option>
+          <option value="Lora">Lora</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Courier Prime">Courier Prime</option>
+          <option value="Comic Sans MS">Comic Sans MS</option>
+          <option value="Impact">Impact</option>
+        </optgroup>
       </select>
-      <select id="size" aria-label="Your text size"></select>
+      <span class="sizebox" title="Text size: type any number and press Enter, or pick one from the list">
+        <input id="size" type="number" min="4" max="200" step="1" inputmode="decimal" aria-label="Text size">
+        <select id="sizePick" aria-label="Pick a text size"><option value="" selected disabled>▾</option></select>
+      </span>
       <span id="swatches" style="display:flex;gap:4px;align-items:center"></span>
       <input type="color" id="color" value="#1f4fd1" aria-label="Custom colour">
       <button id="b" title="Bold"><b>B</b></button>
@@ -355,7 +379,10 @@ const APP_HTML = (() => { const c = document.body.cloneNode(true); c.querySelect
 const $ = s => document.querySelector(s);
 const main = $('#main');
 const COLORS = ['#1f4fd1','#c62828','#2e7d32','#7b1fa2','#d35400','#1d1d1f'];
-const SIZES = [14,16,18,20,24,28,32,40];
+const SIZES = [8,9,10,11,12,14,16,18,20,24,28,32,36,40,48,60,72];
+// the fallback used if a font isn't on this device
+const SERIF = ['Lora', 'Times New Roman', 'Georgia', 'Cambria', 'Garamond', 'Palatino Linotype'], MONO = ['Courier New', 'Courier Prime'], HAND = ['Caveat', 'Patrick Hand', 'Kalam', 'Comic Sans MS'];
+const fontCss = f => `"${f}", ${SERIF.includes(f) ? 'serif' : MONO.includes(f) ? 'monospace' : HAND.includes(f) ? 'cursive' : 'sans-serif'}`;
 let style = {font:'Caveat', size:24, color:'#1f4fd1'};
 let active = null, savedRange = null, slideCount = 0;
 let reading = false;          // study mode: read only
@@ -364,7 +391,7 @@ const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','
 const status = t => $('#status').textContent = t || '';
 
 /* ================= toolbar ================= */
-SIZES.forEach(s => $('#size').add(new Option(s + ' pt', s)));
+SIZES.forEach(s => $('#sizePick').add(new Option(s, s)));
 COLORS.forEach(c => {
   const b = document.createElement('button');
   b.className = 'sw'; b.style.background = c; b.dataset.c = c; b.setAttribute('aria-label', 'Colour ' + c);
@@ -387,14 +414,20 @@ document.addEventListener('selectionchange', () => {
   const sel = getSelection(); if (!sel.rangeCount) return;
   const r = sel.getRangeAt(0), n = r.commonAncestorContainer;
   const el = (n.nodeType === 1 ? n : n.parentElement)?.closest('.mine');
-  if (el) { active = el; savedRange = r.cloneRange(); showStyle(noteStyle(el)); const nb = el.closest('.notebox'); if (nb) showBox(boxOf(nb)); $('#indentSize').value = el.style.getPropertyValue('--ind').trim() || '1.4em'; hint(); }
+  if (el) { active = el; savedRange = r.cloneRange(); showStyle(styleAt(r, el)); const nb = el.closest('.notebox'); if (nb) showBox(boxOf(nb)); $('#indentSize').value = el.style.getPropertyValue('--ind').trim() || '1.4em'; hint(); }
 });
 document.addEventListener('mousedown', e => {
   if (!e.target.closest('.mine, .notebox, .gappill, header, .fpanel, .mediabar')) { active = null; savedRange = null; showStyle(style); hint(); }
 });
 function noteStyle(el){
   return {font: el.style.fontFamily.split(',')[0].replace(/"/g,'').trim() || style.font,
-          size: parseInt(el.style.fontSize) || style.size, color: toHex(el.style.color) || style.color};
+          size: parseFloat(el.style.fontSize) || style.size, color: toHex(el.style.color) || style.color};
+}
+// the font, size and colour of the words where the cursor (or selection) starts
+function styleAt(r, el){
+  const n = r.startContainer, at = (n.nodeType === 1 ? n.childNodes[r.startOffset] || n : n.parentElement);
+  const t = at && at.nodeType === 1 && el.contains(at) ? at : el, cs = getComputedStyle(t), base = noteStyle(el);
+  return {font: cs.fontFamily.split(',')[0].replace(/["']/g, '').trim() || base.font, size: Math.round(parseFloat(cs.fontSize) * 2) / 2 || base.size, color: toHex(cs.color) || base.color};
 }
 function toHex(c){ const m = c && c.match(/\d+/g); return m ? '#' + m.slice(0,3).map(x => (+x).toString(16).padStart(2,'0')).join('') : c; }
 function restoreSel(){ active.focus(); if (savedRange) { const s = getSelection(); s.removeAllRanges(); s.addRange(savedRange); } }
@@ -409,12 +442,17 @@ function apply(kind, value){
     if (kind === 'size') {
       document.execCommand('styleWithCSS', false, false);
       document.execCommand('fontSize', false, '7');
-      active.querySelectorAll('font[size="7"]').forEach(f => { const s = document.createElement('span'); s.style.fontSize = value + 'px'; while (f.firstChild) s.append(f.firstChild); f.replaceWith(s); });
-      active.querySelectorAll('span').forEach(s => { if (s.style.fontSize === 'xxx-large') s.style.fontSize = value + 'px'; });
+      const made = [];
+      active.querySelectorAll('font[size="7"]').forEach(f => { const s = document.createElement('span'); s.style.fontSize = value + 'px'; while (f.firstChild) s.append(f.firstChild); f.replaceWith(s); made.push(s); });
+      active.querySelectorAll('span').forEach(s => { if (s.style.fontSize === 'xxx-large') { s.style.fontSize = value + 'px'; made.push(s); } });
+      if (made.length) {          // keep the same words selected, so another style can be added to them
+        const r = document.createRange(); r.setStartBefore(made[0]); r.setEndAfter(made[made.length - 1]);
+        const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      }
     }
   } else {
     const prop = {font:'fontFamily', size:'fontSize', color:'color'}[kind];
-    active.style[prop] = kind === 'font' ? `"${value}", cursive` : kind === 'size' ? value + 'px' : value;
+    active.style[prop] = kind === 'font' ? fontCss(value) : kind === 'size' ? value + 'px' : value;
     active.querySelectorAll('*').forEach(el => { el.style[prop] = ''; if (el.tagName === 'FONT') el.removeAttribute({font:'face',color:'color',size:'size'}[kind]); });
   }
   const s = getSelection(); savedRange = s.rangeCount ? s.getRangeAt(0).cloneRange() : null;
@@ -422,7 +460,20 @@ function apply(kind, value){
   saveSoon();
 }
 $('#font').onchange = e => apply('font', e.target.value);
-$('#size').onchange = e => apply('size', +e.target.value);
+// any size can be typed; it is used when you press Enter or leave the box
+let sizing = false;
+function applySize(){
+  if (sizing) return; sizing = true;
+  try { applySizeNow(); } finally { sizing = false; }
+}
+function applySizeNow(){
+  const v = Math.round(Math.min(200, Math.max(4, parseFloat($('#size').value))) * 2) / 2;
+  if (!isFinite(v)) { showStyle(active && document.body.contains(active) ? noteStyle(active) : style); return; }
+  $('#size').value = v; apply('size', v);
+}
+$('#size').addEventListener('change', applySize);
+$('#sizePick').onchange = e => { $('#size').value = e.target.value; e.target.value = ''; applySize(); };
+$('#size').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } });   // leaving the box applies it, once
 $('#color').oninput = e => apply('color', e.target.value);
 $('#swatches').onclick = e => { const c = e.target.dataset?.c; if (c) apply('color', c); };
 // Word-style formatting for the note you are writing in
@@ -481,10 +532,20 @@ $('#hlColor').oninput = e => { $('#hlBtn .hl').style.background = e.target.value
 function makeNote(tag){
   const el = document.createElement(tag);
   el.className = 'mine'; el.contentEditable = 'true';
-  el.style.fontFamily = `"${style.font}", cursive`; el.style.fontSize = style.size + 'px'; el.style.color = style.color;
+  el.style.fontFamily = fontCss(style.font); el.style.fontSize = style.size + 'px'; el.style.color = style.color;
   return el;
 }
+// bring a note box in front of all others (e.g. pinned or floating notes on the same page)
+let zTop = 10;
+function raise(box){
+  if (!box || !box.classList?.contains('notebox')) return;
+  if (!zTop || zTop < 10) zTop = 10;
+  const cur = +box.style.zIndex || 0;
+  if (cur && cur === zTop) return;
+  box.style.zIndex = ++zTop;
+}
 function focusNote(el){
+  raise(el.closest('.notebox'));
   el.focus();
   const r = document.createRange(); r.selectNodeContents(el); r.collapse(false);
   const s = getSelection(); s.removeAllRanges(); s.addRange(r);
@@ -528,21 +589,14 @@ function spreadChips(){
     chip.style.setProperty('--ci', i);
     placed.push({card, i, top: r.top, left: r.left});
   }
-  main.querySelectorAll('.notebox.collapsed.chip-moved').forEach(chipLine);
 }
-// drag a minimised note's icon out of the way; a dashed line points back to the words it belongs to
+// drag a minimised note's icon out of the way; it stays where it is dropped, and the note still opens at its own spot
 function setChipOffset(box, x, y){
   const moved = Math.hypot(x, y) >= 6;
   box.classList.toggle('chip-moved', moved);
-  if (moved) { box.style.setProperty('--cdx', x.toFixed(1) + 'px'); box.style.setProperty('--cdy', y.toFixed(1) + 'px'); chipLine(box); }
-  else ['--cdx', '--cdy', '--cl', '--ca'].forEach(v => box.style.removeProperty(v));
-}
-function chipLine(box){
-  const chip = box.querySelector(':scope > .note-chip'); if (!chip) return;
-  const z = zoomOf(box) || 1, br = box.getBoundingClientRect(), cr = chip.getBoundingClientRect();
-  const dx = (cr.left + cr.width / 2 - br.left) / z, dy = (cr.top + cr.height / 2 - br.top) / z;
-  box.style.setProperty('--cl', Math.max(0, Math.hypot(dx, dy) - cr.width / 2 / z).toFixed(1) + 'px');
-  box.style.setProperty('--ca', (Math.atan2(dy, dx) * 180 / Math.PI).toFixed(1) + 'deg');
+  if (moved) { box.style.setProperty('--cdx', x.toFixed(1) + 'px'); box.style.setProperty('--cdy', y.toFixed(1) + 'px'); }
+  else ['--cdx', '--cdy'].forEach(v => box.style.removeProperty(v));
+  ['--cl', '--ca'].forEach(v => box.style.removeProperty(v));     // no line back to the spot (older notes had one)
 }
 function startChipDrag(chip, e){
   const box = chip.parentElement, z = zoomOf(box) || 1, sx = e.clientX, sy = e.clientY;
@@ -553,7 +607,7 @@ function startChipDrag(chip, e){
     const dx = ev.clientX - sx, dy = ev.clientY - sy;
     if (!moved && Math.hypot(dx, dy) < 4) return;
     moved = true; box.classList.add('chip-drag');
-    box.classList.add('chip-moved'); box.style.setProperty('--cdx', (ox + dx / z).toFixed(1) + 'px'); box.style.setProperty('--cdy', (oy + dy / z).toFixed(1) + 'px'); chipLine(box);
+    box.classList.add('chip-moved'); box.style.setProperty('--cdx', (ox + dx / z).toFixed(1) + 'px'); box.style.setProperty('--cdy', (oy + dy / z).toFixed(1) + 'px');
   };
   const up = ev => {
     chip.removeEventListener('pointermove', move); chip.removeEventListener('pointerup', up); chip.removeEventListener('pointercancel', up);
@@ -604,7 +658,24 @@ function makeBox(inline){
   return {box, el};
 }
 // notes made before resizing existed get a box and handles too
+// pictures, videos and sound inside a note (also pasted or dropped ones) sit in a box you can click to select
+function wrapMedia(root){
+  for (const m of root.querySelectorAll('.mine img, .mine video, .mine audio')) {
+    if (m.closest('.media, .formula, .katex') || m.classList.contains('formula')) continue;
+    const w = document.createElement('span'); w.className = 'media'; w.contentEditable = 'false'; w.title = 'Click to select (resize or remove)';
+    if (m.style.width) { w.style.width = m.style.width; m.style.width = ''; }
+    m.replaceWith(w); w.append(m);
+  }
+  root.querySelectorAll('.media > img').forEach(i => { i.draggable = false; });
+}
+function mediaAt(t){
+  const w = t.closest?.('.media'); if (w) return w;
+  if (!['IMG', 'VIDEO', 'AUDIO'].includes(t.tagName) || t.closest('details, .formula, .katex') || t.classList.contains('formula') || !t.closest('.slide')) return null;
+  return t;
+}
 function upgradeNotes(){
+  wrapMedia(main);
+  for (const b of main.querySelectorAll('.notebox')) zTop = Math.max(zTop, +b.style.zIndex || 0);
   main.querySelectorAll('.notebox').forEach(b => { if (b.style.height) { b.style.minHeight = b.style.height; b.style.height = ''; } if ((!b.classList.contains('inline') && (!b.querySelector(':scope > .g-move') || !b.querySelector(':scope > .g-float'))) || !b.querySelector(':scope > .note-chip') || !b.querySelector(':scope > .g-pin')) addGrips(b); });
   main.querySelectorAll('.mine').forEach(el => {
     if (el.parentElement?.classList.contains('notebox')) { if (!el.parentElement.querySelector(':scope > .g-e')) addGrips(el.parentElement); return; }
@@ -663,10 +734,10 @@ let swallowClick = false;
 main.addEventListener('click', e => {
   if (swallowClick) { swallowClick = false; return; }
   const chip = e.target.closest('.note-chip');
-  if (chip) { const box = chip.parentElement; setCollapsed(box, false); afterNotesToggle(); const m = box.querySelector('.mine'); if (m && !reading) focusNote(m); return; }
+  if (chip) { const box = chip.parentElement; setCollapsed(box, false); raise(box); afterNotesToggle(); const m = box.querySelector('.mine'); if (m && !reading) focusNote(m); return; }
   if (reading) return;
   const fx = e.target.closest('.formula'); if (fx && fx.closest('.mine')) { openFormula(fx); return; }
-  const media = e.target.closest('.media') || (e.target.tagName === 'IMG' && !e.target.closest('.mine, details, .formula') && e.target.closest('.slide') ? e.target : null);
+  const media = mediaAt(e.target);
   if (media) { selectMedia(media); return; }
   if (e.target.closest('.mine, .notebox, .gappill, details, summary, .slide-label, a')) return;
   const strip = e.target.closest('.strip');
@@ -697,7 +768,9 @@ main.addEventListener('keydown', e => {
   if (e.key === 'Tab' && (inLi || note.tagName === 'DIV')) { e.preventDefault(); document.execCommand('styleWithCSS', false, false); document.execCommand(e.shiftKey ? 'outdent' : 'indent'); saveSoon(); return; }
   if (e.key === 'Enter' && !inLi) { e.preventDefault(); document.execCommand('insertLineBreak'); }
 });
-main.addEventListener('input', saveSoon);
+main.addEventListener('input', e => { const m = e.target.closest?.('.mine'); if (m) wrapMedia(m); saveSoon(); });
+main.addEventListener('pointerdown', e => { const b = e.target.closest('.notebox'); if (b && !b.classList.contains('collapsed')) raise(b); }, true);
+main.addEventListener('focusin', e => raise(e.target.closest?.('.notebox')));
 document.addEventListener('focusout', e => {
   const el = e.target.closest?.('.mine'); if (!el) return;
   setTimeout(() => {
@@ -1839,6 +1912,9 @@ $('#mediaFile').onchange = async e => {
     if (card.classList.contains('pagecard')) card.append(box); else (card.querySelector('.content') || card).append(box);
     note = el; range = null;
   }
+  await insertMediaFiles(files, note, range);
+};
+async function insertMediaFiles(files, note, range){
   const nodes = [];
   for (const f of files) {
     const kind = f.type.split('/')[0];
@@ -1848,7 +1924,7 @@ $('#mediaFile').onchange = async e => {
     const wrap = document.createElement('span'); wrap.className = 'media'; wrap.contentEditable = 'false'; wrap.title = 'Click to select (resize or remove)';
     const m = document.createElement(kind === 'image' ? 'img' : kind);
     m.src = url;
-    if (kind === 'image') { m.alt = f.name; try { const im = await loadImg(url); wrap.style.width = `min(100%, ${im.naturalWidth}px)`; } catch {} }
+    if (kind === 'image') { m.alt = f.name; m.draggable = false; try { const im = await loadImg(url); wrap.style.width = `min(100%, ${im.naturalWidth}px)`; } catch {} }
     else { m.controls = true; m.preload = 'metadata'; wrap.style.width = kind === 'video' ? 'min(100%, 480px)' : 'min(100%, 320px)'; }
     wrap.append(m); nodes.push(wrap);
   }
@@ -1862,7 +1938,24 @@ $('#mediaFile').onchange = async e => {
   const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
   active = note; savedRange = r.cloneRange();
   updateNotesBtn(); saveSoon(); status('');
-};
+}
+// pasting or dropping a picture, video or sound file into a note inserts it like 🖼 Media
+main.addEventListener('paste', e => {
+  const note = e.target.closest?.('.mine'); if (!note || reading) return;
+  const files = [...(e.clipboardData?.files || [])].filter(f => /^(image|video|audio)\//.test(f.type));
+  if (!files.length) return;
+  e.preventDefault();
+  const sel = getSelection(); insertMediaFiles(files, note, sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null);
+});
+main.addEventListener('drop', e => {
+  const note = e.target.closest?.('.mine'); if (!note || reading) return;
+  const files = [...(e.dataTransfer?.files || [])].filter(f => /^(image|video|audio)\//.test(f.type));
+  if (!files.length) return;
+  e.preventDefault();
+  const c = caretAt(e.clientX, e.clientY); let range = null;
+  if (c && note.contains(c.node)) { range = document.createRange(); range.setStart(c.node, c.offset); range.collapse(true); }
+  insertMediaFiles(files, note, range);
+});
 // click a picture, video or sound (yours or one in the slides) to select it: resize it, add a note under it, or remove it
 const mediaBar = document.createElement('div'); mediaBar.className = 'mediabar'; mediaBar.hidden = true;
 mediaBar.innerHTML = '<button type="button" data-w="25%">Small</button><button type="button" data-w="50%">Medium</button><button type="button" data-w="75%">Large</button><button type="button" data-w="100%">Full width</button><button type="button" data-act="note">+ Note below</button><button type="button" data-act="remove" class="danger">Remove</button>';
