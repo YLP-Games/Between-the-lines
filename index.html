@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Between the Slides</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Patrick+Hand&family=Kalam:wght@400;700&family=Nunito:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,700;1,400&family=Courier+Prime:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600&display=swap">
+<style>
+/* Layout: one centred column of white slide cards holding the extracted text; sticky toolbar on top */
+:root{
+  --bg:#eceff4; --surface:#ffffff; --ink:#1b2330; --muted:#5d6878; --line:#d3d9e3; --accent:#2747c9;
+  --card:#ffffff; --card-ink:#1b2330; --card-muted:#6b7686;
+  --display:"Bricolage Grotesque",system-ui,sans-serif; --ui:system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161d;--surface:#1b212b;--ink:#e6eaf0;--muted:#9aa5b4;--line:#2e3744;--accent:#8fa6ff;--card:#f4f6fa;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12161d;--surface:#1b212b;--ink:#e6eaf0;--muted:#9aa5b4;--line:#2e3744;--accent:#8fa6ff;--card:#f4f6fa;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--ui)}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line);
+  padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bar{max-width:960px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+h1{font-family:var(--display);font-size:18px;margin:0 6px 0 0;font-weight:600}
+.tools{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+button,select,label.btn{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer}
+button:focus-visible,select:focus-visible,label.btn:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+.primary{background:var(--accent);color:var(--surface);border-color:var(--accent)}
+.sw{width:26px;height:26px;padding:0;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line)}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent)}
+input[type=color]{width:30px;height:30px;padding:0;border:1px solid var(--line);border-radius:6px;background:none}
+.hint{width:100%;font-size:12px;color:var(--muted)}
+.spacer{flex:1}
+main{max-width:960px;margin:0 auto;padding-block:20px 120px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+
+/* slide cards: original content */
+.slide{background:var(--card);color:var(--card-ink);border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.15);padding:22px 28px 26px;cursor:text;min-width:0;overflow-wrap:anywhere;line-height:1.35}
+.file-head{font-family:var(--display);font-weight:600;font-size:26px;margin:14px 0 0;text-wrap:balance;overflow-wrap:anywhere}
+.slide-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--card-muted);margin-bottom:10px;cursor:default;display:flex;gap:10px;align-items:center}
+.slide .blk{margin:0 0 .45em}
+.slide img{display:block;max-width:100%;height:auto;margin:.6em 0}
+.slide table{border-collapse:collapse;margin:.6em 0;display:block;overflow-x:auto}
+.slide td,.slide th{border:1px solid #c9d0db;padding:4px 8px;vertical-align:top}
+.bul{display:inline-block;min-width:1.2em}
+details.orig{cursor:default;margin-top:12px;font-size:13px;color:var(--card-muted)}
+details.orig summary{cursor:pointer}
+details.orig img{border:1px solid #d3d9e3}
+
+/* your notes */
+.mine{outline:none;border-radius:3px;font-family:Caveat,cursive;font-size:24px;color:#1f4fd1;cursor:text;line-height:1.3}
+.slide img.formula{max-width:100%;margin:.3em 0}
+span.mine{padding:0 .2em;background:rgba(39,71,201,.06)}
+div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5em;background:rgba(39,71,201,.06);border-left:3px solid #e06b6b}
+.pagecard{padding:0;overflow:hidden;background:#fff}
+.strip{position:relative;overflow:hidden;width:100%;max-width:100%;background-image:var(--pg);background-size:100% auto;background-repeat:no-repeat;cursor:text;font-size:0;color:transparent;container-type:inline-size}
+.tl{position:absolute;white-space:pre;line-height:1;transform-origin:0 0;color:transparent;font-family:Arial,Helvetica,sans-serif;cursor:text}
+.tl::selection{background:rgba(39,71,201,.3);color:transparent}
+.gapline{position:absolute;left:0;right:0;border-top:2px dashed var(--accent);pointer-events:none;z-index:2}
+.gappill{position:absolute;left:8px;transform:translateY(-50%);z-index:3;font:600 13px var(--ui);padding:5px 12px;background:var(--accent);color:var(--surface);border:none;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);user-select:none;-webkit-user-select:none}
+.notebox{position:relative;display:flex;flex-direction:column;width:100%;max-width:100%;margin:.2em 0 .5em;box-sizing:border-box}
+.notebox > .mine{flex:1 1 auto;min-height:0;overflow:auto;margin:0 !important;padding-right:22px}
+.grip{position:absolute;right:2px;bottom:2px;width:16px;height:16px;cursor:nwse-resize;touch-action:none;opacity:.75;
+  background:linear-gradient(135deg,transparent 45%,#7d8796 45%,#7d8796 55%,transparent 55%,transparent 70%,#7d8796 70%,#7d8796 80%,transparent 80%)}
+.pagecard > div.mine{margin:0;padding:8px 14px;border-left-width:4px;background:#f3f6ff}
+.pagecard > .notebox{margin:0}
+.pagecard > .notebox > .mine{padding:8px 22px 8px 14px;border-left-width:4px;background:#f3f6ff}
+.mine:focus{box-shadow:0 0 0 2px var(--accent)}
+.mine:empty::before{content:"type here";opacity:.45}
+
+.empty{text-align:center;padding:60px 16px;color:var(--muted)}
+.empty h2{font-family:var(--display);color:var(--ink);font-size:26px;margin:0 0 8px;text-wrap:balance}
+.empty p{max-width:54ch;margin:0 auto 14px;line-height:1.5}
+#status{font-size:13px;color:var(--muted)}
+</style>
+
+<header>
+  <div class="bar">
+    <h1>Between the Slides</h1>
+    <label class="btn primary" for="file">Open file<input id="file" type="file" accept=".pdf,.pptx,.docx,image/*" multiple hidden></label>
+    <div class="tools" id="tools">
+      <select id="font" aria-label="Your font">
+        <option value="Caveat">Caveat (handwriting)</option>
+        <option value="Patrick Hand">Patrick Hand</option>
+        <option value="Kalam">Kalam</option>
+        <option value="Nunito">Nunito</option>
+        <option value="Lora">Lora</option>
+        <option value="Courier Prime">Courier Prime</option>
+      </select>
+      <select id="size" aria-label="Your text size"></select>
+      <span id="swatches" style="display:flex;gap:4px;align-items:center"></span>
+      <input type="color" id="color" value="#1f4fd1" aria-label="Custom colour">
+      <button id="b" title="Bold"><b>B</b></button>
+      <button id="i" title="Italic"><i>I</i></button>
+      <button id="u" title="Underline"><u>U</u></button>
+    </div>
+    <span class="spacer"></span>
+    <button id="clear">Clear all</button>
+    <div class="hint" id="hint"></div>
+    <div id="status" aria-live="polite"></div>
+  </div>
+</header>
+
+<main id="main"></main>
+
+<template id="emptyTpl">
+  <div class="empty">
+    <h2>Open your slides to start taking notes</h2>
+    <p>Open a PowerPoint (.pptx), PDF or Word (.docx) file. The text comes in with its headings, bold, bullets and the main pictures. Nothing in it can be changed.</p>
+    <p>Then click anywhere in the text to type your own words right there, in your own font, size and colour.</p>
+  </div>
+</template>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const main = $('#main');
+const COLORS = ['#1f4fd1','#c62828','#2e7d32','#7b1fa2','#d35400','#1d1d1f'];
+const SIZES = [14,16,18,20,24,28,32,40];
+let style = {font:'Caveat', size:24, color:'#1f4fd1'};
+let active = null, savedRange = null, slideCount = 0;
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const status = t => $('#status').textContent = t || '';
+
+/* ================= toolbar ================= */
+SIZES.forEach(s => $('#size').add(new Option(s + ' pt', s)));
+COLORS.forEach(c => {
+  const b = document.createElement('button');
+  b.className = 'sw'; b.style.background = c; b.dataset.c = c; b.setAttribute('aria-label', 'Colour ' + c);
+  $('#swatches').append(b);
+});
+function showStyle(s){
+  $('#font').value = s.font; $('#size').value = s.size; $('#color').value = s.color;
+  document.querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === s.color));
+}
+function hint(){
+  $('#hint').textContent = !active
+    ? 'On a PDF page, point at a spot and press “+ Add note here”; the page opens up between the lines. You can select and copy the page text. Drag a note’s corner to resize it. The style above is used for new notes.'
+    : savedRange && !savedRange.collapsed ? 'Styling: the selected words.' : 'Styling: this whole note. Select words to style only those.';
+}
+showStyle(style); hint();
+document.querySelectorAll('#tools button').forEach(b => b.addEventListener('mousedown', e => e.preventDefault()));
+
+document.addEventListener('selectionchange', () => {
+  const sel = getSelection(); if (!sel.rangeCount) return;
+  const r = sel.getRangeAt(0), n = r.commonAncestorContainer;
+  const el = (n.nodeType === 1 ? n : n.parentElement)?.closest('.mine');
+  if (el) { active = el; savedRange = r.cloneRange(); showStyle(noteStyle(el)); hint(); }
+});
+document.addEventListener('mousedown', e => {
+  if (!e.target.closest('.mine, .notebox, .gappill, header')) { active = null; savedRange = null; showStyle(style); hint(); }
+});
+function noteStyle(el){
+  return {font: el.style.fontFamily.split(',')[0].replace(/"/g,'').trim() || style.font,
+          size: parseInt(el.style.fontSize) || style.size, color: toHex(el.style.color) || style.color};
+}
+function toHex(c){ const m = c && c.match(/\d+/g); return m ? '#' + m.slice(0,3).map(x => (+x).toString(16).padStart(2,'0')).join('') : c; }
+function restoreSel(){ active.focus(); if (savedRange) { const s = getSelection(); s.removeAllRanges(); s.addRange(savedRange); } }
+
+function apply(kind, value){
+  if (!active || !document.body.contains(active)) { active = null; style[kind] = value; showStyle(style); saveSoon(); return; }
+  restoreSel();
+  if (savedRange && !savedRange.collapsed) {
+    document.execCommand('styleWithCSS', false, true);
+    if (kind === 'font') document.execCommand('fontName', false, value);
+    if (kind === 'color') document.execCommand('foreColor', false, value);
+    if (kind === 'size') {
+      document.execCommand('styleWithCSS', false, false);
+      document.execCommand('fontSize', false, '7');
+      active.querySelectorAll('font[size="7"]').forEach(f => { const s = document.createElement('span'); s.style.fontSize = value + 'px'; while (f.firstChild) s.append(f.firstChild); f.replaceWith(s); });
+      active.querySelectorAll('span').forEach(s => { if (s.style.fontSize === 'xxx-large') s.style.fontSize = value + 'px'; });
+    }
+  } else {
+    const prop = {font:'fontFamily', size:'fontSize', color:'color'}[kind];
+    active.style[prop] = kind === 'font' ? `"${value}", cursive` : kind === 'size' ? value + 'px' : value;
+    active.querySelectorAll('*').forEach(el => { el.style[prop] = ''; if (el.tagName === 'FONT') el.removeAttribute({font:'face',color:'color',size:'size'}[kind]); });
+  }
+  const s = getSelection(); savedRange = s.rangeCount ? s.getRangeAt(0).cloneRange() : null;
+  showStyle({...noteStyle(active), [kind]: value});
+  saveSoon();
+}
+$('#font').onchange = e => apply('font', e.target.value);
+$('#size').onchange = e => apply('size', +e.target.value);
+$('#color').oninput = e => apply('color', e.target.value);
+$('#swatches').onclick = e => { const c = e.target.dataset?.c; if (c) apply('color', c); };
+['b','i','u'].forEach(id => $('#' + id).onclick = () => {
+  if (!active) return; restoreSel();
+  document.execCommand({b:'bold', i:'italic', u:'underline'}[id]); saveSoon();
+});
+
+/* ================= adding your notes ================= */
+function makeNote(tag){
+  const el = document.createElement(tag);
+  el.className = 'mine'; el.contentEditable = 'true';
+  el.style.fontFamily = `"${style.font}", cursive`; el.style.fontSize = style.size + 'px'; el.style.color = style.color;
+  return el;
+}
+function focusNote(el){
+  el.focus();
+  const r = document.createRange(); r.selectNodeContents(el); r.collapse(false);
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  active = el; savedRange = r; hint();
+}
+function caretAt(x, y){
+  if (document.caretPositionFromPoint) { const p = document.caretPositionFromPoint(x, y); return p && {node: p.offsetNode, offset: p.offset}; }
+  const r = document.caretRangeFromPoint && document.caretRangeFromPoint(x, y);
+  return r && {node: r.startContainer, offset: r.startOffset};
+}
+// a note box you can resize from its corner, like a text box in Word
+function makeBox(){
+  const box = document.createElement('div'); box.className = 'notebox';
+  const el = makeNote('div');
+  const grip = document.createElement('span'); grip.className = 'grip'; grip.title = 'Drag to resize';
+  box.append(el, grip);
+  return {box, el};
+}
+function addBlockNote(after, slide){
+  const {box, el} = makeBox();
+  if (after) after.after(box); else (slide.querySelector('.content') || slide).append(box);
+  focusNote(el);
+}
+main.addEventListener('pointerdown', e => {
+  const g = e.target.closest('.grip'); if (!g) return;
+  e.preventDefault();
+  const box = g.parentElement, r = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY;
+  const max = box.parentElement.clientWidth;
+  g.setPointerCapture(e.pointerId);
+  const move = ev => {
+    box.style.width = Math.round(Math.max(120, Math.min(max, r.width + ev.clientX - sx))) + 'px';
+    box.style.height = Math.round(Math.max(40, r.height + ev.clientY - sy)) + 'px';
+  };
+  const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); saveSoon(); };
+  g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
+});
+main.addEventListener('click', e => {
+  if (e.target.closest('.mine, .notebox, .gappill, details, summary, .slide-label, a')) return;
+  const strip = e.target.closest('.strip');
+  if (strip) { if (!getSelection().toString()) showGap(strip, e.clientY); return; }
+  const slide = e.target.closest('.slide'); if (!slide) return;
+  let blk = e.target.closest('.blk');
+  if (!blk || e.target.tagName === 'IMG') {
+    if (!blk) { const all = [...slide.querySelectorAll('.blk')].filter(b => b.getBoundingClientRect().top < e.clientY); blk = all.pop() || null; }
+    while (blk && (blk.nextElementSibling?.classList.contains('mine') || blk.nextElementSibling?.classList.contains('notebox'))) blk = blk.nextElementSibling;
+    return addBlockNote(blk, slide);
+  }
+  const c = caretAt(e.clientX, e.clientY);
+  if (!c || c.node.nodeType !== 3 || !blk.contains(c.node)) return addBlockNote(blk, slide);
+  const text = c.node.data; let off = c.offset;
+  const r = document.createRange(); r.setStart(c.node, Math.min(off, text.length)); r.collapse(true);
+  const rect = r.getClientRects()[0] || r.getBoundingClientRect();
+  const tail = document.createRange(); tail.setStart(c.node, off); tail.setEndAfter(blk.lastChild);
+  if (!tail.toString().trim() && e.clientX - rect.right > 24) return addBlockNote(blk, slide);
+  while (off < text.length && !/\s/.test(text[off])) off++;   // snap to end of the clicked word
+  const after = c.node.splitText(off);
+  const el = makeNote('span');
+  after.parentNode.insertBefore(el, after);
+  focusNote(el);
+});
+main.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.closest?.('.mine')) { e.preventDefault(); document.execCommand('insertLineBreak'); }
+});
+main.addEventListener('input', saveSoon);
+document.addEventListener('focusout', e => {
+  const el = e.target.closest?.('.mine'); if (!el) return;
+  setTimeout(() => {
+    if (document.activeElement === el || $('header').contains(document.activeElement)) return;
+    if (!el.textContent.trim() && !el.querySelector('img')) { const t = el.closest('.notebox') || el, p = t.parentNode; t.remove(); p && p.normalize(); mergeStrips(p); if (active === el) active = null; saveSoon(); }
+  }, 0);
+});
+
+/* ================= reading files ================= */
+function slideCard(){
+  const s = document.createElement('section'); s.className = 'slide';
+  s.innerHTML = `<div class="content"></div>`;
+  main.append(s); return s;
+}
+const isLight = hex => { const n = parseInt(hex, 16); const r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (0.299*r + 0.587*g + 0.114*b) > 215; };
+const px = pt => Math.round(Math.max(12, Math.min(44, pt)));
+
+// ---------- PowerPoint ----------
+async function readPptx(buf, name){
+  const zip = await JSZip.loadAsync(buf);
+  const xml = async p => { const f = zip.file(p); return f ? new DOMParser().parseFromString(await f.async('string'), 'application/xml') : null; };
+  const kids = (n, ln) => n ? [...n.children].filter(c => c.localName === ln) : [];
+  const kid = (n, ln) => kids(n, ln)[0] || null;
+  const find = (n, ln) => n ? n.getElementsByTagNameNS('*', ln)[0] || null : null;
+  const rels = d => Object.fromEntries(d ? [...d.getElementsByTagName('Relationship')].map(r => [r.getAttribute('Id'), r.getAttribute('Target')]) : []);
+  const resolve = (base, t) => { const parts = base.split('/'); parts.pop(); for (const seg of t.split('/')) { if (seg === '..') parts.pop(); else if (seg !== '.') parts.push(seg); } return parts.join('/'); };
+
+  const pres = await xml('ppt/presentation.xml');
+  const prel = rels(await xml('ppt/_rels/presentation.xml.rels'));
+  const slideW = +(find(pres, 'sldSz')?.getAttribute('cx')) || 12192000;
+  const slideH = +(find(pres, 'sldSz')?.getAttribute('cy')) || 6858000;
+  const firstCard = main.children.length;
+  const ids = [...pres.getElementsByTagNameNS('*', 'sldId')].map(s => s.getAttribute('r:id'));
+  for (let n = 0; n < ids.length; n++) {
+    status(`Reading ${name}: slide ${n + 1} of ${ids.length}`);
+    const path = resolve('ppt/presentation.xml', prel[ids[n]]);
+    const doc = await xml(path); if (!doc) continue;
+    const srel = rels(await xml(path.replace(/slides\/(slide\d+\.xml)$/, 'slides/_rels/$1.rels')));
+    const items = [];
+    let order = 0;
+    const walk = node => {
+      for (const c of node.children) {
+        const ln = c.localName;
+        if (ln === 'grpSp') { walk(c); continue; }
+        if (ln === 'AlternateContent') {
+          const fb = kid(c, 'Fallback'); const sp = fb && fb.firstElementChild;
+          const choice = kid(c, 'Choice');
+          const isMath = choice && choice.getElementsByTagNameNS('*', 'oMath').length;
+          const blip = sp && find(sp, 'blip');
+          if (isMath && blip) {
+            const off = find(sp, 'off'), ext = find(sp, 'ext');
+            items.push({c: sp, ln: 'pic', formula: true, phType: null, y: off ? +off.getAttribute('y') : 1e7, x: off ? +off.getAttribute('x') : 0, cx: ext ? +ext.getAttribute('cx') : 0, cy: ext ? +ext.getAttribute('cy') : 0, order: order++});
+          } else if (choice) walk(choice);
+          continue;
+        }
+        if (!['sp', 'pic', 'graphicFrame'].includes(ln)) continue;
+        const ph = find(c, 'ph'); const phType = ph ? (ph.getAttribute('type') || 'body') : null;
+        const off = find(kid(c, 'spPr') || kid(c, 'xfrm') || c, 'off');
+        const ext = find(kid(c, 'spPr') || c, 'ext');
+        let y = off ? +off.getAttribute('y') : phType === 'title' || phType === 'ctrTitle' ? 0 : 1371600;
+        items.push({c, ln, phType, y, x: off ? +off.getAttribute('x') : 0, cx: ext ? +ext.getAttribute('cx') : 0, cy: ext ? +ext.getAttribute('cy') : 0, order: order++});
+      }
+    };
+    walk(find(doc, 'spTree'));
+    items.sort((a, b) => (Math.abs(a.y - b.y) < 200000 ? a.x - b.x : a.y - b.y) || a.order - b.order);
+
+    const card = slideCard();
+    const box = card.querySelector('.content');
+    for (const it of items) {
+      if (it.ln === 'pic') {
+        const emb = find(it.c, 'blip')?.getAttribute('r:embed'); const t = emb && srel[emb];
+        if (!t || /\.(emf|wmf|tiff?)$/i.test(t)) continue;
+        if (!it.formula && it.cx && it.cx < 914400 && it.cy < 914400) continue;  // skip small icons and logos
+        if (!it.formula && it.cx && it.cy && isBackground(it.x, it.y, it.x + it.cx, it.y + it.cy, slideW, slideH)) continue;
+        const f = zip.file(resolve(path, t)); if (!f) continue;
+        const ext = t.split('.').pop().toLowerCase();
+        const mime = ext === 'svg' ? 'image/svg+xml' : ext === 'jpg' ? 'image/jpeg' : 'image/' + ext;
+        const img = document.createElement('img'); img.className = it.formula ? 'blk formula' : 'blk'; if (!it.formula) img.dataset.k = t;
+        img.src = `data:${mime};base64,` + await f.async('base64');
+        if (it.cx) img.style.width = Math.min(100, it.cx / slideW * 100 * 1.1).toFixed(1) + '%';
+        box.append(img); continue;
+      }
+      if (it.ln === 'graphicFrame') {
+        const tbl = find(it.c, 'tbl'); if (!tbl) continue;
+        const t = document.createElement('table'); t.className = 'blk';
+        for (const tr of kids(tbl, 'tr')) {
+          const row = t.insertRow();
+          for (const tc of kids(tr, 'tc')) { const cell = row.insertCell(); cell.innerHTML = paras(find(tc, 'txBody'), null, 'span').join('<br>'); }
+        }
+        box.append(t); continue;
+      }
+      for (const html of paras(find(it.c, 'txBody'), it.phType, 'div')) box.insertAdjacentHTML('beforeend', html);
+    }
+    if (!box.children.length) box.innerHTML = '<div class="blk" style="color:#8a94a3">(No text on this slide)</div>';
+  }
+  dropRepeats([...main.children].slice(firstCard));
+
+  function paras(body, phType, tag){
+    if (!body) return [];
+    const out = []; let num = 0;
+    const base = phType === 'ctrTitle' ? 40 : phType === 'title' ? 32 : phType === 'subTitle' ? 22 : phType ? 20 : 18;
+    for (const p of kids(body, 'p')) {
+      const pPr = kid(p, 'pPr'); const lvl = +(pPr?.getAttribute('lvl') || 0);
+      let html = '', firstSize = null;
+      for (const r of p.children) {
+        if (r.localName === 'br') { html += '<br>'; continue; }
+        if (r.localName !== 'r' && r.localName !== 'fld') continue;
+        const t = kid(r, 't')?.textContent || ''; if (!t) continue;
+        const pr = kid(r, 'rPr');
+        const sz = pr?.getAttribute('sz') ? +pr.getAttribute('sz') / 100 * 0.8 : base - lvl * 2;
+        firstSize ??= sz;
+        const st = [`font-size:${px(sz)}px`];
+        if (pr?.getAttribute('b') === '1') st.push('font-weight:700');
+        if (pr?.getAttribute('i') === '1') st.push('font-style:italic');
+        if (pr?.getAttribute('u') && pr.getAttribute('u') !== 'none') st.push('text-decoration:underline');
+        const clr = find(kid(pr, 'solidFill'), 'srgbClr')?.getAttribute('val');
+        if (clr && !isLight(clr)) st.push('color:#' + clr);
+        const face = kid(pr, 'latin')?.getAttribute('typeface');
+        if (face && !face.startsWith('+')) st.push(`font-family:'${face.replace(/'/g, '')}',system-ui,sans-serif`);
+        html += `<span style="${st.join(';')}">${esc(t)}</span>`;
+      }
+      if (!html.replace(/<br>/g, '')) continue;
+      if ((phType === 'title' || phType === 'ctrTitle') && !/font-weight/.test(html)) html = `<span style="font-weight:700">${html}</span>`;
+      let bullet = '';
+      const buChar = kid(pPr, 'buChar')?.getAttribute('char');
+      if (kid(pPr, 'buNone')) bullet = '';
+      else if (kid(pPr, 'buAutoNum')) bullet = (++num) + '.';
+      else if (buChar) bullet = buChar;
+      else if (phType === 'body' || phType === 'obj') bullet = '•';
+      const bul = bullet ? `<span class="bul" style="font-size:${px(firstSize || base)}px">${esc(bullet)}</span>` : '';
+      out.push(tag === 'span' ? bul + html : `<div class="blk" style="margin-left:${lvl * 1.6 + (bullet ? 0.2 : 0)}em">${bul}${html}</div>`);
+    }
+    return out;
+  }
+}
+
+// ---------- PDF: the real page, background graphics removed, opened up where you add notes ----------
+async function readPdf(buf, name){
+  const pdf = await pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false}).promise;
+  const OPS = pdfjsLib.OPS, mul = pdfjsLib.Util.transform, n = pdf.numPages;
+
+  // first look: pictures that sit in the same place on many pages are template artwork
+  const placed = [], count = {};
+  for (let p = 1; p <= n; p++) {
+    status(`Reading ${name}: checking page ${p} of ${n}`);
+    const page = await pdf.getPage(p), vp = page.getViewport({scale: 1}), ops = await page.getOperatorList();
+    const keys = new Set(); let ctm = [1, 0, 0, 1, 0, 0]; const stack = [];
+    for (let k = 0; k < ops.fnArray.length; k++) {
+      const fn = ops.fnArray[k], a = ops.argsArray[k];
+      if (fn === OPS.save) stack.push(ctm);
+      else if (fn === OPS.restore) ctm = stack.pop() || ctm;
+      else if (fn === OPS.transform) ctm = mul(ctm, a);
+      else if (fn === OPS.paintFormXObjectBegin) { stack.push(ctm); if (a[0]) ctm = mul(ctm, a[0]); }
+      else if (fn === OPS.paintFormXObjectEnd) ctm = stack.pop() || ctm;
+      else if (fn === OPS.paintImageXObject || fn === OPS.paintInlineImageXObject || fn === OPS.paintImageMaskXObject) {
+        const pts = [[0,0],[1,0],[0,1],[1,1]].map(([x, y]) => vp.convertToViewportPoint(ctm[0]*x + ctm[2]*y + ctm[4], ctm[1]*x + ctm[3]*y + ctm[5]));
+        const b = {l: Math.min(...pts.map(q => q[0])), r: Math.max(...pts.map(q => q[0])), t: Math.min(...pts.map(q => q[1])), b: Math.max(...pts.map(q => q[1]))};
+        keys.add(boxKey(b));
+      }
+    }
+    keys.forEach(k => count[k] = (count[k] || 0) + 1);
+    placed.push(keys);
+  }
+  const limit = n >= 3 ? Math.max(2, Math.ceil(n * 0.3)) : Infinity;
+  const repeated = Object.keys(count).filter(k => count[k] >= limit).map(k => k.split(',').map(Number));
+
+  for (let p = 1; p <= n; p++) {
+    status(`Reading ${name}: page ${p} of ${n}`);
+    const page = await pdf.getPage(p);
+    const S = 2, v = page.getViewport({scale: S}), W = v.width / S, H = v.height / S;
+    const cv = document.createElement('canvas'); cv.width = v.width; cv.height = v.height;
+    const ctx = cv.getContext('2d', {willReadFrequently: true});
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+    skipBackgrounds(ctx, S, W, H, repeated);
+    await page.render({canvasContext: ctx, viewport: v, background: 'rgba(0,0,0,0)'}).promise;
+    // page colour = the most common colour
+    let px = ctx.getImageData(0, 0, cv.width, cv.height).data;
+    const tally = {};
+    for (let i = 0; i < px.length; i += 4 * 97) { const k = (px[i] >> 4) + ',' + (px[i+1] >> 4) + ',' + (px[i+2] >> 4); tally[k] = (tally[k] || 0) + 1; }
+    const bgKey = Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0].split(',').map(v => v == 15 ? 255 : v * 16 + 8);
+    const inked = i => Math.abs(px[i] - bgKey[0]) + Math.abs(px[i+1] - bgKey[1]) + Math.abs(px[i+2] - bgKey[2]) > 60;
+    // solid bands along the sides (and thin ones along top or bottom): paint them out
+    const colInk = x => { let c = 0, t = 0; for (let y = 0; y < cv.height; y += 4) { t++; if (inked((y * cv.width + x) * 4)) c++; } return c / t; };
+    const rowInk = y => { let c = 0, t = 0; for (let x = 0; x < cv.width; x += 4) { t++; if (inked((y * cv.width + x) * 4)) c++; } return c / t; };
+    ctx.fillStyle = `rgb(${bgKey.join(',')})`;
+    let L = 0; while (L < cv.width * 0.12 && colInk(L) > 0.8) L++;
+    let R = cv.width - 1; while (R > cv.width * 0.88 && colInk(R) > 0.8) R--;
+    let T = 0; while (T < cv.height * 0.06 && rowInk(T) > 0.8) T++;
+    let B = cv.height - 1; while (B > cv.height * 0.94 && rowInk(B) > 0.8) B--;
+    if (L > 0 && L < cv.width * 0.12) ctx.fillRect(0, 0, L + 2, cv.height);
+    if (R < cv.width - 1 && R > cv.width * 0.88) ctx.fillRect(R - 2, 0, cv.width - R + 2, cv.height);
+    if (T > 0 && T < cv.height * 0.06) ctx.fillRect(0, 0, cv.width, T + 2);
+    if (B < cv.height - 1 && B > cv.height * 0.94) ctx.fillRect(0, B - 2, cv.width, cv.height - B + 2);
+    px = ctx.getImageData(0, 0, cv.width, cv.height).data;
+    // blank rows: where the page can open up without cutting through anything
+    const gaps = [];
+    let start = -1;
+    for (let y = 0; y < cv.height; y += 2) {
+      let blank = true;
+      for (let x = 0; x < cv.width; x += 3) { if (inked((y * cv.width + x) * 4)) { blank = false; break; } }
+      if (blank && start < 0) start = y;
+      if ((!blank || y + 2 >= cv.height) && start >= 0) { if (y - start >= 6) gaps.push([+(start / S).toFixed(1), +(y / S).toFixed(1)]); start = -1; }
+    }
+    const card = document.createElement('section');
+    card.className = 'slide pagecard';
+    card.dataset.w = W.toFixed(1); card.dataset.h = H.toFixed(1); card.dataset.gaps = JSON.stringify(gaps);
+    card.style.setProperty('--pg', `url(${cv.toDataURL('image/jpeg', 0.88)})`);
+    const tc = await page.getTextContent();
+    card.dataset.text = JSON.stringify(tc.items.filter(i => i.str && i.str.trim()).map(i => {
+      const t = i.transform, [x, y] = v.convertToViewportPoint(t[4], t[5]);
+      return [i.str, +(x / S).toFixed(1), +(y / S).toFixed(1), +(Math.hypot(t[2], t[3]) || i.height || 10).toFixed(1), +(i.width).toFixed(1), i.hasEOL ? 1 : 0];
+    }));
+    card.append(makeStrip(card, 0, H));
+    main.append(card);
+  }
+}
+const boxKey = b => [b.l, b.t, b.r, b.b].map(x => Math.round(x / 4) * 4).join(',');
+
+// Leave out page backgrounds, edge banners and repeated template pictures while the page is drawn
+function skipBackgrounds(ctx, S, W, H, repeated){
+  const devBox = pts => { const m = ctx.getTransform(); const q = pts.map(([x, y]) => [(m.a*x + m.c*y + m.e) / S, (m.b*x + m.d*y + m.f) / S]);
+    return {l: Math.min(...q.map(a => a[0])), r: Math.max(...q.map(a => a[0])), t: Math.min(...q.map(a => a[1])), b: Math.max(...q.map(a => a[1]))}; };
+  const isRepeat = b => repeated.some(r => Math.abs(r[0] - b.l) < 6 && Math.abs(r[1] - b.t) < 6 && Math.abs(r[2] - b.r) < 6 && Math.abs(r[3] - b.b) < 6);
+  const drawImage = ctx.drawImage.bind(ctx);
+  ctx.drawImage = function(img, ...a){
+    try {
+      let dx, dy, dw, dh;
+      if (a.length >= 8) [dx, dy, dw, dh] = a.slice(4, 8); else if (a.length >= 4) [dx, dy, dw, dh] = a; else { dx = a[0]; dy = a[1]; dw = img.width; dh = img.height; }
+      const b = devBox([[dx, dy], [dx + dw, dy], [dx, dy + dh], [dx + dw, dy + dh]]);
+      if (isBackground(b.l, b.t, b.r, b.b, W, H) || isRepeat(b)) return;
+    } catch {}
+    return drawImage(img, ...a);
+  };
+  // big filled shapes behind the slide (coloured backgrounds and side bands)
+  let pb = null;
+  const grow = (x, y) => { const b = devBox([[x, y]]); pb = pb ? {l: Math.min(pb.l, b.l), r: Math.max(pb.r, b.r), t: Math.min(pb.t, b.t), b: Math.max(pb.b, b.b)} : b; };
+  for (const fnName of ['moveTo', 'lineTo']) { const f = ctx[fnName].bind(ctx); ctx[fnName] = (x, y) => { grow(x, y); return f(x, y); }; }
+  const bez = ctx.bezierCurveTo.bind(ctx); ctx.bezierCurveTo = (a, b, c, d, x, y) => { grow(x, y); return bez(a, b, c, d, x, y); };
+  const rect = ctx.rect.bind(ctx); ctx.rect = (x, y, w, h) => { grow(x, y); grow(x + w, y + h); return rect(x, y, w, h); };
+  const begin = ctx.beginPath.bind(ctx); ctx.beginPath = () => { pb = null; return begin(); };
+  const fill = ctx.fill.bind(ctx);
+  ctx.fill = (...a) => {
+    if (!(a[0] instanceof Path2D) && pb && isBackground(pb.l, pb.t, pb.r, pb.b, W, H)) return;
+    return fill(...a);
+  };
+}
+
+function makeStrip(card, y0, y1){
+  const W = +card.dataset.w, H = +card.dataset.h, h = y1 - y0;
+  const s = document.createElement('div');
+  s.className = 'strip'; s.dataset.y0 = y0; s.dataset.y1 = y1;
+  s.style.aspectRatio = `${W} / ${h}`;
+  s.style.backgroundPositionY = (H - h > 0.5 ? (y0 / (H - h) * 100) : 0).toFixed(4) + '%';
+  // invisible copy of the page's text, laid exactly over it so you can select and copy
+  let items = textCache.get(card);
+  if (!items) { try { items = JSON.parse(card.dataset.text || '[]'); } catch { items = []; } textCache.set(card, items); }
+  for (const [str, x, base, size, w, eol] of items) {
+    if (!(base > y0 && base <= y1)) continue;
+    const sp = document.createElement('span'); sp.className = 'tl'; sp.textContent = str;
+    sp.style.left = (x / W * 100).toFixed(3) + '%';
+    sp.style.top = ((base - size * 0.82 - y0) / h * 100).toFixed(3) + '%';
+    sp.style.fontSize = (size / W * 100).toFixed(3) + 'cqw';
+    sp.dataset.w = (w / W).toFixed(5);
+    s.append(sp, eol ? document.createElement('br') : document.createTextNode(' '));
+  }
+  requestAnimationFrame(() => s.querySelectorAll('.tl').forEach(sp => {
+    if (sp.style.transform || !s.isConnected) return;
+    const target = +sp.dataset.w * s.clientWidth, actual = sp.getBoundingClientRect().width;
+    if (actual > 0 && target > 0) sp.style.transform = `scaleX(${(target / actual).toFixed(4)})`;
+  }));
+  return s;
+}
+const textCache = new WeakMap();
+// the nearest blank gap between lines to a point on the page
+function gapY(strip, clientY){
+  const card = strip.closest('.pagecard'); const y0 = +strip.dataset.y0, y1 = +strip.dataset.y1;
+  const r = strip.getBoundingClientRect();
+  let y = y0 + (clientY - r.top) / r.height * (y1 - y0);
+  let best = null;
+  for (const [a, b] of JSON.parse(card.dataset.gaps || '[]')) {
+    const lo = Math.max(a, y0), hi = Math.min(b, y1); if (hi - lo < 2) continue;
+    const mid = (lo + hi) / 2, d = y < lo ? lo - y : y > hi ? y - hi : 0;
+    if (!best || d < best.d) best = {d, y: Math.min(Math.max(y, lo + 1), hi - 1), mid};
+  }
+  if (best && best.d < 40) y = best.d === 0 ? best.y : best.mid;
+  return y;
+}
+// a dashed line and an "Add note here" button follow the mouse (or appear where you tap)
+const gapLine = document.createElement('div'); gapLine.className = 'gapline';
+const gapPill = document.createElement('button'); gapPill.className = 'gappill'; gapPill.type = 'button'; gapPill.textContent = '+ Add note here';
+let pending = null;
+function showGap(strip, clientY){
+  const y = gapY(strip, clientY), y0 = +strip.dataset.y0, y1 = +strip.dataset.y1;
+  const pct = ((y - y0) / (y1 - y0) * 100).toFixed(3) + '%';
+  gapLine.style.top = pct; gapPill.style.top = `clamp(14px, ${pct}, calc(100% - 14px))`;
+  if (gapLine.parentElement !== strip) strip.append(gapLine, gapPill);
+  pending = {strip, y};
+}
+function hideGap(){ gapLine.remove(); gapPill.remove(); pending = null; }
+gapPill.addEventListener('mousedown', e => e.preventDefault());
+gapPill.addEventListener('click', e => { e.stopPropagation(); const p = pending; hideGap(); if (p) insertAt(p.strip, p.y); });
+let moveQueued = false;
+main.addEventListener('mousemove', e => {
+  if (moveQueued || e.buttons) return; moveQueued = true;
+  requestAnimationFrame(() => {
+    moveQueued = false;
+    if (e.target.closest('.gappill')) return;
+    const strip = e.target.closest('.strip');
+    if (strip) showGap(strip, e.clientY); else hideGap();
+  });
+});
+main.addEventListener('mouseleave', hideGap);
+function insertAt(strip, y){
+  const card = strip.closest('.pagecard'); const y0 = +strip.dataset.y0, y1 = +strip.dataset.y1;
+  const {box, el} = makeBox();
+  if (y - y0 < 3) strip.before(box);
+  else if (y1 - y < 3) strip.after(box);
+  else strip.replaceWith(makeStrip(card, y0, y), box, makeStrip(card, y, y1));
+  focusNote(el);
+}
+// close the gap again when a note between two pieces of the same page is removed
+function mergeStrips(parent){
+  if (!parent) return;
+  for (const s of [...parent.querySelectorAll(':scope > .strip')]) {
+    const nx = s.nextElementSibling;
+    if (nx && nx.classList.contains('strip') && Math.abs(+s.dataset.y1 - +nx.dataset.y0) < 0.01) {
+      const card = s.closest('.pagecard'); const m = makeStrip(card, +s.dataset.y0, +nx.dataset.y1);
+      s.replaceWith(m); nx.remove(); return mergeStrips(parent);
+    }
+  }
+}
+
+// background and decoration: covers most of the slide, or a big/stretched strip touching an edge
+function isBackground(x0, y0, x1, y1, W, H){
+  const w = x1 - x0, h = y1 - y0; if (w <= 0 || h <= 0) return true;
+  const area = (w * h) / (W * H), stretch = Math.max(w / h, h / w);
+  const edge = x0 <= W * 0.01 || x1 >= W * 0.99 || y0 <= H * 0.01 || y1 >= H * 0.99;
+  return area > 0.6 || (edge && (area > 0.2 || stretch > 4));
+}
+// template artwork: the same picture in the same place on many slides
+function dropRepeats(cards){
+  if (cards.length < 3) return;
+  const count = {};
+  cards.forEach(c => new Set([...c.querySelectorAll('img[data-k]')].map(i => i.dataset.k)).forEach(k => count[k] = (count[k] || 0) + 1));
+  const limit = Math.max(2, Math.ceil(cards.length * 0.3));
+  cards.forEach(c => c.querySelectorAll('img[data-k]').forEach(i => { if (count[i.dataset.k] >= limit) i.remove(); }));
+}
+function getObj(page, id){
+  return new Promise(res => {
+    const store = String(id).startsWith('g_') ? page.commonObjs : page.objs;
+    const t = setTimeout(() => res(null), 3000);
+    try { store.get(id, o => { clearTimeout(t); res(o); }); } catch { clearTimeout(t); res(null); }
+  });
+}
+function imgToUrl(img){
+  try {
+    const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+    const ctx = c.getContext('2d');
+    if (img.bitmap) ctx.drawImage(img.bitmap, 0, 0);
+    else if (img.data) {
+      const id = ctx.createImageData(img.width, img.height), d = img.data, o = id.data, n = img.width * img.height;
+      if (img.kind === 3) o.set(d.subarray(0, n * 4));
+      else if (img.kind === 2) for (let i = 0; i < n; i++) { o[i*4] = d[i*3]; o[i*4+1] = d[i*3+1]; o[i*4+2] = d[i*3+2]; o[i*4+3] = 255; }
+      else { const rb = (img.width + 7) >> 3; for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) { const v = (d[y*rb + (x >> 3)] >> (7 - (x & 7))) & 1 ? 255 : 0; const i = (y*img.width + x) * 4; o[i] = o[i+1] = o[i+2] = v; o[i+3] = 255; } }
+      ctx.putImageData(id, 0, 0);
+    } else return null;
+    return c.toDataURL(img.kind === 3 ? 'image/png' : 'image/jpeg', 0.85);
+  } catch { return null; }
+}
+
+// ---------- Word ----------
+function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.append(s); }); }
+async function readDocx(buf, name){
+  if (!window.mammoth) await loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js');
+  const r = await mammoth.convertToHtml({arrayBuffer: buf});
+  const card = slideCard();
+  const box = card.querySelector('.content'); box.innerHTML = r.value;
+  box.querySelectorAll('p,h1,h2,h3,h4,h5,h6,li,table,img').forEach(el => { if (!el.parentElement.closest('.blk') || el.tagName === 'LI') el.classList.add('blk'); });
+}
+
+// ---------- pictures ----------
+async function readImage(file){
+  const url = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(file); });
+  const card = slideCard();
+  card.querySelector('.content').innerHTML = `<img class="blk" alt="${esc(file.name)}" src="${url}">`;
+}
+
+$('#file').onchange = async e => {
+  const picked = [...e.target.files]; e.target.value = '';
+  main.querySelector('.empty')?.remove();
+  for (const f of picked) {
+    const ext = f.name.split('.').pop().toLowerCase();
+    const head = document.createElement('h2'); head.className = 'file-head';
+    head.textContent = f.name.replace(/\.[^.]+$/, '').replace(/_+/g, ' ').trim();
+    main.append(head);
+    try {
+      if (ext === 'pptx') await readPptx(await f.arrayBuffer(), f.name);
+      else if (ext === 'pdf') await readPdf(await f.arrayBuffer(), f.name);
+      else if (ext === 'docx') await readDocx(await f.arrayBuffer(), f.name);
+      else if (f.type.startsWith('image/')) await readImage(f);
+      else { status(`“${f.name}” can't be opened. Use a .pptx, .pdf or .docx file (an old .ppt or .doc file can be saved as one of these).`); continue; }
+      status('');
+    } catch (err) { console.error(err); status(`“${f.name}” couldn't be read. Try saving it as a PDF and opening that.`); }
+  }
+  if (!main.children.length) showEmpty();
+  saveSoon();
+};
+
+$('#clear').onclick = () => {
+  const b = $('#clear');
+  if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Remove everything?'; setTimeout(() => { b.dataset.sure = ''; b.textContent = 'Clear all'; }, 3000); return; }
+  b.dataset.sure = ''; b.textContent = 'Clear all';
+  main.innerHTML = ''; slideCount = 0; showEmpty(); saveSoon();
+};
+function showEmpty(){ main.append($('#emptyTpl').content.cloneNode(true)); }
+
+/* ================= remember in this browser ================= */
+let db = null, timer = null;
+function openDb(){ return new Promise(res => { try { const r = indexedDB.open('between-slides-text', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch { res(null); } }); }
+function put(k, v){ try { db && db.transaction('kv', 'readwrite').objectStore('kv').put(v, k); } catch {} }
+function get(k){ return new Promise(res => { try { const r = db.transaction('kv').objectStore('kv').get(k); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch { res(null); } }); }
+function saveSoon(){
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    put('doc', main.querySelector('.empty') ? '' : (() => { const c = main.cloneNode(true); c.querySelectorAll('.gapline, .gappill').forEach(x => x.remove()); return c.innerHTML; })());
+    put('style', style); put('count', slideCount);
+  }, 500);
+}
+showEmpty();
+(async () => {
+  db = await openDb(); if (!db) return;
+  const [d, s, n] = await Promise.all([get('doc'), get('style'), get('count')]);
+  if (s) { style = s; showStyle(style); }
+  if (d) { main.innerHTML = d; slideCount = n || 0; main.querySelectorAll('.slide-label').forEach(e => e.remove()); }
+})();
+</script>
+
+</body>
+</html>
