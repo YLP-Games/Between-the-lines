@@ -30,6 +30,11 @@ button:focus-visible,select:focus-visible,label.btn:focus-within{outline:2px sol
 .primary{background:var(--accent);color:var(--surface);border-color:var(--accent)}
 .sw{width:26px;height:26px;padding:0;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line)}
 .sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent)}
+.favs{display:flex;gap:4px;align-items:center;padding-left:6px;border-left:1px solid var(--line)}
+.favs:empty{display:none}
+.sw.fav{width:22px;height:22px}
+button.favsave{padding:4px 7px;font-size:15px;line-height:1;color:var(--muted)}
+button.favsave:hover{color:var(--accent);border-color:var(--accent)}
 input[type=color]{width:30px;height:30px;padding:0;border:1px solid var(--line);border-radius:6px;background:none}
 .sizebox{display:inline-flex;align-items:center}
 #sizePick{width:26px;padding:6px 0;appearance:none;-webkit-appearance:none;text-align:center;text-align-last:center;border-radius:0 6px 6px 0;border-left:none}
@@ -86,7 +91,7 @@ header.compact #notesToggle{order:5}
 header.compact #readBtn{order:5}
 header.compact #lessBtn{order:6;margin-left:auto}
 header.compact #hideBar{order:7}
-header.compact #status{order:8}
+header.compact #helpBtn{order:8}
 header.compact{padding-block:6px}
 header.barhidden{display:none}
 .showbar{position:fixed;z-index:30;top:calc(8px + env(safe-area-inset-top, 0px));right:max(12px, env(safe-area-inset-right, 0px));font:13px var(--ui);padding:6px 12px;border-radius:999px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.2);opacity:.85}
@@ -212,6 +217,8 @@ main.reading .slide img.blk{cursor:auto}
 .chippop .cc{width:22px;height:22px;padding:0;border-radius:50%;border:1px solid rgba(0,0,0,.25);cursor:pointer;display:flex;align-items:center;justify-content:center;font:10px/1 var(--ui)}
 .chippop .cc[aria-pressed="true"]{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)}
 .chippop input[type=color]{width:26px;height:26px}
+.chippop .favrow:empty::after{content:"None yet: pick a colour, then press ☆ Save";color:var(--muted);font-style:italic}
+.chippop .lbl{color:var(--muted)}
 .chippop button.txt{font-size:12px;padding:3px 8px}
 .chipsw{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:10px;border:1px solid rgba(0,0,0,.25)}
 .mediabar{position:fixed;z-index:45;display:flex;flex-wrap:wrap;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.2);max-width:calc(100vw - 24px)}
@@ -220,7 +227,37 @@ main.reading .slide img.blk{cursor:auto}
 .empty{text-align:center;padding:60px 16px;color:var(--muted)}
 .empty h2{font-family:var(--display);color:var(--ink);font-size:26px;margin:0 0 8px;text-wrap:balance}
 .empty p{max-width:54ch;margin:0 auto 14px;line-height:1.5}
-#status{font-size:13px;color:var(--muted)}
+/* short messages that fade away by themselves */
+.toast{position:fixed;z-index:70;left:50%;bottom:max(20px, env(safe-area-inset-bottom, 0px));transform:translate(-50%, 12px);max-width:min(520px, calc(100vw - 32px));
+  padding:10px 16px;border-radius:10px;background:#1f2633;color:#fff;font:14px/1.4 var(--ui);box-shadow:0 8px 24px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .25s, transform .25s}
+.toast.show{opacity:1;transform:translate(-50%, 0)}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+/* help & settings */
+.settings{position:fixed;z-index:65;top:calc(12px + env(safe-area-inset-top, 0px));right:max(12px, env(safe-area-inset-right, 0px));width:min(420px, calc(100vw - 24px));max-height:calc(100vh - 24px);display:flex;flex-direction:column;
+  background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.28)}
+.sethead{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 8px;border-bottom:1px solid var(--line)}
+.sethead h2{margin:0;font:600 17px var(--display)}
+.sethead button{border:none;background:transparent;font-size:22px;line-height:1;padding:2px 8px}
+.setbody{overflow:auto;padding:4px 14px 14px}
+.settings section{padding:10px 0;border-bottom:1px solid var(--line)}
+.settings section:last-child{border-bottom:none}
+.settings h3{margin:0 0 6px;font-size:14px}
+.settings .count{color:var(--muted);font-weight:400}
+.howto{margin:0;padding-left:18px;font-size:13px;line-height:1.45;color:var(--ink)}
+.howto li{margin:3px 0}
+.sethint{margin:0 0 8px;font-size:12px;color:var(--muted);line-height:1.4}
+.dictadd{display:flex;gap:6px;margin-bottom:8px}
+.dictadd input{flex:1;min-width:0;font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.dictlist{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.dictlist li{display:inline-flex;align-items:center;gap:2px;padding:2px 2px 2px 10px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:13px}
+.dictlist li button,.favmanage button.x{border:none;background:transparent;padding:2px 7px;border-radius:999px;font-size:15px;line-height:1;color:var(--muted)}
+.dictlist li button:hover,.favmanage button.x:hover{background:#c62828;color:#fff}
+.dictlist .empty{border:none;background:none;padding:0;color:var(--muted);font-style:italic}
+.favmanage{display:flex;flex-wrap:wrap;gap:8px}
+.favmanage .fm{display:inline-flex;align-items:center;gap:2px;padding:2px;border:1px solid var(--line);border-radius:999px}
+.favmanage .dot{width:20px;height:20px;border-radius:50%;border:1px solid rgba(0,0,0,.2)}
+.favmanage .empty{color:var(--muted);font-style:italic;font-size:13px}
+#helpBtn[aria-expanded="true"]{color:var(--accent);border-color:var(--accent)}
 </style>
 
 <header>
@@ -261,6 +298,8 @@ main.reading .slide img.blk{cursor:auto}
       </span>
       <span id="swatches" style="display:flex;gap:4px;align-items:center"></span>
       <input type="color" id="color" value="#1f4fd1" aria-label="Custom colour">
+      <span id="favText" class="favs" aria-label="Your favourite colours" title="Your favourite colours: click to use, right-click (or press and hold) to remove"></span>
+      <button id="favTextSave" class="favsave" title="Save the current text colour to your favourites">☆</button>
       <button id="b" title="Bold"><b>B</b></button>
       <button id="i" title="Italic"><i>I</i></button>
       <button id="u" title="Underline"><u>U</u></button>
@@ -273,6 +312,7 @@ main.reading .slide img.blk{cursor:auto}
         <label for="bFill">Fill <input type="color" id="bFill" value="#fff8c4" aria-label="Fill colour"></label>
         <button id="bNoFill" title="No fill" aria-pressed="true">No fill</button>
         <label for="bChip" title="Colour of this note's ✎ icon when it is minimised, to colour-code notes by topic">✎ Icon <input type="color" id="bChip" value="#ffd54a" aria-label="Icon colour"></label>
+        <button id="favChipBtn" class="favsave" title="Icon colours and your favourites, for this note (or new notes)">★</button>
       </span>
     </div>
     <span class="spacer"></span>
@@ -302,6 +342,7 @@ main.reading .slide img.blk{cursor:auto}
     <button id="clear">Clear all</button>
     <button id="lessBtn" class="barbtn" title="Show only the everyday tools">Fewer tools</button>
     <button id="hideBar" class="barbtn" title="Hide the toolbar">Hide toolbar</button>
+    <button id="helpBtn" class="barbtn" aria-haspopup="dialog" aria-expanded="false" title="Help and settings: how to use the page, your dictionary and favourite colours">⚙ Help &amp; settings</button>
     <div class="tools fmtbar" id="fmtbar">
       <button id="undoBtn" title="Back: undo the last change (Ctrl+Z)" disabled>↶</button>
       <button id="redoBtn" title="Forward: redo the change you undid (Ctrl+Y)" disabled>↷</button>
@@ -354,12 +395,41 @@ main.reading .slide img.blk{cursor:auto}
       <button id="addPageBtn" title="Add a blank page after the current page (the one you last clicked)">+ Page after</button>
       <button id="delPageBtn" title="Remove the current page (the one you last clicked)">Remove page</button>
     </div>
-    <div class="hint" id="hint"></div>
-    <div id="status" aria-live="polite"></div>
   </div>
 </header>
 
 <button id="showBar" class="showbar" hidden title="Show the toolbar">☰ Show toolbar</button>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<div class="settings" id="settings" role="dialog" aria-modal="false" aria-labelledby="setTitle" hidden>
+  <div class="sethead"><h2 id="setTitle">Help &amp; settings</h2><button id="setClose" aria-label="Close">×</button></div>
+  <div class="setbody">
+    <section>
+      <h3>How to use it</h3>
+      <ul class="howto">
+        <li><b>Open file</b> to bring in a PDF, PowerPoint (.pptx) or Word (.docx) file.</li>
+        <li>On a PDF page, point at a spot and press <b>+ Add note here</b>: the page opens up between the lines. On other pages, click where you want to write.</li>
+        <li>The font, size and colour in the toolbar are used for new notes. Click in a note to style it, or select words to style only those.</li>
+        <li>Drag a note’s edges to resize it, or its <b>✥</b> handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
+        <li><b>⇄</b> floats a note on top of the page, <b>–</b> minimises it to a ✎ icon (drag the icon aside, right-click it to colour it), and <b>📌</b> keeps it open.</li>
+        <li>Misspelt words get a red wavy line: right-click one (or tap it) for suggestions.</li>
+        <li><b>↶ Back / ↷ Forward</b> (Ctrl+Z / Ctrl+Y) undo and redo any change. <b>📖 Study mode</b> stops accidental changes.</li>
+        <li>You can select and copy text from PDF pages. Everything is saved in this browser; <b>Download</b> a PDF, or a notebook file to keep editing on another device.</li>
+      </ul>
+    </section>
+    <section>
+      <h3>Custom dictionary <span class="count" id="dictCount"></span></h3>
+      <p class="sethint">Words you add here (or with “Add to dictionary” on a misspelt word) are never marked as mistakes.</p>
+      <form class="dictadd" id="dictAddForm"><input id="dictAdd" placeholder="Add a word" autocomplete="off" spellcheck="false" aria-label="Word to add"><button type="submit">Add</button></form>
+      <ul class="dictlist" id="dictList"></ul>
+    </section>
+    <section>
+      <h3>Favourite colours</h3>
+      <p class="sethint">Save colours with <b>☆</b> next to the text colour, or <b>☆ Save</b> in a ✎ icon’s colour menu. They show up in both.</p>
+      <div class="favmanage" id="favManage"></div>
+    </section>
+  </div>
+</div>
 <main id="main"></main>
 
 <div class="fpanel" id="formulaPanel" hidden>
@@ -411,7 +481,14 @@ let active = null, savedRange = null, slideCount = 0;
 let reading = false;          // study mode: read only
 try { reading = localStorage.getItem('study-mode') === '1'; } catch {}
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const status = t => $('#status').textContent = t || '';
+// messages pop up as a toast that fades away after a few seconds (progress messages update the same toast)
+let toastTimer = null;
+function status(t){
+  const el = $('#toast'); clearTimeout(toastTimer);
+  if (!t) { el.classList.remove('show'); return; }
+  el.textContent = t; el.classList.add('show');
+  toastTimer = setTimeout(() => el.classList.remove('show'), Math.min(8000, 2500 + t.length * 40));
+}
 
 /* ================= toolbar ================= */
 SIZES.forEach(s => $('#sizePick').add(new Option(s, s)));
@@ -424,12 +501,7 @@ function showStyle(s){
   $('#font').value = s.font; $('#size').value = s.size; $('#color').value = s.color;
   document.querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === s.color));
 }
-function hint(){
-  $('#hint').textContent = !active
-    ? (reading ? 'Study mode: reading only. Click a ✎ icon to open a note, or a note’s – to minimise it. Press “Back to editing” to make changes.'
-      : 'On a PDF page, point at a spot and press “+ Add note here”; the page opens up between the lines. You can select and copy the page text. Drag a note’s edges to resize it, or its ✥ handle to move it; pink lines show when it lines up with other notes. 📌 keeps a note open. The style above is used for new notes.')
-    : savedRange && !savedRange.collapsed ? 'Styling: the selected words.' : 'Styling: this whole note. Select words to style only those.';
-}
+function hint(){}          // the guide now lives in ⚙ Help & settings
 showStyle(style); hint();
 document.querySelectorAll('#tools button').forEach(b => b.addEventListener('mousedown', e => e.preventDefault()));
 
@@ -453,7 +525,12 @@ function styleAt(r, el){
   return {font: cs.fontFamily.split(',')[0].replace(/["']/g, '').trim() || base.font, size: Math.round(parseFloat(cs.fontSize) * 2) / 2 || base.size, color: toHex(cs.color) || base.color};
 }
 function toHex(c){ const m = c && c.match(/\d+/g); return m ? '#' + m.slice(0,3).map(x => (+x).toString(16).padStart(2,'0')).join('') : c; }
-function restoreSel(){ active.focus(); if (savedRange) { const s = getSelection(); s.removeAllRanges(); s.addRange(savedRange); } }
+function restoreSel(){
+  const s = getSelection();
+  // still in the note (a toolbar button was pressed): the live selection is the freshest
+  if (document.activeElement === active && s.rangeCount && active.contains(s.getRangeAt(0).commonAncestorContainer)) { savedRange = s.getRangeAt(0).cloneRange(); return; }
+  active.focus(); if (savedRange) { s.removeAllRanges(); s.addRange(savedRange); }
+}
 
 function apply(kind, value){
   if (!active || !document.body.contains(active)) { active = null; style[kind] = value; showStyle(style); saveSoon(); return; }
@@ -1545,7 +1622,7 @@ async function saveFile(filename, blob){
 
 // Notebook file: this whole app plus your pages and notes, in one .html file you can open anywhere
 async function downloadNotebook(){
-  const data = JSON.stringify({v: 1, doc: currentDoc(), style, count: slideCount}).replace(/</g, '\\u003c');
+  const data = JSON.stringify({v: 1, doc: currentDoc(), style, count: slideCount, favs}).replace(/</g, '\\u003c');
   const html = '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' +
     '<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>' +
@@ -1558,6 +1635,7 @@ function readNotebookHtml(text){
   try { return JSON.parse(m[1]); } catch { return null; }
 }
 function loadNotebook(data, replace){
+  if (Array.isArray(data.favs)) { const add = data.favs.filter(c => /^#[0-9a-f]{6}$/i.test(c) && !favs.includes(c.toLowerCase())).map(c => c.toLowerCase()); if (add.length) { favs = favs.concat(add).slice(0, 16); storeFavs(); } }
   if (data.style) { style = data.style; showStyle(style); }
   if (replace) { main.innerHTML = data.doc || ''; slideCount = data.count || 0; }
   else { main.querySelector('.empty')?.remove(); main.insertAdjacentHTML('beforeend', data.doc || ''); }
@@ -1879,17 +1957,24 @@ showBox(boxStyle);
 const CHIP_COLORS = [['#ffd54a', 'Yellow'], ['#ff9f43', 'Orange'], ['#ef5350', 'Red'], ['#f48fb1', 'Pink'], ['#ab47bc', 'Purple'],
   ['#42a5f5', 'Blue'], ['#26c6da', 'Teal'], ['#66bb6a', 'Green'], ['#8d6e63', 'Brown'], ['#78909c', 'Grey'], ['#263238', 'Black']];
 const chipPop = document.createElement('div'); chipPop.className = 'chippop'; chipPop.hidden = true;
-chipPop.innerHTML = '<div>Icon colour</div><div class="row">' + CHIP_COLORS.map(([c, n]) => `<button type="button" class="cc" data-c="${c}" title="${n}" aria-label="${n}" style="background:${c}"></button>`).join('') +
-  '</div><div class="row"><input type="color" aria-label="Any colour" title="Any colour"><button type="button" class="txt" data-reset>Reset</button><button type="button" class="txt" data-all title="Use this colour for new notes too">Use for new notes</button></div>';
+chipPop.innerHTML = '<div class="ttl">Icon colour</div><div class="row">' + CHIP_COLORS.map(([c, n]) => `<button type="button" class="cc" data-c="${c}" title="${n}" aria-label="${n}" style="background:${c}"></button>`).join('') +
+  '</div><div class="lbl">★ Favourites</div><div class="row favrow"></div>' +
+  '<div class="row"><input type="color" aria-label="Any colour" title="Any colour"><button type="button" class="txt" data-save title="Save this icon colour to your favourites">☆ Save</button><button type="button" class="txt" data-reset>Reset</button><button type="button" class="txt" data-all title="Use this colour for new notes too">Use for new notes</button></div>';
 document.body.append(chipPop);
-let chipBox = null;
-function openChipPop(box, x, y){
-  chipBox = box;
-  const cur = chipOf(box).toLowerCase();
+let chipBox = null, chipFrom = null;       // the note whose icon is being coloured (null: the colour for new notes), and what opened the menu
+const chipNow = () => chipBox ? chipOf(chipBox) : (boxStyle.chip || CHIP);
+function markChip(){
+  const cur = chipNow().toLowerCase();
   chipPop.querySelectorAll('.cc').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === cur));
   chipPop.querySelector('input').value = cur;
+}
+function openChipPop(box, x, y, from){
+  chipBox = box; chipFrom = from || box?.querySelector(':scope > .note-chip') || null;
+  chipPop.querySelector('.ttl').textContent = box ? (box.classList.contains('collapsed') ? 'Icon colour' : 'Icon colour for this note') : 'Icon colour for new notes';
+  chipPop.querySelector('[data-all]').hidden = !box;
+  renderFavs(); markChip();
   chipPop.hidden = false;
-  const cr = box.querySelector(':scope > .note-chip')?.getBoundingClientRect();
+  const cr = chipFrom?.getBoundingClientRect();
   chipAt = cr ? {dx: x - cr.left, dy: y - cr.top} : null;
   placeChipPop(x, y);
 }
@@ -1901,24 +1986,24 @@ function placeChipPop(x, y){
 }
 // the menu follows its icon when the page scrolls
 function followChip(){
-  if (chipPop.hidden || !chipBox) return;
-  const chip = chipBox.querySelector(':scope > .note-chip');
-  if (!chipBox.isConnected || !chipBox.classList.contains('collapsed') || !chip) { closeChipPop(); return; }
-  const r = chip.getBoundingClientRect();
+  if (chipPop.hidden || !chipFrom) return;
+  const fromChip = chipFrom.classList.contains('note-chip');
+  if (!chipFrom.isConnected || (fromChip && !chipBox.classList.contains('collapsed'))) { closeChipPop(); return; }
+  const r = chipFrom.getBoundingClientRect();
   placeChipPop(r.left + (chipAt ? chipAt.dx : r.width / 2), r.top + (chipAt ? chipAt.dy : r.height / 2));
 }
-function closeChipPop(){ chipPop.hidden = true; chipBox = null; }
+function closeChipPop(){ chipPop.hidden = true; chipBox = null; chipFrom = null; }
 function pickChip(c){
-  if (!chipBox) return;
-  setChipColor(chipBox, c);
-  const cur = chipOf(chipBox).toLowerCase();
-  chipPop.querySelectorAll('.cc').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === cur));
-  if (active && chipBox.contains(active)) showBox(boxOf(chipBox));
+  if (chipBox) { setChipColor(chipBox, c); if (active && chipBox.contains(active)) showBox(boxOf(chipBox)); }
+  else { boxStyle.chip = c; try { localStorage.setItem('box-style', JSON.stringify(boxStyle)); } catch {} if (!active || !document.body.contains(active)) showBox(boxStyle); }
+  markChip();
 }
 chipPop.addEventListener('mousedown', e => { if (e.target.tagName !== 'INPUT') e.preventDefault(); });
 chipPop.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
+  if (b.classList.contains('fav') && favHeld) { favHeld = false; return; }
   if (b.dataset.c) { pickChip(b.dataset.c); closeChipPop(); }
+  else if ('save' in b.dataset) addFav(chipNow());
   else if ('reset' in b.dataset) { pickChip(CHIP); closeChipPop(); }
   else if ('all' in b.dataset && chipBox) {
     boxStyle.chip = chipOf(chipBox); try { localStorage.setItem('box-style', JSON.stringify(boxStyle)); } catch {}
@@ -1926,7 +2011,50 @@ chipPop.addEventListener('click', e => {
   }
 });
 chipPop.querySelector('input').addEventListener('input', e => pickChip(e.target.value));
-document.addEventListener('mousedown', e => { if (!chipPop.hidden && !chipPop.contains(e.target)) closeChipPop(); });
+document.addEventListener('mousedown', e => { if (!chipPop.hidden && !chipPop.contains(e.target) && e.target !== chipFrom) closeChipPop(); });
+// ★ in the toolbar: icon colours for the note you're in, or for new notes
+$('#favChipBtn').addEventListener('mousedown', e => e.preventDefault());
+$('#favChipBtn').onclick = e => {
+  if (!chipPop.hidden && chipFrom === e.currentTarget) { closeChipPop(); return; }
+  const box = active && document.body.contains(active) ? active.closest('.notebox') : null, r = e.currentTarget.getBoundingClientRect();
+  openChipPop(box, r.left, r.bottom - 6, e.currentTarget);
+};
+
+// ================= favourite colours: one list, used for text colours and ✎ icon colours =================
+let favs = [];
+try { favs = (JSON.parse(localStorage.getItem('fav-colors') || '[]') || []).filter(c => /^#[0-9a-f]{6}$/i.test(c)); } catch {}
+function storeFavs(){ try { localStorage.setItem('fav-colors', JSON.stringify(favs)); } catch {} renderFavs(); }
+function addFav(c){
+  c = (c || '').toLowerCase(); if (!/^#[0-9a-f]{6}$/.test(c)) return;
+  if (favs.includes(c)) { status('That colour is already in your favourites.'); return; }
+  if (favs.length >= 16) { status('You have 16 favourites: right-click one (or press and hold) to remove it first.'); return; }
+  favs.push(c); storeFavs(); status('Saved to your favourite colours ★');
+}
+function removeFav(c){ favs = favs.filter(x => x !== c); storeFavs(); status('Removed from your favourite colours.'); }
+function renderFavs(){
+  const sw = c => `<button type="button" class="sw fav" data-c="${c}" style="background:${c}" title="${c}: click to use · right-click (or press and hold) to remove" aria-label="Favourite colour ${c}"></button>`;
+  $('#favText').innerHTML = favs.map(sw).join('');
+  chipPop.querySelector('.favrow').innerHTML = favs.map(c => `<button type="button" class="cc fav" data-c="${c}" style="background:${c}" title="${c}: click to use · right-click (or press and hold) to remove" aria-label="Favourite colour ${c}"></button>`).join('');
+  const cur = $('#color').value.toLowerCase();
+  $('#favText').querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === cur));
+  if (!chipPop.hidden) markChip();
+  if (typeof renderFavManage === 'function') renderFavManage();
+}
+$('#favText').addEventListener('mousedown', e => e.preventDefault());       // keep the selected words selected
+$('#favText').addEventListener('click', e => { const b = e.target.closest('.fav'); if (!b) return; if (favHeld) { favHeld = false; return; } apply('color', b.dataset.c); });
+$('#favTextSave').addEventListener('mousedown', e => e.preventDefault());
+$('#favTextSave').onclick = () => addFav($('#color').value);
+// remove a favourite: right-click, or press and hold on a touch screen
+let favHeld = false;
+document.addEventListener('contextmenu', e => { const b = e.target.closest?.('.fav'); if (!b) return; e.preventDefault(); removeFav(b.dataset.c); });
+document.addEventListener('pointerdown', e => {
+  const b = e.target.closest?.('.fav'); if (!b || e.pointerType === 'mouse') return;
+  const t = setTimeout(() => { favHeld = true; removeFav(b.dataset.c); setTimeout(() => { favHeld = false; }, 800); }, 600);
+  const stop = () => { clearTimeout(t); removeEventListener('pointerup', stop); removeEventListener('pointercancel', stop); removeEventListener('pointermove', far); };
+  const far = ev => { if (Math.hypot(ev.clientX - e.clientX, ev.clientY - e.clientY) > 8) stop(); };
+  addEventListener('pointerup', stop); addEventListener('pointercancel', stop); addEventListener('pointermove', far);
+});
+renderFavs();
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !chipPop.hidden) closeChipPop(); });
 addEventListener('scroll', () => requestAnimationFrame(followChip), {passive: true});
 addEventListener('resize', () => requestAnimationFrame(followChip));
@@ -2329,7 +2457,7 @@ spellMenu.addEventListener('click', e => {
     active = hit.note; savedRange = sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
   } else {
     const lw = hit.word.toLowerCase();
-    if (b.dataset.act === 'add') { userWords.add(lw); try { localStorage.setItem('spell-words', JSON.stringify([...userWords])); } catch {} status(`“${hit.word}” added to your dictionary.`); }
+    if (b.dataset.act === 'add') { userWords.add(lw); saveUserWords(); status(`“${hit.word}” added to your dictionary.`); }
     else ignoredWords.add(lw);
     spellCache = new Map(); spellAll();
   }
@@ -2399,6 +2527,52 @@ main.addEventListener('focusin', e => {
 });
 document.documentElement.lang = spellLang === 'off' ? 'en' : spellLang;
 loadSpell();                 // start straight away; the browser checks spelling until it's ready
+
+// ================= ⚙ Help & settings =================
+const setPanel = $('#settings'), helpBtn = $('#helpBtn');
+function saveUserWords(){
+  try { localStorage.setItem('spell-words', JSON.stringify([...userWords])); } catch {}
+  spellCache = new Map(); spellAll(); renderDict();
+}
+function renderDict(){
+  const list = $('#dictList'), words = [...userWords].sort((a, b) => a.localeCompare(b));
+  $('#dictCount').textContent = words.length ? `(${words.length})` : '';
+  list.replaceChildren(...(words.length ? words.map(w => {
+    const li = document.createElement('li'), sp = document.createElement('span'), x = document.createElement('button');
+    sp.textContent = w; x.type = 'button'; x.textContent = '×'; x.dataset.w = w; x.title = `Remove “${w}”`; x.setAttribute('aria-label', `Remove ${w} from the dictionary`);
+    li.append(sp, x); return li;
+  }) : [Object.assign(document.createElement('li'), {className: 'empty', textContent: 'No words yet.'})]));
+}
+function renderFavManage(){
+  const box = $('#favManage');
+  box.replaceChildren(...(favs.length ? favs.map(c => {
+    const d = document.createElement('span'); d.className = 'fm';
+    d.innerHTML = `<span class="dot" style="background:${c}" title="${c}"></span><button type="button" class="x" data-c="${c}" title="Remove ${c}" aria-label="Remove favourite colour ${c}">×</button>`;
+    return d;
+  }) : [Object.assign(document.createElement('span'), {className: 'empty', textContent: 'No favourite colours yet.'})]));
+}
+$('#dictList').addEventListener('click', e => {
+  const b = e.target.closest('button[data-w]'); if (!b) return;
+  const items = [...$('#dictList').querySelectorAll('button[data-w]')], i = items.indexOf(b);
+  userWords.delete(b.dataset.w); saveUserWords(); status(`“${b.dataset.w}” removed from your dictionary.`);
+  const next = $('#dictList').querySelectorAll('button[data-w]'); (next[Math.min(i, next.length - 1)] || $('#dictAdd')).focus();
+});
+$('#dictAddForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const words = $('#dictAdd').value.split(/[\s,]+/).map(w => w.replace(/^[^\p{L}]+|[^\p{L}']+$/gu, '').toLowerCase()).filter(Boolean);
+  if (!words.length) return;
+  words.forEach(w => userWords.add(w)); $('#dictAdd').value = ''; saveUserWords();
+  status(words.length === 1 ? `“${words[0]}” added to your dictionary.` : `${words.length} words added to your dictionary.`);
+});
+$('#favManage').addEventListener('click', e => { const b = e.target.closest('button[data-c]'); if (b) removeFav(b.dataset.c); });
+function openSettings(){ renderDict(); renderFavManage(); setPanel.hidden = false; helpBtn.setAttribute('aria-expanded', 'true'); $('#setClose').focus(); }
+function closeSettings(back){ if (setPanel.hidden) return; setPanel.hidden = true; helpBtn.setAttribute('aria-expanded', 'false'); if (back) helpBtn.focus(); }
+helpBtn.onclick = () => setPanel.hidden ? openSettings() : closeSettings();
+$('#setClose').onclick = () => closeSettings(true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !setPanel.hidden) closeSettings(true); });
+document.addEventListener('mousedown', e => { if (!setPanel.hidden && !setPanel.contains(e.target) && !helpBtn.contains(e.target)) closeSettings(); });
+// a dictionary change made elsewhere (another tab) shows up here too
+addEventListener('storage', e => { if (e.key === 'spell-words') { try { userWords = new Set(JSON.parse(e.newValue || '[]')); } catch {} spellCache = new Map(); spellAll(); renderDict(); } });
 
 // ================= Back / Forward: undo and redo any change =================
 // whole-document snapshots; big pictures are stored once and referred to by a short key
