@@ -11,4 +11,6 @@ A simple web page for taking notes on lecture slides.
 
 ## Use it
 
-Open `index.html` in a browser. It is a single file with no build step.
+Open it at **https://ylp-games.github.io/Between-the-lines/**, or open `index.html` in a browser. It is a single file with no build step.
+
+Pushing to `main` publishes the site to GitHub Pages automatically (`.github/workflows/static.yml`).
