@@ -14,6 +14,7 @@ A simple web page for taking notes on lecture slides.
 - Select and copy text from the PDF pages.
 - **PowerPoint (.pptx)** and **Word (.docx)** files open as text with their formatting, and you can type inside sentences too.
 - Pick a **page layout** (Default, A4 or A3, portrait or landscape) and each slide with its notes is shown on its own sheet of that size, shrunk to fit if needed.
+- **Fewer tools** shrinks the toolbar to one row of everyday tools; **Hide toolbar** hides it (bring it back with **Show toolbar**).
 - Notes are saved automatically in your browser.
 - **Download** your work as a **PDF** (pages with your notes, to read or print, in the layout you picked, with notes shown on the page, as PDF comments you click to open, or left out) or as a **notebook file** (one .html file you can open later on any device, or with Open file, to keep editing).
 

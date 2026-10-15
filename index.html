@@ -68,6 +68,24 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
 .notebox.no-outline > .mine{border-color:transparent}
 .notebox.no-outline:not(:hover):not(:focus-within) > .mine{box-shadow:none}
 .fmtbar{width:100%;gap:4px}
+.barbtn{font-size:13px;color:var(--muted)}
+/* fewer tools: one row with the everyday ones */
+header.compact h1,header.compact #color,header.compact .boxtools,header.compact #layout,header.compact #clear,header.compact .hint,
+header.compact #fmtbar > :not([data-cmd="insertUnorderedList"]):not(#hlBtn){display:none!important}
+header.compact .fmtbar{width:auto;order:3}
+header.compact .spacer{display:none}
+header.compact .bar{max-width:1200px;flex-wrap:wrap}
+header.compact label.btn{order:1}
+header.compact #tools{order:2}
+header.compact .savewrap{order:4}
+header.compact #notesToggle{order:5}
+header.compact #lessBtn{order:6;margin-left:auto}
+header.compact #hideBar{order:7}
+header.compact #status{order:8}
+header.compact{padding-block:6px}
+header.barhidden{display:none}
+.showbar{position:fixed;z-index:30;top:calc(8px + env(safe-area-inset-top, 0px));right:max(12px, env(safe-area-inset-right, 0px));font:13px var(--ui);padding:6px 12px;border-radius:999px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.2);opacity:.85}
+.showbar:hover{opacity:1}
 .blankpage{aspect-ratio:16/9;max-width:100%;display:flex;flex-direction:column}
 .blankpage > .content{flex:1}
 .cardbar{position:absolute;top:8px;right:8px;z-index:6;display:flex;gap:6px}
@@ -196,6 +214,8 @@ main.clean .notebox > *{display:none!important}
     </span>
     <button id="notesToggle" hidden>Hide notes</button>
     <button id="clear">Clear all</button>
+    <button id="lessBtn" class="barbtn" title="Show only the everyday tools">Fewer tools</button>
+    <button id="hideBar" class="barbtn" title="Hide the toolbar">Hide toolbar</button>
     <div class="tools fmtbar" id="fmtbar">
       <button data-cmd="undo" title="Undo (Ctrl+Z)">↶</button>
       <button data-cmd="redo" title="Redo (Ctrl+Y)">↷</button>
@@ -224,6 +244,7 @@ main.clean .notebox > *{display:none!important}
   </div>
 </header>
 
+<button id="showBar" class="showbar" hidden title="Show the toolbar">☰ Show toolbar</button>
 <main id="main"></main>
 
 <div class="fpanel" id="formulaPanel" hidden>
@@ -1554,6 +1575,25 @@ $('#fInsert').onclick = () => {
 };
 $('#fBtn').onclick = () => openFormula(null);
 
+// toolbar size: all tools, fewer tools, or hidden
+function setBar(mode){
+  const h = $('header');
+  h.classList.toggle('compact', mode === 'compact');
+  h.classList.toggle('barhidden', mode === 'hidden');
+  $('#showBar').hidden = mode !== 'hidden';
+  $('#lessBtn').textContent = mode === 'compact' ? 'More' : 'Fewer tools';
+  $('#hideBar').textContent = mode === 'compact' ? 'Hide' : 'Hide toolbar';
+  $('#lessBtn').title = mode === 'compact' ? 'Show all the tools' : 'Show only the everyday tools';
+  try { localStorage.setItem('bar-mode', mode); } catch {}
+  barMode = mode;
+}
+let barMode = 'full';
+$('#lessBtn').onclick = () => setBar(barMode === 'compact' ? 'full' : 'compact');
+let lastBar = 'full';
+try { const l = localStorage.getItem('bar-last'); if (l === 'compact') lastBar = l; } catch {}
+$('#hideBar').onclick = () => { lastBar = barMode; try { localStorage.setItem('bar-last', lastBar); } catch {} setBar('hidden'); };
+$('#showBar').onclick = () => setBar(lastBar === 'hidden' ? 'full' : lastBar);
+try { const m = localStorage.getItem('bar-mode'); if (m === 'compact' || m === 'hidden') setBar(m); } catch {}
 const saveMenu = $('#saveMenu');
 $('#save').onclick = e => { e.stopPropagation(); saveMenu.hidden = !saveMenu.hidden; $('#save').setAttribute('aria-expanded', !saveMenu.hidden); };
 document.addEventListener('click', e => { if (!e.target.closest('.savewrap')) { saveMenu.hidden = true; $('#save').setAttribute('aria-expanded', 'false'); } });
