@@ -153,7 +153,7 @@ header.barhidden{display:none}
 .notebox.inline.collapsed{display:inline-block;vertical-align:top}
 .notebox.collapsed > .mine,.notebox.collapsed > .grip{display:none}
 .notebox.collapsed > .note-chip{display:flex;align-items:center;justify-content:center;position:absolute;z-index:4;left:calc(-24px + var(--ci, 0) * 23px);top:-10px;width:20px;height:20px;padding:0;border-radius:50%;
-  font:11px/1 var(--ui);color:#5a4500;background:#ffd54a;border:1px solid #c9a400;box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer;opacity:.9}
+  font:11px/1 var(--ui);color:var(--chip-ink,#5a4500);background:var(--chip,#ffd54a);border:1px solid color-mix(in srgb, var(--chip,#ffd54a) 72%, #000);box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer;opacity:.9}
 .notebox.collapsed > .note-chip:hover{opacity:1;transform:scale(1.15)}
 .pagecard > .notebox.collapsed > .note-chip{left:calc(4px + var(--ci, 0) * 23px)}
 .notebox.inline.collapsed > .note-chip{left:calc(-3px + var(--ci, 0) * 17px);top:-.7em;width:15px;height:15px;font-size:9px}
@@ -198,6 +198,14 @@ body.reading #tools,body.reading #fmtbar,body.reading #clear{display:none!import
 .slide .media-sel{outline:3px solid var(--accent)!important;outline-offset:2px}
 .slide img.blk:not(.formula){cursor:pointer}
 main.reading .slide img.blk{cursor:auto}
+/* colour menu for a minimised note's ✎ icon */
+.chippop{position:fixed;z-index:46;display:flex;flex-direction:column;gap:6px;padding:8px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.2);font-size:12px}
+.chippop .row{display:flex;gap:5px;align-items:center;flex-wrap:wrap;max-width:200px}
+.chippop .cc{width:22px;height:22px;padding:0;border-radius:50%;border:1px solid rgba(0,0,0,.25);cursor:pointer;display:flex;align-items:center;justify-content:center;font:10px/1 var(--ui)}
+.chippop .cc[aria-pressed="true"]{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)}
+.chippop input[type=color]{width:26px;height:26px}
+.chippop button.txt{font-size:12px;padding:3px 8px}
+.chipsw{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:10px;border:1px solid rgba(0,0,0,.25)}
 .mediabar{position:fixed;z-index:45;display:flex;flex-wrap:wrap;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.2);max-width:calc(100vw - 24px)}
 .mediabar button{font-size:12px;padding:4px 8px}
 .mediabar .danger{color:#c62828}
@@ -256,6 +264,7 @@ main.reading .slide img.blk{cursor:auto}
         <input type="color" id="bBorder" value="#9aa3b2" aria-label="Outline colour" title="Outline colour">
         <label for="bFill">Fill <input type="color" id="bFill" value="#fff8c4" aria-label="Fill colour"></label>
         <button id="bNoFill" title="No fill" aria-pressed="true">No fill</button>
+        <label for="bChip" title="Colour of this note's ✎ icon when it is minimised, to colour-code notes by topic">✎ Icon <input type="color" id="bChip" value="#ffd54a" aria-label="Icon colour"></label>
       </span>
     </div>
     <span class="spacer"></span>
@@ -566,7 +575,7 @@ function setCollapsed(box, on){
     const t = (box.querySelector('.mine')?.innerText || '').trim().replace(/\s+/g, ' ') || 'Note';
     chip.textContent = '✎';
     const short = t.length > 300 ? t.slice(0, 300) + '…' : t;
-    chip.title = short + '\n\nClick to open · drag to move this icon aside';
+    chip.title = short + '\n\nClick to open · drag to move this icon aside · right-click (or press and hold) to change its colour';
     chip.setAttribute('aria-label', 'Show note: ' + short);
   }
 }
@@ -609,17 +618,21 @@ function setChipOffset(box, x, y){
 function startChipDrag(chip, e){
   const box = chip.parentElement, z = zoomOf(box) || 1, sx = e.clientX, sy = e.clientY;
   const ox = parseFloat(box.style.getPropertyValue('--cdx')) || 0, oy = parseFloat(box.style.getPropertyValue('--cdy')) || 0;
-  let moved = false;
+  let moved = false, held = false;
   try { chip.setPointerCapture(e.pointerId); } catch {}
+  // press and hold on a touch screen: the colour menu (a mouse uses right-click)
+  const hold = e.pointerType === 'mouse' ? 0 : setTimeout(() => { if (!moved) { held = true; openChipPop(box, sx, sy); } }, 550);
   const move = ev => {
     const dx = ev.clientX - sx, dy = ev.clientY - sy;
-    if (!moved && Math.hypot(dx, dy) < 4) return;
+    if (held || (!moved && Math.hypot(dx, dy) < (e.pointerType === 'mouse' ? 4 : 8))) return;
+    clearTimeout(hold);
     moved = true; box.classList.add('chip-drag');
     box.classList.add('chip-moved'); box.style.setProperty('--cdx', (ox + dx / z).toFixed(1) + 'px'); box.style.setProperty('--cdy', (oy + dy / z).toFixed(1) + 'px');
   };
   const up = ev => {
     chip.removeEventListener('pointermove', move); chip.removeEventListener('pointerup', up); chip.removeEventListener('pointercancel', up);
-    box.classList.remove('chip-drag');
+    box.classList.remove('chip-drag'); clearTimeout(hold);
+    if (held) { swallowClick = true; setTimeout(() => { swallowClick = false; }, 600); return; }
     if (!moved) return;
     swallowClick = true; setTimeout(() => { swallowClick = false; }, 600);
     setChipOffset(box, ox + (ev.clientX - sx) / z, oy + (ev.clientY - sy) / z);
@@ -662,7 +675,7 @@ function makeBox(inline){
   const box = document.createElement(inline ? 'span' : 'div'); box.className = inline ? 'notebox inline' : 'notebox';
   const el = makeNote(inline ? 'span' : 'div');
   box.append(el); addGrips(box);
-  if (!inline || boxStyle.fill || !boxStyle.outline || boxStyle.border !== '#9aa3b2') applyBoxVars(box, boxStyle);
+  if (!inline || boxStyle.fill || !boxStyle.outline || boxStyle.border !== '#9aa3b2' || (boxStyle.chip || CHIP) !== CHIP) applyBoxVars(box, boxStyle);
   return {box, el};
 }
 // notes made before resizing existed get a box and handles too
@@ -1643,6 +1656,7 @@ function listMark(li, t){
   return t === 'circle' ? '◦' : t === 'square' ? '▪' : '•';
 }
 const utf16 = t => '<FEFF' + [...String(t)].map(ch => { let h = ''; for (let i = 0; i < ch.length; i++) h += ch.charCodeAt(i).toString(16).padStart(4, '0'); return h; }).join('').toUpperCase() + '>';
+const pdfRgb = c => { const n = parseInt((c && c[0] === '#' ? c : CHIP).slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255].map(v => (v / 255).toFixed(3)).join(' '); };
 function makePdf(pages){
   const enc = new TextEncoder(), chunks = [], offs = [];
   let len = 0;
@@ -1664,7 +1678,7 @@ function makePdf(pages){
     obj(im, `<< /Type /XObject /Subtype /Image /Width ${p.w} /Height ${p.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${p.jpeg.length} >>\nstream\n`, p.jpeg, '\nendstream');
     (p.annots || []).forEach((a, k) => {
       const x = Math.min(pw - 22, Math.max(2, a.fx * pw)), y = Math.min(ph - 2, Math.max(22, ph - a.fy * ph));
-      obj(an[k], `<< /Type /Annot /Subtype /Text /Rect [${x.toFixed(1)} ${(y - 20).toFixed(1)} ${(x + 20).toFixed(1)} ${y.toFixed(1)}] /Contents ${utf16(a.text)} /T ${utf16('My note')} /Name /Comment /Open false /C [1 0.84 0.2] /F 4 /P ${pg} 0 R >>`);
+      obj(an[k], `<< /Type /Annot /Subtype /Text /Rect [${x.toFixed(1)} ${(y - 20).toFixed(1)} ${(x + 20).toFixed(1)} ${y.toFixed(1)}] /Contents ${utf16(a.text)} /T ${utf16('My note')} /Name /Comment /Open false /C [${pdfRgb(a.color)}] /F 4 /P ${pg} 0 R >>`);
     });
   }
   const xref = len;
@@ -1693,7 +1707,7 @@ async function downloadPdf(){
       if (mode === 'comments') for (const b of card.querySelectorAll('.notebox')) {
         const text = (b.querySelector('.mine')?.innerText || '').trim(); if (!text) continue;
         const br = b.getBoundingClientRect();
-        annots.push({fx: (br.left - cr.left) / cr.width, fy: (br.top - cr.top) / cr.height, text});
+        annots.push({fx: (br.left - cr.left) / cr.width, fy: (br.top - cr.top) / cr.height, text, color: chipOf(b)});
       }
       const canvas = await paintCard(card, 2 / viewZoom);
       const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
@@ -1801,20 +1815,33 @@ $('#notesToggle').onclick = () => {
   afterNotesToggle();
 };
 // ================= box outline & fill =================
-let boxStyle = {outline: true, border: '#9aa3b2', fill: ''};
+const CHIP = '#ffd54a';            // the usual yellow ✎ icon
+let boxStyle = {outline: true, border: '#9aa3b2', fill: '', chip: CHIP};
 try { const b = JSON.parse(localStorage.getItem('box-style') || 'null'); if (b) boxStyle = Object.assign(boxStyle, b); } catch {}
 function applyBoxVars(box, b){
   box.classList.toggle('no-outline', !b.outline);
   box.style.setProperty('--nb-border', b.border);
   if (b.fill) box.style.setProperty('--nb-fill', b.fill); else box.style.removeProperty('--nb-fill');
+  setChipColor(box, b.chip, true);
 }
+// colour of a note's minimised ✎ icon; the pencil is drawn dark or light so it stays readable
+function setChipColor(box, c, quiet){
+  if (!c || c.toLowerCase() === CHIP) { box.style.removeProperty('--chip'); box.style.removeProperty('--chip-ink'); }
+  else {
+    const n = parseInt(c.slice(1), 16), lum = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+    box.style.setProperty('--chip', c); box.style.setProperty('--chip-ink', lum > 0.6 ? '#2a2300' : '#ffffff');
+  }
+  if (!quiet) saveSoon();
+}
+const chipOf = b => b.style.getPropertyValue('--chip').trim() || CHIP;
 function boxOf(b){
-  return {outline: !b.classList.contains('no-outline'), border: b.style.getPropertyValue('--nb-border').trim() || '#9aa3b2', fill: b.style.getPropertyValue('--nb-fill').trim()};
+  return {outline: !b.classList.contains('no-outline'), border: b.style.getPropertyValue('--nb-border').trim() || '#9aa3b2', fill: b.style.getPropertyValue('--nb-fill').trim(), chip: chipOf(b)};
 }
 function showBox(b){
   $('#bOutline').checked = b.outline; $('#bBorder').value = b.border.startsWith('#') ? b.border : '#9aa3b2';
   $('#bFill').value = b.fill && b.fill.startsWith('#') ? b.fill : '#fff8c4';
   $('#bNoFill').setAttribute('aria-pressed', !b.fill);
+  $('#bChip').value = b.chip && b.chip.startsWith('#') ? b.chip : CHIP;
 }
 function setBox(kind, value){
   const box = active && document.body.contains(active) ? active.closest('.notebox') : null;
@@ -1822,6 +1849,7 @@ function setBox(kind, value){
   if (kind === 'outline') b.outline = value;
   if (kind === 'border') { b.border = value; b.outline = true; }
   if (kind === 'fill') b.fill = value;
+  if (kind === 'chip') b.chip = value;
   if (box) applyBoxVars(box, b);
   else { boxStyle = b; try { localStorage.setItem('box-style', JSON.stringify(boxStyle)); } catch {} }
   showBox(b); saveSoon();
@@ -1830,7 +1858,68 @@ $('#bOutline').onchange = e => setBox('outline', e.target.checked);
 $('#bBorder').oninput = e => setBox('border', e.target.value);
 $('#bFill').oninput = e => setBox('fill', e.target.value);
 $('#bNoFill').onclick = () => setBox('fill', '');
+$('#bChip').oninput = e => setBox('chip', e.target.value);
 showBox(boxStyle);
+
+// right-click (or press and hold) a minimised note's ✎ icon to colour it
+const CHIP_COLORS = [['#ffd54a', 'Yellow'], ['#ff9f43', 'Orange'], ['#ef5350', 'Red'], ['#f48fb1', 'Pink'], ['#ab47bc', 'Purple'],
+  ['#42a5f5', 'Blue'], ['#26c6da', 'Teal'], ['#66bb6a', 'Green'], ['#8d6e63', 'Brown'], ['#78909c', 'Grey'], ['#263238', 'Black']];
+const chipPop = document.createElement('div'); chipPop.className = 'chippop'; chipPop.hidden = true;
+chipPop.innerHTML = '<div>Icon colour</div><div class="row">' + CHIP_COLORS.map(([c, n]) => `<button type="button" class="cc" data-c="${c}" title="${n}" aria-label="${n}" style="background:${c}"></button>`).join('') +
+  '</div><div class="row"><input type="color" aria-label="Any colour" title="Any colour"><button type="button" class="txt" data-reset>Reset</button><button type="button" class="txt" data-all title="Use this colour for new notes too">Use for new notes</button></div>';
+document.body.append(chipPop);
+let chipBox = null;
+function openChipPop(box, x, y){
+  chipBox = box;
+  const cur = chipOf(box).toLowerCase();
+  chipPop.querySelectorAll('.cc').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === cur));
+  chipPop.querySelector('input').value = cur;
+  chipPop.hidden = false;
+  const cr = box.querySelector(':scope > .note-chip')?.getBoundingClientRect();
+  chipAt = cr ? {dx: x - cr.left, dy: y - cr.top} : null;
+  placeChipPop(x, y);
+}
+let chipAt = null;
+function placeChipPop(x, y){
+  const w = chipPop.offsetWidth, h = chipPop.offsetHeight;
+  chipPop.style.left = Math.max(8, Math.min(innerWidth - w - 8, x)) + 'px';
+  chipPop.style.top = (y + h + 12 < innerHeight ? y + 12 : Math.max(8, y - h - 12)) + 'px';
+}
+// the menu follows its icon when the page scrolls
+function followChip(){
+  if (chipPop.hidden || !chipBox) return;
+  const chip = chipBox.querySelector(':scope > .note-chip');
+  if (!chipBox.isConnected || !chipBox.classList.contains('collapsed') || !chip) { closeChipPop(); return; }
+  const r = chip.getBoundingClientRect();
+  placeChipPop(r.left + (chipAt ? chipAt.dx : r.width / 2), r.top + (chipAt ? chipAt.dy : r.height / 2));
+}
+function closeChipPop(){ chipPop.hidden = true; chipBox = null; }
+function pickChip(c){
+  if (!chipBox) return;
+  setChipColor(chipBox, c);
+  const cur = chipOf(chipBox).toLowerCase();
+  chipPop.querySelectorAll('.cc').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === cur));
+  if (active && chipBox.contains(active)) showBox(boxOf(chipBox));
+}
+chipPop.addEventListener('mousedown', e => { if (e.target.tagName !== 'INPUT') e.preventDefault(); });
+chipPop.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.c) { pickChip(b.dataset.c); closeChipPop(); }
+  else if ('reset' in b.dataset) { pickChip(CHIP); closeChipPop(); }
+  else if ('all' in b.dataset && chipBox) {
+    boxStyle.chip = chipOf(chipBox); try { localStorage.setItem('box-style', JSON.stringify(boxStyle)); } catch {}
+    if (!active) showBox(boxStyle); status('New notes will get this icon colour.'); closeChipPop();
+  }
+});
+chipPop.querySelector('input').addEventListener('input', e => pickChip(e.target.value));
+document.addEventListener('mousedown', e => { if (!chipPop.hidden && !chipPop.contains(e.target)) closeChipPop(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !chipPop.hidden) closeChipPop(); });
+addEventListener('scroll', () => requestAnimationFrame(followChip), {passive: true});
+addEventListener('resize', () => requestAnimationFrame(followChip));
+main.addEventListener('contextmenu', e => {
+  const chip = e.target.closest('.note-chip'); if (!chip) return;
+  e.preventDefault(); openChipPop(chip.parentElement, e.clientX, e.clientY);
+});
 
 // ================= formulas =================
 // plain typing like  w_i = P_i / sum_(i=1)^N P_i   becomes a proper formula
