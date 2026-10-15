@@ -232,6 +232,15 @@ main.reading .slide img.blk{cursor:auto}
 .empty{text-align:center;padding:60px 16px;color:var(--muted)}
 .empty h2{font-family:var(--display);color:var(--ink);font-size:26px;margin:0 0 8px;text-wrap:balance}
 .empty p{max-width:54ch;margin:0 auto 14px;line-height:1.5}
+/* several notes selected at once */
+.notebox.multi-sel > .mine{box-shadow:0 0 0 2px var(--accent),0 0 0 6px rgba(39,71,201,.18)!important}
+.notebox.multi-sel.collapsed > .note-chip{outline:2px solid var(--accent);outline-offset:2px}
+.notebox.multi-sel > .g-move{opacity:1;visibility:visible}
+.multibar{position:fixed;z-index:66;left:50%;bottom:max(20px, env(safe-area-inset-bottom, 0px));transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:8px 10px 8px 14px;
+  background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.22);font:14px var(--ui);max-width:calc(100vw - 32px)}
+.multibar button{font-size:13px;padding:5px 12px}
+.multibar [data-act=del]{color:#c62828}
+body.multi .toast{bottom:calc(max(20px, env(safe-area-inset-bottom, 0px)) + 58px)}
 /* short messages that fade away by themselves */
 .toast{position:fixed;z-index:70;left:50%;bottom:max(20px, env(safe-area-inset-bottom, 0px));transform:translate(-50%, 12px);max-width:min(520px, calc(100vw - 32px));
   padding:10px 16px;border-radius:10px;background:#1f2633;color:#fff;font:14px/1.4 var(--ui);box-shadow:0 8px 24px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .25s, transform .25s}
@@ -399,12 +408,14 @@ main.reading .slide img.blk{cursor:auto}
       <span class="sep"></span>
       <button id="addPageBtn" title="Add a blank page after the current page (the one you last clicked)">+ Page after</button>
       <button id="delPageBtn" title="Remove the current page (the one you last clicked)">Remove page</button>
+      <button id="selAllBtn" title="Select every note on the current page, to restyle, move or delete them together (Ctrl+A when you're not typing in a note)">Select all</button>
     </div>
   </div>
 </header>
 
 <button id="showBar" class="showbar" hidden title="Show the toolbar">☰ Show toolbar</button>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="multibar" class="multibar" role="toolbar" aria-label="Selected notes" hidden><span id="multiCount"></span><button type="button" data-act="del">Delete</button><button type="button" data-act="done" class="primary">Done</button></div>
 
 <div class="settings" id="settings" role="dialog" aria-modal="false" aria-labelledby="setTitle" hidden>
   <div class="sethead"><h2 id="setTitle">Help &amp; settings</h2><button id="setClose" aria-label="Close">×</button></div>
@@ -537,7 +548,16 @@ function restoreSel(){
   active.focus(); if (savedRange) { s.removeAllRanges(); s.addRange(savedRange); }
 }
 
+function styleWhole(el, kind, value){
+  const prop = {font:'fontFamily', size:'fontSize', color:'color'}[kind];
+  el.style[prop] = kind === 'font' ? fontCss(value) : kind === 'size' ? value + 'px' : value;
+  el.querySelectorAll('*').forEach(x => { x.style[prop] = ''; if (x.tagName === 'FONT') x.removeAttribute({font:'face',color:'color',size:'size'}[kind]); });
+}
 function apply(kind, value){
+  if (multi.size) {               // several notes selected: style each of them
+    multi.forEach(b => { const m = b.querySelector(':scope > .mine'); if (m) styleWhole(m, kind, value); });
+    showStyle({...noteStyle([...multi][0].querySelector('.mine')), [kind]: value}); saveSoon(); return;
+  }
   if (!active || !document.body.contains(active)) { active = null; style[kind] = value; showStyle(style); saveSoon(); return; }
   restoreSel();
   if (savedRange && !savedRange.collapsed) {
@@ -586,6 +606,11 @@ $('#fmtbar').addEventListener('mousedown', e => { if (e.target.closest('button')
 $('#fmtbar').addEventListener('click', e => {
   const btn = e.target.closest('button[data-cmd]'); if (!btn) return;
   const cmd = btn.dataset.cmd;
+  if (multi.size) {
+    if (/^justify/.test(cmd)) { multi.forEach(b => { const m = b.querySelector(':scope > .mine'); if (m) m.style.textAlign = {justifyLeft: '', justifyCenter: 'center', justifyRight: 'right'}[cmd]; }); saveSoon(); }
+    else status('With several notes selected you can change the font, size, colour, bold/italic/underline, alignment and box colours. Click inside one note for the rest.');
+    return;
+  }
   if (!active || !document.body.contains(active)) { status('Click inside a note first, then choose the formatting.'); return; }
   if (/List|indent|outdent|justify/.test(cmd) && active.tagName === 'SPAN') { status('Lists, indents and alignment work in notes on their own line, not notes inside a sentence.'); return; }
   restoreSel();
@@ -629,6 +654,13 @@ $('#indentSize').onchange = e => {
 };
 $('#hlColor').oninput = e => { $('#hlBtn .hl').style.background = e.target.value; };
 ['b','i','u'].forEach(id => $('#' + id).onclick = () => {
+  if (multi.size) {               // bold / italic / underline for every selected note
+    const notes = [...multi].map(b => b.querySelector(':scope > .mine')).filter(Boolean), cs = getComputedStyle(notes[0]);
+    const prop = {b: 'fontWeight', i: 'fontStyle', u: 'textDecorationLine'}[id];
+    const on = id === 'b' ? parseInt(cs.fontWeight) < 600 : id === 'i' ? cs.fontStyle !== 'italic' : !/underline/.test(cs.textDecorationLine);
+    notes.forEach(n => { n.style[prop] = on ? {b: '700', i: 'italic', u: 'underline'}[id] : ''; });
+    saveSoon(); return;
+  }
   if (!active) return; restoreSel();
   document.execCommand({b:'bold', i:'italic', u:'underline'}[id]); saveSoon();
 });
@@ -1367,6 +1399,36 @@ function hideGuides(){ guideEls.splice(0).forEach(g => g.remove()); }
 // the guide lines for a box at rect b that met these targets
 const vLines = (hits, b) => hits.map(t => ({x: t.v, a: Math.min(b.top, t.r.top), b: Math.max(b.bottom, t.r.bottom)}));
 const hLines = (hits, b) => hits.map(t => ({y: t.v, a: Math.min(b.left, t.r.left), b: Math.max(b.right, t.r.right)}));
+// store where a floating note sits, from its top-left corner on screen
+function setFloatPos(box, nl, nt){
+  const card = box.parentElement, cr = card.getBoundingClientRect(), s = zoomOf(card) || 1;
+  box.dataset.px = ((nl - cr.left) / cr.width).toFixed(5);
+  delete box.dataset.oy; delete box.dataset.pe;
+  if (card.classList.contains('pagecard')) {
+    const strips = [...card.querySelectorAll(':scope > .strip')].map(x => ({x, r: x.getBoundingClientRect(), y0: +x.dataset.y0, y1: +x.dataset.y1}));
+    const on = strips.find(q => nt >= q.r.top && nt < q.r.bottom);
+    if (on) box.dataset.py = (on.y0 + (nt - on.r.top) / on.r.height * (on.y1 - on.y0)).toFixed(3);
+    else if (strips.length) {
+      // beside the page pieces (e.g. next to a note between lines): hang it below the piece above, by the exact distance
+      const above = strips.filter(q => q.r.bottom <= nt).pop();
+      if (above) { box.dataset.py = above.y1; box.dataset.pe = '1'; box.dataset.oy = ((nt - above.r.bottom) / s).toFixed(2); }
+      else { box.dataset.py = strips[0].y0; box.dataset.oy = ((nt - strips[0].r.top) / s).toFixed(2); }
+    }
+  } else box.dataset.py = ((nt - cr.top) / s).toFixed(2);
+}
+// across-the-page position of a note between the lines: its room, and where it starts in it
+function flowMetrics(box){
+  const parent = box.parentElement, ps = getComputedStyle(parent), pz = zoomOf(parent), pr = parent.getBoundingClientRect();
+  const padL = ((parseFloat(ps.paddingLeft) || 0) + (parseFloat(ps.borderLeftWidth) || 0)) * pz;
+  const contentW = pr.width - padL - ((parseFloat(ps.paddingRight) || 0) + (parseFloat(ps.borderRightWidth) || 0)) * pz;
+  const r = box.getBoundingClientRect();
+  return {cL: pr.left + padL, contentW, w: r.width, left: r.left - pr.left - padL};
+}
+function setFlowLeft(box, m, left){
+  left = Math.max(0, Math.min(m.contentW - m.w, left));
+  box.style.marginLeft = (m.contentW > 0 ? left / m.contentW * 100 : 0).toFixed(4) + '%';
+  return left;
+}
 function startFloatMove(box, g, e){
   const card = box.parentElement, br0 = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, z = zoomOf(box) || 1;
   const cr0 = card.getBoundingClientRect(), whole = {left: cr0.left, right: cr0.right, top: cr0.top, bottom: cr0.bottom};
@@ -1393,20 +1455,7 @@ function startFloatMove(box, g, e){
     g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); unkeys();
     box.classList.remove('moving'); hideGuides();
     if (ev.type === 'pointercancel') { box.style.translate = ''; return; }
-    const cr = card.getBoundingClientRect(), s = zoomOf(card) || 1;
-    box.dataset.px = ((nl - cr.left) / cr.width).toFixed(5);
-    delete box.dataset.oy; delete box.dataset.pe;
-    if (card.classList.contains('pagecard')) {
-      const strips = [...card.querySelectorAll(':scope > .strip')].map(x => ({x, r: x.getBoundingClientRect(), y0: +x.dataset.y0, y1: +x.dataset.y1}));
-      const on = strips.find(q => nt >= q.r.top && nt < q.r.bottom);
-      if (on) box.dataset.py = (on.y0 + (nt - on.r.top) / on.r.height * (on.y1 - on.y0)).toFixed(3);
-      else if (strips.length) {
-        // beside the page pieces (e.g. next to a note between lines): hang it below the piece above, by the exact distance
-        const above = strips.filter(q => q.r.bottom <= nt).pop();
-        if (above) { box.dataset.py = above.y1; box.dataset.pe = '1'; box.dataset.oy = ((nt - above.r.bottom) / s).toFixed(2); }
-        else { box.dataset.py = strips[0].y0; box.dataset.oy = ((nt - strips[0].r.top) / s).toFixed(2); }
-      }
-    } else box.dataset.py = ((nt - cr.top) / s).toFixed(2);
+    setFloatPos(box, nl, nt);
     box.style.translate = '';
     placeFloats(); spreadChips(); saveSoon();
   };
@@ -1610,7 +1659,7 @@ function notebookName(){
 function currentDoc(){
   const c = main.cloneNode(true);
   c.querySelectorAll('.gapline, .gappill, .empty, .cardbar').forEach(x => x.remove());
-  c.querySelectorAll('.media-sel, .target-page').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del'));
+  c.querySelectorAll('.media-sel, .target-page, .multi-sel').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel'));
   c.querySelectorAll('.mine').forEach(x => { x.contentEditable = 'true'; });
   flatten(c);
   return c.innerHTML;
@@ -1941,6 +1990,10 @@ function showBox(b){
   $('#bChip').value = b.chip && b.chip.startsWith('#') ? b.chip : CHIP;
 }
 function setBox(kind, value){
+  if (multi.size) {               // outline / fill / icon colour for every selected note
+    multi.forEach(bx => { const b = boxOf(bx); if (kind === 'outline') b.outline = value; if (kind === 'border') { b.border = value; b.outline = true; } if (kind === 'fill') b.fill = value; if (kind === 'chip') b.chip = value; applyBoxVars(bx, b); });
+    showBox(boxOf([...multi][0])); saveSoon(); return;
+  }
   const box = active && document.body.contains(active) ? active.closest('.notebox') : null;
   const b = box ? boxOf(box) : boxStyle;
   if (kind === 'outline') b.outline = value;
@@ -1997,8 +2050,10 @@ function followChip(){
   const r = chipFrom.getBoundingClientRect();
   placeChipPop(r.left + (chipAt ? chipAt.dx : r.width / 2), r.top + (chipAt ? chipAt.dy : r.height / 2));
 }
-function closeChipPop(){ chipPop.hidden = true; chipBox = null; chipFrom = null; }
+let chipMulti = false;
+function closeChipPop(){ chipPop.hidden = true; chipBox = null; chipFrom = null; chipMulti = false; }
 function pickChip(c){
+  if (chipMulti && multi.size) { multi.forEach(b => setChipColor(b, c, true)); saveSoon(); markChip(); return; }
   if (chipBox) { setChipColor(chipBox, c); if (active && chipBox.contains(active)) showBox(boxOf(chipBox)); }
   else { boxStyle.chip = c; try { localStorage.setItem('box-style', JSON.stringify(boxStyle)); } catch {} if (!active || !document.body.contains(active)) showBox(boxStyle); }
   markChip();
@@ -2021,8 +2076,10 @@ document.addEventListener('mousedown', e => { if (!chipPop.hidden && !chipPop.co
 $('#favChipBtn').addEventListener('mousedown', e => e.preventDefault());
 $('#favChipBtn').onclick = e => {
   if (!chipPop.hidden && chipFrom === e.currentTarget) { closeChipPop(); return; }
-  const box = active && document.body.contains(active) ? active.closest('.notebox') : null, r = e.currentTarget.getBoundingClientRect();
+  const box = multi.size ? [...multi][0] : active && document.body.contains(active) ? active.closest('.notebox') : null, r = e.currentTarget.getBoundingClientRect();
   openChipPop(box, r.left, r.bottom - 6, e.currentTarget);
+  chipMulti = multi.size > 0;
+  if (chipMulti) { chipPop.querySelector('.ttl').textContent = `Icon colour for ${multi.size} selected note${multi.size > 1 ? 's' : ''}`; chipPop.querySelector('[data-all]').hidden = true; }
 };
 
 // ================= favourite colours: one list, used for text colours and ✎ icon colours =================
@@ -2586,6 +2643,106 @@ main.addEventListener('focusin', e => {
 document.documentElement.lang = spellLang === 'off' ? 'en' : spellLang;
 loadSpell();                 // start straight away; the browser checks spelling until it's ready
 
+// ================= Select all: every note on the current page, to restyle, move or delete together =================
+const multi = new Set();
+function clearMulti(){
+  if (!multi.size) return;
+  multi.forEach(b => b.classList.remove('multi-sel')); multi.clear();
+  $('#multibar').hidden = true; document.body.classList.remove('multi');
+  showStyle(style); showBox(boxStyle);
+}
+function selectAllNotes(card){
+  if (reading) { status('Select all works when you’re editing (not in Study mode).'); return; }
+  card = card || currentCard();
+  // (an empty note you just clicked into is about to disappear, so it isn't counted)
+  const boxes = card ? [...card.querySelectorAll('.notebox')].filter(b => { const m = b.querySelector(':scope > .mine'); return m && (m.textContent.trim() || m.querySelector('img, .media, .formula')); }) : [];
+  if (!boxes.length) { status('There are no notes on this page to select.'); return; }
+  if (document.activeElement?.closest?.('.mine')) document.activeElement.blur();
+  getSelection().removeAllRanges(); active = null; savedRange = null;
+  clearMulti();
+  boxes.forEach(b => { b.classList.add('multi-sel'); multi.add(b); });
+  $('#multiCount').textContent = `${boxes.length} note${boxes.length > 1 ? 's' : ''} selected`;
+  $('#multibar').hidden = false; document.body.classList.add('multi');
+  showStyle(noteStyle(boxes[0].querySelector('.mine'))); showBox(boxOf(boxes[0]));
+  status('Change the font, size or colours in the toolbar, drag a ✥ handle or use the arrow keys to move them, or press Delete. Esc to finish.');
+}
+function deleteMulti(){
+  const n = multi.size; if (!n) return;
+  multi.forEach(b => { const p = b.parentNode; b.remove(); p?.normalize?.(); mergeStrips(p); });
+  multi.clear(); clearMulti(); $('#multibar').hidden = true; document.body.classList.remove('multi');
+  if (LAYOUTS[layout]) paginateView();
+  updateNotesBtn(); saveSoon();
+  status(`Deleted ${n} note${n > 1 ? 's' : ''}. Press ↶ Back to bring ${n > 1 ? 'them' : 'it'} back.`);
+}
+// nudge with the arrow keys (Shift: 10 px). Notes between the lines move across; floating notes move anywhere
+function nudgeMulti(dx, dy){
+  for (const b of multi) {
+    if (!b.isConnected) continue;
+    if (b.classList.contains('floating')) { const r = b.getBoundingClientRect(), cr = b.parentElement.getBoundingClientRect(); setFloatPos(b, Math.max(cr.left, Math.min(cr.right - r.width, r.left + dx)), Math.max(cr.top, r.top + dy)); }
+    else if (dx) { const m = flowMetrics(b); setFlowLeft(b, m, m.left + dx); }
+  }
+  placeFloats(); spreadChips(); saveSoon();
+}
+// drag one selected note's ✥ handle: they all move together
+function startGroupMove(g, e){
+  const items = [...multi].filter(b => b.isConnected).map(b => b.classList.contains('floating')
+    ? {b, float: true, br: b.getBoundingClientRect(), cr: b.parentElement.getBoundingClientRect(), z: zoomOf(b) || 1}
+    : {b, m: flowMetrics(b), z: zoomOf(b) || 1});
+  const sx = e.clientX, sy = e.clientY;
+  let dx = 0, dy = 0;
+  const place = (it) => {
+    if (it.float) { it.nl = Math.max(it.cr.left, Math.min(it.cr.right - it.br.width, it.br.left + dx)); it.nt = Math.max(it.cr.top, it.br.top + dy); it.b.style.translate = `${(it.nl - it.br.left) / it.z}px ${(it.nt - it.br.top) / it.z}px`; }
+    else { it.left = Math.max(0, Math.min(it.m.contentW - it.m.w, it.m.left + dx)); it.b.style.translate = `${(it.left - it.m.left) / it.z}px 0px`; }
+  };
+  try { g.setPointerCapture(e.pointerId); } catch {}
+  items.forEach(it => it.b.classList.add('moving'));
+  const move = ev => { dx = ev.clientX - sx; dy = ev.clientY - sy; items.forEach(place); };
+  const up = ev => {
+    g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up);
+    if (ev.type === 'pointerup') move(ev);
+    for (const it of items) {
+      it.b.classList.remove('moving'); it.b.style.translate = '';
+      if (ev.type === 'pointercancel') continue;
+      if (it.float) setFloatPos(it.b, it.nl, it.nt); else setFlowLeft(it.b, it.m, it.left);
+    }
+    placeFloats(); spreadChips(); saveSoon();
+  };
+  g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
+}
+main.addEventListener('pointerdown', e => {
+  const g = e.target.closest('.g-move'); if (!g || !multi.size) return;
+  const box = g.parentElement;
+  if (multi.has(box) && multi.size > 1) { e.preventDefault(); e.stopImmediatePropagation(); startGroupMove(g, e); }
+}, true);
+$('#selAllBtn').addEventListener('mousedown', e => e.preventDefault());
+$('#selAllBtn').onclick = () => selectAllNotes();
+$('#multibar').addEventListener('mousedown', e => e.preventDefault());
+$('#multibar').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.act === 'del') deleteMulti(); else clearMulti(); });
+const typingIn = t => t?.closest?.('input, textarea, select, [contenteditable="true"], .mine');
+document.addEventListener('keydown', e => {
+  // Ctrl+A / Cmd+A: inside a note the browser selects that note's text only; elsewhere it selects every note on the page
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'a') {
+    if (typingIn(e.target) || reading || !main.querySelector('.notebox')) return;
+    e.preventDefault(); selectAllNotes(); return;
+  }
+  if (!multi.size || typingIn(e.target)) return;
+  if (e.key === 'Escape') { e.preventDefault(); clearMulti(); }
+  else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteMulti(); }
+  else if (/^Arrow/.test(e.key)) {
+    e.preventDefault(); const st = e.shiftKey ? 10 : 1;
+    nudgeMulti(e.key === 'ArrowLeft' ? -st : e.key === 'ArrowRight' ? st : 0, e.key === 'ArrowUp' ? -st : e.key === 'ArrowDown' ? st : 0);
+  }
+});
+// clicking anywhere else (or into a note to type) ends the selection; the toolbar and menus keep it
+document.addEventListener('mousedown', e => {
+  if (!multi.size) return;
+  const t = e.target;
+  if (t.closest('header, #multibar, .chippop, #toast, .settings, .showbar')) return;
+  if (t.closest('.g-move') && multi.has(t.closest('.notebox'))) return;
+  clearMulti();
+}, true);
+main.addEventListener('focusin', e => { if (multi.size && e.target.closest?.('.mine')) clearMulti(); });
+
 // ================= ⚙ Help & settings =================
 const setPanel = $('#settings'), helpBtn = $('#helpBtn');
 function saveUserWords(){
@@ -2648,6 +2805,7 @@ function resetHistory(doc){ hist.stack = []; hist.i = -1; snapshot(doc); }
 function updateUndoBtns(){ $('#undoBtn').disabled = reading || hist.i <= 0; $('#redoBtn').disabled = reading || hist.i >= hist.stack.length - 1; }
 function stepHistory(by){
   if (reading) return;
+  clearMulti();
   flushSave();
   const j = hist.i + by; if (j < 0 || j >= hist.stack.length) return;
   hist.i = j;
