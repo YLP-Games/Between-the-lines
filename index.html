@@ -47,7 +47,7 @@ main.paged{max-width:none;align-items:center;gap:24px}
 main{max-width:960px;margin:0 auto;padding-block:20px 120px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
 
 /* slide cards: original content */
-.slide{background:var(--card);color:var(--card-ink);border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.15);padding:22px 28px 26px;cursor:text;min-width:0;overflow-wrap:anywhere;line-height:1.35}
+.slide{position:relative;background:var(--card);color:var(--card-ink);border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.15);padding:22px 28px 26px;cursor:text;min-width:0;overflow-wrap:anywhere;line-height:1.35}
 .file-head{font-family:var(--display);font-weight:600;font-size:26px;margin:14px 0 0;text-wrap:balance;overflow-wrap:anywhere}
 .slide-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--card-muted);margin-bottom:10px;cursor:default;display:flex;gap:10px;align-items:center}
 .slide .blk{margin:0 0 .45em}
@@ -77,6 +77,11 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
 .notebox:hover > .mine{box-shadow:0 0 0 1px var(--accent)}
 .grip{position:absolute;width:12px;height:12px;background:#fff;border:2px solid var(--accent);border-radius:2px;box-sizing:border-box;touch-action:none;z-index:3;opacity:0;transition:opacity .15s}
 .notebox:hover > .grip,.notebox:focus-within > .grip{opacity:1}
+.g-float{right:16px;top:-10px;width:22px;height:22px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font:700 13px/1 var(--ui);color:var(--accent);user-select:none;-webkit-user-select:none}
+.notebox.floating{position:absolute;margin:0!important;z-index:3;max-width:100%}
+.notebox.floating.collapsed{position:absolute}
+.notebox.floating > .g-float{background:var(--accent);color:#fff}
+.pagecard > .notebox.floating.collapsed > .note-chip{left:calc(var(--ci, 0) * 23px)}
 .g-min{right:-10px;top:-10px;width:22px;height:22px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font:700 15px/1 var(--ui);color:var(--accent);user-select:none;-webkit-user-select:none}
 .note-chip{display:none}
 .notebox.collapsed{display:block;position:relative;width:0!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:visible}
@@ -301,6 +306,10 @@ function spreadChips(){
 }
 function addGrips(box){
   box.querySelectorAll(':scope > .grip, :scope > .note-chip').forEach(g => g.remove());
+  if (!box.classList.contains('inline')) {
+    const fl = document.createElement('span'); fl.className = 'grip g-float'; fl.dataset.dir = 'float'; fl.textContent = '⇄';
+    fl.title = 'Put this note beside the text (on top of the page) or back between the lines'; fl.setAttribute('aria-hidden', 'true'); box.append(fl);
+  }
   const mn = document.createElement('span'); mn.className = 'grip g-min'; mn.dataset.dir = 'min'; mn.textContent = '–';
   mn.title = 'Minimise this note'; mn.setAttribute('aria-hidden', 'true'); box.append(mn);
   const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'note-chip'; chip.title = 'Show this note';
@@ -325,7 +334,7 @@ function makeBox(inline){
 }
 // notes made before resizing existed get a box and handles too
 function upgradeNotes(){
-  main.querySelectorAll('.notebox').forEach(b => { if (b.style.height) { b.style.minHeight = b.style.height; b.style.height = ''; } if ((!b.classList.contains('inline') && !b.querySelector(':scope > .g-move')) || !b.querySelector(':scope > .note-chip')) addGrips(b); });
+  main.querySelectorAll('.notebox').forEach(b => { if (b.style.height) { b.style.minHeight = b.style.height; b.style.height = ''; } if ((!b.classList.contains('inline') && (!b.querySelector(':scope > .g-move') || !b.querySelector(':scope > .g-float'))) || !b.querySelector(':scope > .note-chip')) addGrips(b); });
   main.querySelectorAll('.mine').forEach(el => {
     if (el.parentElement?.classList.contains('notebox')) { if (!el.parentElement.querySelector(':scope > .g-e')) addGrips(el.parentElement); return; }
     const inline = el.tagName === 'SPAN';
@@ -340,6 +349,10 @@ function addBlockNote(after, slide){
 }
 main.addEventListener('pointerdown', e => {
   const g = e.target.closest('.grip'); if (!g) return;
+  if (g.dataset.dir === 'float') {
+    e.preventDefault(); e.stopPropagation(); swallowClick = true; setTimeout(() => { swallowClick = false; }, 600);
+    toggleFloat(g.parentElement); return;
+  }
   if (g.dataset.dir === 'min') {
     e.preventDefault(); e.stopPropagation(); swallowClick = true; setTimeout(() => { swallowClick = false; }, 600);
     const box = g.parentElement; if (box.contains(document.activeElement)) document.activeElement.blur();
@@ -727,7 +740,75 @@ function insertBoxAt(card, y, box){
   if (above) above.after(box); else card.prepend(box);
 }
 // drag a note: sideways to place it across the page (snaps to the centre), up or down to move it between other lines
+// ---------- floating notes: a note box on top of the page (like "in front of text" in Word), so it can sit beside a line ----------
+function placeFloats(root){
+  for (const box of (root || main).querySelectorAll('.notebox.floating')) {
+    const card = box.parentElement; if (!card || !card.classList.contains('slide')) continue;
+    const s = zoomOf(card) || 1, cr = card.getBoundingClientRect(), py = +box.dataset.py || 0;
+    if (card.classList.contains('pagecard')) {
+      const strips = [...card.querySelectorAll(':scope > .strip')];
+      const st = strips.find(x => py >= +x.dataset.y0 && py < +x.dataset.y1) || strips[strips.length - 1];
+      if (!st) continue;
+      const y0 = +st.dataset.y0, y1 = +st.dataset.y1, sr = st.getBoundingClientRect();
+      box.style.top = ((sr.top - cr.top + (py - y0) / (y1 - y0) * sr.height) / s).toFixed(1) + 'px';
+    } else box.style.top = py.toFixed(1) + 'px';
+    box.style.left = ((+box.dataset.px || 0) * 100).toFixed(3) + '%';
+  }
+}
+function toggleFloat(box){
+  const card = box.closest('.slide'); if (!card) return;
+  const isPage = card.classList.contains('pagecard'), s = zoomOf(card) || 1;
+  const cr = card.getBoundingClientRect(), br = box.getBoundingClientRect();
+  if (!box.classList.contains('floating')) {
+    box.dataset.px = Math.max(0, (br.left - cr.left) / cr.width).toFixed(4);
+    if (isPage) {
+      const prev = box.previousElementSibling, next = box.nextElementSibling;
+      box.dataset.py = prev?.classList.contains('strip') ? prev.dataset.y1 : next?.classList.contains('strip') ? next.dataset.y0 : 0;
+    } else box.dataset.py = ((br.top - cr.top) / s).toFixed(1);
+    if (!box.style.width || br.width > cr.width * 0.6) box.style.width = Math.round(cr.width * 0.4 / s) + 'px';
+    box.style.marginLeft = '';
+    box.remove(); if (isPage) mergeStrips(card);
+    box.classList.add('floating'); card.append(box);
+  } else {
+    box.classList.remove('floating'); box.style.left = ''; box.style.top = '';
+    const py = +box.dataset.py || 0;
+    box.remove();
+    if (isPage) insertBoxAt(card, py, box);
+    else {
+      const blocks = [...card.querySelectorAll('.blk')].filter(b => (b.getBoundingClientRect().top - cr.top) / s <= py);
+      const after = blocks.pop();
+      if (after) after.after(box); else (card.querySelector('.content') || card).prepend(box);
+    }
+    box.style.marginLeft = ((+box.dataset.px || 0) * 100).toFixed(2) + '%';
+  }
+  if (LAYOUTS[layout]) paginateView();
+  placeFloats(); spreadChips(); saveSoon();
+}
+function startFloatMove(box, g, e){
+  const card = box.parentElement, br0 = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY;
+  g.setPointerCapture(e.pointerId); box.classList.add('moving');
+  const move = ev => { box.style.translate = `${ev.clientX - sx}px ${ev.clientY - sy}px`; };
+  const up = ev => {
+    g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up);
+    box.style.translate = ''; box.classList.remove('moving');
+    const cr = card.getBoundingClientRect(), s = zoomOf(card) || 1;
+    const nl = br0.left + ev.clientX - sx, nt = br0.top + ev.clientY - sy;
+    box.dataset.px = Math.max(0, Math.min(1 - br0.width / cr.width, (nl - cr.left) / cr.width)).toFixed(4);
+    if (card.classList.contains('pagecard')) {
+      const strips = [...card.querySelectorAll(':scope > .strip')];
+      let st = strips.find(x => { const r = x.getBoundingClientRect(); return nt >= r.top && nt < r.bottom; });
+      if (!st) st = nt < cr.top + 1 ? strips[0] : strips[strips.length - 1];
+      if (st) {
+        const r = st.getBoundingClientRect(), y0 = +st.dataset.y0, y1 = +st.dataset.y1;
+        box.dataset.py = Math.max(0, Math.min(y1 - 0.01, y0 + (nt - r.top) / r.height * (y1 - y0))).toFixed(2);
+      }
+    } else box.dataset.py = Math.max(0, (nt - cr.top) / s).toFixed(1);
+    placeFloats(); spreadChips(); saveSoon();
+  };
+  g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
+}
 function startMove(box, g, e){
+  if (box.classList.contains('floating')) return startFloatMove(box, g, e);
   const parent = box.parentElement, ps = getComputedStyle(parent), pz = zoomOf(parent), pr = parent.getBoundingClientRect();
   const padL = ((parseFloat(ps.paddingLeft) || 0) + (parseFloat(ps.borderLeftWidth) || 0)) * pz;
   const contentW = pr.width - padL - ((parseFloat(ps.paddingRight) || 0) + (parseFloat(ps.borderRightWidth) || 0)) * pz;
@@ -886,6 +967,7 @@ function openDb(){ return new Promise(res => { try { const r = indexedDB.open('b
 function put(k, v){ try { db && db.transaction('kv', 'readwrite').objectStore('kv').put(v, k); } catch {} }
 function get(k){ return new Promise(res => { try { const r = db.transaction('kv').objectStore('kv').get(k); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch { res(null); } }); }
 function saveSoon(){
+  placeFloats();
   paginateSoon(); updateNotesBtn();
   clearTimeout(timer);
   timer = setTimeout(() => {
@@ -1128,7 +1210,7 @@ function paginateView(){
     if (pendingHead.length) { const sheet = document.createElement('div'); sheet.className = 'sheet'; main.append(sheet); pendingHead.forEach(h => sheet.append(h)); }
     main.querySelectorAll('.strip').forEach(measureStrip);
   }
-  spreadChips();
+  placeFloats(); spreadChips();
   window.scrollTo(0, scrollY);
   if (focused && focused.isConnected && focused.classList?.contains('mine')) {
     focused.focus({preventScroll: true});
@@ -1138,7 +1220,7 @@ function paginateView(){
 }
 function paginateSoon(){ if (LAYOUTS[layout]) { clearTimeout(pageTimer); pageTimer = setTimeout(paginateView, 700); } }
 let resizeTimer = null;
-window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (LAYOUTS[layout]) paginateView(); }, 250); });
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (LAYOUTS[layout]) paginateView(); else { placeFloats(); spreadChips(); } }, 250); });
 
 $('#notesToggle').onclick = () => {
   const boxes = [...main.querySelectorAll('.notebox')];
