@@ -50,8 +50,8 @@ details.orig img{border:1px solid #d3d9e3}
 /* your notes */
 .mine{outline:none;border-radius:3px;font-family:Caveat,cursive;font-size:24px;color:#1f4fd1;cursor:text;line-height:1.3}
 .slide img.formula{max-width:100%;margin:.3em 0}
-span.mine{padding:0 .2em;background:rgba(39,71,201,.06)}
-div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5em;background:rgba(39,71,201,.06);border-left:3px solid #e06b6b}
+span.mine{padding:0 .2em;background:transparent;border:1px solid #9aa3b2}
+div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5em;background:transparent;border:1px solid #9aa3b2}
 .pagecard{padding:0;overflow:hidden;background:#fff}
 .strip{position:relative;overflow:hidden;width:100%;max-width:100%;background-image:var(--pg);background-size:100% auto;background-repeat:no-repeat;cursor:text;font-size:0;color:transparent;container-type:inline-size}
 .tl{position:absolute;white-space:pre;line-height:1;transform-origin:0 0;color:transparent;font-family:Arial,Helvetica,sans-serif;cursor:text}
@@ -59,12 +59,21 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
 .gapline{position:absolute;left:0;right:0;border-top:2px dashed var(--accent);pointer-events:none;z-index:2}
 .gappill{position:absolute;left:8px;transform:translateY(-50%);z-index:3;font:600 13px var(--ui);padding:5px 12px;background:var(--accent);color:var(--surface);border:none;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);user-select:none;-webkit-user-select:none}
 .notebox{position:relative;display:flex;flex-direction:column;width:100%;max-width:100%;margin:.2em 0 .5em;box-sizing:border-box}
-.notebox > .mine{flex:1 1 auto;min-height:0;overflow:auto;margin:0 !important;padding-right:22px}
-.grip{position:absolute;right:2px;bottom:2px;width:16px;height:16px;cursor:nwse-resize;touch-action:none;opacity:.75;
-  background:linear-gradient(135deg,transparent 45%,#7d8796 45%,#7d8796 55%,transparent 55%,transparent 70%,#7d8796 70%,#7d8796 80%,transparent 80%)}
-.pagecard > div.mine{margin:0;padding:8px 14px;border-left-width:4px;background:#f3f6ff}
-.pagecard > .notebox{margin:0}
-.pagecard > .notebox > .mine{padding:8px 22px 8px 14px;border-left-width:4px;background:#f3f6ff}
+.notebox > .mine{flex:1 1 auto;min-height:0;overflow:visible;margin:0 !important;padding-right:22px}
+.notebox.inline{display:inline-flex;width:auto;vertical-align:baseline;margin:0 .15em}
+.notebox.inline > .mine{padding:0 14px 0 .25em}
+.notebox:hover > .mine{box-shadow:0 0 0 1px var(--accent)}
+.grip{position:absolute;width:12px;height:12px;background:#fff;border:2px solid var(--accent);border-radius:2px;box-sizing:border-box;touch-action:none;z-index:3;opacity:0;transition:opacity .15s}
+.notebox:hover > .grip,.notebox:focus-within > .grip{opacity:1}
+@media (hover:none){.grip{opacity:1;width:16px;height:16px}}
+.g-se{right:0;bottom:0;cursor:nwse-resize}
+.g-e{right:0;top:50%;transform:translateY(-50%);cursor:ew-resize}
+.g-s{bottom:0;left:50%;transform:translateX(-50%);cursor:ns-resize}
+.notebox.inline > .g-s{display:none}
+.pagecard > div.mine{margin:0 14px;padding:8px 14px}
+.pagecard > .notebox{margin:4px 0;padding:0 14px}
+.pagecard > .notebox > .mine{padding:8px 22px 8px 14px}
+.pagecard > .notebox > .g-e,.pagecard > .notebox > .g-se{right:14px}
 .mine:focus{box-shadow:0 0 0 2px var(--accent)}
 .mine:empty::before{content:"type here";opacity:.45}
 
@@ -208,13 +217,30 @@ function caretAt(x, y){
   const r = document.caretRangeFromPoint && document.caretRangeFromPoint(x, y);
   return r && {node: r.startContainer, offset: r.startOffset};
 }
-// a note box you can resize from its corner, like a text box in Word
-function makeBox(){
-  const box = document.createElement('div'); box.className = 'notebox';
-  const el = makeNote('div');
-  const grip = document.createElement('span'); grip.className = 'grip'; grip.title = 'Drag to resize';
-  box.append(el, grip);
+// a note box with handles on its right edge, bottom edge and corner, like a text box in Word
+function addGrips(box){
+  box.querySelectorAll(':scope > .grip').forEach(g => g.remove());
+  for (const d of ['e', 's', 'se']) {
+    const g = document.createElement('span'); g.className = 'grip g-' + d; g.dataset.dir = d;
+    g.title = d === 'e' ? 'Drag to change the width' : d === 's' ? 'Drag to change the height' : 'Drag to resize';
+    box.append(g);
+  }
+}
+function makeBox(inline){
+  const box = document.createElement(inline ? 'span' : 'div'); box.className = inline ? 'notebox inline' : 'notebox';
+  const el = makeNote(inline ? 'span' : 'div');
+  box.append(el); addGrips(box);
   return {box, el};
+}
+// notes made before resizing existed get a box and handles too
+function upgradeNotes(){
+  main.querySelectorAll('.notebox').forEach(b => { if (b.style.height) { b.style.minHeight = b.style.height; b.style.height = ''; } });
+  main.querySelectorAll('.mine').forEach(el => {
+    if (el.parentElement?.classList.contains('notebox')) { if (!el.parentElement.querySelector(':scope > .g-e')) addGrips(el.parentElement); return; }
+    const inline = el.tagName === 'SPAN';
+    const box = document.createElement(inline ? 'span' : 'div'); box.className = inline ? 'notebox inline' : 'notebox';
+    el.replaceWith(box); box.append(el); addGrips(box);
+  });
 }
 function addBlockNote(after, slide){
   const {box, el} = makeBox();
@@ -224,12 +250,13 @@ function addBlockNote(after, slide){
 main.addEventListener('pointerdown', e => {
   const g = e.target.closest('.grip'); if (!g) return;
   e.preventDefault();
-  const box = g.parentElement, r = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY;
-  const max = box.parentElement.clientWidth;
+  const box = g.parentElement, r = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, dir = g.dataset.dir || 'se';
+  const holder = box.closest('.content, .slide') || box.parentElement;
+  const max = holder.getBoundingClientRect().right - r.left;
   g.setPointerCapture(e.pointerId);
   const move = ev => {
-    box.style.width = Math.round(Math.max(120, Math.min(max, r.width + ev.clientX - sx))) + 'px';
-    box.style.height = Math.round(Math.max(40, r.height + ev.clientY - sy)) + 'px';
+    if (dir.includes('e')) box.style.width = Math.round(Math.max(60, Math.min(max, r.width + ev.clientX - sx))) + 'px';
+    if (dir.includes('s')) { box.style.height = ''; box.style.minHeight = Math.round(Math.max(30, r.height + ev.clientY - sy)) + 'px'; }
   };
   const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); saveSoon(); };
   g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
@@ -254,8 +281,8 @@ main.addEventListener('click', e => {
   if (!tail.toString().trim() && e.clientX - rect.right > 24) return addBlockNote(blk, slide);
   while (off < text.length && !/\s/.test(text[off])) off++;   // snap to end of the clicked word
   const after = c.node.splitText(off);
-  const el = makeNote('span');
-  after.parentNode.insertBefore(el, after);
+  const {box, el} = makeBox(true);
+  after.parentNode.insertBefore(box, after);
   focusNote(el);
 });
 main.addEventListener('keydown', e => {
@@ -695,7 +722,7 @@ showEmpty();
   db = await openDb(); if (!db) return;
   const [d, s, n] = await Promise.all([get('doc'), get('style'), get('count')]);
   if (s) { style = s; showStyle(style); }
-  if (d) { main.innerHTML = d; slideCount = n || 0; main.querySelectorAll('.slide-label').forEach(e => e.remove()); }
+  if (d) { main.innerHTML = d; slideCount = n || 0; main.querySelectorAll('.slide-label').forEach(e => e.remove()); upgradeNotes(); }
 })();
 </script>
 
