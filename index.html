@@ -77,6 +77,15 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
 .notebox:hover > .mine{box-shadow:0 0 0 1px var(--accent)}
 .grip{position:absolute;width:12px;height:12px;background:#fff;border:2px solid var(--accent);border-radius:2px;box-sizing:border-box;touch-action:none;z-index:3;opacity:0;transition:opacity .15s}
 .notebox:hover > .grip,.notebox:focus-within > .grip{opacity:1}
+.g-min{right:-10px;top:-10px;width:22px;height:22px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font:700 15px/1 var(--ui);color:var(--accent);user-select:none;-webkit-user-select:none}
+.note-chip{display:none}
+.notebox.collapsed{display:block;width:auto!important;min-height:0!important;margin-left:0}
+.notebox.inline.collapsed{display:inline-block;vertical-align:middle}
+.notebox.collapsed > .mine,.notebox.collapsed > .grip{display:none}
+.notebox.collapsed > .note-chip{display:inline-flex;align-items:center;max-width:280px;font:12px/1.3 var(--ui);color:#5a4500;background:#fff3b8;border:1px solid #e0c34a;border-radius:4px;padding:3px 8px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pagecard > .notebox.collapsed{margin:2px 14px}
+main.clean .notebox{height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden;width:auto!important}
+main.clean .notebox > *{display:none!important}
 .g-move{left:-10px;top:-10px;width:22px;height:22px;border-radius:50%;cursor:move;display:flex;align-items:center;justify-content:center;font:13px/1 var(--ui);color:var(--accent);user-select:none;-webkit-user-select:none}
 .notebox.moving{opacity:.9;z-index:6}
 .notebox.moving > .mine{box-shadow:0 6px 18px rgba(0,0,0,.22);background:rgba(255,255,255,.85)}
@@ -128,10 +137,18 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
     <span class="savewrap">
       <button id="save" class="primary" aria-haspopup="true" aria-expanded="false">Download ▾</button>
       <div class="savemenu" id="saveMenu" hidden>
+        <label class="layout" for="pdfNotes">Notes in the PDF
+          <select id="pdfNotes">
+            <option value="page">Shown on the page</option>
+            <option value="comments">As comments you click to open</option>
+            <option value="none">Left out</option>
+          </select>
+        </label>
         <button type="button" data-kind="pdf"><strong>PDF</strong><small>Your pages and notes, in the layout you picked</small></button>
         <button type="button" data-kind="notebook"><strong>Notebook file</strong><small>Open it later on any device to keep editing</small></button>
       </div>
     </span>
+    <button id="notesToggle" hidden>Hide notes</button>
     <button id="clear">Clear all</button>
     <div class="hint" id="hint"></div>
     <div id="status" aria-live="polite"></div>
@@ -248,8 +265,29 @@ function caretAt(x, y){
   return r && {node: r.startContainer, offset: r.startOffset};
 }
 // a note box with handles on its right edge, bottom edge and corner, like a text box in Word
+// minimise a note to a small tab (like a comment in Word), or open it again
+function setCollapsed(box, on){
+  box.classList.toggle('collapsed', on);
+  const chip = box.querySelector(':scope > .note-chip');
+  if (on && chip) {
+    const t = (box.querySelector('.mine')?.innerText || '').trim().replace(/\s+/g, ' ') || 'Note';
+    chip.textContent = '✎ ' + (t.length > 40 ? t.slice(0, 40) + '…' : t);
+  }
+}
+function updateNotesBtn(){
+  const boxes = [...main.querySelectorAll('.notebox')];
+  const btn = $('#notesToggle');
+  btn.hidden = !boxes.length;
+  btn.textContent = boxes.some(b => !b.classList.contains('collapsed')) ? 'Hide notes' : 'Show notes';
+}
+function afterNotesToggle(){ updateNotesBtn(); if (LAYOUTS[layout]) paginateView(); saveSoon(); }
 function addGrips(box){
-  box.querySelectorAll(':scope > .grip').forEach(g => g.remove());
+  box.querySelectorAll(':scope > .grip, :scope > .note-chip').forEach(g => g.remove());
+  const mn = document.createElement('span'); mn.className = 'grip g-min'; mn.dataset.dir = 'min'; mn.textContent = '–';
+  mn.title = 'Minimise this note'; mn.setAttribute('aria-hidden', 'true'); box.append(mn);
+  const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'note-chip'; chip.title = 'Show this note';
+  box.append(chip);
+  if (box.classList.contains('collapsed')) setCollapsed(box, true);
   if (!box.classList.contains('inline')) {
     const m = document.createElement('span'); m.className = 'grip g-move'; m.dataset.dir = 'move'; m.textContent = '✥';
     m.title = 'Drag to move this note'; m.setAttribute('aria-hidden', 'true');
@@ -269,7 +307,7 @@ function makeBox(inline){
 }
 // notes made before resizing existed get a box and handles too
 function upgradeNotes(){
-  main.querySelectorAll('.notebox').forEach(b => { if (b.style.height) { b.style.minHeight = b.style.height; b.style.height = ''; } if (!b.classList.contains('inline') && !b.querySelector(':scope > .g-move')) addGrips(b); });
+  main.querySelectorAll('.notebox').forEach(b => { if (b.style.height) { b.style.minHeight = b.style.height; b.style.height = ''; } if ((!b.classList.contains('inline') && !b.querySelector(':scope > .g-move')) || !b.querySelector(':scope > .note-chip')) addGrips(b); });
   main.querySelectorAll('.mine').forEach(el => {
     if (el.parentElement?.classList.contains('notebox')) { if (!el.parentElement.querySelector(':scope > .g-e')) addGrips(el.parentElement); return; }
     const inline = el.tagName === 'SPAN';
@@ -284,6 +322,7 @@ function addBlockNote(after, slide){
 }
 main.addEventListener('pointerdown', e => {
   const g = e.target.closest('.grip'); if (!g) return;
+  if (g.dataset.dir === 'min') { e.preventDefault(); setCollapsed(g.parentElement, true); afterNotesToggle(); return; }
   if (g.dataset.dir === 'move') return startMove(g.parentElement, g, e);
   e.preventDefault();
   const box = g.parentElement, r = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, dir = g.dataset.dir || 'se';
@@ -298,6 +337,8 @@ main.addEventListener('pointerdown', e => {
   g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
 });
 main.addEventListener('click', e => {
+  const chip = e.target.closest('.note-chip');
+  if (chip) { const box = chip.parentElement; setCollapsed(box, false); afterNotesToggle(); const m = box.querySelector('.mine'); if (m) focusNote(m); return; }
   if (e.target.closest('.mine, .notebox, .gappill, details, summary, .slide-label, a')) return;
   const strip = e.target.closest('.strip');
   if (strip) { if (!getSelection().toString()) showGap(strip, e.clientY); return; }
@@ -820,7 +861,7 @@ function openDb(){ return new Promise(res => { try { const r = indexedDB.open('b
 function put(k, v){ try { db && db.transaction('kv', 'readwrite').objectStore('kv').put(v, k); } catch {} }
 function get(k){ return new Promise(res => { try { const r = db.transaction('kv').objectStore('kv').get(k); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch { res(null); } }); }
 function saveSoon(){
-  paginateSoon();
+  paginateSoon(); updateNotesBtn();
   clearTimeout(timer);
   timer = setTimeout(() => {
     put('doc', main.querySelector('.empty') ? '' : currentDoc());
@@ -925,23 +966,31 @@ async function paintCard(card, scale){
   }
   return c;
 }
+const utf16 = t => '<FEFF' + [...String(t)].map(ch => { let h = ''; for (let i = 0; i < ch.length; i++) h += ch.charCodeAt(i).toString(16).padStart(4, '0'); return h; }).join('').toUpperCase() + '>';
 function makePdf(pages){
   const enc = new TextEncoder(), chunks = [], offs = [];
   let len = 0;
   const push = d => { const b = typeof d === 'string' ? enc.encode(d) : d; chunks.push(b); len += b.length; };
   const obj = (num, ...parts) => { offs[num] = len; push(`${num} 0 obj\n`); parts.forEach(push); push('\nendobj\n'); };
+  // number every object first: catalog 1, page tree 2, then each page, its content, its picture and its comments
+  let next = 3;
+  const plan = pages.map(p => ({p, pg: next++, ct: next++, im: next++, an: (p.annots || []).map(() => next++)}));
+  const total = next - 1;
   push('%PDF-1.4\n%âãÏÓ\n');
-  const n = pages.length, total = 2 + n * 3;
   obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
-  obj(2, `<< /Type /Pages /Kids [${pages.map((_, i) => `${3 + i * 3} 0 R`).join(' ')}] /Count ${n} >>`);
-  pages.forEach((p, i) => {
-    const pg = 3 + i * 3, ct = pg + 1, im = pg + 2;
+  obj(2, `<< /Type /Pages /Kids [${plan.map(x => `${x.pg} 0 R`).join(' ')}] /Count ${plan.length} >>`);
+  for (const {p, pg, ct, im, an} of plan) {
     const pw = p.pw || 595.28, ph = p.ph || +(pw * p.h / p.w).toFixed(2);
     const content = `q ${pw} 0 0 ${ph} 0 0 cm /Im0 Do Q`;
-    obj(pg, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /XObject << /Im0 ${im} 0 R >> >> /Contents ${ct} 0 R >>`);
+    const annots = an.length ? ` /Annots [${an.map(n => `${n} 0 R`).join(' ')}]` : '';
+    obj(pg, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /XObject << /Im0 ${im} 0 R >> >> /Contents ${ct} 0 R${annots} >>`);
     obj(ct, `<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
     obj(im, `<< /Type /XObject /Subtype /Image /Width ${p.w} /Height ${p.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${p.jpeg.length} >>\nstream\n`, p.jpeg, '\nendstream');
-  });
+    (p.annots || []).forEach((a, k) => {
+      const x = Math.min(pw - 22, Math.max(2, a.fx * pw)), y = Math.min(ph - 2, Math.max(22, ph - a.fy * ph));
+      obj(an[k], `<< /Type /Annot /Subtype /Text /Rect [${x.toFixed(1)} ${(y - 20).toFixed(1)} ${(x + 20).toFixed(1)} ${y.toFixed(1)}] /Contents ${utf16(a.text)} /T ${utf16('My note')} /Name /Comment /Open false /C [1 0.84 0.2] /F 4 /P ${pg} 0 R >>`);
+    });
+  }
   const xref = len;
   push(`xref\n0 ${total + 1}\n0000000000 65535 f \n` + offs.slice(1).map(o => String(o).padStart(10, '0') + ' 00000 n \n').join(''));
   push(`trailer\n<< /Size ${total + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
@@ -951,21 +1000,36 @@ async function downloadPdf(){
   hideGap();
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   try { await document.fonts.ready; } catch {}
-  const size = LAYOUTS[layout];
-  if (size) paginateView();
-  const cards = size ? [...main.querySelectorAll('.sheet')] : [...main.querySelectorAll('.slide')];
-  const sheets = [];
-  for (let i = 0; i < cards.length; i++) {
-    status(`Making your PDF: page ${i + 1} of ${cards.length}`);
-    const canvas = await paintCard(cards[i], 2 / viewZoom);
-    sheets.push(size ? {canvas, pw: size[0], ph: size[1]} : {canvas});
+  const mode = $('#pdfNotes').value;           // page | comments | none
+  const boxes = [...main.querySelectorAll('.notebox')];
+  const wasCollapsed = boxes.map(b => b.classList.contains('collapsed'));
+  if (mode === 'page') boxes.forEach(b => b.classList.remove('collapsed'));
+  else main.classList.add('clean');            // notes take no room, so the pages look like the originals
+  try {
+    const size = LAYOUTS[layout];
+    paginateView();
+    const cards = size ? [...main.querySelectorAll('.sheet')] : [...main.querySelectorAll('.slide')];
+    const pages = [];
+    for (let i = 0; i < cards.length; i++) {
+      status(`Making your PDF: page ${i + 1} of ${cards.length}`);
+      const card = cards[i], cr = card.getBoundingClientRect();
+      const annots = [];
+      if (mode === 'comments') for (const b of card.querySelectorAll('.notebox')) {
+        const text = (b.querySelector('.mine')?.innerText || '').trim(); if (!text) continue;
+        const br = b.getBoundingClientRect();
+        annots.push({fx: (br.left - cr.left) / cr.width, fy: (br.top - cr.top) / cr.height, text});
+      }
+      const canvas = await paintCard(card, 2 / viewZoom);
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
+      pages.push({w: canvas.width, h: canvas.height, pw: size?.[0], ph: size?.[1], annots, jpeg: new Uint8Array(await blob.arrayBuffer())});
+    }
+    const extra = [size ? layout.replace('-', ' ') : '', mode === 'comments' ? 'comments' : mode === 'none' ? 'no notes' : ''].filter(Boolean).join(', ');
+    await saveFile(notebookName() + ` (notes${extra ? ', ' + extra : ''}).pdf`, makePdf(pages));
+  } finally {
+    main.classList.remove('clean');
+    boxes.forEach((b, i) => b.classList.toggle('collapsed', wasCollapsed[i]));
+    paginateView();
   }
-  const pages = [];
-  for (const sh of sheets) {
-    const blob = await new Promise(res => sh.canvas.toBlob(res, 'image/jpeg', 0.9));
-    pages.push({w: sh.canvas.width, h: sh.canvas.height, pw: sh.pw, ph: sh.ph, jpeg: new Uint8Array(await blob.arrayBuffer())});
-  }
-  await saveFile(notebookName() + (size ? ` (notes, ${layout.replace('-', ' ')})` : ' (notes)') + '.pdf', makePdf(pages));
 }
 
 // page sizes in points (1/72 inch)
@@ -1067,6 +1131,13 @@ function paginateSoon(){ if (LAYOUTS[layout]) { clearTimeout(pageTimer); pageTim
 let resizeTimer = null;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (LAYOUTS[layout]) paginateView(); }, 250); });
 
+$('#notesToggle').onclick = () => {
+  const boxes = [...main.querySelectorAll('.notebox')];
+  const hide = boxes.some(b => !b.classList.contains('collapsed'));
+  if (document.activeElement?.closest?.('.notebox')) document.activeElement.blur();
+  boxes.forEach(b => setCollapsed(b, hide));
+  afterNotesToggle();
+};
 const saveMenu = $('#saveMenu');
 $('#save').onclick = e => { e.stopPropagation(); saveMenu.hidden = !saveMenu.hidden; $('#save').setAttribute('aria-expanded', !saveMenu.hidden); };
 document.addEventListener('click', e => { if (!e.target.closest('.savewrap')) { saveMenu.hidden = true; $('#save').setAttribute('aria-expanded', 'false'); } });

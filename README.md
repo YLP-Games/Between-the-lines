@@ -5,11 +5,12 @@ A simple web page for taking notes on lecture slides.
 - Open a **PDF** and each page shows exactly as it is, with background graphics, side bands and slide numbers removed.
 - Point at a spot on a page and press **+ Add note here**. The page opens up at the nearest gap between lines, and you type in your own font, size and colour.
 - Notes sit in clear boxes. Drag a box's edges to resize it, or its ✥ handle to move it across the page (it snaps to the centre) or to another spot between lines, like a text box in Word.
+- Minimise a note to a small tab with its **–** button (like a comment in Word), or use **Hide notes / Show notes** for all of them at once.
 - Select and copy text from the PDF pages.
 - **PowerPoint (.pptx)** and **Word (.docx)** files open as text with their formatting, and you can type inside sentences too.
 - Pick a **page layout** (Default, A4 or A3, portrait or landscape) and the page shows your work on sheets of that size, re-flowing as you add notes.
 - Notes are saved automatically in your browser.
-- **Download** your work as a **PDF** (pages with your notes, to read or print, in the layout you picked) or as a **notebook file** (one .html file you can open later on any device, or with Open file, to keep editing).
+- **Download** your work as a **PDF** (pages with your notes, to read or print, in the layout you picked, with notes shown on the page, as PDF comments you click to open, or left out) or as a **notebook file** (one .html file you can open later on any device, or with Open file, to keep editing).
 
 ## Use it
 
