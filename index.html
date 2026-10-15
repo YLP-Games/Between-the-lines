@@ -198,6 +198,14 @@ body.reading #tools,body.reading #fmtbar,body.reading #clear{display:none!import
 .slide .media-sel{outline:3px solid var(--accent)!important;outline-offset:2px}
 .slide img.blk:not(.formula){cursor:pointer}
 main.reading .slide img.blk{cursor:auto}
+/* spell check */
+::highlight(spell){text-decoration:underline wavy #e53935;text-decoration-thickness:1.5px;text-underline-offset:2px;text-decoration-skip-ink:none}
+.spellmenu{position:fixed;z-index:47;min-width:190px;max-width:280px;padding:4px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.2);display:flex;flex-direction:column;font:14px var(--ui)}
+.spellmenu button{all:unset;box-sizing:border-box;padding:7px 10px;border-radius:5px;cursor:pointer;overflow-wrap:anywhere}
+.spellmenu button:hover,.spellmenu button:focus-visible{background:var(--bg)}
+.spellmenu button.sug{font-weight:600}
+.spellmenu .none{padding:7px 10px;color:var(--muted);font-style:italic}
+.spellmenu hr{border:none;border-top:1px solid var(--line);margin:4px 2px}
 /* colour menu for a minimised note's ✎ icon */
 .chippop{position:fixed;z-index:46;display:flex;flex-direction:column;gap:6px;padding:8px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.2);font-size:12px}
 .chippop .row{display:flex;gap:5px;align-items:center;flex-wrap:wrap;max-width:200px}
@@ -336,6 +344,12 @@ main.reading .slide img.blk{cursor:auto}
       <button data-cmd="hiliteColor" id="hlBtn" title="Highlight the selected words"><span class="hl">ab</span></button>
       <input type="color" id="hlColor" value="#fff176" aria-label="Highlight colour" title="Highlight colour">
       <button data-cmd="removeFormat" title="Clear formatting of the selected words">Clear format</button>
+      <span class="sep"></span>
+      <select id="spellLang" aria-label="Spell check" title="Spell check: misspelt words get a red wavy line; right-click one (or tap it) for suggestions">
+        <option value="en-US">✓ Spelling: US English</option>
+        <option value="en-GB">✓ Spelling: UK English</option>
+        <option value="off">Spelling: off</option>
+      </select>
       <span class="sep"></span>
       <button id="addPageBtn" title="Add a blank page after the current page (the one you last clicked)">+ Page after</button>
       <button id="delPageBtn" title="Remove the current page (the one you last clicked)">Remove page</button>
@@ -540,7 +554,7 @@ $('#hlColor').oninput = e => { $('#hlBtn .hl').style.background = e.target.value
 /* ================= adding your notes ================= */
 function makeNote(tag){
   const el = document.createElement(tag);
-  el.className = 'mine'; el.contentEditable = 'true';
+  el.className = 'mine'; el.contentEditable = 'true'; el.spellcheck = nativeSpell();
   el.style.fontFamily = fontCss(style.font); el.style.fontSize = style.size + 'px'; el.style.color = style.color;
   return el;
 }
@@ -789,7 +803,7 @@ main.addEventListener('keydown', e => {
   if (e.key === 'Tab' && (inLi || note.tagName === 'DIV')) { e.preventDefault(); document.execCommand('styleWithCSS', false, false); document.execCommand(e.shiftKey ? 'outdent' : 'indent'); saveSoon(); return; }
   if (e.key === 'Enter' && !inLi) { e.preventDefault(); document.execCommand('insertLineBreak'); }
 });
-main.addEventListener('input', e => { const m = e.target.closest?.('.mine'); if (m) wrapMedia(m); saveSoon(); });
+main.addEventListener('input', e => { const m = e.target.closest?.('.mine'); if (m) { wrapMedia(m); spellSoon(m); } saveSoon(); });
 main.addEventListener('pointerdown', e => { const b = e.target.closest('.notebox'); if (b && !b.classList.contains('collapsed')) raise(b); }, true);
 main.addEventListener('focusin', e => raise(e.target.closest?.('.notebox')));
 document.addEventListener('focusout', e => {
@@ -1793,7 +1807,7 @@ function paginateView(){
     if (pendingHead.length) { const sheet = document.createElement('div'); sheet.className = 'sheet'; main.append(sheet); pendingHead.forEach(h => sheet.append(h)); }
     main.querySelectorAll('.strip').forEach(measureStrip);
   }
-  placeFloats(); spreadChips();
+  placeFloats(); spreadChips(); spellAllSoon();
   window.scrollTo(0, scrollY);
   if (focused && focused.isConnected && focused.classList?.contains('mine')) {
     focused.focus({preventScroll: true});
@@ -2142,9 +2156,217 @@ $('#readBtn').onclick = () => {
   reading = !reading;
   try { localStorage.setItem('study-mode', reading ? '1' : '0'); } catch {}
   if (reading) { if (document.activeElement?.closest?.('.mine')) document.activeElement.blur(); active = null; savedRange = null; hideGap(); clearMediaSel(); fPanel.hidden = true; }
-  applyReadMode(); hint();
+  applyReadMode(); hint(); spellAll();
   status(reading ? 'Study mode: nothing can be changed by accident. You can still open and minimise notes.' : '');
 };
+
+// ================= spell check =================
+// misspelt words in your notes get a red wavy line (drawn with the CSS Highlight API, so the notes themselves are untouched);
+// right-click one, or tap it, for suggestions. Dictionaries: Hunspell US / UK English, checked with Typo.js.
+const SPELL_LIB = 'https://cdn.jsdelivr.net/npm/typo-js@1.2.4/typo.js';
+const SPELL_DICTS = {'en-US': ['https://cdn.jsdelivr.net/npm/dictionary-en@4.0.0/index', 'en_US'], 'en-GB': ['https://cdn.jsdelivr.net/npm/dictionary-en-gb@3.0.0/index', 'en_GB']};
+const canHighlight = !!(window.CSS && CSS.highlights && window.Highlight);
+let spellLang = /^en-(GB|AU|NZ|IE|ZA|IN)/i.test(navigator.language || '') ? 'en-GB' : 'en-US';
+try { const l = localStorage.getItem('spell-lang'); if (l && (l in SPELL_DICTS || l === 'off')) spellLang = l; } catch {}
+let spellDict = null, spellFailed = false, spellLoading = null, spellCache = new Map();
+let userWords = new Set(); try { userWords = new Set(JSON.parse(localStorage.getItem('spell-words') || '[]')); } catch {}
+const ignoredWords = new Set();
+const spellHl = canHighlight ? new Highlight() : null;
+if (spellHl) CSS.highlights.set('spell', spellHl);
+const spellRanges = new Map();          // note -> [{range, word}]
+// the browser's own spell check is used only when ours can't run (an older browser, or no internet for the dictionary)
+function nativeSpell(){ return spellLang !== 'off' && (!canHighlight || spellFailed); }
+function loadSpell(){
+  if (spellLang === 'off' || !canHighlight) return Promise.resolve(null);
+  const lang = spellLang;
+  return spellLoading || (spellLoading = (async () => {
+    try {
+      if (!window.Typo) await loadScript(SPELL_LIB);
+      const [base, code] = SPELL_DICTS[lang];
+      const [aff, dic] = await Promise.all(['.aff', '.dic'].map(x => fetch(base + x).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })));
+      await new Promise(r => setTimeout(r, 0));
+      if (lang !== spellLang) return null;
+      spellDict = new Typo(code, aff, dic); spellFailed = false; spellCache = new Map();
+    } catch (err) { console.warn('Spell check dictionary could not load', err); spellFailed = true; spellDict = null; }
+    spellLoading = null; spellAll();
+    return spellDict;
+  })());
+}
+function wordOk(w){
+  if (spellCache.has(w)) return spellCache.get(w);
+  const lw = w.toLowerCase();
+  const ok = w.length < 2 || (w === w.toUpperCase()) || userWords.has(lw) || ignoredWords.has(lw) ||
+    spellDict.check(w) || (/'s$/i.test(w) && spellDict.check(w.slice(0, -2))) || (/^[A-Z][a-z]/.test(w) && spellDict.check(lw));
+  spellCache.set(w, ok); return ok;
+}
+// the note's text as one string (so words split by bold/italic still count as one), with a map back to the text nodes
+function noteText(note){
+  const parts = []; let text = '';
+  const walk = n => {
+    for (const c of n.childNodes) {
+      if (c.nodeType === 3) { parts.push([text.length, c]); text += c.data; }
+      else if (c.nodeType === 1) {
+        if (c.matches('.formula, .media, .katex, br, img, video, audio')) { text += ' '; continue; }
+        const block = /^(DIV|P|LI|UL|OL|BLOCKQUOTE|H\d|TABLE|TR|TD)$/.test(c.tagName);
+        if (block) text += ' ';
+        walk(c);
+        if (block) text += ' ';
+      }
+    }
+  };
+  walk(note);
+  return {text, parts};
+}
+function posAt(parts, i, end){
+  let lo = 0, hi = parts.length - 1;
+  while (lo < hi) { const m = (lo + hi + 1) >> 1; if (parts[m][0] < i || (!end && parts[m][0] === i)) lo = m; else hi = m - 1; }
+  const [start, node] = parts[lo]; return [node, Math.min(node.data.length, i - start)];
+}
+function spellNote(note, all){
+  spellRanges.delete(note);
+  if (!spellDict || reading || !note.isConnected) return;
+  const {text, parts} = noteText(note); if (!parts.length) return;
+  const sel = getSelection(), typing = !all && document.activeElement === note && sel.rangeCount && sel.isCollapsed ? sel.getRangeAt(0) : null;
+  const found = [];
+  for (const m of text.matchAll(/[A-Za-zÀ-ÖØ-öø-ÿ]+(?:['’][A-Za-zÀ-ÖØ-öø-ÿ]+)*/g)) {
+    const w = m[0].replace(/’/g, "'");
+    if (/\d/.test(text[m.index - 1] || '') || /\d/.test(text[m.index + m[0].length] || '') || wordOk(w)) continue;
+    const r = document.createRange();
+    try { r.setStart(...posAt(parts, m.index, false)); r.setEnd(...posAt(parts, m.index + m[0].length, true)); } catch { continue; }
+    // the word you are still typing isn't marked until you move on from it
+    if (typing && r.comparePoint(typing.startContainer, typing.startOffset) === 0) continue;
+    found.push({range: r, word: w});
+  }
+  if (found.length) spellRanges.set(note, found);
+}
+function paintSpell(){
+  if (!spellHl) return;
+  spellHl.clear();
+  for (const [note, list] of spellRanges) { if (!note.isConnected) { spellRanges.delete(note); continue; } list.forEach(x => spellHl.add(x.range)); }
+}
+const spellQueue = new Set(); let spellTimer = null, spellAllTimer = null;
+function spellSoon(note){ spellQueue.add(note); clearTimeout(spellTimer); spellTimer = setTimeout(() => { spellQueue.forEach(n => spellNote(n)); spellQueue.clear(); paintSpell(); }, 350); }
+function spellAllSoon(){ clearTimeout(spellAllTimer); spellAllTimer = setTimeout(spellAll, 60); }
+function spellAll(){
+  clearTimeout(spellAllTimer);
+  const native = nativeSpell();
+  main.querySelectorAll('.mine').forEach(n => { if (n.spellcheck !== native) n.spellcheck = native; });
+  spellRanges.clear();
+  if (spellDict && !reading && spellLang !== 'off') main.querySelectorAll('.mine').forEach(n => spellNote(n));
+  paintSpell();
+}
+// moving the cursor off a word you just typed marks it if it is misspelt
+document.addEventListener('selectionchange', () => { if (spellDict && active && document.body.contains(active)) spellSoon(active); });
+const spellSel = $('#spellLang'); spellSel.value = spellLang;
+spellSel.onchange = () => {
+  spellLang = spellSel.value; try { localStorage.setItem('spell-lang', spellLang); } catch {}
+  spellDict = null; spellFailed = false; spellLoading = null; spellCache = new Map();
+  spellAll(); loadSpell();
+  if (active && document.body.contains(active)) restoreSel();
+};
+// the suggestions menu
+const spellMenu = document.createElement('div'); spellMenu.className = 'spellmenu'; spellMenu.hidden = true; spellMenu.setAttribute('role', 'menu');
+document.body.append(spellMenu);
+let spellHitNow = null;
+function spellHit(note, x, y){
+  spellNote(note, true); paintSpell();          // include the word the cursor is in (right-clicking puts it there)
+  for (const h of spellRanges.get(note) || []) for (const r of h.range.getClientRects()) if (x >= r.left - 1 && x <= r.right + 1 && y >= r.top - 2 && y <= r.bottom + 2) return {...h, note};
+  return null;
+}
+function openSpellMenu(hit, x, y){
+  spellHitNow = hit;
+  const btn = (cls, label, act) => { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = label; b.dataset.act = act; b.setAttribute('role', 'menuitem'); return b; };
+  spellMenu.replaceChildren(Object.assign(document.createElement('div'), {className: 'none', textContent: 'Looking for suggestions…'}));
+  spellMenu.append(document.createElement('hr'), btn('', `Add “${hit.word}” to dictionary`, 'add'), btn('', 'Ignore', 'ignore'));
+  spellMenu.hidden = false; placeSpellMenu(x, y);
+  setTimeout(() => {                 // suggestions can take a moment for long words
+    if (spellHitNow !== hit) return;
+    const sug = spellDict ? spellSuggest(spellDict, hit.word) : [];
+    const head = spellMenu.querySelector('.none'); if (!head) return;
+    if (!sug.length) head.textContent = 'No suggestions';
+    else head.replaceWith(...sug.map(w => { const b = btn('sug', w, 'fix'); b.dataset.w = w; return b; }));
+    placeSpellMenu(x, y);
+    spellMenu.querySelector('button')?.focus({preventScroll: true});
+  }, 10);
+}
+function placeSpellMenu(x, y){
+  const w = spellMenu.offsetWidth, h = spellMenu.offsetHeight;
+  spellMenu.style.left = Math.max(8, Math.min(innerWidth - w - 8, x)) + 'px';
+  spellMenu.style.top = (y + h + 8 < innerHeight ? y + 6 : Math.max(8, y - h - 6)) + 'px';
+}
+function closeSpellMenu(){ spellMenu.hidden = true; spellHitNow = null; }
+spellMenu.addEventListener('mousedown', e => e.preventDefault());
+spellMenu.addEventListener('click', e => {
+  const b = e.target.closest('button'), hit = spellHitNow; if (!b || !hit) return;
+  closeSpellMenu();
+  if (b.dataset.act === 'fix') {
+    const sel = getSelection(); hit.note.focus({preventScroll: true});
+    sel.removeAllRanges(); sel.addRange(hit.range);
+    document.execCommand('insertText', false, b.dataset.w);      // like typing it: Back can undo it
+    active = hit.note; savedRange = sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
+  } else {
+    const lw = hit.word.toLowerCase();
+    if (b.dataset.act === 'add') { userWords.add(lw); try { localStorage.setItem('spell-words', JSON.stringify([...userWords])); } catch {} status(`“${hit.word}” added to your dictionary.`); }
+    else ignoredWords.add(lw);
+    spellCache = new Map(); spellAll();
+  }
+});
+spellMenu.addEventListener('keydown', e => {
+  const items = [...spellMenu.querySelectorAll('button')], i = items.indexOf(document.activeElement);
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus(); }
+  if (e.key === 'Escape') { e.preventDefault(); const n = spellHitNow?.note; closeSpellMenu(); n?.focus(); }
+});
+document.addEventListener('mousedown', e => { if (!spellMenu.hidden && !spellMenu.contains(e.target)) closeSpellMenu(); });
+addEventListener('scroll', () => { if (!spellMenu.hidden) closeSpellMenu(); }, {passive: true});
+main.addEventListener('contextmenu', e => {
+  if (!spellDict || reading) return;
+  const note = e.target.closest('.mine'); if (!note) return;
+  const hit = spellHit(note, e.clientX, e.clientY); if (!hit) return;   // not on a marked word: the browser's usual menu
+  e.preventDefault(); openSpellMenu(hit, e.clientX, e.clientY);
+});
+// on a touch screen, tapping a marked word shows the suggestions
+main.addEventListener('pointerup', e => {
+  if (e.pointerType !== 'touch' || !spellDict || reading) return;
+  const note = e.target.closest('.mine'); if (!note) return;
+  const x = e.clientX, y = e.clientY;
+  setTimeout(() => { if (getSelection().isCollapsed) { const hit = spellHit(note, x, y); if (hit) openSpellMenu(hit, x, y + 10); } }, 250);
+});
+// spelling suggestions, best first: one edit away (swapped, missing, extra or wrong letter), then two if needed
+const KB = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
+const near = (a, b) => { const p = c => { for (let r = 0; r < 3; r++) { const i = KB[r].indexOf(c); if (i >= 0) return [r, i]; } return null; }; const x = p(a), y = p(b); return x && y && Math.abs(x[0] - y[0]) <= 1 && Math.abs(x[1] - y[1]) <= 1; };
+const VOW = 'aeiou';
+function spellSuggest(dict, word, max = 6){
+  const lower = word.toLowerCase(), AL = "abcdefghijklmnopqrstuvwxyz'";
+  const seen = new Map();
+  const add = (w, score) => { if (w && w !== lower && (!seen.has(w) || seen.get(w) > score)) seen.set(w, score); };
+  const edits = (w, base, out) => {
+    for (let i = 0; i <= w.length; i++) {
+      const a = w.slice(0, i), b = w.slice(i);
+      if (b) out(a + b.slice(1), base + (b[0] === b[1] || b[0] === a.slice(-1) ? 0.6 : 1.2));                   // extra letter (cheap if doubled)
+      if (b.length > 1) out(a + b[1] + b[0] + b.slice(2), base + 0.5);                                          // two letters swapped
+      for (const c of AL) {
+        if (b && c !== b[0]) out(a + c + b.slice(1), base + (near(c, b[0]) ? 0.8 : VOW.includes(c) && VOW.includes(b[0]) ? 0.8 : 1.4));   // wrong letter
+        out(a + c + b, base + (c === a.slice(-1) || c === b[0] ? 0.6 : 1.3));                                    // missing letter (cheap if doubling)
+      }
+    }
+  };
+  const one = new Map();
+  edits(lower, 0, (w, s) => { if (!one.has(w) || one.get(w) > s) one.set(w, s); });
+  for (const [w, s] of one) if (dict.check(w)) add(w, s + (w[0] !== lower[0] ? 0.7 : 0));
+  // a split into two words ("alot" → "a lot")
+  for (let i = 1; i < lower.length; i++) { const a = lower.slice(0, i), b = lower.slice(i); if ((a.length > 1 || a === 'a' || a === 'i') && b.length > 2 && dict.check(a) && dict.check(b)) add(a + ' ' + b, 1.1); }
+  if (seen.size < 3 && lower.length > 3) {                    // two edits away, within a time budget
+    const t0 = performance.now();
+    for (const [w1, s1] of one) {
+      if (performance.now() - t0 > 250) break;
+      edits(w1, s1, (w, s) => { if (s < 3 && !seen.has(w) && dict.check(w)) add(w, s + (w[0] !== lower[0] ? 0.7 : 0)); });
+    }
+  }
+  const keepCase = w => word === word.toUpperCase() && word.length > 1 ? w.toUpperCase() : word[0] === word[0].toUpperCase() ? w[0].toUpperCase() + w.slice(1) : w;
+  return [...seen].sort((x, y) => x[1] - y[1] || Math.abs(x[0].length - lower.length) - Math.abs(y[0].length - lower.length)).slice(0, max).map(([w]) => keepCase(w));
+}
+
+setTimeout(loadSpell, 800);
 
 // ================= Back / Forward: undo and redo any change =================
 // whole-document snapshots; big pictures are stored once and referred to by a short key
