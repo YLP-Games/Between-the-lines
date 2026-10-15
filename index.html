@@ -36,6 +36,11 @@ input[type=color]{width:30px;height:30px;padding:0;border:1px solid var(--line);
 .savemenu button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:none;background:transparent;padding:8px 10px;border-radius:6px}
 .savemenu button:hover,.savemenu button:focus-visible{background:var(--bg)}
 .savemenu small{color:var(--muted);font-size:12px}
+main.paged{max-width:none;align-items:center;gap:24px}
+.sheet{width:var(--sheet-w);min-height:var(--sheet-h);background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.18);padding:48px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;flex-shrink:0;color:#1b2330}
+.sheet > .slide{box-shadow:none;border-radius:0;flex-shrink:0}
+.sheet > .file-head{margin:0;color:#1b2330}
+.sheet > .cont{margin-top:0}
 .savemenu .layout{display:flex;flex-direction:column;gap:4px;padding:6px 10px 8px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:2px}
 .savemenu .layout select{width:100%}
 .spacer{flex:1}
@@ -113,19 +118,17 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
       <button id="u" title="Underline"><u>U</u></button>
     </div>
     <span class="spacer"></span>
+    <select id="layout" aria-label="Page layout" title="Page layout">
+      <option value="default">Layout: Default</option>
+      <option value="a4-portrait">A4 portrait</option>
+      <option value="a4-landscape">A4 landscape</option>
+      <option value="a3-portrait">A3 portrait</option>
+      <option value="a3-landscape">A3 landscape</option>
+    </select>
     <span class="savewrap">
       <button id="save" class="primary" aria-haspopup="true" aria-expanded="false">Download ▾</button>
       <div class="savemenu" id="saveMenu" hidden>
-        <label class="layout" for="layout">Page layout for the PDF
-          <select id="layout">
-            <option value="default">Default (one page per slide)</option>
-            <option value="a4-portrait">A4 portrait</option>
-            <option value="a4-landscape">A4 landscape</option>
-            <option value="a3-portrait">A3 portrait</option>
-            <option value="a3-landscape">A3 landscape</option>
-          </select>
-        </label>
-        <button type="button" data-kind="pdf"><strong>PDF</strong><small>Your pages and notes, to read or print</small></button>
+        <button type="button" data-kind="pdf"><strong>PDF</strong><small>Your pages and notes, in the layout you picked</small></button>
         <button type="button" data-kind="notebook"><strong>Notebook file</strong><small>Open it later on any device to keep editing</small></button>
       </div>
     </span>
@@ -288,8 +291,8 @@ main.addEventListener('pointerdown', e => {
   const max = holder.getBoundingClientRect().right - r.left;
   g.setPointerCapture(e.pointerId);
   const move = ev => {
-    if (dir.includes('e')) box.style.width = Math.round(Math.max(60, Math.min(max, r.width + ev.clientX - sx))) + 'px';
-    if (dir.includes('s')) { box.style.height = ''; box.style.minHeight = Math.round(Math.max(30, r.height + ev.clientY - sy)) + 'px'; }
+    if (dir.includes('e')) box.style.width = Math.round(Math.max(60, Math.min(max, r.width + ev.clientX - sx)) / viewZoom) + 'px';
+    if (dir.includes('s')) { box.style.height = ''; box.style.minHeight = Math.round(Math.max(30, r.height + ev.clientY - sy) / viewZoom) + 'px'; }
   };
   const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); saveSoon(); };
   g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
@@ -799,6 +802,7 @@ $('#file').onchange = async e => {
     } catch (err) { console.error(err); status(`“${f.name}” couldn't be read. Try saving it as a PDF and opening that.`); }
   }
   if (!main.children.length) showEmpty();
+  paginateView();
   saveSoon();
 };
 
@@ -806,7 +810,7 @@ $('#clear').onclick = () => {
   const b = $('#clear');
   if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Remove everything?'; setTimeout(() => { b.dataset.sure = ''; b.textContent = 'Clear all'; }, 3000); return; }
   b.dataset.sure = ''; b.textContent = 'Clear all';
-  main.innerHTML = ''; slideCount = 0; showEmpty(); saveSoon();
+  main.innerHTML = ''; slideCount = 0; showEmpty(); paginateView(); saveSoon();
 };
 function showEmpty(){ main.append($('#emptyTpl').content.cloneNode(true)); }
 
@@ -816,9 +820,10 @@ function openDb(){ return new Promise(res => { try { const r = indexedDB.open('b
 function put(k, v){ try { db && db.transaction('kv', 'readwrite').objectStore('kv').put(v, k); } catch {} }
 function get(k){ return new Promise(res => { try { const r = db.transaction('kv').objectStore('kv').get(k); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch { res(null); } }); }
 function saveSoon(){
+  paginateSoon();
   clearTimeout(timer);
   timer = setTimeout(() => {
-    put('doc', main.querySelector('.empty') ? '' : (() => { const c = main.cloneNode(true); c.querySelectorAll('.gapline, .gappill').forEach(x => x.remove()); return c.innerHTML; })());
+    put('doc', main.querySelector('.empty') ? '' : currentDoc());
     put('style', style); put('count', slideCount);
   }, 500);
 }
@@ -831,6 +836,7 @@ function notebookName(){
 function currentDoc(){
   const c = main.cloneNode(true);
   c.querySelectorAll('.gapline, .gappill, .empty').forEach(x => x.remove());
+  flatten(c);
   return c.innerHTML;
 }
 async function saveFile(filename, blob){
@@ -864,6 +870,7 @@ function loadNotebook(data, replace){
   main.querySelectorAll('.slide-label, .gapline, .gappill').forEach(e => e.remove());
   upgradeNotes();
   if (!main.children.length) showEmpty();
+  paginateView();
 }
 
 // PDF: each page drawn exactly as you see it, with your notes, one PDF page per slide
@@ -874,14 +881,14 @@ async function paintCard(card, scale){
   c.width = Math.round(r.width * scale); c.height = Math.round(r.height * scale);
   const ctx = c.getContext('2d'); ctx.scale(scale, scale);
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, r.width, r.height);
-  if (card.classList.contains('pagecard')) {
-    const m = card.style.getPropertyValue('--pg').match(/url\(["']?(.*?)["']?\)$/);
-    if (m) {
-      const img = await loadImg(m[1]), H = +card.dataset.h;
-      for (const s of card.querySelectorAll(':scope > .strip')) {
-        const sr = s.getBoundingClientRect(), y0 = +s.dataset.y0, y1 = +s.dataset.y1;
-        ctx.drawImage(img, 0, y0 / H * img.naturalHeight, img.naturalWidth, (y1 - y0) / H * img.naturalHeight, sr.left - ox, sr.top - oy, sr.width, sr.height);
-      }
+  const pcs = card.classList.contains('pagecard') ? [card] : [...card.querySelectorAll('.pagecard')];
+  for (const pc of pcs) {
+    const m = pc.style.getPropertyValue('--pg').match(/url\(["']?(.*?)["']?\)$/);
+    if (!m) continue;
+    const img = await loadImg(m[1]), H = +pc.dataset.h;
+    for (const s of pc.querySelectorAll(':scope > .strip')) {
+      const sr = s.getBoundingClientRect(), y0 = +s.dataset.y0, y1 = +s.dataset.y1;
+      ctx.drawImage(img, 0, y0 / H * img.naturalHeight, img.naturalWidth, (y1 - y0) / H * img.naturalHeight, sr.left - ox, sr.top - oy, sr.width, sr.height);
     }
   }
   for (const im of card.querySelectorAll('img')) {
@@ -944,14 +951,15 @@ async function downloadPdf(){
   hideGap();
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   try { await document.fonts.ready; } catch {}
-  const cards = [...main.querySelectorAll('.slide')];
-  const canvases = [];
-  for (let i = 0; i < cards.length; i++) {
-    status(`Making your PDF: slide ${i + 1} of ${cards.length}`);
-    canvases.push(await paintCard(cards[i], 2));
-  }
   const size = LAYOUTS[layout];
-  const sheets = size ? paginate(canvases, size) : canvases.map(c => ({canvas: c}));
+  if (size) paginateView();
+  const cards = size ? [...main.querySelectorAll('.sheet')] : [...main.querySelectorAll('.slide')];
+  const sheets = [];
+  for (let i = 0; i < cards.length; i++) {
+    status(`Making your PDF: page ${i + 1} of ${cards.length}`);
+    const canvas = await paintCard(cards[i], 2 / viewZoom);
+    sheets.push(size ? {canvas, pw: size[0], ph: size[1]} : {canvas});
+  }
   const pages = [];
   for (const sh of sheets) {
     const blob = await new Promise(res => sh.canvas.toBlob(res, 'image/jpeg', 0.9));
@@ -965,38 +973,100 @@ const LAYOUTS = {'default': null, 'a4-portrait': [595.28, 841.89], 'a4-landscape
 let layout = 'default';
 try { const l = localStorage.getItem('pdf-layout'); if (l && l in LAYOUTS) layout = l; } catch {}
 $('#layout').value = layout;
-$('#layout').onchange = e => { layout = e.target.value; try { localStorage.setItem('pdf-layout', layout); } catch {} };
-// lay the slides one after another on paper-sized pages, breaking only at blank rows (gaps between lines)
-function paginate(canvases, [pw, ph]){
-  const K = 2.5, M = 36 * K, GAP = 12 * K;
-  const sw = Math.round(pw * K), sh = Math.round(ph * K), cw = sw - 2 * M, ch = sh - 2 * M;
-  const sheets = []; let sheet = null, sctx = null, used = 0;
-  const newSheet = () => {
-    sheet = document.createElement('canvas'); sheet.width = sw; sheet.height = sh;
-    sctx = sheet.getContext('2d'); sctx.fillStyle = '#fff'; sctx.fillRect(0, 0, sw, sh);
-    sheets.push({canvas: sheet, pw, ph}); used = 0;
-  };
-  newSheet();
-  for (const c of canvases) {
-    const f = cw / c.width, px = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
-    const blank = r => { const o = r * c.width * 4; for (let x = 0; x < c.width; x += 3) { const i = o + x * 4; if (px[i] < 242 || px[i+1] < 242 || px[i+2] < 242) return false; } return true; };
-    let y = 0;
-    while (y < c.height) {
-      if (used === 0) while (y < c.height && blank(y)) y++;          // no empty space at the top of a page
-      if (y >= c.height) break;
-      const room = (ch - used) / f, rest = c.height - y;
-      if (rest <= room) { sctx.drawImage(c, 0, y, c.width, rest, M, M + used, cw, rest * f); used += rest * f + GAP; break; }
-      let cut = -1;
-      for (let r = Math.floor(y + room); r > y + room * 0.3; r--) if (blank(r)) { cut = r; break; }
-      if (cut < 0 && used > 0) { newSheet(); continue; }               // start this slide on a fresh page
-      if (cut < 0) cut = Math.floor(y + room);                          // nothing blank at all: cut where the page ends
-      sctx.drawImage(c, 0, y, c.width, cut - y, M, M + used, cw, (cut - y) * f);
-      y = cut; newSheet();
-    }
+$('#layout').onchange = e => { layout = e.target.value; try { localStorage.setItem('pdf-layout', layout); } catch {} paginateView(); };
+// ================= page layout on screen: A4 / A3 sheets, portrait or landscape =================
+let viewZoom = 1, pageTimer = null;
+const pxSize = ([pw, ph]) => [Math.round(pw * 96 / 72), Math.round(ph * 96 / 72)];   // points to screen pixels
+const SHEET_MARGIN = 48, SHEET_GAP = 14;
+// undo the sheets: back to one list of headings and slides, with split slides joined up again
+function flatten(root){
+  const sheets = [...root.querySelectorAll(':scope > .sheet')];
+  if (sheets.length) {
+    const items = []; sheets.forEach(s => items.push(...s.children));
+    sheets.forEach(s => s.remove());
+    items.forEach(i => root.append(i));
   }
-  if (sheets.length > 1 && used === 0) sheets.pop();
-  return sheets;
+  for (const c of [...root.querySelectorAll(':scope > .cont')]) {
+    const prev = c.previousElementSibling;
+    if (prev && prev.dataset.pid && prev.dataset.pid === c.dataset.pid) { while (c.firstChild) prev.append(c.firstChild); c.remove(); mergeStrips(prev); }
+    else c.classList.remove('cont');
+  }
 }
+function measureStrip(s){
+  s.querySelectorAll('.tl').forEach(sp => {
+    if (sp.style.transform || !s.isConnected) return;
+    const target = +sp.dataset.w * s.getBoundingClientRect().width, actual = sp.getBoundingClientRect().width;
+    if (actual > 0 && target > 0) sp.style.transform = `scaleX(${(target / actual).toFixed(4)})`;
+  });
+}
+function paginateView(){
+  clearTimeout(pageTimer);
+  const sel = getSelection(), keep = sel.rangeCount ? [sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset] : null;
+  const focused = document.activeElement, scrollY = window.scrollY;
+  hideGap();
+  flatten(main);
+  const size = LAYOUTS[layout];
+  main.classList.toggle('paged', !!size);
+  if (!size || !main.querySelector('.slide')) {
+    main.style.zoom = ''; viewZoom = 1;
+  } else {
+    const [W, H] = pxSize(size);
+    main.style.setProperty('--sheet-w', W + 'px'); main.style.setProperty('--sheet-h', H + 'px');
+    const avail = document.documentElement.clientWidth - 32;
+    viewZoom = Math.min(1, avail / W); main.style.zoom = viewZoom === 1 ? '' : viewZoom;
+    const z = viewZoom, ROOM = (H - 2 * SHEET_MARGIN) * z;
+    const items = [...main.children];
+    items.forEach(i => i.remove());
+    let sheet = null;
+    const newSheet = () => { sheet = document.createElement('div'); sheet.className = 'sheet'; main.append(sheet); };
+    const used = () => { const last = sheet.lastElementChild; return last ? last.getBoundingClientRect().bottom - sheet.getBoundingClientRect().top - SHEET_MARGIN * z : 0; };
+    newSheet();
+    for (const it of items) {
+      if (it.classList.contains('pagecard') && !it.dataset.pid) it.dataset.pid = Math.random().toString(36).slice(2, 10);
+      const before = used();
+      sheet.append(it);
+      if (used() <= ROOM) continue;
+      if (!it.classList.contains('pagecard')) { if (before > 0) { newSheet(); sheet.append(it); } continue; }
+      // the slide doesn't fit: keep what fits on this sheet and carry the rest over, breaking at a gap between lines
+      let card = it;
+      for (let guard = 0; guard < 50 && used() > ROOM; guard++) {
+        const top = card.getBoundingClientRect().top, room = ROOM - (top - sheet.getBoundingClientRect().top - SHEET_MARGIN * z);
+        let cut = null;
+        for (const k of [...card.children]) {
+          const r = k.getBoundingClientRect();
+          if (r.bottom - top <= room) continue;
+          if (k.classList.contains('strip')) {
+            const y0 = +k.dataset.y0, y1 = +k.dataset.y1, scale = r.height / (y1 - y0);
+            const limit = y0 + (room - (r.top - top)) / scale;
+            const gaps = JSON.parse(card.dataset.gaps || '[]').map(([a, b]) => (a + b) / 2).filter(g => g > y0 + 4 && g < limit);
+            if (gaps.length) { const g = gaps.pop(); const a = makeStrip(card, y0, g), b = makeStrip(card, g, y1); k.replaceWith(a, b); cut = b; }
+            else cut = k;
+          } else cut = k;
+          break;
+        }
+        if (!cut) break;
+        if (cut === card.firstElementChild) {             // nothing of this slide fits here: move it all to a new sheet
+          if (sheet.firstElementChild === card) break;
+          newSheet(); sheet.append(card); continue;
+        }
+        const rest = card.cloneNode(false); rest.classList.add('cont');
+        for (let x = cut; x; ) { const nx = x.nextElementSibling; rest.append(x); x = nx; }
+        newSheet(); sheet.append(rest); card = rest;
+      }
+    }
+    main.querySelectorAll('.strip').forEach(measureStrip);
+  }
+  window.scrollTo(0, scrollY);
+  if (focused && focused.isConnected && focused.classList?.contains('mine')) {
+    focused.focus({preventScroll: true});
+    if (keep && keep[0] && focused.contains(keep[0])) { try { sel.setBaseAndExtent(keep[0], keep[1], keep[2], keep[3]); } catch {} }
+    savedRange = sel.rangeCount ? sel.getRangeAt(0).cloneRange() : savedRange;
+  }
+}
+function paginateSoon(){ if (LAYOUTS[layout]) { clearTimeout(pageTimer); pageTimer = setTimeout(paginateView, 700); } }
+let resizeTimer = null;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (LAYOUTS[layout]) paginateView(); }, 250); });
+
 const saveMenu = $('#saveMenu');
 $('#save').onclick = e => { e.stopPropagation(); saveMenu.hidden = !saveMenu.hidden; $('#save').setAttribute('aria-expanded', !saveMenu.hidden); };
 document.addEventListener('click', e => { if (!e.target.closest('.savewrap')) { saveMenu.hidden = true; $('#save').setAttribute('aria-expanded', 'false'); } });
@@ -1022,6 +1092,7 @@ showEmpty();
   const [d, s, n] = await Promise.all([get('doc'), get('style'), get('count')]);
   if (s) { style = s; showStyle(style); }
   if (d) { main.innerHTML = d; slideCount = n || 0; main.querySelectorAll('.slide-label').forEach(e => e.remove()); upgradeNotes(); }
+  requestAnimationFrame(() => { main.querySelectorAll('.strip').forEach(measureStrip); paginateView(); });
 })();
 </script>
 
