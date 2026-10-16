@@ -37,7 +37,30 @@ A simple web page for taking notes on lecture slides.
 ## Saving
 
 - Everything is saved automatically in your browser; the title bar says if the browser's storage is full or blocked.
-- **Download** a **PDF** (in the layout you picked, with notes on the page, as clickable PDF comments, or left out) or a **notebook file** (one .html file you can open later on any device, or with Open, to keep editing). Ctrl+S opens the Download menu.
+- **Download** a **PDF** (in the layout you picked, with notes on the page, as clickable PDF comments, or left out) or a **notebook file** (one .html file you can open later on any device, or with Open, to keep editing). Ctrl+S opens the Download menu. The same menu can also save them to Google Drive (see below).
+
+## Google Drive
+
+Notebooks can be opened from, and saved to, Google Drive. It only works on the hosted site (https://ylp-games.github.io/Between-the-lines/, or `http://localhost:8000` while testing), not on a file opened from disk and not in a preview. The page asks for the `drive.file` permission only: it can reach files you pick with Google's file picker and files it saves itself, never the rest of your Drive. Until the site owner does the set-up below, the Drive buttons show a message saying Drive isn't set up yet.
+
+- **Open from Google Drive** (the sidebar, or the link on the welcome screen): pick one or more PDF, PowerPoint, Word, Markdown or text files, pictures, notebook `.html` files, Google Slides (opened as a PDF) or Google Docs (opened as a Word file). Each becomes its own notebook.
+- **Download › Notebook to Drive** and **PDF to Drive**: the first time this makes `<name> (notes).html` (or `.pdf`) in the folder the file was opened from; after that it updates that same file. If the file has been deleted from Drive, a new one is made.
+- **Help & settings › Google Drive** shows who is connected and has a **Disconnect** button.
+
+### Set-up (for the site owner, once)
+
+1. In the [Google Cloud console](https://console.cloud.google.com/), create a project.
+2. Under **APIs & Services › Library**, enable the **Google Drive API** and the **Google Picker API**.
+3. Under **OAuth consent screen**, choose **External**, fill in the app name and your email, and add the scope `https://www.googleapis.com/auth/drive.file`. While the app is in *Testing*, add the Google accounts that may use it as test users (or publish it; `drive.file` is not a sensitive scope).
+4. Under **Credentials › Create credentials › OAuth client ID**, choose **Web application** and add these **Authorised JavaScript origins**: `https://ylp-games.github.io` (and `http://localhost:8000` for testing). No redirect URIs are needed.
+5. Under **Credentials › Create credentials › API key**, restrict it to **Websites** (HTTP referrer) `https://ylp-games.github.io/*` (and `http://localhost:8000/*` for testing), and under **API restrictions** to the **Google Picker API**.
+6. Paste both into `GDRIVE` at the top of the script in `index.html`, then push:
+
+   ```js
+   const GDRIVE = {clientId: '1234567890-abc….apps.googleusercontent.com', apiKey: 'AIza…'};
+   ```
+
+Both values are public by design (they are in every page that uses Google sign-in); the origin and referrer restrictions are what protect them. The Picker's app id is worked out from the client ID (the number before the first dash).
 
 ## Use it
 
