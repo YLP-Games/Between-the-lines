@@ -630,6 +630,12 @@ body.dragging-sticky,body.dragging-sticky *{cursor:grabbing!important}
 .pgghost{position:fixed;z-index:300;pointer-events:none;opacity:.92;transform:rotate(-2deg);box-shadow:3px 4px 0 rgba(47,43,36,.55)} /* taste-skill-ignore: a lifted thumbnail */
 .pgdrop{position:fixed;z-index:300;height:3px;border-radius:2px;background:var(--accent);pointer-events:none}
 body.pgdragging,body.pgdragging *{cursor:grabbing!important}
+/* ================= Google Drive ================= */
+.menu .mhead{margin:6px 0 2px;padding:8px 10px 2px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.linkbtn{border:none;background:none;padding:0;font:inherit;font-size:16px;color:var(--accent);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.linkbtn:hover{color:var(--ink)}
+#driveSec .btn{margin-top:2px}
+
 /* ================= add a note from the Notes panel ================= */
 .ncompose{display:flex;flex-direction:column;gap:8px;padding:2px 0 4px}
 .ncompose textarea{display:block;width:100%;box-sizing:border-box;min-height:62px;max-height:180px;resize:none;padding:6px 10px;border:1.5px solid var(--pencil);border-radius:var(--wob);background:#fff;color:#1f4fd1;font:22px/1.2 Caveat,cursive;outline:none}
@@ -839,6 +845,9 @@ try {
         <button type="button" data-kind="pdf"><strong>PDF</strong><small>Your pages and notes, in the page layout from View</small></button>
         <button type="button" data-kind="notebook"><strong>Notebook file</strong><small>One .html file: open it later on any device to keep editing</small></button>
         <button type="button" data-kind="markdown"><strong>Notes as Markdown</strong><small>Every note, by page, to paste into Notion or anywhere</small></button>
+        <div class="mhead">Google Drive</div>
+        <button type="button" data-drive="notebook"><strong>Notebook to Drive</strong><small>Saves the notebook file in Google Drive; next time it updates the same file</small></button>
+        <button type="button" data-drive="pdf"><strong>PDF to Drive</strong><small>The PDF, with notes as chosen above, saved in Google Drive</small></button>
       </div>
     </span>
     <button class="btn" id="helpBtn" aria-haspopup="dialog" aria-expanded="false" aria-label="Help and settings" title="Help and settings: how to use it, shortcuts, your dictionary and favourite colours"><svg class="i"><use href="#i-help"/></svg></button>
@@ -1040,6 +1049,7 @@ try {
       <button type="button" class="srow" id="newDocBtn" title="A new notebook with a blank page to write on"><svg class="i"><use href="#i-plus"/></svg>New notebook</button>
       <button type="button" class="srow" id="newFolderBtn" title="A folder to group notebooks in, like a course or a topic"><svg class="i"><use href="#i-folder-plus"/></svg>New folder</button>
       <button type="button" class="srow" id="sideOpen" title="Open a PDF, PowerPoint or Word file as a new notebook"><svg class="i"><use href="#i-folder"/></svg>Open a file</button>
+      <button type="button" class="srow" id="sideDrive" data-drive-open title="Open a file from Google Drive: PDF, PowerPoint, Word, Google Slides or Docs, pictures or a notebook file"><svg class="i"><use href="#i-drive"/></svg>Open from Google Drive</button>
       <button type="button" class="srow" id="sideAdd" title="Write a note for the page you're on, in the Notes panel"><svg class="i"><use href="#i-pen"/></svg>Add a note</button>
       <button type="button" class="srow" id="sideSearch" title="Search: find a notebook, page or note, or run an action (Ctrl+K)"><svg class="i"><use href="#i-search"/></svg>Search</button>
     </div>
@@ -1147,6 +1157,12 @@ try {
       <p class="sethint">Save colours with the star next to the text colour, or <b>Save</b> in a pencil icon’s colour menu. They show up in both.</p>
       <div class="favmanage" id="favManage"></div>
     </section>
+    <section id="driveSec">
+      <h3>Google Drive</h3>
+      <p class="sethint" id="driveStatus">Not connected</p>
+      <p class="sethint" id="driveHint" hidden>Google Drive isn't set up for this site yet. The site owner needs to add a Google client ID and API key at the top of the page's script (see “Google Drive” in the README).</p>
+      <button type="button" class="btn outline" id="driveOff" disabled title="Sign out of Google Drive on this device. Your files in Drive stay where they are.">Disconnect</button>
+    </section>
   </div>
 </div>
 
@@ -1181,6 +1197,7 @@ try {
       <div class="w-act">
         <button type="button" class="btn primary big" data-open><svg class="i"><use href="#i-folder"/></svg>Choose a file</button>
         <span class="or">or drop one anywhere on this page</span>
+        <button type="button" class="linkbtn" data-drive-open title="Open a file from Google Drive">or open from Google Drive</button>
       </div>
       <div class="kinds"><span>PDF</span><span>PowerPoint .pptx</span><span>Word .docx</span><span>Pictures</span><span>Notebook .html</span></div>
     </div>
@@ -1198,14 +1215,18 @@ try {
       <li><span><b>Write between the lines</b>Point at a gap and press “+ Add here” for a note; right-click it for a sticky note or an equation.</span></li>
       <li><span><b>Revise and download</b>Study mode, a searchable notes list, and PDF or notebook downloads.</span></li>
     </ol>
-    <p class="private"><svg class="i"><use href="#i-lock"/></svg>Everything stays on this device. Your notes are saved in this browser.</p>
+    <p class="private"><svg class="i"><use href="#i-lock"/></svg>Everything stays on this device, unless you save it to Google Drive. Your notes are saved in this browser.</p>
   </div>
 </template>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="i-drive" viewBox="0 0 24 24"><path d="M9 3h6l7 12h-6L9 3Z"/><path d="M9 3 2 15l3 5 7-12"/><path d="M5 20h14l3-5H8"/></symbol></svg>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
 <script>
+
+// Google Drive: the site owner fills these in (see "Google Drive" in the README). While clientId is empty, Drive is switched off.
+const GDRIVE = {clientId: '', apiKey: ''};
 
 // a copy of this app as it is before anything is opened, for the downloadable notebook file
 const APP_HTML = (() => {
@@ -2666,11 +2687,12 @@ async function saveFile(filename, blob){
 }
 
 // Notebook file: this whole app plus your pages and notes, in one .html file you can open anywhere
-async function downloadNotebook(){
+async function notebookFile(){
   const data = JSON.stringify({v: 2, id: curId, name: notebookName(), named: !!curDoc()?.named, doc: await inlineAssets(currentDoc()), style, favs}).replace(/</g, '\\u003c');
   const html = APP_HTML.replace(/<body[^>]*>/, m => `${m}\n<script id="notebook-data" type="application/json">${data}<\/script>`);
-  await saveFile(notebookName() + ' (notes).html', new Blob([html], {type: 'text/html'}));
+  return {name: notebookName() + ' (notes).html', blob: new Blob([html], {type: 'text/html'})};
 }
+async function downloadNotebook(){ const f = await notebookFile(); await saveFile(f.name, f.blob); }
 function readNotebookHtml(text){
   const m = text.match(/<script id="notebook-data" type="application\/json">([\s\S]*?)<\/script>/);
   if (!m) return null;
@@ -2825,7 +2847,8 @@ function makePdf(pages){
   push(`trailer\n<< /Size ${total + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
   return new Blob(chunks, {type: 'application/pdf'});
 }
-async function downloadPdf(){
+async function downloadPdf(){ const f = await pdfFile(); await saveFile(f.name, f.blob); }
+async function pdfFile(){
   hideGap();
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   try { await document.fonts.ready; } catch {}
@@ -2857,7 +2880,7 @@ async function downloadPdf(){
       pages.push({w: canvas.width, h: canvas.height, pw: size?.[0], ph: size?.[1], annots, jpeg: new Uint8Array(await blob.arrayBuffer())});
     }
     const extra = [size ? layout.replace('-', ' ') : '', mode === 'comments' ? 'comments' : mode === 'none' ? 'no notes' : ''].filter(Boolean).join(', ');
-    await saveFile(notebookName() + ` (notes${extra ? ', ' + extra : ''}).pdf`, makePdf(pages));
+    return {name: notebookName() + ` (notes${extra ? ', ' + extra : ''}).pdf`, blob: makePdf(pages)};
   } finally {
     main.classList.remove('clean');
     boxes.forEach((b, i) => b.classList.toggle('collapsed', wasCollapsed[i]));
@@ -3789,7 +3812,7 @@ $('#dictAddForm').addEventListener('submit', e => {
   toast(words.length === 1 ? `“${words[0]}” added to your dictionary.` : `${words.length} words added to your dictionary.`);
 });
 $('#favManage').addEventListener('click', e => { const b = e.target.closest('button[data-c]'); if (b) removeFav(b.dataset.c); });
-function openSettings(fromKeys){ renderDict(); renderFavManage(); fillPrefs(); settingsBox.hidden = false; helpBtn.setAttribute('aria-expanded', 'true'); if (fromKeys) $('#setClose').focus(); }
+function openSettings(fromKeys){ renderDict(); renderFavManage(); fillPrefs(); renderDrive(); settingsBox.hidden = false; helpBtn.setAttribute('aria-expanded', 'true'); if (fromKeys) $('#setClose').focus(); }
 function closeSettings(back){ if (settingsBox.hidden) return; settingsBox.hidden = true; helpBtn.setAttribute('aria-expanded', 'false'); if (back) helpBtn.focus(); }
 // a click with detail 0 came from the keyboard (Enter or Space)
 helpBtn.onclick = e => settingsBox.hidden ? openSettings(e.detail === 0) : closeSettings();
@@ -5313,6 +5336,226 @@ function pgUp(e){
 function pgCancel(){ pgEnd(); }
 function pgKey(e){ if (e.key === 'Escape' && pgDrag) { e.preventDefault(); e.stopPropagation(); pgEnd(); } }
 
+// ================= Google Drive =================
+// Sign-in uses Google's token client and files are chosen with Google's Picker. Only files you pick here, or that this page saves,
+// can be reached (the drive.file permission); the rest of your Drive stays out of reach. The access token is kept in memory only.
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_API = 'https://www.googleapis.com/drive/v3', DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3';
+const drive = {token: '', expires: 0, user: null, client: null, wait: null, libs: null};
+class DriveError extends Error { constructor(msg, kind, status){ super(msg); this.kind = kind; this.status = status; } }
+const driveTokenOk = () => !!drive.token && Date.now() < drive.expires - 60000;
+
+// Google's scripts load only when wanted (and are started early, on pointing at a Drive button, so the sign-in
+// pop-up can still open inside the click). They are asked for without "crossorigin", as Google's own pages do.
+function driveScript(src, again){
+  return new Promise((res, rej) => {
+    const s = document.createElement('script'); s.async = true; s.src = again ? src + (src.includes('?') ? '&' : '?') + 'again=' + Date.now() : src;
+    s.onload = res;
+    s.onerror = () => { s.remove(); if (again) rej(new DriveError('Google’s sign-in couldn’t be loaded. Check your internet connection (or an ad or script blocker) and try again.', 'load')); else driveScript(src, true).then(res, rej); };
+    document.head.append(s);
+  });
+}
+function driveLoad(){
+  drive.libs ??= (async () => {
+    await Promise.all([
+      window.google?.accounts?.oauth2 ? 0 : driveScript('https://accounts.google.com/gsi/client'),
+      window.google?.picker ? 0 : driveScript('https://apis.google.com/js/api.js').then(() => new Promise((ok, no) => window.gapi.load('picker', {callback: ok, onerror: () => no(new DriveError('Google’s file picker couldn’t be loaded. Please try again.', 'load'))}))),
+    ]);
+  })().catch(err => { drive.libs = null; throw err; });
+  return drive.libs;
+}
+const driveWarm = e => { if (GDRIVE.clientId && e.target.closest?.('[data-drive-open], [data-drive]')) driveLoad().catch(() => {}); };
+document.addEventListener('pointerover', driveWarm);
+document.addEventListener('focusin', driveWarm);
+
+// an access token, asking again (with Google's pop-up) when there isn't one or it has run out
+function driveToken(){
+  if (driveTokenOk()) return Promise.resolve(drive.token);
+  return driveLoad().then(() => new Promise((ok, no) => {
+    drive.wait = {ok, no};
+    drive.client ??= google.accounts.oauth2.initTokenClient({
+      client_id: GDRIVE.clientId, scope: DRIVE_SCOPE,
+      callback: r => {
+        const w = drive.wait; drive.wait = null; if (!w) return;
+        if (r.error) return w.no(new DriveError(r.error, r.error === 'access_denied' ? 'denied' : 'other'));
+        const all = google.accounts.oauth2.hasGrantedAllScopes;
+        if (all && !all(r, DRIVE_SCOPE)) return w.no(new DriveError('not allowed', 'denied'));
+        drive.token = r.access_token; drive.expires = Date.now() + (+r.expires_in || 3600) * 1000;
+        w.ok(drive.token); if (!drive.user) driveWho(); else renderDrive();
+      },
+      error_callback: er => {
+        const w = drive.wait; drive.wait = null; if (!w) return;
+        w.no(new DriveError(er?.type || 'sign-in failed', er?.type === 'popup_closed' ? 'closed' : er?.type === 'popup_failed_to_open' ? 'blocked' : 'other'));
+      },
+    });
+    drive.client.requestAccessToken(drive.user ? {prompt: ''} : {});
+  }));
+}
+// who is signed in, for the Help & settings page
+async function driveWho(){
+  try {
+    const u = (await (await driveFetch(DRIVE_API + '/about?fields=user')).json()).user;
+    if (u) drive.user = {name: u.displayName || '', email: u.emailAddress || ''};
+  } catch {}
+  renderDrive();
+}
+// a request to Drive with the token; an expired token is renewed once
+async function driveFetch(url, opts = {}, again){
+  const token = await driveToken();
+  let res;
+  try { res = await fetch(url, {...opts, headers: {...opts.headers, Authorization: 'Bearer ' + token}}); }
+  catch (err) { throw new DriveError(err?.message || 'no connection', 'network'); }
+  if (res.status === 401 && !again) { drive.token = ''; return driveFetch(url, opts, true); }
+  if (!res.ok) throw await driveHttp(res);
+  return res;
+}
+async function driveHttp(res){
+  let msg = ''; try { msg = (await res.json()).error?.message || ''; } catch {}
+  return new DriveError(msg || 'Google Drive said ' + res.status, 'http', res.status);
+}
+// one calm sentence for whatever went wrong; nothing in the notebook is touched
+function driveSay(err, doing){
+  console.error(err);
+  const k = err?.kind;
+  toast(k === 'closed' ? 'The Google sign-in window was closed, so nothing was done. Your notes are safe.'
+    : k === 'denied' ? 'Google Drive access wasn’t allowed, so nothing was done. Your notes are safe.'
+    : k === 'blocked' ? 'Your browser blocked Google’s sign-in window. Press the button again to try once more.'
+    : k === 'network' ? `Couldn’t reach Google Drive (${err.message}). Your notes are still saved in this browser.`
+    : k === 'load' ? err.message
+    : `Couldn’t ${doing} (${err?.message || 'something went wrong'}). Your notes are still saved in this browser.`);
+}
+// with no client ID the site owner hasn't set Drive up
+function driveSetUp(){
+  if (GDRIVE.clientId) return true;
+  toast('Google Drive isn’t set up for this site yet.');
+  return false;
+}
+
+// ---------- open from Google Drive ----------
+const DRIVE_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/markdown', 'text/x-markdown', 'text/plain', 'text/html', 'image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/bmp',
+  'application/vnd.google-apps.presentation', 'application/vnd.google-apps.document'];
+const DRIVE_EXT = {'application/pdf': 'pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'text/markdown': 'md', 'text/x-markdown': 'md', 'text/plain': 'txt', 'text/html': 'html', 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp', 'image/bmp': 'bmp'};
+const DRIVE_HAS_EXT = /\.(pdf|pptx|docx|md|markdown|txt|html?|png|jpe?g|gif|webp|bmp)$/i;
+function drivePick(){
+  return driveToken().then(token => new Promise(ok => {
+    const p = google.picker, view = new p.DocsView(p.ViewId.DOCS).setMimeTypes(DRIVE_TYPES.join(',')).setIncludeFolders(true).setSelectFolderEnabled(false);
+    const b = new p.PickerBuilder().addView(view).enableFeature(p.Feature.MULTISELECT_ENABLED).setOAuthToken(token).setTitle('Open from Google Drive')
+      .setCallback(data => {
+        const a = data[p.Response.ACTION];
+        if (a === p.Action.PICKED) ok((data[p.Response.DOCUMENTS] || []).map(d => ({id: d[p.Document.ID], name: d[p.Document.NAME], mime: d[p.Document.MIME_TYPE]})));
+        else if (a === p.Action.CANCEL) ok([]);
+      });
+    if (GDRIVE.apiKey) b.setDeveloperKey(GDRIVE.apiKey);
+    const app = GDRIVE.clientId.split('-')[0]; if (app) b.setAppId(app);       // the project number
+    b.build().setVisible(true);
+  }));
+}
+// a file as a File with the right ending; Google Slides come as a PDF and Google Docs as a Word file
+async function driveDownload(d){
+  const id = encodeURIComponent(d.id);
+  let url = `${DRIVE_API}/files/${id}?alt=media`, mime = d.mime, name = d.name || 'Untitled';
+  if (mime === 'application/vnd.google-apps.presentation') { mime = 'application/pdf'; url = `${DRIVE_API}/files/${id}/export?mimeType=${encodeURIComponent(mime)}`; }
+  else if (mime === 'application/vnd.google-apps.document') { mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'; url = `${DRIVE_API}/files/${id}/export?mimeType=${encodeURIComponent(mime)}`; }
+  if (DRIVE_EXT[mime] && !DRIVE_HAS_EXT.test(name)) name += '.' + DRIVE_EXT[mime];
+  else if (url.includes('/export?') && !name.toLowerCase().endsWith('.' + DRIVE_EXT[mime])) name = name.replace(DRIVE_HAS_EXT, '') + '.' + DRIVE_EXT[mime];
+  let res;
+  try { res = await driveFetch(url); }
+  catch (err) { if (err.status === 403 && /export/i.test(err.message)) err.message = 'it is too big for Google to export'; throw err; }
+  return new File([await res.blob()], name, {type: mime});
+}
+async function driveParent(id){
+  try { return (await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?fields=parents`)).json()).parents?.[0] || ''; } catch { return ''; }
+}
+async function driveOpen(){
+  if (!driveSetUp()) return;
+  try {
+    const picked = await drivePick();
+    for (const [i, d] of picked.entries()) {
+      toast(`Downloading “${d.name}” from Google Drive…${picked.length > 1 ? ` (${i + 1} of ${picked.length})` : ''}`);
+      let file;
+      try { file = await driveDownload(d); }
+      catch (err) { driveSay(err, `download “${d.name}”`); continue; }
+      const folder = await driveParent(d.id), before = curId, had = !!main.querySelector('.slide');
+      await openFiles([file]);
+      const doc = curDoc();
+      if (doc && main.querySelector('.slide') && (curId !== before || !had)) {         // the file did become a notebook: remember where it came from
+        if (folder) doc.driveFolder = folder;
+        if (/\.html?$/i.test(file.name)) doc.driveNb = d.id;
+        putAll({docs});
+      }
+    }
+  } catch (err) { driveSay(err, 'open from Google Drive'); }
+}
+
+// ---------- save to Google Drive ----------
+function driveBody(meta, blob){
+  const edge = 'bts' + Math.random().toString(36).slice(2);
+  return {type: 'multipart/related; boundary=' + edge, body: new Blob([`--${edge}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${edge}\r\nContent-Type: ${blob.type || 'application/octet-stream'}\r\n\r\n`, blob, `\r\n--${edge}--`])};
+}
+function driveSend(method, url, meta, blob, progress, again){
+  return driveToken().then(token => new Promise((ok, no) => {
+    const {type, body} = driveBody(meta, blob), x = new XMLHttpRequest();
+    x.open(method, url); x.setRequestHeader('Authorization', 'Bearer ' + token); x.setRequestHeader('Content-Type', type);
+    x.upload.onprogress = e => { if (e.lengthComputable) progress?.(e.loaded / e.total); };
+    x.onerror = () => no(new DriveError('no connection', 'network'));
+    x.onload = () => {
+      let j = null; try { j = JSON.parse(x.responseText); } catch {}
+      if (x.status >= 200 && x.status < 300) ok(j || {});
+      else no(new DriveError(j?.error?.message || 'Google Drive said ' + x.status, 'http', x.status));
+    };
+    x.send(body);
+  })).catch(err => {
+    if (err.status === 401 && !again) { drive.token = ''; return driveSend(method, url, meta, blob, progress, true); }
+    throw err;
+  });
+}
+// kind: 'notebook' or 'pdf'. The first save makes a file (next to the source, if it came from Drive); after that the same file is updated.
+async function driveSave(kind){
+  if (!driveSetUp()) return;
+  if (!main.querySelector('.slide')) { toast('Open your slides first, then save to Google Drive.'); return; }
+  const key = kind === 'pdf' ? 'drivePdf' : 'driveNb';
+  try {
+    await driveToken();                         // sign in first, while the click still counts, then build the file
+    await flushSave();
+    const doc = curDoc(), file = kind === 'pdf' ? await pdfFile() : await notebookFile();
+    let last = -1;
+    const progress = file.blob.size < 1.5e6 ? null : f => { const n = Math.round(f * 100); if (n !== last) { last = n; toast(`Uploading “${file.name}” to Google Drive: ${n}%`); } };
+    toast(progress ? `Uploading “${file.name}” to Google Drive…` : 'Saving to Google Drive…');
+    const fields = '&fields=id,name,parents';
+    const create = () => driveSend('POST', `${DRIVE_UPLOAD}/files?uploadType=multipart${fields}`, {name: file.name, mimeType: file.blob.type, ...(doc?.driveFolder ? {parents: [doc.driveFolder]} : {})}, file.blob, progress);
+    let out;
+    if (doc?.[key]) {
+      try { out = await driveSend('PATCH', `${DRIVE_UPLOAD}/files/${encodeURIComponent(doc[key])}?uploadType=multipart${fields}`, {}, file.blob, progress); }
+      catch (err) { if (err.status !== 404) throw err; out = await create(); }          // the file is gone from Drive: make a new one
+    } else out = await create();
+    if (doc && docs.includes(doc)) { doc[key] = out.id; if (!doc.driveFolder && out.parents?.[0]) doc.driveFolder = out.parents[0]; putAll({docs}); }
+    toast(`Saved to Google Drive: ${out.name || file.name} (${new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})})`);
+  } catch (err) { driveSay(err, 'save to Google Drive'); }
+}
+
+// ---------- buttons, and the Help & settings section ----------
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-drive-open]')) { if (narrow.matches) setPanel('pages', false); driveOpen(); return; }
+  const b = e.target.closest('#saveMenu [data-drive]'); if (!b) return;
+  saveMenu.hidden = true; $('#save').setAttribute('aria-expanded', 'false');
+  driveSave(b.dataset.drive);
+});
+function renderDrive(){
+  const on = driveTokenOk();
+  $('#driveStatus').textContent = on ? 'Connected' + (drive.user ? ` as ${drive.user.name}${drive.user.email ? ` (${drive.user.email})` : ''}` : '') : 'Not connected';
+  $('#driveHint').hidden = !!GDRIVE.clientId;
+  $('#driveOff').disabled = !on;
+}
+$('#driveOff').onclick = () => {
+  const t = drive.token;
+  drive.token = ''; drive.expires = 0; drive.user = null;
+  try { google.accounts.oauth2.revoke(t, () => {}); } catch {}
+  renderDrive();
+  toast('Disconnected from Google Drive. Your files in Drive have not been touched.');
+};
+
 // ================= add a note from the Notes panel =================
 const newNote = $('#newNote'), stickyPad = $('#stickyPad');
 function updateWhere(){
@@ -5811,7 +6054,7 @@ async function duplicateDoc(id){
   if (id === curId) await flushSave();                    // so the copy has what is on the page now
   const html = (await get('doc:' + id)) || '';
   const copy = {...d, id: newId(), name: d.name.slice(0, 112) + ' (copy)', named: true, copiedFrom: id, updated: Date.now()};
-  delete copy.fav; delete copy.trashed;
+  delete copy.fav; delete copy.trashed; delete copy.driveNb; delete copy.drivePdf;       // a copy gets its own files in Google Drive
   docs.splice(docs.indexOf(d) + 1, 0, copy);
   await putAll({['doc:' + copy.id]: html, docs});
   renderDocs();
