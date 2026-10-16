@@ -605,6 +605,30 @@ body.dragging-sticky,body.dragging-sticky *{cursor:grabbing!important}
 .ncwhere{margin-left:auto;font-size:14px;color:var(--muted);white-space:nowrap}
 body.reading .ncompose,body.reading #sideAdd{display:none}
 
+/* ================= the sidebar's Favourites and Trash, and the ⋯ menu's divider ================= */
+.docmenu hr{margin:3px 6px;border:none;border-top:1.5px solid var(--line)}
+.trashbox{margin-top:auto;padding:6px 6px 4px}
+.trashbox ~ .sidefoot{margin-top:0}
+.trashhead .count{font:13px var(--ui);color:var(--muted)}
+.trashhead > .i:last-child{margin-left:auto;width:15px;height:15px;transition:transform .15s}
+.trashhead[aria-expanded="true"] > .i:last-child{transform:rotate(90deg)}
+.trashlist{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:2px 0 6px}
+.trashrow{align-self:stretch;padding:5px 8px 6px;border-radius:var(--wob)}
+.trashrow:hover{background:var(--hover)}
+.tname{display:flex;align-items:center;gap:8px;font-size:16.5px;color:var(--muted)}
+.tname .i{width:16px;height:16px}
+.tname .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tname .when{flex:none;font-size:13px}
+.tacts{display:flex;flex-wrap:wrap;gap:4px;padding:4px 0 0 24px}
+.tbtn{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border:1.5px solid var(--line-strong);border-radius:var(--wob);background:var(--surface);font:inherit;font-size:14px;color:var(--ink);cursor:pointer}
+.tbtn:hover{background:var(--hover)}
+.tbtn .i{width:14px;height:14px}
+.tbtn.danger{color:var(--danger)}
+.tbtn.sure{background:var(--danger);border-color:var(--danger);color:var(--bg)}
+.tempty{margin:4px 0 2px 8px}
+.tnone{margin:0;padding:4px 10px 6px 12px;font-size:15px;color:var(--muted)}
+@media (hover:none){.tbtn{height:32px}}
+
 /* ================= tooltips: what a control does, after a brief pause ================= */
 .qtip{position:fixed;z-index:120;left:0;top:0;max-width:260px;padding:6px 10px 7px;border-radius:8px;background:var(--pencil);color:var(--bg);font:15px/1.3 var(--ui);pointer-events:none;opacity:0;transition:opacity .1s}
 .qtip.on{opacity:1}
@@ -655,6 +679,9 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
 <symbol id="i-align-right" viewBox="0 0 24 24"><path d="M21 6H3"/><path d="M21 12H9"/><path d="M21 18H7"/></symbol>
 <symbol id="i-eraser" viewBox="0 0 24 24"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></symbol>
 <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></symbol>
+<symbol id="i-star-off" viewBox="0 0 24 24"><path d="M8.34 8.34 2 9.27l5 4.87L5.82 21 12 17.77 18.18 21l-.59-3.43"/><path d="M18.42 12.76 22 9.27l-6.91-1L12 2l-1.44 2.91"/><path d="m2 2 20 20"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+<symbol id="i-restore" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
 <symbol id="i-select" viewBox="0 0 24 24"><path d="M5 3a2 2 0 0 0-2 2"/><path d="M19 3a2 2 0 0 1 2 2"/><path d="M21 19a2 2 0 0 1-2 2"/><path d="M5 21a2 2 0 0 1-2-2"/><path d="M9 3h1"/><path d="M9 21h1"/><path d="M14 3h1"/><path d="M14 21h1"/><path d="M3 9v1"/><path d="M21 9v1"/><path d="M3 14v1"/><path d="M21 14v1"/></symbol>
 <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
 <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="m2 2 20 20"/></symbol>
@@ -940,7 +967,7 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
         <li>The <b>Home</b> tab styles your notes: the font, size and colour are used for new notes, or click in a note (or select words) to change just that.</li>
         <li>Drag a note’s edges to resize it, or its move handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
         <li>On each note: the arrows float it on top of the page, the minus minimises it to a pencil icon (drag the icon aside, right-click it to colour it), and the pin keeps it open.</li>
-        <li>The <b>sidebar</b> (left) lists your notebooks: click one to switch, and the one you're in shows its pages. Use its <b>⋯</b> to rename or delete it. Hide it with <b>«</b> (Ctrl+\) and point at the left edge to peek at it.</li>
+        <li>The <b>sidebar</b> (left) lists your notebooks: click one to switch, and the one you're in shows its pages. Use its <b>⋯</b> to rename or delete it. Hide it with <b>«</b> (Ctrl+\) and point at the left edge to peek at it. A notebook’s <b>⋯</b> menu can also star it as a <b>Favourite</b>, <b>Duplicate</b> it, or move it to the <b>Trash</b>, where it waits 30 days (and can be restored) before it is gone for ever.</li>
         <li><b>Notes</b> (right) lists every note in the notebook to search, filter by icon colour and jump to.</li>
         <li>In Chrome or Edge, <b>Install as an app</b> (at the bottom of the sidebar) gives Between the Slides its own window that works offline.</li>
         <li><b>Focus</b> hides the toolbar, side panels and status bar so only your pages and notes are left (Esc brings them back). Each panel also closes with its ×, and View › Toolbar can shrink the toolbar to tabs only.</li>
@@ -3942,10 +3969,12 @@ document.addEventListener('keydown', e => {
 
 // ================= notebooks, Notion style: each file you open is its own notebook in the sidebar =================
 // each notebook is stored on its own ("doc:<id>"); "docs" lists them in sidebar order and "cur" is the open one
-let docs = [], curId = null, renaming = null, docPagesOpen = pref.get('doc-pages', '1') === '1';
+// a notebook can also be a favourite (fav: true) or in the Trash (trashed: when it was put there; see the Trash further down)
+let docs = [], curId = null, renaming = null, docPagesOpen = pref.get('doc-pages', '1') === '1', trashOpen = false;
 const histByDoc = new Map(), scrollByDoc = new Map();
 const newId = () => 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const curDoc = () => docs.find(d => d.id === curId);
+const liveDocs = () => docs.filter(d => !d.trashed);       // everything but what is in the Trash
 function makeDoc(id = newId(), name = 'Untitled'){
   const d = {id, name, named: false, pages: 0, notes: 0, updated: Date.now()};
   docs.unshift(d); return d;
@@ -3977,37 +4006,34 @@ async function switchDoc(id){
   putAll({docs, cur: curId});
   refreshPanels();
 }
-async function deleteDoc(id){
-  const d = docs.find(x => x.id === id); if (!d) return;
-  if (id === curId) { clearTimeout(timer); timer = null; curId = null; }      // nothing more is saved for it
-  docs = docs.filter(x => x !== d); histByDoc.delete(id); scrollByDoc.delete(id); delKey('doc:' + id);
-  if (!curId) await switchDoc(docs[0]?.id || null);
-  else { putAll({docs}); renderDocs(); }
-  toast(`Deleted “${d.name}”.`);
+// one notebook's row in the sidebar (with its page list under it when it is the open one)
+function docItem(d){
+  const on = d.id === curId, open = on && docPagesOpen, li = document.createElement('li');
+  li.className = 'nb'; if (on) li.setAttribute('aria-current', 'true');
+  const row = document.createElement('div'); row.className = 'docrow';
+  const caret = Object.assign(document.createElement('button'), {type: 'button', className: 'caret', innerHTML: icon('right')});
+  caret.dataset.caret = d.id; caret.setAttribute('aria-expanded', open); caret.setAttribute('aria-label', (open ? 'Hide' : 'Show') + ' the pages of ' + d.name);
+  const btn = Object.assign(document.createElement('button'), {type: 'button', className: 'docbtn', innerHTML: icon('file') + '<span class="nm"></span>'});
+  btn.dataset.doc = d.id; btn.querySelector('.nm').textContent = d.name || 'Untitled';
+  btn.title = `${d.name} · ${d.pages} page${d.pages === 1 ? '' : 's'} · ${d.notes} note${d.notes === 1 ? '' : 's'}`;
+  const more = Object.assign(document.createElement('button'), {type: 'button', className: 'more', innerHTML: icon('dots')});
+  more.dataset.more = d.id; more.setAttribute('aria-label', 'More for ' + d.name); more.setAttribute('aria-haspopup', 'menu');
+  row.append(caret, btn, more); li.append(row);
+  if (open) li.append(pageList);
+  return li;
 }
 function renderDocs(){
   if (renaming) return;                   // don't pull the name box away while you type in it
-  const list = $('#docList'), pages = pageList;
-  $('#docCount').textContent = docs.length > 1 ? docs.length : '';
-  list.replaceChildren(...docs.map(d => {
-    const on = d.id === curId, open = on && docPagesOpen, li = document.createElement('li');
-    li.className = 'nb'; if (on) li.setAttribute('aria-current', 'true');
-    const row = document.createElement('div'); row.className = 'docrow';
-    const caret = Object.assign(document.createElement('button'), {type: 'button', className: 'caret', innerHTML: icon('right')});
-    caret.dataset.caret = d.id; caret.setAttribute('aria-expanded', open); caret.setAttribute('aria-label', (open ? 'Hide' : 'Show') + ' the pages of ' + d.name);
-    const btn = Object.assign(document.createElement('button'), {type: 'button', className: 'docbtn', innerHTML: icon('file') + '<span class="nm"></span>'});
-    btn.dataset.doc = d.id; btn.querySelector('.nm').textContent = d.name || 'Untitled';
-    btn.title = `${d.name} · ${d.pages} page${d.pages === 1 ? '' : 's'} · ${d.notes} note${d.notes === 1 ? '' : 's'}`;
-    const more = Object.assign(document.createElement('button'), {type: 'button', className: 'more', innerHTML: icon('dots')});
-    more.dataset.more = d.id; more.setAttribute('aria-label', 'More for ' + d.name); more.setAttribute('aria-haspopup', 'menu');
-    row.append(caret, btn, more); li.append(row);
-    if (open) li.append(pages);
-    return li;
-  }));
-  if (!docPagesOpen && pages.isConnected) pages.remove();
+  const live = liveDocs(), starred = live.filter(d => d.fav), rest = live.filter(d => !d.fav);
+  $('#docCount').textContent = rest.length > 1 ? rest.length : '';
+  $('#docList').replaceChildren(...rest.map(docItem));
+  const fl = $('#favList');               // the Favourites section only shows while there is a favourite
+  if (fl) { fl.replaceChildren(...starred.map(docItem)); fl.hidden = $('#favSec').hidden = !starred.length; }
+  if (!docPagesOpen && pageList.isConnected) pageList.remove();
+  renderTrash();
 }
-$('#docList').addEventListener('click', async e => {
-  const t = e.target.closest('[data-doc], [data-caret], [data-more]'); if (!t) return;
+$('#pagesPanel').addEventListener('click', async e => {      // the Notebooks rows and the Favourites rows
+  const t = e.target.closest('.doclist [data-doc], .doclist [data-caret], .doclist [data-more]'); if (!t) return;
   if (t.dataset.more) { openDocMenu(t.dataset.more, t); return; }
   const id = t.dataset.doc || t.dataset.caret;
   if (t.dataset.caret && id === curId) { docPagesOpen = !docPagesOpen; pref.set('doc-pages', docPagesOpen ? '1' : '0'); renderDocs(); renderPages(); return; }
@@ -4022,15 +4048,16 @@ $('#newDocBtn').onclick = async () => {
 };
 $('#sideOpen').onclick = () => pickFiles(false);
 
-// a notebook's ⋯ menu: rename or delete it
+// a notebook's ⋯ menu: rename, duplicate, favourite it, or move it to the Trash
 const docMenu = document.createElement('div'); docMenu.className = 'pop docmenu'; docMenu.hidden = true; docMenu.setAttribute('role', 'menu');
-docMenu.innerHTML = `<button type="button" role="menuitem" data-act="rename">${icon('pen')}Rename</button><button type="button" role="menuitem" data-act="delete" class="danger">${icon('trash')}<span>Delete</span></button>`;
+docMenu.innerHTML = `<button type="button" role="menuitem" data-act="rename">${icon('pen')}Rename</button><button type="button" role="menuitem" data-act="duplicate">${icon('copy')}Duplicate</button><button type="button" role="menuitem" data-act="fav"></button><hr><button type="button" role="menuitem" data-act="trash">${icon('trash')}Move to Trash</button>`;
 document.body.append(docMenu);
 let menuDoc = null, menuFrom = null;
 function openDocMenu(id, from){
   if (!docMenu.hidden && menuDoc === id) { closeDocMenu(); return; }
   menuDoc = id; menuFrom = from; from.setAttribute('aria-expanded', 'true');
-  const del = docMenu.querySelector('[data-act=delete]'); del.classList.remove('sure'); del.querySelector('span').textContent = 'Delete';
+  const fav = docs.find(x => x.id === id)?.fav;
+  docMenu.querySelector('[data-act=fav]').innerHTML = icon(fav ? 'star-off' : 'star') + (fav ? 'Remove from Favourites' : 'Add to Favourites');
   docMenu.hidden = false;
   const r = from.getBoundingClientRect();
   docMenu.style.left = Math.min(innerWidth - docMenu.offsetWidth - 8, r.left) + 'px';
@@ -4040,16 +4067,14 @@ function openDocMenu(id, from){
 function closeDocMenu(){ docMenu.hidden = true; menuFrom?.setAttribute('aria-expanded', 'false'); menuDoc = menuFrom = null; }
 docMenu.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || !menuDoc) return;
-  const id = menuDoc;
-  if (b.dataset.act === 'rename') { closeDocMenu(); startRename(id); return; }
-  if (!b.classList.contains('sure')) { b.classList.add('sure'); b.querySelector('span').textContent = 'Delete for good? Click again'; return; }
-  closeDocMenu(); deleteDoc(id);
+  const id = menuDoc; closeDocMenu();
+  ({rename: startRename, duplicate: duplicateDoc, fav: toggleFav, trash: trashDoc})[b.dataset.act]?.(id);
 });
 document.addEventListener('mousedown', e => { if (!docMenu.hidden && !docMenu.contains(e.target) && !e.target.closest('[data-more]')) closeDocMenu(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !docMenu.hidden) { const f = menuFrom; closeDocMenu(); f?.focus(); } });
 function startRename(id){
   const d = docs.find(x => x.id === id); if (!d) return;
-  const btn = $(`#docList [data-doc="${id}"]`); if (!btn) return;
+  const btn = $(`.doclist [data-doc="${id}"]`); if (!btn) return;
   renaming = id;
   const box = Object.assign(document.createElement('input'), {value: d.name, ariaLabel: 'Notebook name'});
   btn.replaceWith(box); box.focus(); box.select();
@@ -4787,6 +4812,117 @@ addEventListener('scroll', () => {
   else hideTip();
 }, {capture: true, passive: true});
 
+// ================= favourites, copies and the Trash: starred notebooks, Duplicate, and a delete you can take back =================
+// "Move to Trash" only marks a notebook (trashed: when). Its pages stay stored, so Restore brings everything back and its
+// pictures are kept too. It is gone for ever only when you delete it from the Trash, empty the Trash, or after 30 days.
+const TRASH_DAYS = 30;
+// forget a notebook's stored pages and its place (pictures only it used are tidied away at the next start-up)
+function forgetDoc(d){ histByDoc.delete(d.id); scrollByDoc.delete(d.id); delKey('doc:' + d.id); }
+async function trashDoc(id){
+  const d = docs.find(x => x.id === id); if (!d || d.trashed) return;
+  if (id === curId) await flushSave();                    // what you just wrote goes into the Trash with it
+  const live = liveDocs(), order = [...live.filter(x => x.fav), ...live.filter(x => !x.fav)], at = order.indexOf(d);
+  d.trashed = Date.now();
+  if (id === curId) await switchDoc((order[at + 1] || order[at - 1])?.id || null);    // the next one down the list, or a new empty notebook
+  else { putAll({docs}); renderDocs(); }
+  toast(`Moved “${d.name}” to the Trash.`);
+}
+function restoreDoc(id){
+  const d = docs.find(x => x.id === id); if (!d || !d.trashed) return;
+  delete d.trashed; putAll({docs}); renderDocs();
+  toast(`Restored “${d.name}”.`);
+}
+function purgeDoc(id){
+  const d = docs.find(x => x.id === id); if (!d || !d.trashed) return;
+  docs = docs.filter(x => x !== d); forgetDoc(d); putAll({docs}); renderDocs();
+  toast(`Deleted “${d.name}” for ever.`);
+}
+function emptyTrash(){
+  const gone = docs.filter(d => d.trashed); if (!gone.length) return;
+  docs = liveDocs(); gone.forEach(forgetDoc); putAll({docs}); renderDocs();
+  toast('Emptied the Trash.');
+}
+// at start-up: what has been in the Trash for more than 30 days goes for ever
+async function purgeOldTrash(){
+  const old = docs.filter(d => d.trashed && Date.now() - d.trashed > TRASH_DAYS * 864e5);
+  if (!old.length) return;
+  docs = docs.filter(d => !old.includes(d)); old.forEach(forgetDoc);
+  await putAll({docs});
+}
+function toggleFav(id){
+  const d = docs.find(x => x.id === id); if (!d) return;
+  if (d.fav) delete d.fav; else d.fav = true;
+  putAll({docs}); renderDocs();
+}
+// a copy of a notebook, right after it in the list (the copy is not opened)
+async function duplicateDoc(id){
+  const d = docs.find(x => x.id === id); if (!d) return;
+  if (id === curId) await flushSave();                    // so the copy has what is on the page now
+  const html = (await get('doc:' + id)) || '';
+  const copy = {...d, id: newId(), name: d.name.slice(0, 112) + ' (copy)', named: true, copiedFrom: id, updated: Date.now()};
+  delete copy.fav; delete copy.trashed;
+  docs.splice(docs.indexOf(d) + 1, 0, copy);
+  await putAll({['doc:' + copy.id]: html, docs});
+  renderDocs();
+  toast(`Made a copy: “${copy.name}”.`);
+}
+
+// the Trash in the sidebar: collapsed, with a count; unfolded it lists what is in it with Restore and Delete for ever
+const trashDate = t => new Date(t).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', ...(new Date(t).getFullYear() === new Date().getFullYear() ? {} : {year: 'numeric'})});
+function renderTrash(){
+  const box = document.getElementById('trashBox'); if (!box) return;
+  const gone = docs.filter(d => d.trashed).sort((a, b) => b.trashed - a.trashed);
+  box.querySelector('.count').textContent = gone.length || '';
+  box.querySelector('.trashhead').setAttribute('aria-expanded', trashOpen);
+  const list = box.querySelector('.trashlist'); list.hidden = !trashOpen;
+  const sig = trashOpen + '|' + gone.map(d => d.id + d.name).join('|');
+  if (box.dataset.sig === sig) return;                    // nothing changed: leave a "click again" button as it is
+  box.dataset.sig = sig;
+  if (!trashOpen) { list.replaceChildren(); return; }
+  const rows = gone.map(d => {
+    const row = document.createElement('div'); row.className = 'trashrow'; row.dataset.trash = d.id;
+    row.innerHTML = `<div class="tname">${icon('file')}<span class="nm"></span><span class="when"></span></div>` +
+      `<div class="tacts"><button type="button" class="tbtn" data-t="restore" title="Put it back in your list">${icon('restore')}<span>Restore</span></button>` +
+      `<button type="button" class="tbtn danger" data-t="purge" title="Delete it, with its notes, for ever. This can’t be undone.">${icon('trash')}<span>Delete for ever</span></button></div>`;
+    row.querySelector('.nm').textContent = d.name || 'Untitled';
+    row.querySelector('.when').textContent = trashDate(d.trashed);
+    row.querySelector('.tname').title = `In the Trash since ${trashDate(d.trashed)}. It goes for ever on ${trashDate(d.trashed + TRASH_DAYS * 864e5)}.`;
+    return row;
+  });
+  if (!rows.length) rows.push(Object.assign(document.createElement('p'), {className: 'tnone', textContent: 'Nothing in the Trash.'}));
+  else {
+    const all = Object.assign(document.createElement('button'), {type: 'button', className: 'tbtn danger tempty', innerHTML: `${icon('trash')}<span>Empty the Trash</span>`, title: 'Delete everything in the Trash for ever'});
+    all.dataset.t = 'empty'; rows.push(all);
+  }
+  list.replaceChildren(...rows);
+}
+// a button that needs a second click: the first click arms it, and it relaxes again after a few seconds
+function armed(b){
+  if (b.classList.contains('sure')) return true;
+  const s = b.querySelector('span'), was = s.textContent;
+  b.classList.add('sure'); s.textContent = 'Sure? Click again';
+  clearTimeout(b._t); b._t = setTimeout(() => { b.classList.remove('sure'); s.textContent = was; }, 4000);
+  return false;
+}
+// the Favourites list (above Notebooks) and the Trash (above the install button) are added to the sidebar here
+{
+  const fav = Object.assign(document.createElement('div'), {className: 'sidesec', id: 'favSec', hidden: true, innerHTML: '<span>Favourites</span>'});
+  const favList = Object.assign(document.createElement('ul'), {className: 'doclist', id: 'favList', hidden: true});
+  $('#docCount').closest('.sidesec').before(fav, favList);
+  const box = Object.assign(document.createElement('div'), {className: 'trashbox', id: 'trashBox'});
+  box.innerHTML = `<button type="button" class="srow trashhead" aria-expanded="false" aria-controls="trashList" title="Trash: notebooks you delete wait here for ${TRASH_DAYS} days, then they go for ever">${icon('trash')}<span class="nm">Trash</span> <span class="count"></span>${icon('right')}</button><div class="trashlist" id="trashList" hidden></div>`;
+  $('.sidefoot').before(box);
+  box.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.classList.contains('trashhead')) { trashOpen = !trashOpen; renderTrash(); return; }
+    const id = b.closest('[data-trash]')?.dataset.trash, act = b.dataset.t;
+    if (act === 'restore') restoreDoc(id);
+    else if (armed(b)) { if (act === 'empty') emptyTrash(); else purgeDoc(id); }
+    else return;
+    if (!box.contains(document.activeElement)) box.querySelector('.trashhead').focus();    // the button you used has gone
+  });
+}
+
 // ================= install as an app (when it is served from the web) =================
 let installEvt = null;
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
@@ -4828,18 +4964,20 @@ restorePanels();
     const [list, cur, s, legacy] = db ? await Promise.all([get('docs'), get('cur'), get('style'), get('doc')]) : [];
     if (s) { style = s; showStyle(style); }
     docs = Array.isArray(list) ? list.filter(d => d && d.id) : [];
-    if (!docs.length) {                     // first visit, or notes saved before there were notebooks
+    await purgeOldTrash();
+    if (!liveDocs().length) {               // first visit, or notes saved before there were notebooks
       const d = makeDoc();
       if (legacy) { d.name = 'My notes'; await putAll({['doc:' + d.id]: legacy}); }
     }
     if (legacy) delKey('doc');
-    curId = docs.some(d => d.id === cur) ? cur : docs[0].id;
+    curId = liveDocs().some(d => d.id === cur) ? cur : liveDocs()[0].id;
     // a notebook file opened on its own: show it (or the newer copy of it already saved in this browser)
     let data = null;
     try { const emb = document.getElementById('notebook-data'); if (emb) data = JSON.parse(emb.textContent); } catch {}
     if (data) {
       notebookPrefs(data);
-      if (data.id && docs.some(d => d.id === data.id)) curId = data.id;
+      const known = data.id && docs.find(d => d.id === data.id);
+      if (known) { delete known.trashed; curId = known.id; }          // opening a file brings it back from the Trash
       else {
         const d = makeDoc(data.id || undefined, data.name || 'My notes'); d.named = !!data.named; curId = d.id;
         await putAll({['doc:' + d.id]: data.doc || ''});
