@@ -1,4 +1,4 @@
-# Between the Slides
+# Between the Lines
 
 A simple web page for taking notes on lecture slides.
 
@@ -20,10 +20,10 @@ A simple web page for taking notes on lecture slides.
 ## Taking notes
 
 - **Open** a **PDF**, or drop it anywhere on the page. Each page shows exactly as it is, with background graphics, side bands and slide numbers removed. You can select and copy text from the pages.
-- Point at a spot on a page and press **+ Add here**. A menu like Notion's opens: **Note** opens the page up at the nearest gap between lines for you to type in your own font, size and colour (handwriting styles and standard fonts); **Sticky note** puts a sticky note on top of the page there; **Equation** adds a formula in the gap. Point at an option or use the arrow keys, type to search, Enter to add, Esc to close.
+- Point at a spot on a page and press **+ Add here** to add a **Note** there: the page opens up at the nearest gap between lines for you to type in your own font, size and colour (handwriting styles and standard fonts). **Right-click** the button (or the dashed line; press and hold the button on a touch screen) for a menu like Notion's: **Note**, **Sticky note** (put on top of the page there) or **Equation** (a formula in the gap). Point at an option or use the arrow keys, type to search, Enter to add, Esc to close.
 - In a note, type **/** (at the start, or after a space) for the same menu at the cursor: add an equation, or turn the note into a sticky note and back. What you type after the slash searches it.
 - **Sticky notes** are yellow paper on top of the page. Drag one by its tape to move it anywhere, even onto another page; it shows in the Notes panel as a sticky note and in the PDF as you see it.
-- **PowerPoint (.pptx)** and **Word (.docx)** files open as text with their formatting, and you can type inside sentences too. Pictures open as pages.
+- **PowerPoint (.pptx)** and **Word (.docx)** files open as text with their formatting, and you can type inside sentences too. Pictures open as pages. PowerPoint files are rebuilt as text, so layouts, formulas and fonts can differ, and some pictures may not come through; for an exact copy, save the file as a PDF (File › Save as › PDF) and open that.
 - Notes sit in boxes. A box's handles show only when you point at it (or tap it on a touch screen), so the page stays clear. Drag a box's edges to resize it, or its move handle to move it across the page or between other lines. Pink guide lines show when it lines up with other notes; it gently snaps only within a few pixels, and holding **Alt** or **Shift** turns snapping off.
 - Each note's handles: **float** it on top of the page (like "in front of text" in Word), **minimise** it to a small pencil icon (it shows the note when you point at it, opens when clicked, and can be dragged aside), and **pin** it so it stays open.
 - **Colour-code** the pencil icons by topic: right-click one (press and hold on a touch screen), or use **Box › Icon colours**. Save **favourite colours** with the star next to the text colour.

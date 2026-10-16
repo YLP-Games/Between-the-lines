@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="claude:viewport-fit-sides" content="cover">
-<title>Between the Slides</title>
+<title>Between the Lines</title>
 <meta name="description" content="Take notes right between the lines of your lecture slides.">
 <meta name="theme-color" content="#eeede9">
 <link rel="icon" id="favicon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cg%20transform%3D%22rotate%28-4%2016%2016%29%22%3E%3Cpath%20d%3D%22M3.6%203.3C10.5%202.4%2021.6%202.2%2028.6%203.1c1.4%206.3%201.6%2019.5.6%2026.3-7%201.1-18.7%201.2-25.3.3C2.3%2023.7%202.2%2010.1%203.6%203.3Z%22%20fill%3D%22%233552c4%22%20stroke%3D%22%231d2752%22%20stroke-width%3D%221.4%22%2F%3E%3Cpath%20d%3D%22M8%209.2c5.2-.7%2010.9-.6%2016%20.2M8.2%2023.2c5.3-.6%2010.8-.5%2015.6.1%22%20stroke%3D%22%23fbfbf8%22%20stroke-width%3D%222.9%22%20stroke-linecap%3D%22round%22%20fill%3D%22none%22%2F%3E%3Cpath%20d%3D%22M8.2%2016.6c2.3-3.4%204%202.9%206.4-.3s4%202.9%206.6.1%22%20stroke%3D%22%23ffd54a%22%20stroke-width%3D%223.3%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20fill%3D%22none%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
@@ -97,7 +97,7 @@ input[type=color]{width:28px;height:28px;padding:0;border:1px solid var(--line-s
 .hlswatch{background:#fff176;color:#1b2330;padding:0 4px;border-radius:3px;font-weight:600}
 .seg{display:flex;gap:2px;padding:2px;border-radius:9px;background:var(--bg)}
 .seg .btn{height:28px}
-.seg .btn[aria-pressed="true"]{background:var(--surface);color:var(--ink)}
+.seg .btn[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:700;box-shadow:inset 0 0 0 1.5px var(--accent)} /* taste-skill-ignore: a ring marking the chosen option, not a shadow */
 .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
 .showbar{position:fixed;z-index:30;top:calc(8px + env(safe-area-inset-top,0px));right:var(--gutter-r);display:inline-flex;align-items:center;gap:6px;font:13px var(--ui);height:32px;padding:0 14px;border-radius:999px;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer;opacity:.9} /* taste-skill-ignore: a floating button */
 .showbar:hover{opacity:1}
@@ -579,7 +579,6 @@ body.focus .peekzone{display:none}
 :root[data-ui-font="clean"] body *{font-size-adjust:inherit}   /* rules with a font shorthand would otherwise reset it */
 :root[data-ui-font="clean"] #listStyle{min-width:100px}
 :root[data-ui-font="clean"] #indentSize{min-width:138px}
-#themeModes .btn[aria-pressed="true"],#uiFonts .btn[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
 :root[data-ui-font="clean"] :is(main,.stickyghost,.ncompose textarea,.pv,.fpreview,#fInput,kbd){font-size-adjust:none}
 
 /* ================= sticky notes: yellow paper on top of the page, moved by their tape ================= */
@@ -621,6 +620,16 @@ body.dragging-sticky,body.dragging-sticky *{cursor:grabbing!important}
 .slide .content pre code{padding:0;background:none}
 .slide .content blockquote.blk{margin-left:0;padding-left:12px;border-left:3px solid #c9d0db}
 
+.gappill{-webkit-touch-callout:none;touch-action:manipulation}
+.pptx-tip{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;box-sizing:border-box;width:100%;max-width:900px;margin:0;padding:8px 12px;border:1.5px solid var(--line-strong);border-radius:var(--radius);background:var(--accent-soft);color:var(--ink);font-size:15px;line-height:1.35}
+.pptx-tip > span{flex:1 1 320px}
+.pptx-tip .btn{height:30px}
+.pptx-tip .linkbtn{border:none;background:none;padding:0;font:inherit;color:var(--accent);text-decoration:underline;cursor:pointer}
+.pg{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.pg.dragging{opacity:.4}
+.pgghost{position:fixed;z-index:300;pointer-events:none;opacity:.92;transform:rotate(-2deg);box-shadow:3px 4px 0 rgba(47,43,36,.55)} /* taste-skill-ignore: a lifted thumbnail */
+.pgdrop{position:fixed;z-index:300;height:3px;border-radius:2px;background:var(--accent);pointer-events:none}
+body.pgdragging,body.pgdragging *{cursor:grabbing!important}
 /* ================= add a note from the Notes panel ================= */
 .ncompose{display:flex;flex-direction:column;gap:8px;padding:2px 0 4px}
 .ncompose textarea{display:block;width:100%;box-sizing:border-box;min-height:62px;max-height:180px;resize:none;padding:6px 10px;border:1.5px solid var(--pencil);border-radius:var(--wob);background:#fff;color:#1f4fd1;font:22px/1.2 Caveat,cursive;outline:none}
@@ -727,6 +736,13 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none!importa
 .qtip .d{margin-top:2px;font-size:13.5px;opacity:.75;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 @media (prefers-reduced-motion:reduce){.qtip{transition:none}}
 </style>
+<script>
+// a saved Light or Dark theme is set before the page paints, so it doesn't flash the other one first
+try {
+  var t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+  if (localStorage.getItem('ui-font') === 'clean') document.documentElement.dataset.uiFont = 'clean';
+} catch (e) {}
+</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to your pages</a>
@@ -947,7 +963,7 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none!importa
         <button class="btn danger" id="delPageBtn" title="Remove the current page (the one you last clicked)"><svg class="i"><use href="#i-page-remove"/></svg><span>Remove page</span></button>
       </div><span class="cap">Pages</span></div>
       <span class="sep"></span>
-      <p class="tip">On a PDF page, point between two lines and press “+ Add here” for a note, sticky note or equation. In a note, type / for the same options.</p>
+      <p class="tip">On a PDF page, point between two lines and press “+ Add here” for a note (right-click it for a sticky note or an equation). In a note, type / for the same options.</p>
     </div>
 
     <div class="panel" role="tabpanel" id="panel-box" aria-labelledby="tab-box" data-edit hidden>
@@ -1071,7 +1087,9 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none!importa
       <h3>How to use it</h3>
       <ul class="howto">
         <li><b>Open</b> a PDF, PowerPoint (.pptx) or Word (.docx) file, or drop one anywhere on the page. Each file becomes its own <b>notebook</b> in the sidebar; <b>Insert › Add a file here</b> adds one to the notebook you're in instead.</li>
-        <li>On a PDF page, point at a spot and press <b>+ Add here</b>, then pick <b>Note</b> (the page opens up between the lines), <b>Sticky note</b> or <b>Equation</b>. On other pages, click where you want to write. In a note, type <b>/</b> for the same choices.</li>
+        <li>PowerPoint files are rebuilt as text here, so layouts, formulas and fonts can differ. For an exact copy, save the slides as a PDF (File › Save as › PDF) and open that.</li>
+        <li>Some pictures inside PowerPoint and Word files may not come through. For an exact copy, save the file as a PDF and open that; you can also add a missing picture with Insert › Picture, video or sound.</li>
+        <li>On a PDF page, point at a spot and press <b>+ Add here</b> to add a note there (the page opens up between the lines). <b>Right-click</b> the button (press and hold on a touch screen) to pick <b>Note</b>, <b>Sticky note</b> or <b>Equation</b>. On other pages, click where you want to write. In a note, type <b>/</b> for the same choices.</li>
         <li><b>Sticky notes</b> sit on top of the page: drag one by its tape to move it, even onto another page. In the <b>Notes</b> panel, type a note and press <b>Add note</b>, or drag <b>Sticky</b> onto any page.</li>
         <li><b>Draw</b> (Insert tab) writes or highlights on PDF pages with a pen, and the eraser rubs strokes out. Select words on any page to highlight them, or press <b>Comment</b>; open comments are listed in the <b>Notes</b> panel until you resolve them.</li>
         <li>The <b>Home</b> tab styles your notes: the font, size and colour are used for new notes, or click in a note (or select words) to change just that.</li>
@@ -1079,7 +1097,7 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none!importa
         <li>On each note: the arrows float it on top of the page, the minus minimises it to a pencil icon (drag the icon aside, right-click it to colour it), and the pin keeps it open.</li>
         <li>The <b>sidebar</b> (left) lists your notebooks: click one to switch, and the one you're in shows its pages. Use its <b>⋯</b> to rename or delete it. Hide it with <b>«</b> (Ctrl+\) and point at the left edge to peek at it. A notebook’s <b>⋯</b> menu can also star it as a <b>Favourite</b>, <b>Duplicate</b> it, or move it to the <b>Trash</b>, where it waits 30 days (and can be restored) before it is gone for ever. Group notebooks in <b>folders</b> (<b>New folder</b>): drag a notebook or a folder onto a folder to move it, or use <b>Move to…</b> in its <b>⋯</b> menu.</li>
         <li><b>Notes</b> (right) lists every note in the notebook to search, filter by icon colour and jump to.</li>
-        <li>In Chrome or Edge, <b>Install as an app</b> (at the bottom of the sidebar) gives Between the Slides its own window that works offline.</li>
+        <li>In Chrome or Edge, <b>Install as an app</b> (at the bottom of the sidebar) gives Between the Lines its own window that works offline.</li>
         <li><b>Focus</b> hides the toolbar, side panels and status bar so only your pages and notes are left (Esc brings them back). Each panel also closes with its ×, and View › Toolbar can shrink the toolbar to tabs only.</li>
         <li><b>Study mode</b> stops accidental changes while you revise. Everything is saved in this browser; <b>Download</b> a PDF, or a notebook file to keep editing on another device.</li>
       </ul>
@@ -1177,7 +1195,7 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none!importa
     </figure>
     <ol class="steps">
       <li><span><b>Open</b>Background graphics, side bands and slide numbers are cleaned away.</span></li>
-      <li><span><b>Write between the lines</b>Point at a gap and press “+ Add here” for a note, a sticky note or an equation.</span></li>
+      <li><span><b>Write between the lines</b>Point at a gap and press “+ Add here” for a note; right-click it for a sticky note or an equation.</span></li>
       <li><span><b>Revise and download</b>Study mode, a searchable notes list, and PDF or notebook downloads.</span></li>
     </ol>
     <p class="private"><svg class="i"><use href="#i-lock"/></svg>Everything stays on this device. Your notes are saved in this browser.</p>
@@ -1192,6 +1210,7 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none!importa
 // a copy of this app as it is before anything is opened, for the downloadable notebook file
 const APP_HTML = (() => {
   const c = document.documentElement.cloneNode(true);
+  c.removeAttribute('data-theme'); c.removeAttribute('data-ui-font');     // the saved look belongs to this browser, not the notebook file
   c.querySelector('#notebook-data')?.remove();
   const m = c.querySelector('#main'); if (m) m.innerHTML = '';
   return '<!doctype html>\n' + c.outerHTML;
@@ -2033,7 +2052,7 @@ function gapY(strip, clientY){
 // a dashed line and an "+ Add here" button follow the mouse (or appear where you tap); the button opens the add menu
 const gapLine = document.createElement('div'); gapLine.className = 'gapline';
 const gapPill = document.createElement('button'); gapPill.className = 'gappill'; gapPill.type = 'button'; gapPill.textContent = '+ Add here';
-gapPill.title = 'Add a note, sticky note or equation between these lines';
+gapPill.title = 'Add a note here (right-click for a sticky note or an equation)';
 gapPill.setAttribute('aria-haspopup', 'listbox');
 let pending = null, ins = null;          // ins: the add menu, while it is open
 function showGap(strip, clientY, clientX){
@@ -2045,10 +2064,15 @@ function showGap(strip, clientY, clientX){
 }
 function hideGap(){ if (ins?.mode === 'gap') closeInsMenu(); gapLine.remove(); gapPill.remove(); pending = null; }
 gapPill.addEventListener('mousedown', e => e.preventDefault());
+// a click adds a note at once; right-click (or press and hold on a touch screen) opens the menu for a sticky note or an equation
+let pillHeld = false;
 gapPill.addEventListener('click', e => {
   e.stopPropagation();
+  if (pillHeld) { pillHeld = false; return; }
   if (ins?.mode === 'gap') { closeInsMenu(); return; }
-  if (pending) openInsMenu({mode: 'gap', ...pending});
+  if (!pending) return;
+  const {strip, y} = pending; hideGap();
+  if (strip.isConnected) insertAt(strip, y);
 });
 let moveQueued = false;
 main.addEventListener('mousemove', e => {
@@ -2449,6 +2473,7 @@ async function openFiles(picked, here = false){
     main.append(head);
     try {
       await (read === readImage ? readImage(f) : read(await f.arrayBuffer(), f.name));
+      if (ext === 'pptx' && head.nextElementSibling && pref.get('pptx-tip') !== 'off') head.after(pptxTip());
       first ??= head;
       toast(''); saveSoon();
     } catch (err) {
@@ -2579,7 +2604,7 @@ function updateTab(){
   let name = '';
   try { name = main.querySelector('.slide') ? notebookName() : ''; } catch {}
   const unsaved = $('#saveState').dataset.s === 'error';
-  const title = (unsaved ? 'Not saved · ' : '') + (name ? `${name}${reading ? ' (Study mode)' : ''} — Between the Slides` : 'Between the Slides');
+  const title = (unsaved ? 'Not saved · ' : '') + (name ? `${name}${reading ? ' (Study mode)' : ''} — Between the Lines` : 'Between the Lines');
   if (document.title !== title) document.title = title;
   const state = unsaved ? 'error' : 'ok';
   if (state === tabState) return;
@@ -2623,7 +2648,7 @@ function notebookName(){
 }
 function currentDoc(){
   const c = main.cloneNode(true);
-  c.querySelectorAll('.gapline, .gappill, .welcome, .empty, .cardbar').forEach(x => x.remove());
+  c.querySelectorAll('.gapline, .gappill, .welcome, .empty, .cardbar, .pptx-tip').forEach(x => x.remove());
   c.querySelectorAll('.media-sel, .target-page, .multi-sel, .flash, .drop-target, .touched').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel', 'flash', 'drop-target', 'touched'));
   c.querySelectorAll('.mine').forEach(x => { x.contentEditable = 'true'; });
   flatten(c);
@@ -5123,6 +5148,171 @@ document.addEventListener('keydown', e => {
 });
 paintStar(); fillPrefs(); paintUiFont(); paintTheme();
 
+// ================= the add menu from the "+ Add here" button: right-click, or press and hold =================
+// (a plain click on the button adds a note straight away)
+function openGapMenu(x){
+  if (!pending) return;
+  if (x != null) pending.x = x;
+  openInsMenu({mode: 'gap', ...pending});
+}
+gapPill.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); openGapMenu(); });
+// right-click on the dashed line, where the button shows, does the same
+main.addEventListener('contextmenu', e => {
+  if (reading || drawing || !annoBar.hidden || annoCur) return;
+  const strip = e.target.closest('.strip');
+  if (!strip || e.target.closest('.notebox, .mine, .gappill') || gapLine.parentElement !== strip) return;
+  if (Math.abs(e.clientY - gapLine.getBoundingClientRect().top) > 18) return;
+  e.preventDefault(); openGapMenu(e.clientX);
+});
+// on a touch screen, pressing and holding the button (half a second) opens the menu
+let pillTimer = 0, pillDown = null;
+gapPill.addEventListener('pointerdown', e => {
+  pillHeld = false; clearTimeout(pillTimer);
+  if (e.pointerType !== 'touch') return;
+  pillDown = [e.clientX, e.clientY];
+  pillTimer = setTimeout(() => { pillHeld = true; openGapMenu(); }, 500);
+});
+gapPill.addEventListener('pointermove', e => { if (pillDown && Math.hypot(e.clientX - pillDown[0], e.clientY - pillDown[1]) > 10) clearTimeout(pillTimer); });
+for (const t of ['pointerup', 'pointercancel']) gapPill.addEventListener(t, () => clearTimeout(pillTimer));
+
+// ================= a tip after opening a PowerPoint file (not saved with the notes) =================
+function pptxTip(){
+  const d = document.createElement('div'); d.className = 'pptx-tip'; d.setAttribute('role', 'note'); d.contentEditable = 'false';
+  const t = document.createElement('span');
+  t.textContent = 'PowerPoint files are rebuilt as text here, so layouts, formulas and fonts can differ. For an exact copy, save the slides as a PDF (File › Save as › PDF) and open that.';
+  const ok = Object.assign(document.createElement('button'), {type: 'button', className: 'btn outline', textContent: 'Got it'});
+  const never = Object.assign(document.createElement('button'), {type: 'button', className: 'linkbtn', textContent: 'Don’t show again'});
+  ok.onclick = () => d.remove();
+  never.onclick = () => { pref.set('pptx-tip', 'off'); main.querySelectorAll('.pptx-tip').forEach(x => x.remove()); };
+  d.append(t, ok, never);
+  return d;
+}
+
+// ================= reorder pages: drag a thumbnail in the Pages list (or Alt+↑ / Alt+↓ on a focused one) =================
+// move the page at index `from` (among all pages) to before or after the page at `to`; false if that changes nothing
+function movePage(from, to, after){
+  flatten(main);                                       // out of the page layout's sheets, so the pages sit side by side again
+  const slides = [...main.querySelectorAll('.slide')], card = slides[from], ref = slides[to];
+  if (!card || !ref || card === ref) { if (LAYOUTS[layout]) paginateView(); return false; }
+  let dest = to + (after ? 1 : 0); if (from < dest) dest--;
+  if (dest === from) { if (LAYOUTS[layout]) paginateView(); return false; }
+  hideGap(); closeInsMenu();
+  if (after) ref.after(card); else ref.before(card);
+  if (LAYOUTS[layout]) paginateView();
+  lastCard = card;
+  saveSoon();                                          // one change in the history, so Back puts the page back
+  pagesSig = null; renderPages();
+  return dest;
+}
+pageList.addEventListener('keydown', e => {
+  const b = e.target.closest?.('.pg');
+  if (!b || !e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') || reading) return;
+  e.preventDefault();
+  const from = +b.dataset.i, up = e.key === 'ArrowUp', last = main.querySelectorAll('.slide').length - 1;
+  if (up ? from <= 0 : from >= last) return;
+  const dest = movePage(from, up ? from - 1 : from + 1, !up);
+  if (dest === false) return;
+  pageList.querySelector(`.pg[data-i="${dest}"]`)?.focus();
+  // the panels redraw a moment after a change and drop the focus: give it back to the thumbnail (unless you went elsewhere)
+  let tries = 0;
+  const keep = setInterval(() => {
+    if (++tries > 20) clearInterval(keep);
+    else if (document.activeElement === document.body) pageList.querySelector(`.pg[data-i="${dest}"]`)?.focus({preventScroll: true});
+    else if (!document.activeElement.closest('#pageList')) clearInterval(keep);
+  }, 100);
+  toast(`Moved to page ${dest + 1}.`);
+});
+let pgDrag = null, pgDragEnd = 0;
+pageList.addEventListener('pointerdown', e => {
+  const b = e.target.closest('.pg');
+  if (!b || e.button !== 0 || pgDrag || reading || e.isPrimary === false) return;
+  const touch = e.pointerType !== 'mouse';
+  pgDrag = {b, from: +b.dataset.i, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, touch, live: false, to: null, after: false};
+  // a mouse starts dragging after 6 px; a finger must press and hold for 300 ms first (moving sooner is a scroll)
+  if (touch) pgDrag.timer = setTimeout(() => { if (pgDrag) pgStart(); }, 300);
+  addEventListener('pointermove', pgMove); addEventListener('pointerup', pgUp); addEventListener('pointercancel', pgCancel);
+  addEventListener('touchmove', pgTouch, {passive: false});
+  addEventListener('keydown', pgKey, true);
+});
+// a click that ends a drag must not also jump to the page
+addEventListener('click', e => { if (performance.now() - pgDragEnd < 400 && e.target.closest?.('#pageList')) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+pageList.addEventListener('contextmenu', e => { if (pgDrag?.touch && e.target.closest('.pg')) e.preventDefault(); });
+function pgStart(){
+  const d = pgDrag; if (!d || d.live) return;
+  d.live = true;
+  const th = d.b.querySelector('.thumb'), r = (th || d.b).getBoundingClientRect();
+  d.ox = d.x - r.left; d.oy = d.y - r.top;
+  d.ghost = document.createElement('div'); d.ghost.className = 'pgghost'; d.ghost.setAttribute('aria-hidden', 'true');
+  d.ghost.style.width = r.width + 'px';
+  if (th) d.ghost.append(th.cloneNode(true));
+  d.line = document.createElement('div'); d.line.className = 'pgdrop'; d.line.hidden = true;
+  document.body.append(d.ghost, d.line);
+  d.b.classList.add('dragging'); document.body.classList.add('pgdragging');
+  getSelection().removeAllRanges();
+  pgFrame();
+}
+function pgMove(e){
+  const d = pgDrag; if (!d) return;
+  d.x = e.clientX; d.y = e.clientY;
+  if (!d.live) {
+    if (Math.hypot(d.x - d.x0, d.y - d.y0) < 6) return;
+    if (d.touch) { pgCancel(); return; }                  // moved before the hold finished: the finger is scrolling
+    pgStart();
+  }
+  pgPlace();
+}
+function pgTouch(e){ if (pgDrag?.live && e.cancelable) e.preventDefault(); }   // once dragging, a finger must not scroll the page
+// the ghost follows the pointer; the accent line shows where the page would land
+function pgPlace(){
+  const d = pgDrag; if (!d?.live) return;
+  d.ghost.style.left = (d.x - d.ox) + 'px'; d.ghost.style.top = (d.y - d.oy) + 'px';
+  const pr = panelEl.pages.getBoundingClientRect();
+  d.to = null;
+  if (d.x >= pr.left - 24 && d.x <= pr.right + 24 && d.y >= pr.top - 24 && d.y <= pr.bottom + 24) {
+    const pgs = [...pageList.querySelectorAll('.pg')];
+    let hit = null;
+    for (const g of pgs) { const r = g.getBoundingClientRect(); if (d.y < r.top + r.height / 2) { hit = {g, after: false, r}; break; } }
+    if (!hit && pgs.length) { const g = pgs[pgs.length - 1]; hit = {g, after: true, r: g.getBoundingClientRect()}; }
+    if (hit) {
+      d.to = +hit.g.dataset.i; d.after = hit.after;
+      const lr = pageList.getBoundingClientRect(), y = hit.after ? hit.r.bottom + 1 : hit.r.top - 2;
+      if (y > pr.top - 2 && y < pr.bottom + 2) {
+        d.line.hidden = false; d.line.style.top = y + 'px'; d.line.style.left = (lr.left + 6) + 'px'; d.line.style.width = Math.max(0, lr.width - 12) + 'px';
+      } else d.line.hidden = true;
+    }
+  }
+  if (d.to === null) d.line.hidden = true;
+}
+// near the top or bottom edge of the list it scrolls by itself
+function pgFrame(){
+  const d = pgDrag; if (!d?.live) return;
+  const pr = panelEl.pages.getBoundingClientRect(), edge = 56;
+  if (d.x >= pr.left - 24 && d.x <= pr.right + 24) {
+    const up = pr.top + edge - d.y, down = d.y - (pr.bottom - edge);
+    const v = up > 0 ? -Math.min(up, edge) : down > 0 ? Math.min(down, edge) : 0;
+    if (v) { panelEl.pages.scrollTop += v / 4; pgPlace(); }
+  }
+  d.raf = requestAnimationFrame(pgFrame);
+}
+function pgEnd(){
+  const d = pgDrag; if (!d) return;
+  clearTimeout(d.timer); cancelAnimationFrame(d.raf);
+  d.ghost?.remove(); d.line?.remove(); d.b.classList.remove('dragging'); document.body.classList.remove('pgdragging');
+  removeEventListener('pointermove', pgMove); removeEventListener('pointerup', pgUp); removeEventListener('pointercancel', pgCancel);
+  removeEventListener('touchmove', pgTouch); removeEventListener('keydown', pgKey, true);
+  pgDrag = null;
+  if (d.live) pgDragEnd = performance.now();
+  return d;
+}
+function pgUp(e){
+  const d = pgDrag; if (!d) return;
+  if (d.live) { d.x = e.clientX; d.y = e.clientY; pgPlace(); }
+  const done = pgEnd();
+  if (done?.live && done.to !== null) movePage(done.from, done.to, done.after);
+}
+function pgCancel(){ pgEnd(); }
+function pgKey(e){ if (e.key === 'Escape' && pgDrag) { e.preventDefault(); e.stopPropagation(); pgEnd(); } }
+
 // ================= add a note from the Notes panel =================
 const newNote = $('#newNote'), stickyPad = $('#stickyPad');
 function updateWhere(){
@@ -5942,7 +6132,7 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
   }).catch(() => {});               // e.g. a preview with no sw.js: it just isn't installable there
 }
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('#installBtn').hidden = false; });
-addEventListener('appinstalled', () => { installEvt = null; $('#installBtn').hidden = true; toast('Installed. Between the Slides now opens in its own window, even offline.'); });
+addEventListener('appinstalled', () => { installEvt = null; $('#installBtn').hidden = true; toast('Installed. Between the Lines now opens in its own window, even offline.'); });
 $('#installBtn').onclick = async () => {
   if (!installEvt) return;
   installEvt.prompt();
