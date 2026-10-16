@@ -575,6 +575,47 @@ body.dragging-sticky,body.dragging-sticky *{cursor:grabbing!important}
 #stickyPad{cursor:grab;touch-action:none}
 .ncwhere{margin-left:auto;font-size:14px;color:var(--muted);white-space:nowrap}
 body.reading .ncompose,body.reading #sideAdd{display:none}
+/* ================= annotate: draw on PDF pages, highlight and comment on words ================= */
+/* the ink sits over the page picture and under the invisible text, so words can still be selected */
+.ink{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden}
+.ink .hl{opacity:.35;mix-blend-mode:multiply}
+.ink .mk{opacity:.45;mix-blend-mode:multiply}
+body.drawing .strip,body.drawing .tl{cursor:crosshair;user-select:none;-webkit-user-select:none}
+body.drawing .strip{touch-action:none}
+body.drawing.erasing .strip,body.drawing.erasing .tl{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%23fff' stroke-width='3'/%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%23222' stroke-width='1.5'/%3E%3C/svg%3E") 12 12,crosshair}
+body.drawing .gappill,body.drawing .gapline{display:none}
+body.drawing .toast{bottom:calc(var(--status-h) + 74px + env(safe-area-inset-bottom,0px))}
+body.on-mark .strip,body.on-mark .tl{cursor:pointer}
+.drawbar{z-index:66;left:50%;bottom:calc(var(--status-h) + 16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 12px;padding:8px 10px 8px 12px;border-radius:12px;font:15px var(--ui);max-width:calc(100vw - 24px);box-sizing:border-box}
+.drawbar .seg .btn{gap:5px;padding:0 10px}
+.drawbar .seg .btn .i{width:17px;height:17px}
+.dcols,.dwids{display:flex;align-items:center;gap:1px}
+.drawbar .sw:disabled,.drawbar .dw:disabled{opacity:.3;cursor:default}
+.drawbar .dw{min-width:34px;padding:0}
+.drawbar .dw span{display:block;width:18px;height:var(--t);border-radius:99px;background:currentColor}
+/* selecting words on a page: the bar with highlight colours and Comment */
+.annobar{z-index:52;display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:12px;font:15px var(--ui);box-sizing:border-box;max-width:calc(100vw - 16px)}
+.hdot{flex:none;width:26px;height:26px;padding:0;border-radius:50%;border:1.5px solid var(--pencil);background:var(--c);cursor:pointer}
+.hdot[aria-pressed="true"]{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)} /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
+.annobar .btn{height:30px;padding:0 9px;gap:5px}
+.annobar .btn .i{width:16px;height:16px}
+.asep{width:1px;align-self:stretch;margin:3px 1px;background:var(--line-strong)}
+/* the comment on a highlight */
+.annopop{z-index:53;width:min(320px,calc(100vw - 16px));padding:10px 12px 10px;display:flex;flex-direction:column;gap:8px;box-sizing:border-box;font:15px var(--ui)}
+.annopop .aq{border-left:4px solid var(--c);padding-left:8px;color:var(--muted);font-size:14px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.annopop textarea{display:block;width:100%;box-sizing:border-box;min-height:70px;max-height:200px;resize:vertical;padding:6px 9px;border:1.5px solid var(--pencil);border-radius:var(--wob);background:var(--surface-2);color:var(--ink);font:16px/1.35 var(--ui);outline:none}
+.annopop textarea:focus{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)} /* taste-skill-ignore: a ring marking focus, not a shadow */
+.annopop textarea[readonly]{background:transparent;resize:none}
+.annopop .arow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.annopop .arow + .arow{padding-top:8px;border-top:1.5px dashed var(--line-strong)}
+.annopop .btn{height:30px;padding:0 10px;gap:5px;font-size:15px}
+.annopop .btn .i{width:15px;height:15px}
+.annopop.ro .arow + .arow{border-top:0;padding-top:0}
+.annopop .done-tag{font-size:13px;color:var(--ok);margin-left:auto}
+/* a highlight on a text slide */
+mark.anno{background:var(--ac,#ffe066);color:inherit;padding:0;border-radius:2px;cursor:pointer;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+mark.anno[data-cm]:not([data-done])::after{content:"";display:inline-block;width:1em;height:.92em;margin:0 0 -.18em .22em;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 13 12'%3E%3Cpath d='M2 .4h9a1.6 1.6 0 0 1 1.6 1.6v5a1.6 1.6 0 0 1-1.6 1.6H6.5l-3 3V8.6H2A1.6 1.6 0 0 1 .4 7V2A1.6 1.6 0 0 1 2 .4z' fill='%233552c4' stroke='%23fff' stroke-width='.8'/%3E%3Ccircle cx='4' cy='4.5' r='.9' fill='%23fff'/%3E%3Ccircle cx='6.5' cy='4.5' r='.9' fill='%23fff'/%3E%3Ccircle cx='9' cy='4.5' r='.9' fill='%23fff'/%3E%3C/svg%3E") center/contain no-repeat}
 </style>
 </head>
 <body>
@@ -625,6 +666,11 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
 <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
 <symbol id="i-hide-left" viewBox="0 0 24 24"><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></symbol>
 <symbol id="i-sticky" viewBox="0 0 24 24"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/></symbol>
+<symbol id="i-pen-line" viewBox="0 0 24 24"><path d="M13 21h8"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></symbol>
+<symbol id="i-highlighter" viewBox="0 0 24 24"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></symbol>
+<symbol id="i-comment" viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-reopen" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
 <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol>
 </defs></svg>
 
@@ -767,6 +813,10 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
       </div><span class="cap">Into the note</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row">
+        <button class="btn" id="drawBtn" data-edit aria-pressed="false" title="Draw: write or highlight on PDF pages with a pen (Esc to stop)"><svg class="i"><use href="#i-pen-line"/></svg>Draw</button>
+      </div><span class="cap">Annotate</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row">
         <button class="btn" id="addPageBtn" title="Add a blank page after the current page (the one you last clicked)"><svg class="i"><use href="#i-page-add"/></svg>Blank page after</button>
         <button class="btn" id="addHereBtn" title="Add another file to the end of this notebook, instead of opening it as a new one"><svg class="i"><use href="#i-file"/></svg>Add a file here</button>
         <button class="btn danger" id="delPageBtn" title="Remove the current page (the one you last clicked)"><svg class="i"><use href="#i-page-remove"/></svg><span>Remove page</span></button>
@@ -891,6 +941,7 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
         <li><b>Open</b> a PDF, PowerPoint (.pptx) or Word (.docx) file, or drop one anywhere on the page. Each file becomes its own <b>notebook</b> in the sidebar; <b>Insert › Add a file here</b> adds one to the notebook you're in instead.</li>
         <li>On a PDF page, point at a spot and press <b>+ Add here</b>, then pick <b>Note</b> (the page opens up between the lines), <b>Sticky note</b> or <b>Equation</b>. On other pages, click where you want to write. In a note, type <b>/</b> for the same choices.</li>
         <li><b>Sticky notes</b> sit on top of the page: drag one by its tape to move it, even onto another page. In the <b>Notes</b> panel, type a note and press <b>Add note</b>, or drag <b>Sticky</b> onto any page.</li>
+        <li><b>Draw</b> (Insert tab) writes or highlights on PDF pages with a pen, and the eraser rubs strokes out. Select words on any page to highlight them, or press <b>Comment</b>; open comments are listed in the <b>Notes</b> panel until you resolve them.</li>
         <li>The <b>Home</b> tab styles your notes: the font, size and colour are used for new notes, or click in a note (or select words) to change just that.</li>
         <li>Drag a note’s edges to resize it, or its move handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
         <li>On each note: the arrows float it on top of the page, the minus minimises it to a pencil icon (drag the icon aside, right-click it to colour it), and the pin keeps it open.</li>
@@ -1428,6 +1479,8 @@ main.addEventListener('click', e => {
   if (swallowClick) { swallowClick = false; return; }
   const chip = e.target.closest('.note-chip');
   if (chip) { const box = chip.parentElement; setCollapsed(box, false); raise(box); afterNotesToggle(); const m = box.querySelector('.mine'); if (m && !reading) focusNote(m); return; }
+  if (drawing) return;
+  if (annoClick(e)) return;
   if (reading) return;
   const fx = e.target.closest('.formula'); if (fx && fx.closest('.mine')) { openFormula(fx); return; }
   const media = mediaAt(e.target);
@@ -1436,6 +1489,7 @@ main.addEventListener('click', e => {
   const strip = e.target.closest('.strip');
   if (strip) { if (!getSelection().toString()) showGap(strip, e.clientY, e.clientX); return; }
   const slide = e.target.closest('.slide'); if (!slide || slide.classList.contains('pagecard')) return;
+  if (getSelection().toString().trim()) return;          // words were just selected (to highlight): not a click for a new note
   let blk = e.target.closest('.blk');
   if (!blk || e.target.tagName === 'IMG') {
     if (!blk) { const all = [...slide.querySelectorAll('.blk')].filter(b => b.getBoundingClientRect().top < e.clientY); blk = all.pop() || null; }
@@ -1753,6 +1807,7 @@ function makeStrip(card, y0, y1){
     sp.dataset.w = (w / W).toFixed(5);
     s.append(sp, eol ? document.createElement('br') : document.createTextNode(' '));
   }
+  stripInk(card, s);
   requestAnimationFrame(() => measureStrip(s));
   return s;
 }
@@ -1797,7 +1852,7 @@ main.addEventListener('mousemove', e => {
   requestAnimationFrame(() => {
     moveQueued = false;
     if (e.target.closest('.gappill')) return;
-    const strip = !reading && e.target.closest('.strip');
+    const strip = !reading && !drawing && annoBar.hidden && !annoCur && e.target.closest('.strip');
     if (strip) showGap(strip, e.clientY, e.clientX); else hideGap();
   });
 });
@@ -2297,6 +2352,7 @@ function currentDoc(){
   c.querySelectorAll('.media-sel, .target-page, .multi-sel, .flash, .drop-target, .touched').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel', 'flash', 'drop-target', 'touched'));
   c.querySelectorAll('.mine').forEach(x => { x.contentEditable = 'true'; });
   flatten(c);
+  c.querySelectorAll('svg.ink').forEach(x => x.remove());          // drawn again from data-ink
   return c.innerHTML;
 }
 async function saveFile(filename, blob){
@@ -2325,7 +2381,7 @@ function loadNotebook(data, replace){
   if (replace) main.innerHTML = data.doc || '';
   else { main.querySelector('.welcome')?.remove(); main.insertAdjacentHTML('beforeend', data.doc || ''); }
   main.querySelectorAll('.slide-label, .gapline, .gappill').forEach(e => e.remove());
-  upgradeNotes(); applyReadMode();
+  upgradeNotes(); applyReadMode(); renderAllInk();
   if (!main.children.length) showEmpty();
   paginateView();
 }
@@ -2351,6 +2407,7 @@ async function paintCard(card, scale){
     for (const s of pc.querySelectorAll(':scope > .strip')) {
       const sr = s.getBoundingClientRect(), y0 = +s.dataset.y0, y1 = +s.dataset.y1;
       ctx.drawImage(img, 0, y0 / H * img.naturalHeight, img.naturalWidth, (y1 - y0) / H * img.naturalHeight, sr.left - ox, sr.top - oy, sr.width, sr.height);
+      paintInk(ctx, pc, s, sr.left - ox, sr.top - oy);
     }
   }
   for (const im of card.querySelectorAll('img')) {
@@ -2374,7 +2431,7 @@ async function paintCard(card, scale){
   ctx.strokeStyle = '#c9d0db';
   for (const td of card.querySelectorAll('td, th')) { const tr = td.getBoundingClientRect(); ctx.strokeRect(tr.left - ox, tr.top - oy, tr.width, tr.height); }
   // highlighted words inside notes
-  for (const h of card.querySelectorAll('.mine span, .mine font, .mine mark')) {
+  for (const h of card.querySelectorAll('.mine span, .mine font, .mine mark, .slide mark.anno')) {
     const bg = getComputedStyle(h).backgroundColor;
     if (!seen(bg)) continue;
     ctx.fillStyle = bg; for (const hr of h.getClientRects()) ctx.fillRect(hr.left - ox, hr.top - oy, hr.width, hr.height);
@@ -2490,6 +2547,10 @@ async function downloadPdf(){
         const text = (b.querySelector('.mine')?.innerText || '').trim(); if (!text) continue;
         const br = b.getBoundingClientRect();
         annots.push({fx: (br.left - cr.left) / cr.width, fy: (br.top - cr.top) / cr.height, text, color: chipOf(b)});
+      }
+      if (mode === 'comments') for (const pg of card.matches('.slide') ? [card] : card.querySelectorAll('.slide')) for (const c of openComments(pg)) {
+        const mr = markRect(pg, c.id); if (!mr) continue;
+        annots.push({fx: (mr.left - cr.left) / cr.width, fy: (mr.top - cr.top) / cr.height, text: `${c.text}\n\nOn: “${c.quote}”`, color: c.color});
       }
       const canvas = await paintCard(card, 2 / viewZoom);
       const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
@@ -2977,6 +3038,8 @@ document.addEventListener('keydown', e => {
 // ================= study mode: read only =================
 function applyReadMode(){
   main.classList.toggle('reading', reading); document.body.classList.toggle('reading', reading);
+  if (reading) { setDrawing(false); hideAnnoBar(); }
+  if (annoCur) showAnnoPop();                    // an open comment becomes read only (or editable again)
   main.querySelectorAll('.mine').forEach(el => { el.contentEditable = reading ? 'false' : 'true'; });
   const b = $('#readBtn'); b.setAttribute('aria-pressed', reading);
   b.innerHTML = icon(reading ? 'pen' : 'book') + `<span class="lbl">${reading ? 'Back to editing' : 'Study mode'}</span>`;
@@ -3454,11 +3517,11 @@ function stepHistory(by){
   const j = hist.i + by; if (j < 0 || j >= hist.stack.length) return;
   hist.i = j;
   const scrollY = window.scrollY;
-  hideGap(); closeInsMenu(); clearMediaSel(); hideGuides(); fPanel.hidden = true;
+  hideGap(); closeInsMenu(); clearMediaSel(); hideGuides(); fPanel.hidden = true; closeAnnoPop(); hideAnnoBar();
   active = null; savedRange = null;
   main.innerHTML = unpackDoc(hist.stack[j]);
   if (!main.children.length) showEmpty();
-  upgradeNotes(); applyReadMode();
+  upgradeNotes(); applyReadMode(); renderAllInk();
   paginateView(); window.scrollTo(0, scrollY);
   hist.stack[j] = packDoc(main.querySelector('.welcome') ? '' : currentDoc());   // so the next save doesn't count as a new change
   updateUndoBtns(); updateNotesBtn(); saveSoon();
@@ -3645,8 +3708,12 @@ function markText(el, text, q){
 }
 function renderNotes(){
   const all = [];
-  main.querySelectorAll('.slide').forEach((s, i) => s.querySelectorAll('.notebox').forEach(b => { if (hasContent(b)) all.push({b, i, s}); }));
-  $('#noteCount').textContent = all.length || '';
+  const cmts = [];
+  main.querySelectorAll('.slide').forEach((s, i) => {
+    s.querySelectorAll('.notebox').forEach(b => { if (hasContent(b)) all.push({b, i, s}); });
+    for (const c of openComments(s)) cmts.push({...c, i, s});
+  });
+  $('#noteCount').textContent = all.length + cmts.length || '';
   const used = [...new Set(all.map(x => chipOf(x.b).toLowerCase()))];
   if (noteColor && !used.includes(noteColor)) noteColor = null;
   $('#noteFilters').replaceChildren(...(used.length > 1 ? [null, ...used].map(c => {
@@ -3657,9 +3724,11 @@ function renderNotes(){
   }) : []));
   const q = noteQuery.trim().toLowerCase(), list = $('#noteList'), frag = document.createDocumentFragment();
   shownNotes = []; let lastI = -1;
-  for (const {b, i, s} of all) {
-    if (noteColor && chipOf(b).toLowerCase() !== noteColor) continue;
-    let text = noteSummary(b.querySelector(':scope > .mine'));
+  // notes first, then the comments, on each page
+  const rows = [...all.map(x => ({...x, note: true})), ...(noteColor ? [] : cmts)].sort((a, b) => a.i - b.i);
+  for (const {b, i, s, id, color, quote, note, text: cm} of rows) {
+    let text = note ? noteSummary(b.querySelector(':scope > .mine')) : cm;
+    if (note && noteColor && chipOf(b).toLowerCase() !== noteColor) continue;
     const at = q ? text.toLowerCase().indexOf(q) : 0;
     if (at < 0) continue;
     if (at > 120) text = '…' + text.slice(at - 60);         // show the part that matched
@@ -3669,21 +3738,23 @@ function renderNotes(){
       frag.append(Object.assign(document.createElement('li'), {className: 'group', textContent: `Page ${i + 1}${t ? ' · ' + t : ''}`}));
     }
     const li = document.createElement('li'), c = document.createElement('button');
-    c.type = 'button'; c.className = 'ncard'; c.dataset.k = shownNotes.push(b) - 1;
-    const dot = document.createElement('span'); dot.className = 'dot'; dot.style.setProperty('--c', chipOf(b));
+    c.type = 'button'; c.className = 'ncard'; c.dataset.k = shownNotes.push(note ? b : {cmt: {card: s, id}}) - 1;
+    const dot = document.createElement('span'); dot.className = 'dot'; dot.style.setProperty('--c', note ? chipOf(b) : color);
     const body = document.createElement('span'); body.className = 'body';
     const txt = document.createElement('span'); txt.className = 'txt'; markText(txt, text, q);
-    body.append(txt, Object.assign(document.createElement('span'), {className: 'meta', textContent: noteKind(b)}));
+    const meta = note ? noteKind(b) : `Comment on “${quote.length > 50 ? quote.slice(0, 50) + '…' : quote}”`;
+    body.append(txt, Object.assign(document.createElement('span'), {className: 'meta', textContent: meta}));
     c.append(dot, body); li.append(c); frag.append(li);
   }
   if (!shownNotes.length) frag.append(Object.assign(document.createElement('li'), {className: 'sideempty',
-    textContent: all.length ? `No notes match${q ? ` “${noteQuery.trim()}”` : ' this colour'}.` : 'No notes yet. Write one above, or on a PDF page point between two lines and press “+ Add here”.'}));
+    textContent: all.length + cmts.length ? `No notes match${q ? ` “${noteQuery.trim()}”` : ' this colour'}.` : 'No notes yet. Write one above, or on a PDF page point between two lines and press “+ Add here”.'}));
   list.replaceChildren(frag);
 }
 $('#noteFilters').addEventListener('click', e => { const f = e.target.closest('.fchip'); if (f) { noteColor = f.dataset.c || null; renderNotes(); } });
 $('#noteSearch').addEventListener('input', e => { noteQuery = e.target.value; renderNotes(); });
 $('#noteList').addEventListener('click', e => { const c = e.target.closest('.ncard'); if (c) jumpToNote(shownNotes[+c.dataset.k]); });
 function jumpToNote(box){
+  if (box?.cmt) return jumpToComment(box.cmt.card, box.cmt.id);
   if (!box?.isConnected) return;
   if (narrow.matches) setPanel('notes', false);
   if (box.classList.contains('collapsed')) { setCollapsed(box, false); afterNotesToggle(); }
@@ -3795,7 +3866,7 @@ function showDocHtml(html){
   main.innerHTML = html || '';
   main.querySelectorAll('.slide-label, .gapline, .gappill').forEach(e => e.remove());
   if (!main.children.length) showEmpty(); else upgradeNotes();
-  applyReadMode(); paginateView(); updateNotesBtn();
+  applyReadMode(); renderAllInk(); paginateView(); updateNotesBtn();
   requestAnimationFrame(() => main.querySelectorAll('.strip').forEach(measureStrip));
 }
 // open another notebook (no id: a new, empty one); the one you leave is saved first and keeps its Back history and place
@@ -3924,6 +3995,514 @@ panelEl.pages.addEventListener('mouseleave', e => {
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key === '\\') { e.preventDefault(); setPanel('pages', !panelOpen.pages); }
 });
+
+// ================= annotate: draw on PDF pages, highlight and comment on words =================
+// What is drawn or highlighted on a PDF page is kept on its card (data-ink) as a list in page units, and drawn as an svg over each
+// strip, so it stays in place when the page opens up for a note. Highlights on other pages are <mark class="anno"> around the words.
+const SVGNS = 'http://www.w3.org/2000/svg';
+const inkCache = new WeakMap();
+const inkNum = v => Number.isFinite(+v) ? +v : 0;
+const inkR1 = v => Math.round(v * 10) / 10;
+const inkHex = (c, d = '#1d1d1f') => /^#[0-9a-f]{6}$/i.test(c) ? c : d;
+const svgEl = (tag, attrs, kids) => { const e = document.createElementNS(SVGNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (kids) e.append(...kids); return e; };
+const annoEl = n => n && (n.nodeType === 1 ? n : n.parentElement);
+function inkItems(card){
+  const raw = card.dataset.ink || '', c = inkCache.get(card);
+  if (c && c.raw === raw) return c.items;
+  let items = [];
+  try { const v = JSON.parse(raw || '[]'); if (Array.isArray(v)) items = v.filter(it => it && typeof it === 'object'); } catch {}
+  inkCache.set(card, {raw, items}); return items;
+}
+function setInk(card, items){
+  if (items.length) card.dataset.ink = JSON.stringify(items); else delete card.dataset.ink;
+  inkCache.set(card, {raw: card.dataset.ink || '', items});
+  renderInk(card);
+}
+// a stroke as a smooth path (the same one is used on screen and in the PDF)
+function inkPath(p){
+  if (!p.length) return '';
+  if (p.length === 1) return `M${p[0][0]} ${p[0][1]}l0 0`;
+  let d = `M${p[0][0]} ${p[0][1]}`;
+  if (p.length === 2) return d + `L${p[1][0]} ${p[1][1]}`;
+  for (let i = 1; i < p.length - 1; i++) d += `Q${p[i][0]} ${p[i][1]} ${inkR1((p[i][0] + p[i + 1][0]) / 2)} ${inkR1((p[i][1] + p[i + 1][1]) / 2)}`;
+  return d + `L${p[p.length - 1][0]} ${p[p.length - 1][1]}`;
+}
+const strokePts = it => Array.isArray(it.p) ? it.p.filter(q => Array.isArray(q)).map(q => [inkNum(q[0]), inkNum(q[1])]) : [];
+const penW = it => (inkNum(it.w) || 2) * (it.k === 'hl' ? 4 : 1);          // the highlighter is four times as wide
+const rectsOf = it => Array.isArray(it.r) ? it.r.filter(Array.isArray) : [];
+const hasCm = it => !!(it.cm && it.cm.text && !it.cm.done);
+const BUBBLE = 'M2 .4h9a1.6 1.6 0 0 1 1.6 1.6v5a1.6 1.6 0 0 1-1.6 1.6H6.5l-3 3V8.6H2A1.6 1.6 0 0 1 .4 7V2A1.6 1.6 0 0 1 2 .4z';
+const BADGE_W = 17, BADGE_H = 16;
+// where a comment's speech bubble sits: just after the end of the highlight
+function badgeAt(it, W){
+  const rs = rectsOf(it), last = rs[rs.length - 1]; if (!last) return null;
+  return [Math.min(inkNum(last[0]) + inkNum(last[2]) + 1.5, W - BADGE_W - 1), inkNum(last[1]) - 1];
+}
+// the top and bottom of an item, in page units
+function inkSpan(it){
+  let lo = 1e9, hi = -1e9;
+  if (it.k === 'mark') for (const r of rectsOf(it)) { lo = Math.min(lo, inkNum(r[1])); hi = Math.max(hi, inkNum(r[1]) + inkNum(r[3]) + BADGE_H); }
+  else for (const q of strokePts(it)) { lo = Math.min(lo, q[1]); hi = Math.max(hi, q[1]); }
+  const pad = penW(it) / 2 + 2;
+  return [lo - pad, hi + pad];
+}
+function inkNodes(it, W){
+  if (it.k === 'pen' || it.k === 'hl')
+    return [svgEl('path', {class: it.k, d: inkPath(strokePts(it)), fill: 'none', stroke: inkHex(it.c), 'stroke-width': penW(it), 'stroke-linecap': 'round', 'stroke-linejoin': 'round'})];
+  if (it.k !== 'mark') return [];
+  const out = [svgEl('g', {class: 'mk', fill: inkHex(it.c, '#ffe066')}, rectsOf(it).map(r => svgEl('rect', {x: inkNum(r[0]), y: inkNum(r[1]), width: inkNum(r[2]), height: inkNum(r[3]), rx: 1.5})))];
+  const b = hasCm(it) && badgeAt(it, W);
+  if (b) out.push(svgEl('g', {class: 'bd', transform: `translate(${b[0]} ${b[1]}) scale(1.3)`}, [svgEl('path', {d: BUBBLE, fill: '#3552c4', stroke: '#fff', 'stroke-width': .8}),
+    ...[4, 6.5, 9].map(x => svgEl('circle', {cx: x, cy: 4.5, r: .9, fill: '#fff'}))]));
+  return out;
+}
+function inkSvg(card, s){
+  const W = inkNum(card.dataset.w), y0 = inkNum(s.dataset.y0), y1 = inkNum(s.dataset.y1);
+  const svg = svgEl('svg', {class: 'ink', viewBox: `0 ${y0} ${W} ${y1 - y0}`, preserveAspectRatio: 'none', 'aria-hidden': 'true'});
+  s.prepend(svg); return svg;
+}
+// the ink for one strip: everything on the card, cropped to this slice of the page by the viewBox
+function stripInk(card, s){
+  s.querySelector(':scope > svg.ink')?.remove();
+  const items = inkItems(card); if (!items.length) return;
+  const y0 = inkNum(s.dataset.y0), y1 = inkNum(s.dataset.y1), W = inkNum(card.dataset.w), svg = inkSvg(card, s);
+  for (const it of items) { const [lo, hi] = inkSpan(it); if (hi >= y0 && lo <= y1) svg.append(...inkNodes(it, W)); }
+}
+function renderInk(card){ for (const s of card.querySelectorAll(':scope > .strip')) stripInk(card, s); }
+function renderAllInk(){
+  main.querySelectorAll('.pagecard').forEach(renderInk);
+  if (drawing && !main.querySelector('.pagecard')) setDrawing(false);
+}
+// the ink and highlights on a PDF page, painted for the downloaded PDF (dx, dy: where the strip is on the canvas)
+function paintInk(ctx, card, s, dx, dy){
+  const items = inkItems(card); if (!items.length) return;
+  const sr = s.getBoundingClientRect(), W = inkNum(card.dataset.w), y0 = inkNum(s.dataset.y0), y1 = inkNum(s.dataset.y1);
+  if (!W || y1 <= y0) return;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(dx, dy, sr.width, sr.height); ctx.clip();
+  ctx.translate(dx, dy - y0 * sr.height / (y1 - y0)); ctx.scale(sr.width / W, sr.height / (y1 - y0));
+  for (const it of items) {
+    if (it.k === 'mark') {
+      ctx.globalAlpha = .45; ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = inkHex(it.c, '#ffe066');
+      for (const r of rectsOf(it)) ctx.fillRect(inkNum(r[0]), inkNum(r[1]), inkNum(r[2]), inkNum(r[3]));
+    } else if (it.k === 'pen' || it.k === 'hl') {
+      ctx.globalAlpha = it.k === 'hl' ? .35 : 1; ctx.globalCompositeOperation = it.k === 'hl' ? 'multiply' : 'source-over';
+      ctx.strokeStyle = inkHex(it.c); ctx.lineWidth = penW(it); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.stroke(new Path2D(inkPath(strokePts(it))));
+    }
+  }
+  ctx.restore();
+}
+
+// ---------- drawing: pen, highlighter and eraser ----------
+const DRAW_COLORS = [['#1f4fd1', 'Blue'], ['#c62828', 'Red'], ['#2e7d32', 'Green'], ['#1d1d1d', 'Black'], ['#ffd54a', 'Yellow']];
+const PEN_W = [2, 3.5, 6];
+let drawing = false;
+const draw = {
+  tool: ['pen', 'hl', 'er'].includes(pref.get('draw-tool')) ? pref.get('draw-tool') : 'pen',
+  col: {pen: inkHex(pref.get('draw-c-pen'), '#1f4fd1'), hl: inkHex(pref.get('draw-c-hl'), '#ffd54a')},
+  w: Math.max(0, Math.min(2, parseInt(pref.get('draw-w', '1')) || 0)),
+};
+const drawBtn = $('#drawBtn');
+const drawBar = document.createElement('div');
+drawBar.id = 'drawBar'; drawBar.className = 'pop drawbar'; drawBar.hidden = true; drawBar.setAttribute('role', 'toolbar'); drawBar.setAttribute('aria-label', 'Drawing tools');
+drawBar.innerHTML = '<div class="seg" role="group" aria-label="Tool">' +
+  `<button type="button" class="btn" data-tool="pen" title="Pen: draw or write on the page in the colour you pick">${icon('pen-line')}Pen</button>` +
+  `<button type="button" class="btn" data-tool="hl" title="Highlighter: a wide see-through stripe over words and pictures">${icon('highlighter')}Highlighter</button>` +
+  `<button type="button" class="btn" data-tool="er" title="Eraser: press and drag over a stroke to rub it out">${icon('eraser')}Eraser</button></div>` +
+  '<span class="dcols" role="group" aria-label="Colour">' + DRAW_COLORS.map(([c, n]) => `<button type="button" class="sw" data-c="${c}" style="--c:${c}" title="${n}" aria-label="${n}"></button>`).join('') + '</span>' +
+  '<span class="dwids" role="group" aria-label="Thickness">' + ['Thin', 'Medium', 'Thick'].map((n, i) => `<button type="button" class="btn dw" data-w="${i}" title="${n}: how thick the line is" aria-label="${n}"><span style="--t:${[2, 4, 7][i]}px"></span></button>`).join('') + '</span>' +
+  '<button type="button" class="btn primary" data-done title="Done: stop drawing (Esc)">Done</button>';
+document.body.append(drawBar);
+function updateDrawBar(){
+  drawBar.querySelectorAll('[data-tool]').forEach(b => b.setAttribute('aria-pressed', b.dataset.tool === draw.tool));
+  const er = draw.tool === 'er';
+  drawBar.querySelectorAll('.sw').forEach(b => { b.setAttribute('aria-pressed', !er && b.dataset.c === draw.col[draw.tool]); b.disabled = er; });
+  drawBar.querySelectorAll('.dw').forEach(b => { b.setAttribute('aria-pressed', !er && +b.dataset.w === draw.w); b.disabled = er; });
+  document.body.classList.toggle('erasing', er);
+}
+function setDrawing(on){
+  on = !!on;
+  if (on === drawing) return;
+  if (on && (reading || !main.querySelector('.pagecard'))) { toast(reading ? 'Drawing is off in Study mode.' : 'Drawing works on PDF pages. Open a PDF first.'); return; }
+  drawing = on;
+  document.body.classList.toggle('drawing', on);
+  drawBar.hidden = !on; drawBtn.setAttribute('aria-pressed', on);
+  if (on) {
+    hideGap(); closeInsMenu(); hideAnnoBar(); closeAnnoPop(); clearMulti(); ribbon.classList.remove('peek');
+    if (document.activeElement?.closest?.('.mine')) document.activeElement.blur();
+    getSelection().removeAllRanges(); updateDrawBar();
+  }
+}
+drawBtn.onclick = () => setDrawing(!drawing);
+drawBar.addEventListener('mousedown', e => e.preventDefault());
+drawBar.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.dataset.tool) { draw.tool = b.dataset.tool; pref.set('draw-tool', draw.tool); }
+  else if (b.dataset.c) { draw.col[draw.tool] = b.dataset.c; pref.set('draw-c-' + draw.tool, b.dataset.c); }
+  else if (b.dataset.w) { draw.w = +b.dataset.w; pref.set('draw-w', draw.w); }
+  else if ('done' in b.dataset) { setDrawing(false); return; }
+  updateDrawBar();
+});
+// how far a point is from a line segment
+function segDist(p, a, b){
+  const dx = b[0] - a[0], dy = b[1] - a[1], l = dx * dx + dy * dy;
+  const t = l ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l)) : 0;
+  return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
+}
+// does the eraser, at pt, touch this stroke?
+function strokeHit(it, pt){
+  if (it.k !== 'pen' && it.k !== 'hl') return false;
+  const p = strokePts(it), reach = penW(it) / 2 + 4;
+  if (p.length === 1) return Math.hypot(p[0][0] - pt[0], p[0][1] - pt[1]) <= reach;
+  for (let i = 1; i < p.length; i++) if (segDist(pt, p[i - 1], p[i]) <= reach) return true;
+  return false;
+}
+// the stroke being drawn shows as it goes, in every strip it passes through
+function liveInk(card, tool, pts){
+  const d = inkPath(pts), w = PEN_W[draw.w] * (tool === 'hl' ? 4 : 1);
+  for (const s of card.querySelectorAll(':scope > .strip')) {
+    const svg = s.querySelector(':scope > svg.ink') || inkSvg(card, s);
+    let p = svg.querySelector(':scope > path.live');
+    if (!p) { p = svgEl('path', {class: 'live ' + tool, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round'}); svg.append(p); }
+    p.setAttribute('d', d); p.setAttribute('stroke', inkHex(draw.col[tool])); p.setAttribute('stroke-width', w);
+  }
+}
+main.addEventListener('pointerdown', e => {
+  if (!drawing || e.button !== 0 || e.isPrimary === false) return;
+  const strip = e.target.closest?.('.strip');
+  if (!strip || e.target.closest('.notebox, .gappill')) return;
+  const card = strip.closest('.pagecard'); if (!card) return;
+  e.preventDefault(); hideGap();
+  const W = +card.dataset.w, tool = draw.tool, pts = [];
+  // the point on the page under the pointer: the strip it is over decides (over a note in between, the last point stays)
+  const at = ev => {
+    for (const s of card.querySelectorAll(':scope > .strip')) {
+      const r = s.getBoundingClientRect();
+      if (ev.clientY < r.top || ev.clientY > r.bottom || !r.width) continue;
+      const y0 = +s.dataset.y0, y1 = +s.dataset.y1;
+      return [inkR1(Math.min(W, Math.max(0, (ev.clientX - r.left) / r.width * W))), inkR1(y0 + (ev.clientY - r.top) / r.height * (y1 - y0))];
+    }
+    return null;
+  };
+  let items = inkItems(card), erased = false, raf = 0;
+  const erase = pt => {
+    const keep = items.filter(it => !strokeHit(it, pt));
+    if (keep.length !== items.length) { items = keep; erased = true; }
+  };
+  const add = pt => {
+    const l = pts[pts.length - 1];
+    if (!l || Math.hypot(pt[0] - l[0], pt[1] - l[1]) >= 1) pts.push(pt);
+  };
+  const take = ev => { const pt = at(ev); if (pt) { if (tool === 'er') erase(pt); else add(pt); } };
+  const paint = () => { raf = 0; if (tool === 'er') { if (erased) setInk(card, items); } else liveInk(card, tool, pts); };
+  take(e); paint();
+  try { strip.setPointerCapture(e.pointerId); } catch {}
+  const move = ev => {
+    for (const q of (ev.getCoalescedEvents?.() || []).length ? ev.getCoalescedEvents() : [ev]) take(q);
+    if (!raf) raf = requestAnimationFrame(paint);
+  };
+  const up = () => {
+    strip.removeEventListener('pointermove', move); strip.removeEventListener('pointerup', up); strip.removeEventListener('pointercancel', up);
+    cancelAnimationFrame(raf);
+    if (tool === 'er') { if (erased) { setInk(card, items); saveSoon(); } return; }
+    if (!pts.length) { renderInk(card); return; }
+    setInk(card, [...inkItems(card), {k: tool, c: draw.col[tool], w: PEN_W[draw.w], p: pts}]);
+    saveSoon();
+  };
+  strip.addEventListener('pointermove', move); strip.addEventListener('pointerup', up); strip.addEventListener('pointercancel', up);
+});
+
+// ---------- highlights and comments ----------
+const HL_COLORS = [['#ffe066', 'Yellow'], ['#a7e3a1', 'Green'], ['#a5d8ff', 'Blue'], ['#ffc9de', 'Pink']];
+let hlCol = inkHex(pref.get('hl-colour'), '#ffe066');
+const newMarkId = () => 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const quoteOf = t => { t = (t || '').replace(/\s+/g, ' ').trim(); return t.length > 300 ? t.slice(0, 300) : t; };
+// the page-unit boxes of the words you selected on a PDF page, one per piece of text
+function pdfRects(range, card){
+  const W = +card.dataset.w, out = [], root = annoEl(range.commonAncestorContainer);
+  const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let t = tw.nextNode(); t; t = tw.nextNode()) {
+    const sp = t.parentElement, strip = sp?.classList.contains('tl') && sp.closest('.strip');
+    if (!strip || strip.closest('.pagecard') !== card || !range.intersectsNode(t)) continue;
+    const a = t === range.startContainer ? range.startOffset : 0, b = t === range.endContainer ? range.endOffset : t.length;
+    if (b <= a) continue;
+    const rr = document.createRange(); rr.setStart(t, a); rr.setEnd(t, b);
+    const sr = strip.getBoundingClientRect(), y0 = +strip.dataset.y0, y1 = +strip.dataset.y1, k = (y1 - y0) / sr.height;
+    for (const q of rr.getClientRects()) {
+      if (q.width < 0.5 || q.height < 0.5) continue;
+      const top = Math.max(y0, y0 + (q.top - sr.top) * k), bottom = Math.min(y1, y0 + (q.bottom - sr.top) * k);
+      if (bottom - top > 0.5) out.push([(q.left - sr.left) / sr.width * W, top, q.width / sr.width * W, bottom - top]);
+    }
+  }
+  return out;
+}
+// pieces on the same line that touch become one box
+function mergeRects(rs){
+  rs.sort((a, b) => a[1] - b[1] || a[0] - b[0]);
+  const out = [];
+  for (const r of rs) {
+    const m = out.find(o => Math.abs(o[1] - r[1]) < Math.min(o[3], r[3]) * .5 && Math.abs(o[3] - r[3]) < Math.min(o[3], r[3]) * .6 &&
+      r[0] <= o[0] + o[2] + Math.max(6, o[3] * .6) && r[0] + r[2] >= o[0] - 6);
+    if (m) { const x2 = Math.max(m[0] + m[2], r[0] + r[2]), y2 = Math.max(m[1] + m[3], r[1] + r[3]); m[0] = Math.min(m[0], r[0]); m[1] = Math.min(m[1], r[1]); m[2] = x2 - m[0]; m[3] = y2 - m[1]; }
+    else out.push(r.slice());
+  }
+  return out.map(r => r.map(inkR1));
+}
+// wrap the selected words of a text slide in <mark class="anno"> (one per piece of text; never inside notes or formulas)
+function wrapAnno(range, id, col){
+  const jobs = [], tw = document.createTreeWalker(annoEl(range.commonAncestorContainer), NodeFilter.SHOW_TEXT);
+  for (let t = tw.nextNode(); t; t = tw.nextNode()) {
+    const el = t.parentElement;
+    if (!el || !range.intersectsNode(t) || el.closest('.mine, .notebox, .formula, .katex, .tl, .grip, .note-chip, .gappill, .cardbar, .slide-label, script, style')) continue;
+    const a = t === range.startContainer ? range.startOffset : 0, b = t === range.endContainer ? range.endOffset : t.length;
+    if (b <= a) continue;
+    if (!t.data.slice(a, b).trim() && !(t.previousSibling && t.nextSibling && /^inline/.test(getComputedStyle(el).display))) continue;   // a space between two blocks
+    jobs.push([t, a, b]);
+  }
+  const made = [];
+  for (const [t, a, b] of jobs) {
+    let mid = t;
+    if (b < t.length) t.splitText(b);
+    if (a > 0) mid = t.splitText(a);
+    const m = document.createElement('mark'); m.className = 'anno'; m.dataset.id = id; m.style.setProperty('--ac', col);
+    mid.replaceWith(m); m.append(mid); made.push(m);
+  }
+  return made;
+}
+// the slide a selection can be highlighted on, or null
+function selTarget(r){
+  const a = annoEl(r.startContainer), b = annoEl(r.endContainer), sa = a?.closest('.slide'), sb = b?.closest('.slide');
+  if (!sa || sa !== sb || !main.contains(sa)) return null;
+  if (a.closest('.mine, .notebox, .formula, .katex') || b.closest('.mine, .notebox, .formula, .katex')) return null;
+  if (!r.toString().trim()) return null;
+  if (sa.classList.contains('pagecard') && !pdfRects(r, sa).length) return null;
+  return sa;
+}
+function makeHighlight(range, col){
+  const card = selTarget(range); if (!card) return null;
+  const id = newMarkId(), t = quoteOf(range.toString());
+  if (card.classList.contains('pagecard')) setInk(card, [...inkItems(card), {k: 'mark', id, c: col, r: mergeRects(pdfRects(range, card)), t}]);
+  else if (!wrapAnno(range, id, col).length) return null;
+  getSelection().removeAllRanges(); hideAnnoBar(); saveSoon();
+  return {card, id};
+}
+// one highlight, whichever kind of page it is on
+function annoGet(card, id){
+  if (card.classList.contains('pagecard')) { const it = inkItems(card).find(x => x.k === 'mark' && x.id === id); return it ? {kind: 'pdf', it} : null; }
+  const pcs = [...card.querySelectorAll(`mark.anno[data-id="${CSS.escape(id)}"]`)];
+  return pcs.length ? {kind: 'text', pcs} : null;
+}
+function annoCm(h){
+  if (h.kind === 'pdf') return h.it.cm && h.it.cm.text ? h.it.cm : null;
+  const f = h.pcs[0]; return f.dataset.cm ? {text: f.dataset.cm, at: +f.dataset.at || 0, done: f.hasAttribute('data-done')} : null;
+}
+const annoQuote = h => h.kind === 'pdf' ? quoteOf(h.it.t) : quoteOf(h.pcs.map(m => m.textContent).join(' '));
+const annoColor = h => h.kind === 'pdf' ? inkHex(h.it.c, '#ffe066') : inkHex(h.pcs[0].style.getPropertyValue('--ac').trim(), '#ffe066');
+// save, change or take away a highlight's comment (empty text: no comment)
+function annoSetCm(card, id, text, done){
+  const h = annoGet(card, id); if (!h) return;
+  const old = annoCm(h);
+  if (h.kind === 'pdf') {
+    if (text) h.it.cm = {text, at: old && old.text === text ? old.at : Date.now(), done: !!done}; else delete h.it.cm;
+    setInk(card, inkItems(card));
+  } else {
+    const f = h.pcs[0];
+    if (text) { f.dataset.cm = text; f.dataset.at = old && old.text === text ? old.at : Date.now(); f.toggleAttribute('data-done', !!done); }
+    else ['data-cm', 'data-at', 'data-done'].forEach(a => f.removeAttribute(a));
+  }
+  saveSoon();
+}
+function annoRemove(card, id){
+  if (card.classList.contains('pagecard')) setInk(card, inkItems(card).filter(x => !(x.k === 'mark' && x.id === id)));
+  else for (const m of card.querySelectorAll(`mark.anno[data-id="${CSS.escape(id)}"]`)) { const p = m.parentNode; m.replaceWith(...m.childNodes); p.normalize(); }
+  saveSoon();
+}
+// the comments that are still open on a page
+function openComments(card){
+  const out = [];
+  if (card.classList.contains('pagecard')) {
+    for (const it of inkItems(card)) if (it.k === 'mark' && hasCm(it) && it.id)
+      out.push({id: it.id, text: it.cm.text, quote: quoteOf(it.t), color: inkHex(it.c, '#ffe066'), y: inkNum(rectsOf(it)[0]?.[1]), x: inkNum(rectsOf(it)[0]?.[0])});
+    out.sort((a, b) => a.y - b.y || a.x - b.x);
+  } else for (const f of card.querySelectorAll('mark.anno[data-cm]')) {
+    if (f.hasAttribute('data-done') || !f.dataset.id) continue;
+    const h = annoGet(card, f.dataset.id);
+    out.push({id: f.dataset.id, text: f.dataset.cm, quote: annoQuote(h), color: annoColor(h)});
+  }
+  return out;
+}
+// where a highlight is on screen (its first line)
+function markRect(card, id){
+  if (card.classList.contains('pagecard')) {
+    const it = inkItems(card).find(x => x.k === 'mark' && x.id === id), r = it?.r?.[0]; if (!r) return null;
+    const W = +card.dataset.w, cy = inkNum(r[1]) + inkNum(r[3]) / 2;
+    for (const s of card.querySelectorAll(':scope > .strip')) {
+      const y0 = +s.dataset.y0, y1 = +s.dataset.y1; if (cy < y0 || cy > y1) continue;
+      const sr = s.getBoundingClientRect(), left = sr.left + inkNum(r[0]) / W * sr.width, top = sr.top + (inkNum(r[1]) - y0) / (y1 - y0) * sr.height;
+      const width = inkNum(r[2]) / W * sr.width, height = inkNum(r[3]) / (y1 - y0) * sr.height;
+      return {left, top, width, height, right: left + width, bottom: top + height};
+    }
+    return null;
+  }
+  const f = card.querySelector(`mark.anno[data-id="${CSS.escape(id)}"]`);
+  return f ? (f.getClientRects()[0] || f.getBoundingClientRect()) : null;
+}
+// the highlight of a PDF page under a click (its words, or its speech bubble)
+function markAt(card, strip, cx, cy){
+  const W = +card.dataset.w, y0 = +strip.dataset.y0, y1 = +strip.dataset.y1, sr = strip.getBoundingClientRect();
+  const x = (cx - sr.left) / sr.width * W, y = y0 + (cy - sr.top) / sr.height * (y1 - y0), items = inkItems(card);
+  for (let i = items.length - 1; i >= 0; i--) {
+    const it = items[i]; if (it.k !== 'mark') continue;
+    if (rectsOf(it).some(r => x >= inkNum(r[0]) - 1 && x <= inkNum(r[0]) + inkNum(r[2]) + 1 && y >= inkNum(r[1]) - 1 && y <= inkNum(r[1]) + inkNum(r[3]) + 1)) return it;
+    const b = hasCm(it) && badgeAt(it, W);
+    if (b && x >= b[0] - 1 && x <= b[0] + BADGE_W + 1 && y >= b[1] - 1 && y <= b[1] + BADGE_H + 1) return it;
+  }
+  return null;
+}
+function annoClick(e){
+  if (getSelection().toString().trim() || e.target.closest?.('.gappill, .mine, .notebox')) return false;
+  const a = e.target.closest?.('mark.anno'), card0 = a?.closest('.slide');
+  if (a && card0 && a.dataset.id) return openAnnoPop(card0, a.dataset.id);
+  const strip = e.target.closest?.('.strip'), card = strip?.closest('.pagecard');
+  if (!card || !card.dataset.ink) return false;
+  const it = markAt(card, strip, e.clientX, e.clientY);
+  return it ? openAnnoPop(card, it.id) : false;
+}
+// the pointer turns into a hand over a highlight on a PDF page
+let hoverQueued = false;
+main.addEventListener('mousemove', e => {
+  if (hoverQueued || e.buttons) return; hoverQueued = true;
+  requestAnimationFrame(() => {
+    hoverQueued = false;
+    const strip = !drawing && e.target.closest?.('.strip'), card = strip && strip.closest('.pagecard');
+    document.body.classList.toggle('on-mark', !!(card && card.dataset.ink && markAt(card, strip, e.clientX, e.clientY)));
+  });
+});
+
+// ---------- the bar that shows when you select words ----------
+const annoBar = document.createElement('div');
+annoBar.id = 'annoBar'; annoBar.className = 'pop annobar'; annoBar.hidden = true; annoBar.setAttribute('role', 'toolbar'); annoBar.setAttribute('aria-label', 'Highlight the selected words');
+annoBar.innerHTML = HL_COLORS.map(([c, n]) => `<button type="button" class="hdot" data-c="${c}" style="--c:${c}" title="${n}: highlight the selected words" aria-label="${n} highlight"></button>`).join('') +
+  `<span class="asep"></span><button type="button" class="btn" data-cm title="Comment: highlight the selected words and write a comment on them">${icon('comment')}Comment</button>`;
+document.body.append(annoBar);
+let barRange = null;
+function hideAnnoBar(){ annoBar.hidden = true; barRange = null; }
+function checkSelection(){
+  const sel = getSelection();
+  if (drawing || reading || !sel.rangeCount || sel.isCollapsed) return hideAnnoBar();
+  const r = sel.getRangeAt(0);
+  if (!selTarget(r)) return hideAnnoBar();
+  barRange = r.cloneRange();
+  annoBar.querySelectorAll('.hdot').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === hlCol));
+  annoBar.hidden = false; hideGap();
+  const sr = r.getBoundingClientRect(), w = annoBar.offsetWidth, h = annoBar.offsetHeight, top0 = appbar.classList.contains('barhidden') || focusMode ? 8 : appbar.getBoundingClientRect().bottom + 4;
+  let top = sr.top - h - 10;
+  if (top < top0) top = Math.min(sr.bottom + 10, innerHeight - h - 8);
+  annoBar.style.left = Math.max(8, Math.min(innerWidth - w - 8, sr.left + sr.width / 2 - w / 2)) + 'px';
+  annoBar.style.top = Math.max(8, top) + 'px';
+}
+document.addEventListener('pointerup', e => { if (!e.target.closest?.('.annobar, .annopop')) setTimeout(checkSelection, 0); });
+document.addEventListener('keyup', e => { if (e.shiftKey && /^(Arrow|Home$|End$|Page)/.test(e.key) && !e.target.closest?.('input, textarea, .mine')) checkSelection(); });
+document.addEventListener('selectionchange', () => { if (annoBar.hidden) return; const s = getSelection(); if (!s.rangeCount || s.isCollapsed) hideAnnoBar(); });
+addEventListener('scroll', () => { hideAnnoBar(); if (annoCur && !annoPopRaf) annoPopRaf = requestAnimationFrame(placeAnnoPop); }, {passive: true});
+addEventListener('resize', () => { hideAnnoBar(); placeAnnoPop(); });
+annoBar.addEventListener('mousedown', e => e.preventDefault());
+annoBar.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || !barRange) return;
+  if (b.dataset.c) { hlCol = b.dataset.c; pref.set('hl-colour', hlCol); }
+  const made = makeHighlight(barRange, hlCol);
+  if (made && 'cm' in b.dataset) openAnnoPop(made.card, made.id, true);
+});
+
+// ---------- the comment on a highlight ----------
+const annoPop = document.createElement('div');
+annoPop.id = 'annoPop'; annoPop.className = 'pop annopop'; annoPop.hidden = true; annoPop.setAttribute('role', 'dialog'); annoPop.setAttribute('aria-label', 'Comment');
+annoPop.innerHTML = '<div class="aq"></div><textarea rows="3" placeholder="Add a comment…" aria-label="Comment"></textarea>' +
+  '<div class="arow" data-edit-row><button type="button" class="btn primary" data-a="save" title="Save: keep this comment (Ctrl+Enter)">Save</button><button type="button" class="btn outline" data-a="cancel" title="Cancel: close without saving (Esc)">Cancel</button><span class="done-tag" hidden>Resolved</span></div>' +
+  `<div class="arow"><button type="button" class="btn" data-a="resolve"></button><button type="button" class="btn danger" data-a="remove" title="Remove highlight: take away the highlight and its comment">${icon('trash')}Remove highlight</button></div>`;
+document.body.append(annoPop);
+const annoTa = annoPop.querySelector('textarea');
+let annoCur = null, annoPopRaf = 0;      // annoCur: the highlight whose pop-up is open
+function closeAnnoPop(){ annoPop.hidden = true; annoCur = null; }
+function placeAnnoPop(){
+  annoPopRaf = 0;
+  if (!annoCur || annoPop.hidden) return;
+  const r = markRect(annoCur.card, annoCur.id); if (!r) { closeAnnoPop(); return; }
+  const w = annoPop.offsetWidth, h = annoPop.offsetHeight, bottom = innerHeight - (focusMode ? 0 : 34) - 8;
+  let top = r.bottom + 8;
+  if (top + h > bottom) top = Math.max(8, r.top - h - 8);
+  annoPop.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left)) + 'px';
+  annoPop.style.top = Math.max(8, Math.min(bottom - h, top)) + 'px';
+}
+// show (or refresh) the pop-up for annoCur; in Study mode it can be read and resolved, not changed
+function showAnnoPop(){
+  const h = annoCur && annoGet(annoCur.card, annoCur.id); if (!h) { closeAnnoPop(); return; }
+  const cm = annoCm(h), q = annoQuote(h);
+  annoPop.style.setProperty('--c', annoColor(h));
+  annoPop.querySelector('.aq').textContent = '“' + q + '”';
+  annoTa.readOnly = reading;
+  annoPop.classList.toggle('ro', reading);
+  annoPop.querySelector('[data-edit-row]').hidden = reading;
+  annoPop.querySelector('.done-tag').hidden = true;
+  const res = annoPop.querySelector('[data-a=resolve]');
+  res.hidden = !cm;
+  if (cm) { res.innerHTML = icon(cm.done ? 'reopen' : 'check') + (cm.done ? 'Reopen' : 'Resolve'); res.title = cm.done ? 'Reopen: list this comment again' : 'Resolve: this comment is dealt with, so it leaves the Notes list'; }
+  const rm = annoPop.querySelector('[data-a=remove]'); rm.hidden = reading || annoCur.fresh;
+  annoPop.querySelector('.arow:last-child').hidden = res.hidden && rm.hidden;
+  annoPop.hidden = false; placeAnnoPop();
+}
+function openAnnoPop(card, id, fresh){
+  const h = annoGet(card, id); if (!h) return false;
+  const cm = annoCm(h);
+  if (reading && !cm) return false;
+  hideAnnoBar();
+  hideGap(); annoCur = {card, id, fresh: !!fresh};
+  annoTa.value = cm ? cm.text : '';
+  showAnnoPop();
+  if (!reading) annoTa.focus({preventScroll: true});
+  return true;
+}
+function saveAnnoPop(){
+  if (!annoCur) return;
+  const {card, id} = annoCur, h = annoGet(card, id), cm = h && annoCm(h), t = annoTa.value.trim();
+  if (h && !reading && t !== (cm ? cm.text : '')) annoSetCm(card, id, t, cm && cm.done);
+  closeAnnoPop();
+}
+annoPop.addEventListener('mousedown', e => { if (!e.target.closest('textarea')) e.preventDefault(); });
+annoPop.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || !annoCur) return;
+  const {card, id} = annoCur, h = annoGet(card, id), cm = h && annoCm(h);
+  if (b.dataset.a === 'save') saveAnnoPop();
+  else if (b.dataset.a === 'cancel') closeAnnoPop();
+  else if (b.dataset.a === 'resolve' && cm) {
+    annoSetCm(card, id, (!reading && annoTa.value.trim()) || cm.text, !cm.done);
+    closeAnnoPop(); toast(cm.done ? 'Comment reopened.' : 'Comment resolved. Click the highlight to reopen it.');
+  } else if (b.dataset.a === 'remove' && h && !reading) {
+    annoRemove(card, id); closeAnnoPop(); toast('Highlight removed. Press Back (Ctrl+Z) to bring it back.');
+  }
+});
+annoTa.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveAnnoPop(); } });
+// clicking elsewhere closes it; words you typed are kept
+document.addEventListener('pointerdown', e => {
+  if (!annoCur || annoPop.contains(e.target)) return;
+  const h = annoGet(annoCur.card, annoCur.id), t = annoTa.value.trim();
+  if (h && !reading && t && t !== (annoCm(h)?.text || '')) saveAnnoPop(); else closeAnnoPop();
+}, true);
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (annoCur) { e.stopPropagation(); closeAnnoPop(); }
+  else if (!annoBar.hidden) { e.stopPropagation(); hideAnnoBar(); getSelection().removeAllRanges(); }
+  else if (drawing) { e.stopPropagation(); setDrawing(false); }
+}, true);
+// from the Notes list: go to the highlight and open its comment
+function jumpToComment(card, id){
+  if (!card?.isConnected) return;
+  if (narrow.matches) setPanel('notes', false);
+  const r = markRect(card, id); if (!r) return;
+  scrollBy({top: r.top - innerHeight * 0.4, behavior: 'instant'});
+  openAnnoPop(card, id);
+}
 
 // ================= the add menu: a note, a sticky note or an equation, Notion style =================
 // "+ Add here" between two lines of a PDF page opens it with a search box; typing / in a note opens it at the cursor
