@@ -544,6 +544,34 @@ body.focus .peekzone{display:none}
 .pv .fx{font:italic 21px/1 "Times New Roman",serif;color:#1b2330;align-self:center;margin:auto 0}
 @media (max-width:640px){.itip{display:none!important}}
 
+/* ================= your preferences: favourite colours, New notes, interface font, theme ================= */
+/* the star is filled when the colour in use is already a favourite */
+.favstar{min-width:28px;height:28px;padding:0;color:var(--muted)}
+.favstar[aria-pressed="true"]{color:var(--accent)}
+.favstar[aria-pressed="true"] .i{fill:currentColor}
+/* a favourite swatch shows a × badge in its corner while you point at it or tab to it */
+.fvw{position:relative;display:inline-flex;flex:none}
+.favx{position:absolute;top:-2px;right:-2px;z-index:1;width:15px;height:15px;padding:0;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--pencil);border-radius:50%;background:var(--surface);color:var(--ink);font:700 12px/1 var(--ui);cursor:pointer;opacity:0;pointer-events:none;transition:opacity .12s}
+.fvw:hover .favx,.fvw:focus-within .favx{opacity:1;pointer-events:auto}
+.favx:hover{background:var(--danger);border-color:var(--danger);color:var(--surface)}
+.chippop .favx{top:-6px;right:-6px}
+/* New notes (in Help & settings) */
+.newrow{display:flex;align-items:center;gap:8px;margin:0 0 8px}
+.newrow select{flex:1;min-width:0}
+.newrow input[type=number]{width:64px;height:32px;box-sizing:border-box;flex:none;font:inherit;font-size:15px;color:var(--ink);background:var(--surface-2);border:1.5px solid var(--pencil);border-radius:var(--wob);padding:0 6px}
+.newrow.uifont{justify-content:space-between;margin:12px 0 0}
+.newrow .lbl{font-size:15px}
+.settings .seg .btn{font-size:15px}
+/* the plain font for the buttons, menus and labels (notes keep their own font) */
+:root[data-ui-font="clean"]{--ui:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--display:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+/* the sizes were chosen for Patrick Hand, which is small: keep the plain font the same apparent size (and the notes as they are) */
+:root[data-ui-font="clean"] body{font-size-adjust:.48}
+:root[data-ui-font="clean"] body *{font-size-adjust:inherit}   /* rules with a font shorthand would otherwise reset it */
+:root[data-ui-font="clean"] #listStyle{min-width:100px}
+:root[data-ui-font="clean"] #indentSize{min-width:138px}
+#themeModes .btn[aria-pressed="true"],#uiFonts .btn[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+:root[data-ui-font="clean"] :is(main,.stickyghost,.ncompose textarea,.pv,.fpreview,#fInput,kbd){font-size-adjust:none}
+
 /* ================= sticky notes: yellow paper on top of the page, moved by their tape ================= */
 .slide .notebox.sticky > .mine{min-height:92px;padding:16px 14px 12px;background:var(--nb-fill,#fff59d);border:1px solid rgba(120,100,20,.35);border-radius:2px 3px 2px 4px;box-shadow:2px 4px 0 rgba(47,43,36,.22)} /* taste-skill-ignore: a sticky note is paper lifted off the page */
 .slide .notebox.sticky:hover > .mine{box-shadow:0 0 0 1px var(--accent),2px 4px 0 rgba(47,43,36,.22)} /* taste-skill-ignore: a sticky note is paper lifted off the page */
@@ -626,6 +654,9 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
 <symbol id="i-hide-left" viewBox="0 0 24 24"><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></symbol>
 <symbol id="i-sticky" viewBox="0 0 24 24"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/></symbol>
 <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol>
+<symbol id="i-monitor" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
 </defs></svg>
 
 <header class="appbar" id="appbar">
@@ -707,7 +738,7 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
         <span id="swatches" class="row"></span>
         <input type="color" id="color" value="#1f4fd1" aria-label="Any text colour" title="Any colour">
         <span id="favText" class="favs" aria-label="Your favourite colours" title="Your favourite colours: click to use, right-click (or press and hold) to remove"></span>
-        <button id="favTextSave" class="btn" style="min-width:28px;height:28px;padding:0;color:var(--muted)" aria-label="Save this colour to your favourites" title="Save the current text colour to your favourites"><svg class="i" style="width:16px;height:16px"><use href="#i-star"/></svg></button>
+        <button id="favTextSave" class="btn favstar" aria-pressed="false" aria-label="Save this colour to your favourites" title="Favourite: save the current text colour to your favourites"><svg class="i" style="width:16px;height:16px"><use href="#i-star"/></svg></button>
       </div><span class="cap">Colour</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row">
@@ -821,6 +852,12 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
         </select>
       </div><span class="cap">Proofing</span></div>
       <span class="sep"></span>
+      <div class="grp"><div class="row seg" id="themeModes" role="group" aria-label="Theme">
+        <button class="btn" data-pick="system" aria-pressed="true" title="System: follow the light or dark setting of this device"><svg class="i"><use href="#i-monitor"/></svg>System</button>
+        <button class="btn" data-pick="light" aria-pressed="false" title="Light: always use the light theme"><svg class="i"><use href="#i-sun"/></svg>Light</button>
+        <button class="btn" data-pick="dark" aria-pressed="false" title="Dark: always use the dark theme"><svg class="i"><use href="#i-moon"/></svg>Dark</button>
+      </div><span class="cap">Theme</span></div>
+      <span class="sep"></span>
       <div class="grp"><div class="row seg" id="barModes">
         <button class="btn" data-mode="full" aria-pressed="true" title="Tabs and tools">Full</button>
         <button class="btn" data-mode="compact" aria-pressed="false" title="Only the tabs: click one to open its tools">Tabs only</button>
@@ -911,10 +948,28 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
         <dt>Arrow keys</dt><dd>Move selected notes (with <kbd>Shift</kbd>: 10 px)</dd>
         <dt><kbd>Delete</kbd></dt><dd>Delete the selected notes, picture or video</dd>
         <dt><kbd>Ctrl</kbd> <kbd>\</kbd></dt><dd>Show or hide the sidebar</dd>
+        <dt><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>L</kbd></dt><dd>Change the theme: System, Light or Dark</dd>
         <dt><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>F</kbd></dt><dd>Focus mode on or off</dd>
         <dt><kbd>/</kbd></dt><dd>In a note: add an equation, or turn it into a sticky note</dd>
         <dt><kbd>Esc</kbd></dt><dd>Close a menu or end a selection</dd>
       </dl>
+    </section>
+    <section>
+      <h3>New notes</h3>
+      <p class="sethint">New notes start in this style. You can still change any note.</p>
+      <div class="newrow">
+        <select id="setFont" aria-label="Font for new notes" title="Font: the font new notes start in"></select>
+        <input id="setSize" type="number" min="4" max="200" step="1" inputmode="decimal" aria-label="Text size for new notes" title="Text size: the size new notes start at (4 to 200)">
+        <input id="setColor" type="color" aria-label="Text colour for new notes" title="Colour: the text colour new notes start in">
+      </div>
+      <button type="button" class="btn outline" id="setFromNote" disabled title="Click inside a note first, then press this">Use the style of the note I'm in</button>
+      <div class="newrow uifont">
+        <span class="lbl" id="uiFontLbl">Interface font</span>
+        <div class="seg" id="uiFonts" role="group" aria-labelledby="uiFontLbl">
+          <button class="btn" type="button" data-pick="hand" aria-pressed="true" title="Handwritten: the sketchy look for buttons and menus">Handwritten</button>
+          <button class="btn" type="button" data-pick="clean" aria-pressed="false" title="Clean: a plain, easy-to-read font for buttons and menus">Clean</button>
+        </div>
+      </div>
     </section>
     <section>
       <h3>Custom dictionary <span class="count" id="dictCount"></span></h3>
@@ -1006,6 +1061,20 @@ const pref = {
   json(k, d){ try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
   setJson(k, v){ pref.set(k, JSON.stringify(v)); },
 };
+// light or dark (System follows the device) and the interface font: applied at once, after APP_HTML above is taken so downloaded notebook files don't bake them in
+const THEMES = ['system', 'light', 'dark'];
+const themeNow = () => { const t = pref.get('theme', 'system'); return THEMES.includes(t) ? t : 'system'; };
+function paintThemeColor(){
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || toHex(getComputedStyle(document.body).backgroundColor);
+  $('meta[name="theme-color"]')?.setAttribute('content', bg);
+}
+function applyTheme(t){
+  if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+  paintThemeColor();
+}
+applyTheme(themeNow());
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintThemeColor);
+if (pref.get('ui-font') === 'clean') document.documentElement.dataset.uiFont = 'clean';
 const COLORS = [['#1f4fd1', 'Blue'], ['#c62828', 'Red'], ['#2e7d32', 'Green'], ['#7b1fa2', 'Purple'], ['#d35400', 'Orange'], ['#1d1d1f', 'Black']];
 const SIZES = [8,9,10,11,12,14,16,18,20,24,28,32,36,40,48,60,72];
 // the fallback used if a font isn't on this device
@@ -1036,6 +1105,7 @@ COLORS.forEach(([c, name]) => {
 function showStyle(s){
   $('#font').value = s.font; $('#size').value = s.size; $('#color').value = s.color;
   document.querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === s.color));
+  document.dispatchEvent(new Event('stylechange'));      // the star and the New notes settings follow it
 }
 showStyle(style);
 // pressing a toolbar button keeps the cursor (and any selected words) in the note
@@ -1048,7 +1118,7 @@ document.addEventListener('selectionchange', () => {
   if (el) { active = el; savedRange = r.cloneRange(); showStyle(styleAt(r, el)); const nb = el.closest('.notebox'); if (nb) showBox(boxOf(nb)); $('#indentSize').value = el.style.getPropertyValue('--ind').trim() || '1.4em'; }
 });
 document.addEventListener('mousedown', e => {
-  if (!e.target.closest('.mine, .notebox, .gappill, header, .fpanel, .mediabar, .chippop, .spellmenu, .multibar')) { active = null; savedRange = null; showStyle(style); }
+  if (!e.target.closest('.mine, .notebox, .gappill, header, .fpanel, .mediabar, .chippop, .spellmenu, .multibar, .settings')) { active = null; savedRange = null; showStyle(style); }
 });
 function noteStyle(el){
   return {font: el.style.fontFamily.split(',')[0].replace(/"/g,'').trim() || style.font,
@@ -2728,18 +2798,21 @@ function addFav(c){
   if (favs.length >= 16) { toast('You have 16 favourites: right-click one (or press and hold) to remove it first.'); return; }
   favs.push(c); storeFavs(); toast('Saved to your favourite colours.');
 }
-function removeFav(c){ favs = favs.filter(x => x !== c); storeFavs(); toast('Removed from your favourite colours.'); }
+function removeFav(c){ favs = favs.filter(x => x !== c); storeFavs(); toast('Removed from your favourites.'); }
 function renderFavs(){
-  const sw = c => `<button type="button" class="sw fav" data-c="${c}" style="--c:${c}" title="${c}: click to use · right-click (or press and hold) to remove" aria-label="Favourite colour ${c}"></button>`;
+  // each swatch sits in a wrapper with a × badge beside it (a button can't hold a button)
+  const x = c => `<button type="button" class="favx" data-x="${c}" title="Remove ${c} from your favourites" aria-label="Remove favourite colour ${c}">×</button>`;
+  const sw = c => `<span class="fvw"><button type="button" class="sw fav" data-c="${c}" style="--c:${c}" title="${c}: click to use · right-click (or press and hold) to remove" aria-label="Favourite colour ${c}"></button>${x(c)}</span>`;
   $('#favText').innerHTML = favs.map(sw).join('');
-  chipPop.querySelector('.favrow').innerHTML = favs.map(c => `<button type="button" class="cc fav" data-c="${c}" style="background:${c}" title="${c}: click to use · right-click (or press and hold) to remove" aria-label="Favourite colour ${c}"></button>`).join('');
+  chipPop.querySelector('.favrow').innerHTML = favs.map(c => `<span class="fvw"><button type="button" class="cc fav" data-c="${c}" style="background:${c}" title="${c}: click to use · right-click (or press and hold) to remove" aria-label="Favourite colour ${c}"></button>${x(c)}</span>`).join('');
   const cur = $('#color').value.toLowerCase();
   $('#favText').querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === cur));
   if (!chipPop.hidden) markChip();
+  paintStar();
   renderFavManage();
 }
 $('#favText').addEventListener('click', e => { const b = e.target.closest('.fav'); if (!b) return; if (favHeld) { favHeld = false; return; } apply('color', b.dataset.c); });
-$('#favTextSave').onclick = () => addFav($('#color').value);
+$('#favTextSave').onclick = () => { const c = $('#color').value.toLowerCase(); favs.includes(c) ? removeFav(c) : addFav(c); };
 // remove a favourite: right-click, or press and hold on a touch screen
 let favHeld = false;
 document.addEventListener('contextmenu', e => { const b = e.target.closest?.('.fav'); if (!b) return; e.preventDefault(); removeFav(b.dataset.c); });
@@ -3423,7 +3496,7 @@ $('#dictAddForm').addEventListener('submit', e => {
   toast(words.length === 1 ? `“${words[0]}” added to your dictionary.` : `${words.length} words added to your dictionary.`);
 });
 $('#favManage').addEventListener('click', e => { const b = e.target.closest('button[data-c]'); if (b) removeFav(b.dataset.c); });
-function openSettings(fromKeys){ renderDict(); renderFavManage(); settingsBox.hidden = false; helpBtn.setAttribute('aria-expanded', 'true'); if (fromKeys) $('#setClose').focus(); }
+function openSettings(fromKeys){ renderDict(); renderFavManage(); fillPrefs(); settingsBox.hidden = false; helpBtn.setAttribute('aria-expanded', 'true'); if (fromKeys) $('#setClose').focus(); }
 function closeSettings(back){ if (settingsBox.hidden) return; settingsBox.hidden = true; helpBtn.setAttribute('aria-expanded', 'false'); if (back) helpBtn.focus(); }
 // a click with detail 0 came from the keyboard (Enter or Space)
 helpBtn.onclick = e => settingsBox.hidden ? openSettings(e.detail === 0) : closeSettings();
@@ -4177,6 +4250,77 @@ function showAdded(box){
   setTimeout(() => box.classList.remove('flash'), 1700);
   updateNotesBtn(); saveSoon();
 }
+
+// ================= your preferences: favourite colours, New notes, interface font, theme =================
+// the star is filled when the colour in use is already a favourite
+function paintStar(){
+  const b = $('#favTextSave'), on = favs.includes($('#color').value.toLowerCase()), was = b.getAttribute('aria-pressed') === 'true';
+  if (b.hasAttribute('aria-pressed') && on === was) return;
+  b.setAttribute('aria-pressed', on);
+  b.title = on ? 'Favourite: press to remove this colour from your favourites' : 'Favourite: save the current text colour to your favourites';
+  b.setAttribute('aria-label', on ? 'Remove this colour from your favourites' : 'Save this colour to your favourites');
+}
+// the × badge on a favourite removes it; clicking the swatch itself still uses the colour
+document.addEventListener('click', e => {
+  const x = e.target.closest?.('.favx'); if (!x) return;
+  e.stopPropagation();
+  const row = x.closest('#favText, .favrow'), i = [...row.querySelectorAll('.favx')].indexOf(x);
+  removeFav(x.dataset.x);
+  if (e.detail === 0) { const left = row.querySelectorAll('.fav'); (left[Math.min(i, left.length - 1)] || (row.id === 'favText' ? $('#favTextSave') : chipPop.querySelector('[data-save]')))?.focus(); }   // from the keyboard: stay in the row
+}, true);
+document.addEventListener('contextmenu', e => { const x = e.target.closest?.('.favx'); if (!x) return; e.preventDefault(); removeFav(x.dataset.x); });
+document.addEventListener('stylechange', () => { paintStar(); if (!settingsBox.hidden) fillPrefs(); });
+
+// New notes: the style new notes start in (the same style the Home tab shows when you're not in a note)
+const newFont = $('#setFont'), newSize = $('#setSize'), newColor = $('#setColor'), fromNote = $('#setFromNote');
+newFont.innerHTML = $('#font').innerHTML;
+function fillPrefs(){
+  newFont.value = style.font; newColor.value = style.color;
+  if (document.activeElement !== newSize && parseFloat(newSize.value) !== style.size) newSize.value = style.size;
+  const can = !!noteActive();
+  fromNote.disabled = !can;
+  fromNote.title = can ? 'Use the style of the note I\'m in: copy its font, size and colour to new notes' : 'Click inside a note first, then press this';
+}
+function setNew(kind, value){
+  style[kind] = value; saveSoon();
+  if (!noteActive() && !multi.size) showStyle(style);
+}
+newFont.onchange = e => setNew('font', e.target.value);
+newColor.oninput = e => setNew('color', e.target.value);
+// the size is used as you type (once it makes sense) and tidied up when you leave the box
+newSize.addEventListener('input', () => { const v = parseFloat(newSize.value); if (v >= 4 && v <= 200) setNew('size', Math.round(v * 2) / 2); });
+newSize.addEventListener('change', () => {
+  const v = Math.round(Math.min(200, Math.max(4, parseFloat(newSize.value))) * 2) / 2;
+  if (isFinite(v)) { newSize.value = v; setNew('size', v); } else newSize.value = style.size;
+});
+newSize.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); newSize.blur(); } });
+fromNote.onclick = () => {
+  const n = noteActive(); if (!n) { fillPrefs(); toast('Click inside a note first.'); return; }
+  const s = savedRange && n.contains(savedRange.commonAncestorContainer) ? styleAt(savedRange, n) : noteStyle(n);
+  Object.assign(style, {font: s.font, size: s.size, color: s.color}); saveSoon(); fillPrefs();
+  toast('New notes will start in this style.');
+};
+document.addEventListener('selectionchange', () => { if (!settingsBox.hidden) fillPrefs(); });
+
+// Interface font: Handwritten (the default) or Clean (set at start-up, near the top)
+const paintUiFont = () => $('#uiFonts').querySelectorAll('[data-pick]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pick === (document.documentElement.dataset.uiFont || 'hand')));
+$('#uiFonts').addEventListener('click', e => {
+  const b = e.target.closest('[data-pick]'); if (!b) return;
+  if (b.dataset.pick === 'clean') document.documentElement.dataset.uiFont = 'clean'; else delete document.documentElement.dataset.uiFont;
+  pref.set('ui-font', b.dataset.pick); paintUiFont();
+});
+
+// Theme: System (follow the device), Light or Dark; Ctrl+Shift+L cycles through them
+const THEME_NAMES = {system: 'System', light: 'Light', dark: 'Dark'};
+const paintTheme = () => $('#themeModes').querySelectorAll('[data-pick]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pick === themeNow()));
+function setTheme(t){ pref.set('theme', t); applyTheme(t); paintTheme(); }
+$('#themeModes').addEventListener('click', e => { const b = e.target.closest('[data-pick]'); if (b) setTheme(b.dataset.pick); });
+document.addEventListener('keydown', e => {
+  if (!((e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'l')) return;
+  e.preventDefault();
+  const t = THEMES[(THEMES.indexOf(themeNow()) + 1) % THEMES.length]; setTheme(t); toast('Theme: ' + THEME_NAMES[t]);
+});
+paintStar(); fillPrefs(); paintUiFont(); paintTheme();
 
 // ================= add a note from the Notes panel =================
 const newNote = $('#newNote'), stickyPad = $('#stickyPad');
