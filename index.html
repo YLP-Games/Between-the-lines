@@ -788,6 +788,53 @@ body:not(.side-visible) #annoBar [data-side]{display:none}
 .sidebg .pv.dark{--sp-line:rgba(236,230,214,.3)}
 .sidebg .cust{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
 main.reading .sidepage{cursor:auto}
+
+/* ================= split view: a second notebook to read, beside the one you write in ================= */
+.workspace.has-beside > main{max-width:none;margin:0}
+.beside{position:sticky;top:var(--appbar-h);height:calc(100dvh - var(--appbar-h) - var(--status-h));flex:none;width:46%;min-width:0;box-sizing:border-box;display:flex;flex-direction:column;background:var(--bg);border-left:1.5px solid var(--pencil);z-index:2}
+.beside[hidden]{display:none}
+.bdiv{position:absolute;left:-7px;top:0;bottom:0;width:12px;z-index:4;cursor:col-resize;touch-action:none;outline:none}
+.bdiv::before{content:"";position:absolute;left:4px;top:50%;width:4px;height:44px;margin-top:-22px;border-radius:3px;background:var(--line-strong);transition:background .15s,height .15s,margin-top .15s}
+.bdiv:hover::before,.bdiv:focus-visible::before,body.bresizing .bdiv::before{background:var(--accent);height:64px;margin-top:-32px}
+body.bresizing{cursor:col-resize;user-select:none;-webkit-user-select:none}
+body.bresizing .beside{pointer-events:none}
+.bhead{flex:none;display:flex;align-items:center;gap:8px;padding:6px 8px 6px 14px;min-height:46px;box-sizing:border-box;background:var(--surface-2);border-bottom:1px solid var(--line-strong)}
+.bhead .bname{flex:1 1 auto;min-width:0;font:600 17px var(--display);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bhead .bro{flex:none;display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--muted);white-space:nowrap}
+.bhead .bro .i{width:14px;height:14px}
+.bhead select{flex:0 1 150px;min-width:0;height:30px}
+.bhead .btn{height:30px;flex:none}
+.bhead .btn .i{width:16px;height:16px}
+.bbody{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;container-type:inline-size;outline:none;background:var(--bg)}
+.bbody:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)} /* taste-skill-ignore: a ring marking focus */
+.bview{position:relative;max-width:960px;margin:0 auto;padding:18px 16px 80px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px}
+.bview .bempty{margin:60px 0;text-align:center;color:var(--muted);font-size:15px}
+/* read only: no handles, no cursor in the notes, words can still be selected and copied */
+.bview .grip,.bview .nbar{display:none!important}
+.bview .slide,.bview .strip,.bview .mine,.bview .sidepage{cursor:auto}
+.bview .tl{cursor:text}
+.bview .mine:empty::before{content:none}
+.bview .notebox:hover > .mine{box-shadow:none}
+.bview .notebox.collapsed > .note-chip{cursor:pointer}
+.bview mark.anno{cursor:auto}
+.bview .slide img.blk,.bview .media{cursor:auto}
+.bview .sidepage{display:none}
+.bview.side-on{max-width:1500px;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);column-gap:18px;row-gap:16px;align-items:start}
+.bview.side-on .sidepage{display:block}
+.bview.side-on > .file-head{grid-column:1 / -1}
+.bview.side-on > .slide{grid-column:1}
+.bview.side-on > .sidepage{grid-column:2;align-self:stretch}
+@container (max-width:640px){.bview.side-on{grid-template-columns:minmax(0,1fr)}.bview.side-on > .sidepage{grid-column:1;align-self:start}}
+#besideInfo{min-width:0;max-width:38ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bdrop{position:fixed;z-index:40;top:var(--appbar-h);bottom:var(--status-h);right:0;width:50vw;display:flex;align-items:center;justify-content:center;pointer-events:none;background:color-mix(in srgb,var(--accent) 12%,transparent);border:2px dashed var(--accent);box-sizing:border-box}
+.bdrop[hidden]{display:none}
+.bdrop span{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:var(--wob-pill);background:var(--accent);color:var(--accent-ink);font:600 17px var(--ui)}
+@media (max-width:900px){
+  .beside{position:fixed;top:var(--appbar-h);bottom:calc(var(--status-h) + env(safe-area-inset-bottom,0px));left:0;right:0;width:auto!important;height:auto;z-index:14;border-left:none}
+  .bdiv{display:none}
+  .bhead select{flex-basis:110px}
+  .bhead .bro{display:none}
+}
 </style>
 <script>
 // a saved Light or Dark theme is set before the page paints, so it doesn't flash the other one first
@@ -1119,6 +1166,17 @@ try {
     <div class="sidefoot"><button type="button" class="srow" id="installBtn" hidden><svg class="i"><use href="#i-download"/></svg>Install as an app</button></div>
   </nav>
   <main id="main"></main>
+  <section id="beside" class="beside" aria-label="The notebook beside, to read" hidden>
+    <div class="bdiv" id="bDiv" role="separator" aria-orientation="vertical" aria-label="Drag to change the width of the notebook beside (or use the arrow keys)" tabindex="0"></div>
+    <div class="bhead">
+      <span class="bname" id="bName"></span>
+      <span class="bro" title="You read this notebook here. Swap to write in it."><svg class="i"><use href="#i-lock"/></svg>Read only</span>
+      <select id="bPage" aria-label="Jump to a page" hidden></select>
+      <button type="button" class="btn outline" id="bSwap" title="Swap: write in this notebook, and read the one on the left here"><svg class="i"><use href="#i-sync"/></svg><span>Swap</span></button>
+      <button type="button" class="btn" id="bClose" aria-label="Close the notebook beside" title="Close (Esc)"><svg class="i"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="bbody" id="bBody" tabindex="0" role="region" aria-label="Notebook beside, read only"><div class="bview" id="bView"></div></div>
+  </section>
   <aside class="side notes" id="notesPanel" aria-label="Notes" hidden>
     <div class="sidehead"><h2>Notes</h2><span class="count" id="noteCount"></span><button class="btn" data-close="notes" aria-label="Close the notes list"><svg class="i"><use href="#i-x"/></svg></button></div>
     <div class="notetools">
@@ -1136,12 +1194,14 @@ try {
     <ol class="notelist" id="noteList"></ol>
   </aside>
 </div>
+<div class="bdrop" id="bDrop" hidden><span><svg class="i" style="width:20px;height:20px"><use href="#i-panel-right"/></svg>Open beside</span></div>
 <div class="scrim" id="scrim" hidden></div>
 <div class="peekzone" id="peekZone" hidden></div>
 
 <footer class="statusbar" id="statusbar">
   <span id="pageInfo"></span>
   <span id="noteInfo"></span>
+  <span id="besideInfo" hidden></span>
   <span class="spacer"></span>
   <button class="btn notes-toggle" id="notesToggle" disabled><svg class="i"><use href="#i-eye-off"/></svg><span>Hide notes</span></button>
 </footer>
@@ -1561,9 +1621,9 @@ function updateNotesBtn(){
 }
 function afterNotesToggle(){ updateNotesBtn(); if (LAYOUTS[layout]) paginateView(); spreadChips(); saveSoon(); }
 // minimised notes at (nearly) the same spot get their icons side by side instead of on top of each other
-function spreadChips(){
+function spreadChips(root = main){
   const placed = [];
-  for (const box of main.querySelectorAll('.notebox.collapsed')) {
+  for (const box of root.querySelectorAll('.notebox.collapsed')) {
     const chip = box.querySelector(':scope > .note-chip'); if (!chip) continue;
     chip.style.setProperty('--ci', 0);
     const r = box.getBoundingClientRect(), card = box.closest('.slide');
@@ -2372,7 +2432,7 @@ function startFloatMove(box, g, e){
   const move = ev => {
     last = {clientX: ev.clientX ?? last.clientX, clientY: ev.clientY ?? last.clientY, altKey: ev.altKey, shiftKey: ev.shiftKey};
     if (ev.clientX != null && !card.classList.contains('sidepage')) {      // (a side note stays on its own side page)
-      const over = document.elementsFromPoint(last.clientX, last.clientY).filter(el => !box.contains(el)).map(el => el.closest('.slide')).find(Boolean);
+      const over = document.elementsFromPoint(last.clientX, last.clientY).filter(el => !box.contains(el) && !el.closest('#beside')).map(el => el.closest('.slide')).find(Boolean);
       if (over && over !== dest) {
         dest.classList.remove('drop-target'); dest = over; dr = over.getBoundingClientRect();
         if (dest !== card) dest.classList.add('drop-target');
@@ -2428,7 +2488,7 @@ function startMove(box, g, e){
     if (ev.clientY != null) {                 // a mouse move, not only Alt / Shift: find the line it would move to
       target = null;
       if (Math.abs(dy) > 20) {
-        const under = document.elementsFromPoint(ev.clientX, ev.clientY).filter(el => !box.contains(el));
+        const under = document.elementsFromPoint(ev.clientX, ev.clientY).filter(el => !box.contains(el) && !el.closest('#beside'));
         const strip = under.map(el => el.closest('.strip')).find(Boolean);
         if (strip) { showGap(strip, ev.clientY); gapPill.remove(); target = {card: strip.closest('.pagecard'), y: pending.y}; }
         else {
@@ -4280,6 +4340,7 @@ function showDocHtml(html){
 // open another notebook (no id: a new, empty one); the one you leave is saved first and keeps its Back history and place
 async function switchDoc(id){
   if (id && id === curId) return;
+  const prevId = curId;
   await flushSave();
   if (curId) { histByDoc.set(curId, {stack: hist.stack, i: hist.i}); scrollByDoc.set(curId, scrollY); }
   if (document.activeElement?.closest?.('.mine')) document.activeElement.blur();
@@ -4294,6 +4355,7 @@ async function switchDoc(id){
   scrollTo(0, scrollByDoc.get(id) || 0);
   putAll({docs, cur: curId});
   refreshPanels();
+  await besideAfterSwitch(prevId);
 }
 // one notebook's row in the sidebar (with its page list under it when it is the open one)
 function docItem(d){
@@ -4313,6 +4375,7 @@ function docItem(d){
   return li;
 }
 function renderDocs(){
+  besideSync();                           // the notebook beside was renamed, or went to the Trash
   if (renaming) return;                   // don't pull the name box away while you type in it
   const side = $('#pagesPanel'), kept = side.scrollTop;      // rebuilding the rows must not make the sidebar jump
   const live = liveDocs(), starred = live.filter(d => d.fav), rest = live.filter(d => !d.fav);
@@ -4352,6 +4415,7 @@ function openDocMenu(id, from, kind = 'doc'){
   else {
     const fav = docs.find(x => x.id === id)?.fav;
     docMenu.innerHTML = `<button type="button" role="menuitem" data-act="rename">${icon('pen')}Rename</button><button type="button" role="menuitem" data-act="duplicate">${icon('copy')}Duplicate</button>` +
+      (id !== curId ? `<button type="button" role="menuitem" data-act="beside">${icon('panel-right')}${id === bs.id ? 'Close beside' : 'Open beside'}</button>` : '') +
       (folders.length ? `<button type="button" role="menuitem" data-act="move" aria-expanded="false">${icon('folder')}Move to…</button>` : '') +
       `<button type="button" role="menuitem" data-act="fav">${icon(fav ? 'star-off' : 'star')}${fav ? 'Remove from Favourites' : 'Add to Favourites'}</button><hr><button type="button" role="menuitem" data-act="trash">${icon('trash')}Move to Trash</button>`;
   }
@@ -4372,7 +4436,7 @@ docMenu.addEventListener('click', e => {
   closeDocMenu();
   if (b.dataset.to !== undefined) { (kind === 'folder' ? moveFolder : moveDoc)(id, b.dataset.to || null); return; }
   (kind === 'folder' ? {rename: startRenameFolder, sub: newFolder, here: newDocIn, rmfolder: deleteFolder}
-                     : {rename: startRename, duplicate: duplicateDoc, fav: toggleFav, trash: trashDoc})[b.dataset.act]?.(id);
+                     : {rename: startRename, duplicate: duplicateDoc, beside: toggleBeside, fav: toggleFav, trash: trashDoc})[b.dataset.act]?.(id);
 });
 document.addEventListener('mousedown', e => { if (!docMenu.hidden && !docMenu.contains(e.target) && !e.target.closest('[data-more], [data-fmore]')) closeDocMenu(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !docMenu.hidden) { const f = menuFrom; closeDocMenu(); f?.focus(); } });
@@ -5246,6 +5310,195 @@ addEventListener('scroll', () => { if (!sideBgPop.hidden) placeSideBg(); }, {pas
 annoBar.insertAdjacentHTML('beforeend', `<button type="button" class="btn" data-side title="Link to side note: highlight the selected words and open a note beside them on the side page, joined by a line">${icon('link')}Link to side note</button>`);
 sidePaintUi();
 
+// ================= split view: a second notebook to read, beside the one you write in =================
+// The notebook on the left stays the only one you edit (all the editing code works on #main). The one beside it is shown in #beside from its
+// saved copy with editing taken out; Swap trades places. Nothing in the pane is ever saved: currentDoc() copies #main only.
+const bEl = $('#beside'), bBody = $('#bBody'), bView = $('#bView'), bPage = $('#bPage'), bInfo = $('#besideInfo'), bDiv = $('#bDiv'), bName = $('#bName'), bDrop = $('#bDrop'), bSpace = $('.workspace');
+const bs = {id: null, token: 0, busy: false, ratio: Math.min(.8, Math.max(.2, parseFloat(pref.get('beside-ratio', '0.45')) || .45))};
+// the room the two notebooks share: the workspace less the sidebar and the notes list when they are docked
+function besideAvail(){
+  const w = el => el.offsetParent !== null ? el.offsetWidth : 0;
+  return bSpace.clientWidth - w(panelEl.pages) - w(panelEl.notes);
+}
+function besideApply(){
+  if (bEl.hidden || narrow.matches) { bEl.style.width = ''; return; }
+  const avail = besideAvail(), min = 320;
+  const w = avail < min * 2 ? avail / 2 : Math.min(avail - min, Math.max(min, bs.ratio * avail));
+  bEl.style.width = Math.round(w) + 'px';
+  bDiv.setAttribute('aria-valuenow', Math.round(w / avail * 100)); bDiv.setAttribute('aria-valuemin', 20); bDiv.setAttribute('aria-valuemax', 80);
+}
+// the page column changed width: lay both notebooks out again (soon, so dragging the divider stays smooth)
+let besideTimer = 0;
+function besideRelayout(){ clearTimeout(besideTimer); besideTimer = setTimeout(() => { relayout(); besideLayout(); }, 120); }
+new ResizeObserver(() => besideApply()).observe(main);
+new ResizeObserver(() => { if (!bEl.hidden) besideRelayout(); }).observe(bBody);
+narrow.addEventListener('change', () => { besideApply(); besideRelayout(); });
+function besideLayout(){
+  if (bEl.hidden || !bView.firstElementChild) return;
+  placeFloats(bView);
+  if (bView.classList.contains('side-on')) for (const sp of bView.querySelectorAll('.sidepage')) {
+    let need = 0;
+    for (const b of sp.querySelectorAll(':scope > .notebox')) need = Math.max(need, b.offsetTop + b.offsetHeight + 28);
+    const v = need ? need + 'px' : '';
+    if (sp.style.minHeight !== v) sp.style.minHeight = v;
+  }
+  spreadChips(bView);
+}
+// one note's pencil icon in the pane: what the note says when you point at it, and a click opens it
+function besideChip(box){
+  let chip = box.querySelector(':scope > .note-chip');
+  if (!chip) { chip = document.createElement('button'); chip.type = 'button'; chip.className = 'note-chip'; chip.innerHTML = icon('pen'); box.append(chip); }
+  const m = box.querySelector(':scope > .mine'), t = (m && noteSummary(m)) || 'Note', short = t.length > 300 ? t.slice(0, 300) + '…' : t;
+  chip.removeAttribute('data-tip'); chip.title = short + '\n\nClick to open'; chip.setAttribute('aria-label', 'Show note: ' + short);
+}
+// put a notebook's saved pages into the pane, read only
+function besideFill(html){
+  const v = bView;
+  v.className = 'bview'; v.innerHTML = html || '';
+  v.querySelectorAll('.slide-label, .gapline, .gappill, .welcome, .empty, .cardbar, .pptx-tip, .sidewrap, .grip, .nbar, svg.ink').forEach(e => e.remove());
+  v.querySelectorAll('[contenteditable]').forEach(e => e.removeAttribute('contenteditable'));
+  v.querySelectorAll('.media-sel, .target-page, .multi-sel, .flash, .drop-target, .touched, .moving, .chip-drag').forEach(e => e.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel', 'flash', 'drop-target', 'touched', 'moving', 'chip-drag'));
+  v.querySelectorAll('.mine').forEach(el => {            // a note without its box (saved by an older version)
+    if (el.parentElement?.classList.contains('notebox')) return;
+    const box = document.createElement(el.tagName === 'SPAN' ? 'span' : 'div'); box.className = el.tagName === 'SPAN' ? 'notebox inline' : 'notebox';
+    el.replaceWith(box); box.append(el);
+  });
+  for (const b of v.querySelectorAll('.notebox')) {
+    if (!hasContent(b)) { b.remove(); continue; }
+    besideChip(b);
+  }
+  if (!v.querySelector('.slide, .file-head')) { v.innerHTML = '<p class="bempty">This notebook has no pages yet.</p>'; }
+  const sp = v.querySelector('.sidepage');
+  v.classList.toggle('side-on', !!(sp && sp.dataset.on === '1' && v.querySelector('.slide')));
+  v.querySelectorAll('.pagecard').forEach(renderInk);
+  besidePages();
+}
+function besidePages(){
+  const slides = [...bView.querySelectorAll('.slide')];
+  bPage.replaceChildren(...slides.map((s, i) => Object.assign(document.createElement('option'), {value: i, textContent: `${i + 1}. ${(pageTitle(s) || 'Page ' + (i + 1)).slice(0, 38)}`})));
+  bPage.hidden = slides.length < 2;
+}
+bPage.addEventListener('change', () => {
+  const s = bView.querySelectorAll('.slide')[+bPage.value]; if (!s) return;
+  bBody.scrollTo({top: Math.max(0, bBody.scrollTop + s.getBoundingClientRect().top - bBody.getBoundingClientRect().top - 12), behavior: smoothScroll()});
+});
+let besideScrollRaf = 0;
+bBody.addEventListener('scroll', () => {
+  if (besideScrollRaf) return;
+  besideScrollRaf = requestAnimationFrame(() => {
+    besideScrollRaf = 0;
+    const top = bBody.getBoundingClientRect().top + 40, slides = bView.querySelectorAll('.slide');
+    let at = 0; slides.forEach((s, i) => { if (s.getBoundingClientRect().top <= top) at = i; });
+    if (slides.length && bPage.value !== String(at)) bPage.value = at;
+  });
+}, {passive: true});
+// show a saved notebook beside the one you are writing in
+async function besideShow(id, scroll = 0){
+  if (!id || id === curId) return false;
+  const t = ++bs.token;
+  await flushSave();                       // the copy it reads must be the latest
+  const d = docs.find(x => x.id === id && !x.trashed); if (!d) return false;
+  let html = '';
+  try { html = await fromStored(await get('doc:' + id)); } catch (err) { console.error(err); }
+  if (t !== bs.token || id === curId) return false;       // something newer was asked for meanwhile
+  const first = bEl.hidden;
+  bs.id = id; pref.set('beside', id);
+  bEl.hidden = false; bSpace.classList.add('has-beside'); besideApply();
+  besideFill(html);
+  bName.textContent = d.name || 'Untitled'; bInfo.textContent = 'Beside: ' + (d.name || 'Untitled'); bInfo.hidden = false;
+  bBody.scrollTop = scroll || 0;
+  requestAnimationFrame(() => {
+    if (t !== bs.token) return;
+    bView.querySelectorAll('.strip').forEach(measureStrip);
+    besideLayout(); bBody.scrollTop = scroll || 0;
+  });
+  relayout();
+  if (first && narrow.matches) bBody.focus({preventScroll: true});
+  return true;
+}
+function besideClose(){
+  bs.token++;
+  const had = bs.id;
+  bs.id = null; pref.set('beside', '');
+  if (bEl.contains(document.activeElement)) document.activeElement.blur();
+  bEl.hidden = true; bSpace.classList.remove('has-beside'); bEl.style.width = '';
+  bView.replaceChildren(); bInfo.hidden = true; bInfo.textContent = '';
+  if (had) besideRelayout();
+}
+function openBeside(id){
+  if (id === curId) { toast('That notebook is open on the left. Pick another one to read beside it.'); return Promise.resolve(false); }
+  if (!docs.some(d => d.id === id && !d.trashed)) return Promise.resolve(false);
+  return besideShow(id, id === bs.id ? bBody.scrollTop : 0);
+}
+function toggleBeside(id){ if (id === bs.id) besideClose(); else openBeside(id); }
+// the name changed, or the notebook went to the Trash or was deleted
+function besideSync(){
+  if (!bs.id) return;
+  const d = docs.find(x => x.id === bs.id);
+  if (!d || d.trashed) { besideClose(); return; }
+  const n = d.name || 'Untitled';
+  if (bName.textContent !== n) { bName.textContent = n; bInfo.textContent = 'Beside: ' + n; }
+}
+// you opened the notebook that was beside (from the sidebar, say): the one you left takes its place there
+async function besideAfterSwitch(prev){
+  if (!bs.id) return;
+  if (bs.id !== curId) return;
+  try {
+    if (prev && prev !== curId && docs.some(d => d.id === prev && !d.trashed)) await besideShow(prev, scrollByDoc.get(prev) || 0);
+    else besideClose();
+  } catch (err) { console.error(err); besideClose(); }
+}
+async function besideSwap(){
+  if (!bs.id || bs.busy) return;
+  bs.busy = true;
+  try { scrollByDoc.set(bs.id, bBody.scrollTop); await switchDoc(bs.id); }      // (the left one's place is kept as it is left)
+  finally { bs.busy = false; }
+}
+$('#bSwap').onclick = besideSwap;
+$('#bClose').onclick = besideClose;
+function restoreBeside(){
+  const id = pref.get('beside', '');
+  if (id && !narrow.matches && id !== curId && docs.some(d => d.id === id && !d.trashed)) besideShow(id);
+}
+// a pencil icon opens its note, right where it is
+bView.addEventListener('click', e => {
+  const chip = e.target.closest('.note-chip'); if (!chip) return;
+  const box = chip.parentElement;
+  box.classList.remove('collapsed', 'chip-moved'); ['--cdx', '--cdy'].forEach(k => box.style.removeProperty(k));
+  besideLayout();
+});
+bView.addEventListener('dragstart', e => e.preventDefault());
+// Esc closes the pane when you are in it
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || e.defaultPrevented || bEl.hidden || !bEl.contains(document.activeElement)) return;
+  besideClose();
+});
+// the divider: drag it (or use the arrow keys) to share the room; where you leave it is remembered
+bDiv.addEventListener('pointerdown', e => {
+  if (e.button !== 0 || narrow.matches) return;
+  e.preventDefault();
+  try { bDiv.setPointerCapture(e.pointerId); } catch {}
+  document.body.classList.add('bresizing');
+  const right = bEl.getBoundingClientRect().right, avail = besideAvail();
+  const move = ev => { bs.ratio = Math.min(.8, Math.max(.2, (right - ev.clientX) / avail)); besideApply(); besideRelayout(); };
+  const up = () => {
+    bDiv.removeEventListener('pointermove', move); bDiv.removeEventListener('pointerup', up); bDiv.removeEventListener('pointercancel', up);
+    document.body.classList.remove('bresizing'); pref.set('beside-ratio', bs.ratio.toFixed(3));
+  };
+  bDiv.addEventListener('pointermove', move); bDiv.addEventListener('pointerup', up); bDiv.addEventListener('pointercancel', up);
+});
+bDiv.addEventListener('keydown', e => {
+  const k = {ArrowLeft: .03, ArrowRight: -.03}[e.key]; if (!k) return;
+  e.preventDefault(); bs.ratio = Math.min(.8, Math.max(.2, bs.ratio + k)); pref.set('beside-ratio', bs.ratio.toFixed(3)); besideApply(); besideRelayout();
+});
+bDiv.addEventListener('dblclick', () => { bs.ratio = .45; pref.set('beside-ratio', '0.45'); besideApply(); besideRelayout(); });
+// dragging a notebook from the sidebar onto the right half of the page opens it beside
+function besideAim(x, y){
+  const on = !!drag && drag.kind === 'doc' && !narrow.matches && drag.id !== curId && x != null && x > innerWidth / 2 && y > (appbar.getBoundingClientRect().bottom || 0);
+  bDrop.hidden = !on;
+  return on;
+}
+
 // ================= the add menu: a note, a sticky note or an equation, Notion style =================
 // "+ Add here" between two lines of a PDF page opens it with a search box; typing / in a note opens it at the cursor
 const INS_ITEMS = {
@@ -6017,7 +6270,7 @@ stickyPad.addEventListener('pointerdown', e => {
       document.body.append(ghost); document.body.classList.add('dragging-sticky');
     }
     ghost.style.translate = `${ev.clientX - 75}px ${ev.clientY - 8}px`;
-    const card = document.elementsFromPoint(ev.clientX, ev.clientY).map(el => el.closest('.slide')).find(Boolean) || null;
+    const card = document.elementsFromPoint(ev.clientX, ev.clientY).filter(el => !el.closest('#beside')).map(el => el.closest('.slide')).find(Boolean) || null;
     if (card !== over) { over?.classList.remove('drop-target'); over = card; over?.classList.add('drop-target'); }
     ghost.classList.toggle('off', !over);
   };
@@ -6072,8 +6325,11 @@ const CK_ACTIONS = [
   {id: 'md', label: 'Download notes as Markdown', ico: 'download', words: 'save export md text notion', ok: ckPages, run: ckDownload('markdown')},
   {id: 'toggle', label: 'Hide or show notes', ico: 'eye-off', words: 'notes toggle', ok: () => !$('#notesToggle').disabled, run: ckClick('#notesToggle')},
   {id: 'list', label: 'Notes list', ico: 'panel-right', words: 'notes panel side', run: ckClick('#notesBtn')},
+  {id: 'beside', label: 'Open beside…', ico: 'panel-right', words: 'split view side by side second notebook compare read', ok: () => liveDocs().some(d => d.id !== curId), run: () => openCmdk(true)},
+  {id: 'swap', label: 'Swap the notebook beside', ico: 'sync', words: 'split view switch exchange', ok: () => !!bs.id, run: () => besideSwap()},
+  {id: 'unbeside', label: 'Close the notebook beside', ico: 'x', words: 'split view side by side', ok: () => !!bs.id, run: () => besideClose()},
 ];
-const ck = {open: false, k: 0, items: [], key: null, prev: null, pages: null, cache: new Map(), loading: false, load: Promise.resolve(), mx: 0, my: 0};
+const ck = {open: false, beside: false, k: 0, items: [], key: null, prev: null, pages: null, cache: new Map(), loading: false, load: Promise.resolve(), mx: 0, my: 0};
 const ckScrim = Object.assign(document.createElement('div'), {className: 'ckscrim', hidden: true});
 const ckBox = document.createElement('div'); ckBox.className = 'pop cmdk'; ckBox.hidden = true;
 ckBox.setAttribute('role', 'dialog'); ckBox.setAttribute('aria-modal', 'true'); ckBox.setAttribute('aria-label', 'Search');
@@ -6114,10 +6370,14 @@ function ckBuild(raw){
   const q = ckWords(raw), typed = !!raw.trim(), secs = [];
   const sec = (title, rows) => { if (rows.length) secs.push({title, rows: rows.slice(0, 6)}); };
   const books = docs.filter(d => d.pages > 0 || (d.id === curId && ckPages()));
-  const bookRow = d => ({key: 'nb:' + d.id, kind: 'nb', ico: 'file', name: ckHi(d.name || 'Untitled', q), sub: `${d.pages} page${d.pages === 1 ? '' : 's'} · ${d.notes} note${d.notes === 1 ? '' : 's'}`, hint: d.id === curId ? 'Open now' : '', run: () => ckGoDoc(d.id)});
+  const bookRow = d => ({key: 'nb:' + d.id, kind: 'nb', ico: 'file', name: ckHi(d.name || 'Untitled', q), sub: `${d.pages} page${d.pages === 1 ? '' : 's'} · ${d.notes} note${d.notes === 1 ? '' : 's'}`, hint: d.id === curId ? 'Open now' : '', run: () => ckGoDoc(d.id), alt: d.id === curId ? null : () => openBeside(d.id)});
   const actRow = a => ({key: 'act:' + a.id, kind: 'act', ico: a.ico, name: ckHi(a.label, q), hint: a.hint, run: a.run});
   const acts = CK_ACTIONS.filter(a => !a.ok || a.ok());
-  if (!typed) {
+  if (ck.beside) {                                // "Open beside…": pick the notebook to read on the right
+    const rows = books.filter(d => d.id !== curId && !d.trashed && (!q.length || ckHit(ckWords(d.name || ''), q))).sort((a, b) => b.updated - a.updated)
+      .map(d => ({...bookRow(d), hint: d.id === bs.id ? 'Beside now' : '', run: () => openBeside(d.id)}));
+    sec('Open beside', rows);
+  } else if (!typed) {
     sec('Recent notebooks', [...books].sort((a, b) => b.updated - a.updated).slice(0, 5).map(bookRow));
     sec('Actions', acts.map(actRow));
   } else if (q.length) {
@@ -6165,10 +6425,15 @@ function ckSel(scroll){
   ckList.querySelectorAll('.iitem').forEach(o => { const on = +o.dataset.i === ck.k; o.setAttribute('aria-selected', on); if (on) cur = o; });
   ck.key = ck.items[ck.k]?.key ?? null;
   ckInput.setAttribute('aria-activedescendant', cur ? cur.id : '');
+  const foot = ckBox.querySelector('.ifoot span'), it = ck.items[ck.k];
+  const ft = ck.beside ? '↑↓ to choose · Enter to open beside · Esc to close' : `↑↓ to choose · Enter to open${it?.alt ? ' · Alt+Enter to open beside' : ''} · Esc to close`;
+  if (foot.textContent !== ft) foot.textContent = ft;
   if (scroll && cur) cur.scrollIntoView({block: 'nearest'});
 }
-function openCmdk(){
+function openCmdk(beside = false){
   if (ck.open) return;
+  ck.beside = beside === true;
+  ckInput.placeholder = ck.beside ? 'Open beside: pick a notebook to read…' : 'Search notebooks, pages and notes…';
   closeInsMenu(); closeSettings(); closeDocMenu(); closeChipPop(); closeSpellMenu(); clearMediaSel(); clearMulti(); hideTip();
   saveMenu.hidden = true; $('#save').setAttribute('aria-expanded', 'false');
   ck.prev = document.activeElement; ck.open = true; ck.pages = null; ck.key = null;
@@ -6179,7 +6444,7 @@ function openCmdk(){
 }
 function closeCmdk(back){
   if (!ck.open) return;
-  ck.open = false; ckScrim.hidden = ckBox.hidden = true;
+  ck.open = false; ck.beside = false; ckScrim.hidden = ckBox.hidden = true;
   if (back && ck.prev?.isConnected && ck.prev !== document.body) ck.prev.focus({preventScroll: true});
   ck.prev = null;
 }
@@ -6198,17 +6463,17 @@ async function ckGoNote(id, nth){
   const box = docBoxes().filter(hasContent)[nth];
   if (box) jumpToNote(box); else toast('That note has moved or been deleted.');
 }
-function ckChoose(i){
+function ckChoose(i, alt){
   const r = ck.items[i]; if (!r) return;
   closeCmdk(false);
-  (async () => r.run())().catch(err => { console.error(err); toast('That didn’t work. Please try again.'); });
+  (async () => alt && r.alt ? r.alt() : r.run())().catch(err => { console.error(err); toast('That didn’t work. Please try again.'); });
 }
 ckInput.addEventListener('input', () => ckRender(false));
 ckBox.addEventListener('keydown', e => {
   if (e.isComposing) return;
   const n = ck.items.length;
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (n) { ck.k = (ck.k + (e.key === 'ArrowUp' ? n - 1 : 1)) % n; ckSel(true); } }
-  else if (e.key === 'Enter') { e.preventDefault(); ckChoose(ck.k); }
+  else if (e.key === 'Enter') { e.preventDefault(); ckChoose(ck.k, e.altKey); }
   else if (e.key === 'Tab') e.preventDefault();
 });
 ckList.addEventListener('mousemove', e => {
@@ -6216,7 +6481,7 @@ ckList.addEventListener('mousemove', e => {
   ck.mx = e.clientX; ck.my = e.clientY;
   const o = e.target.closest('.iitem'); if (o && +o.dataset.i !== ck.k) { ck.k = +o.dataset.i; ckSel(false); }
 });
-ckList.addEventListener('click', e => { const o = e.target.closest('.iitem'); if (o) ckChoose(+o.dataset.i); });
+ckList.addEventListener('click', e => { const o = e.target.closest('.iitem'); if (o) ckChoose(+o.dataset.i, e.altKey); });
 ckBox.addEventListener('mousedown', e => { if (e.target !== ckInput) e.preventDefault(); });       // the search box keeps the cursor
 ckScrim.addEventListener('click', () => closeCmdk(true));
 ckBox.querySelector('.ifoot').onclick = () => closeCmdk(true);
@@ -6740,6 +7005,7 @@ function dropTarget(x, y){
 }
 function aimDrag(){
   const [x, y] = drag.last;
+  drag.beside = besideAim(x, y);
   dragGhost.style.left = x + 14 + 'px'; dragGhost.style.top = y + 10 + 'px';
   const t = dropTarget(x, y);
   let ok = false, bad = false;
@@ -6771,10 +7037,11 @@ function endDrag(commit){
   const d = drag; drag = null;
   clearTimeout(d.hold); clearTimeout(d.timer); clearInterval(d.scroll);
   if (!d.on) return;
-  dragGhost.remove(); dragLine.remove(); document.body.classList.remove('dragging');
+  dragGhost.remove(); dragLine.remove(); document.body.classList.remove('dragging'); bDrop.hidden = true;
   const stop = ev => { ev.preventDefault(); ev.stopPropagation(); };            // the click that ends a drag is not a click on the row
   document.addEventListener('click', stop, true); setTimeout(() => document.removeEventListener('click', stop, true), 100);
-  if (commit && d.ok) (d.kind === 'folder' ? moveFolder : moveDoc)(d.id, d.to); else renderDocs();
+  if (commit && d.beside) { openBeside(d.id); renderDocs(); }
+  else if (commit && d.ok) (d.kind === 'folder' ? moveFolder : moveDoc)(d.id, d.to); else renderDocs();
 }
 
 // ================= install as an app (when it is served from the web) =================
@@ -6843,7 +7110,7 @@ restorePanels();
   } catch (err) { reportError(err, 'loading your saved notebooks'); }
   requestAnimationFrame(() => {
     try {
-      paginateView(); refreshPanels();
+      paginateView(); refreshPanels(); restoreBeside();
       resetHistory(main.querySelector('.welcome') ? '' : currentDoc());
       if (db) putAll({docs, cur: curId});
     } catch (err) { reportError(err, 'showing your notebook'); }
