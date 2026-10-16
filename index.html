@@ -29,6 +29,11 @@ body{margin:0;color:var(--ink);font:16px var(--ui);background:var(--bg) radial-g
 /* a little paper grain over everything */
 body::after{content:"";position:fixed;inset:0;z-index:200;pointer-events:none;opacity:.06;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* Google's file picker: no grain over it, the page behind stays still, and it sits fixed in the window */
+body.gpicker{overflow:hidden}
+body.gpicker::after{display:none}
+body.gpicker .picker-dialog-bg{position:fixed!important;inset:0!important;width:auto!important;height:auto!important;z-index:1000!important}
+body.gpicker .picker-dialog{position:fixed!important;z-index:1001!important}
 img{max-width:100%}
 [hidden]{display:none!important}
 .spacer{flex:1}
@@ -6143,19 +6148,31 @@ function drivePick(){
       .enableFeature(p.Feature.MULTISELECT_ENABLED).enableFeature(p.Feature.SUPPORT_DRIVES).setOAuthToken(token).setTitle('Open from Google Drive')
       .setCallback(data => {
         const a = data[p.Response.ACTION];
-        if (a === p.Action.LOADED) { loaded = true; return; }
+        if (a === p.Action.LOADED) { loaded = true; fit(); return; }
         clearTimeout(watch);
+        if (a === p.Action.PICKED || a === p.Action.CANCEL) done();
         if (a === p.Action.PICKED) ok((data[p.Response.DOCUMENTS] || []).map(d => ({id: d[p.Document.ID], name: d[p.Document.NAME], mime: d[p.Document.MIME_TYPE]})));
         else if (a === p.Action.CANCEL) ok([]);
       });
     if (GDRIVE.apiKey) b.setDeveloperKey(GDRIVE.apiKey);
     const app = GDRIVE.clientId.split('-')[0]; if (app) b.setAppId(app);       // the project number
     b.setOrigin(location.protocol + '//' + location.host);
+    // as big as Google's usual picker, but never bigger than the window
+    b.setSize?.(Math.max(320, Math.min(1051, innerWidth - 24)), Math.max(320, Math.min(650, innerHeight - 24)));
     let loaded = false;
-    const picker = b.build(); picker.setVisible(true);
+    // Google places the picker against the page and only once: keep it centred in the window, on whole pixels so it stays sharp
+    const fit = () => {
+      const d = document.querySelector('.picker-dialog'); if (!d) return;
+      d.style.setProperty('left', Math.max(0, Math.round((innerWidth - d.offsetWidth) / 2)) + 'px', 'important');
+      d.style.setProperty('top', Math.max(0, Math.round((innerHeight - d.offsetHeight) / 2)) + 'px', 'important');
+    };
+    const done = () => { document.body.classList.remove('gpicker'); removeEventListener('resize', fit); };
+    document.body.classList.add('gpicker'); addEventListener('resize', fit);
+    const picker = b.build(); picker.setVisible(true); fit(); requestAnimationFrame(fit);
     // Google's picker can stay blank (the Picker API off, a key or project mix-up, blocked cookies): don't leave a white screen
     const watch = setTimeout(() => {
       if (loaded) return;
+      done();
       try { picker.setVisible(false); picker.dispose(); } catch {}
       toast('Google Drive’s file picker didn’t load. If this keeps happening, the site’s Google set-up needs checking (Picker API, API key or test users); see Help & settings › Google Drive.');
       ok([]);
