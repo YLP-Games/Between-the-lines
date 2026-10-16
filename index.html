@@ -3,108 +3,206 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
-</head>
-<body>
-<title>Between the Slides</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<title>Between the Slides</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Patrick+Hand&family=Kalam:wght@400;700&family=Nunito:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,700;1,400&family=Courier+Prime:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
 <style>
-/* Layout: one centred column of white slide cards holding the extracted text; sticky toolbar on top */
+/* ================= tokens ================= */
 :root{
-  --bg:#eceff4; --surface:#ffffff; --ink:#1b2330; --muted:#5d6878; --line:#d3d9e3; --accent:#2747c9;
-  --card:#ffffff; --card-ink:#1b2330; --card-muted:#6b7686;
+  --bg:#eef1f6; --surface:#fff; --surface-2:#f7f8fb; --hover:#e9edf5; --ink:#18202c; --muted:#5b6678; --line:#e1e6ee; --line-strong:#d5dbe5;
+  --accent:#2747c9; --accent-ink:#fff; --accent-soft:#e6ebfb; --accent-strong:#1a318f; --danger:#b3261e; --ok:#1e6b3f; --mark:#ffd54a;
+  --card:#fff; --card-ink:#1b2330; --card-muted:#6b7686;
+  --radius:8px; --pop-shadow:0 8px 24px rgba(16,24,40,.18); --page-shadow:0 1px 2px rgba(16,24,40,.08),0 4px 16px rgba(16,24,40,.06);
   --display:"Bricolage Grotesque",system-ui,sans-serif; --ui:system-ui,-apple-system,"Segoe UI",sans-serif;
+  --appbar-h:0px; --status-h:32px; --gutter-l:max(12px,env(safe-area-inset-left,0px)); --gutter-r:max(12px,env(safe-area-inset-right,0px));
+  color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161d;--surface:#1b212b;--ink:#e6eaf0;--muted:#9aa5b4;--line:#2e3744;--accent:#8fa6ff;--card:#f4f6fa;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#12161d;--surface:#1b212b;--ink:#e6eaf0;--muted:#9aa5b4;--line:#2e3744;--accent:#8fa6ff;--card:#f4f6fa;color-scheme:dark}
-body{background:var(--bg);color:var(--ink);font-family:var(--ui)}
-header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line);
-  padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.bar{max-width:960px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
-h1{font-family:var(--display);font-size:18px;margin:0 6px 0 0;font-weight:600}
-.tools{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
-button,select,label.btn{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer}
-button:focus-visible,select:focus-visible,label.btn:focus-within{outline:2px solid var(--accent);outline-offset:1px}
-.primary{background:var(--accent);color:var(--surface);border-color:var(--accent)}
-.sw{width:26px;height:26px;padding:0;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line)}
-.sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent)}
-.favs{display:flex;gap:4px;align-items:center;padding-left:6px;border-left:1px solid var(--line)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11151c;--surface:#1a2029;--surface-2:#151a22;--hover:#252d39;--ink:#e6eaf0;--muted:#9aa5b4;--line:#2a3240;--line-strong:#364052;--accent:#8fa6ff;--accent-ink:#0f1830;--accent-soft:#232d4a;--accent-strong:#b5c4ff;--danger:#ff8a80;--ok:#7dd3a0;--card:#f4f6fa;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11151c;--surface:#1a2029;--surface-2:#151a22;--hover:#252d39;--ink:#e6eaf0;--muted:#9aa5b4;--line:#2a3240;--line-strong:#364052;--accent:#8fa6ff;--accent-ink:#0f1830;--accent-soft:#232d4a;--accent-strong:#b5c4ff;--danger:#ff8a80;--ok:#7dd3a0;--card:#f4f6fa;color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px var(--ui)}
+img{max-width:100%}
+[hidden]{display:none!important}
+.spacer{flex:1}
+
+/* ================= controls ================= */
+.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:34px;height:34px;padding:0 9px;border:1px solid transparent;border-radius:var(--radius);
+  background:transparent;color:var(--ink);font:inherit;font-size:13px;cursor:pointer;box-sizing:border-box;white-space:nowrap;flex:none;text-decoration:none}
+.btn:hover{background:var(--hover)}
+.btn:disabled{opacity:.4;cursor:default;background:transparent}
+.btn.outline{border-color:var(--line-strong);background:var(--surface)}
+.btn.outline:hover{background:var(--hover)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{background:var(--accent-strong);border-color:var(--accent-strong)}
+.btn[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+.btn.danger{color:var(--danger)}
+.btn.sure{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn.big{height:44px;padding:0 22px;font-size:15px;font-weight:600;border-radius:10px}
+:is(button,select,input,label,a):focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+select{font:inherit;font-size:13px;height:32px;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius);padding:0 6px;cursor:pointer}
+input[type=color]{width:28px;height:28px;padding:0;border:1px solid var(--line-strong);border-radius:6px;background:none;cursor:pointer;flex:none}
+.sw{width:28px;height:28px;padding:0;border:none;background:transparent;border-radius:50%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.sw::before{content:"";width:18px;height:18px;border-radius:50%;background:var(--c);box-shadow:0 0 0 1px rgba(0,0,0,.18)}
+.sw[aria-pressed="true"]::before{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)}
+.sw.fav::before{width:16px;height:16px}
+.favs{display:flex;align-items:center;padding-left:4px;margin-left:2px;border-left:1px solid var(--line)}
 .favs:empty{display:none}
-.sw.fav{width:22px;height:22px}
-button.favsave{padding:4px 7px;font-size:15px;line-height:1;color:var(--muted)}
-button.favsave:hover{color:var(--accent);border-color:var(--accent)}
-input[type=color]{width:30px;height:30px;padding:0;border:1px solid var(--line);border-radius:6px;background:none}
-.sizebox{display:inline-flex;align-items:center}
-#sizePick{width:26px;padding:6px 0;appearance:none;-webkit-appearance:none;text-align:center;text-align-last:center;border-radius:0 6px 6px 0;border-left:none}
-#size{border-radius:6px 0 0 6px!important}
-#size{width:56px;font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 6px}
-.hint{width:100%;font-size:12px;color:var(--muted)}
+
+/* ================= app bar: title bar + ribbon ================= */
+.appbar{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.appbar.barhidden{display:none}
+.titlebar{display:flex;align-items:center;gap:4px;min-height:48px;padding:6px var(--gutter-r) 6px var(--gutter-l);box-sizing:border-box}
+.brand{display:flex;align-items:center;gap:9px;padding:0 6px;flex:none}
+.brand b{font:600 17px var(--display);letter-spacing:-.01em;white-space:nowrap}
+.vr{width:1px;height:22px;background:var(--line);flex:none;margin:0 6px}
+.doc{display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 auto}
+.doc-title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.doc-title.none{font-weight:400;color:var(--muted)}
+.savestate{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--ok);white-space:nowrap}
+.savestate .i{width:14px;height:14px;stroke-width:2}
+.savestate[data-s="saving"]{color:var(--muted)}
+.savestate[data-s="error"]{color:var(--danger)}
 .savewrap{position:relative}
-.savemenu{position:absolute;right:0;top:calc(100% + 6px);z-index:20;min-width:250px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:6px;display:flex;flex-direction:column;gap:4px}
-.savemenu button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:none;background:transparent;padding:8px 10px;border-radius:6px}
-.savemenu button:hover,.savemenu button:focus-visible{background:var(--bg)}
-.savemenu small{color:var(--muted);font-size:12px}
+.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:260px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--pop-shadow);padding:6px;display:flex;flex-direction:column;gap:2px}
+.menu button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:none;background:transparent;padding:8px 10px;border-radius:6px;font:inherit;color:inherit;cursor:pointer}
+.menu button:hover,.menu button:focus-visible{background:var(--hover)}
+.menu small{color:var(--muted);font-size:12px}
+.menu label{display:flex;flex-direction:column;gap:4px;padding:6px 10px 10px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:4px}
+.ribbon{position:relative;padding:0 var(--gutter-r) 0 var(--gutter-l);border-top:1px solid var(--line)}
+.tabs{display:flex;align-items:center;gap:2px}
+.tab{height:36px;padding:0 14px;border:none;border-bottom:2px solid transparent;background:none;font:inherit;font-size:13.5px;color:var(--muted);cursor:pointer;margin-bottom:-1px}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
+.panel{display:flex;align-items:stretch;gap:2px;padding:6px 0;border-top:1px solid var(--line);overflow-x:auto;scrollbar-width:thin}
+.ribbon.compact:not(.peek) .panel{display:none}
+.ribbon.compact.peek .panel{position:absolute;left:0;right:0;top:100%;padding:6px var(--gutter-r) 6px var(--gutter-l);background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 8px 16px rgba(16,24,40,.12)}
+.ribbon.compact .tab[aria-selected="true"]:not(.peeking){font-weight:400;border-bottom-color:transparent;color:var(--muted)}
+.grp{display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:3px;padding:0 4px;flex:none}
+.grp > .row{display:flex;align-items:center;gap:2px;flex:1}
+.cap{font-size:11px;color:var(--muted);white-space:nowrap}
+.sep{width:1px;align-self:stretch;background:var(--line);margin:4px 3px;flex:none}
+.tip{display:flex;align-items:center;font-size:12.5px;color:var(--muted);padding:0 8px;max-width:440px;line-height:1.4}
+.sizebox{display:inline-flex;align-items:center}
+#size{width:52px;height:32px;box-sizing:border-box;font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius) 0 0 var(--radius);padding:0 6px}
+#sizePick{width:26px;padding:0;appearance:none;-webkit-appearance:none;text-align:center;text-align-last:center;border-radius:0 var(--radius) var(--radius) 0;border-left:none}
+.hlswatch{background:#fff176;color:#1b2330;padding:0 4px;border-radius:3px;font-weight:600}
+.seg{display:flex;gap:2px;padding:2px;border-radius:9px;background:var(--bg)}
+.seg .btn{height:28px}
+.seg .btn[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.14)}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
+.showbar{position:fixed;z-index:30;top:calc(8px + env(safe-area-inset-top,0px));right:var(--gutter-r);display:inline-flex;align-items:center;gap:6px;font:13px var(--ui);height:32px;padding:0 14px;border-radius:999px;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer;opacity:.9}
+.showbar:hover{opacity:1}
+#ribbonFold .i,#save .chev{width:16px;height:16px}
+/* focus mode: only the pages and notes are left on screen */
+body.focus{--status-h:0px}
+body.focus .appbar,body.focus .side,body.focus .statusbar,body.focus .scrim,body.focus #showBar{display:none!important}
+body.focus #focusExit{opacity:.55}
+body.focus #focusExit:hover,body.focus #focusExit:focus-visible{opacity:1}
+/* study mode: the editing tabs are put away */
+body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
+#readBtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+
+/* ================= workspace: pages | document | notes ================= */
+.workspace{display:flex;align-items:flex-start;min-height:calc(100dvh - var(--appbar-h) - var(--status-h))}
+.side{position:sticky;top:var(--appbar-h);height:calc(100dvh - var(--appbar-h) - var(--status-h));overflow:auto;flex:none;box-sizing:border-box;background:var(--surface-2);overscroll-behavior:contain}
+.side.pages{width:212px;border-right:1px solid var(--line)}
+.side.notes{width:320px;border-left:1px solid var(--line);background:var(--surface)}
+.sidehead{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:10px 10px 8px 14px;background:inherit}
+.sidehead h2{margin:0;font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sidehead .count{font-size:12px;color:var(--muted)}
+.sidehead .btn{min-width:28px;height:28px;padding:0;margin-left:auto}
+.sidehead .btn .i{width:16px;height:16px}
+.sideempty{padding:8px 16px;color:var(--muted);font-size:13px;line-height:1.45}
+.pagelist{list-style:none;margin:0;padding:0 8px 16px;display:flex;flex-direction:column;gap:2px}
+.pagelist .group{font-size:11.5px;font-weight:600;color:var(--muted);padding:10px 8px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pg{display:flex;flex-direction:column;gap:6px;width:100%;padding:8px;border:none;border-radius:10px;background:transparent;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
+.pg:hover{background:var(--hover)}
+.pg[aria-current="true"]{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)}
+.thumb{position:relative;display:block;width:100%;aspect-ratio:16/9;background:#fff;border-radius:4px;box-shadow:0 0 0 1px var(--line-strong);overflow:hidden;box-sizing:border-box;
+  padding:7px 9px;color:#33415c;font:9px/1.35 var(--ui);overflow-wrap:anywhere}
+.thumb.img{background:#fff var(--pg) 0 0/100% auto no-repeat;padding:0}
+.thumb b{display:block;font-size:10px;color:#13254a;margin-bottom:2px}
+.thumb .n{position:absolute;right:5px;bottom:5px;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;background:var(--mark);color:#3d3000;font:700 11px/18px var(--ui);text-align:center}
+.pgl{display:flex;gap:8px;font-size:12px;align-items:baseline;min-width:0}
+.pgl span:first-child{color:var(--muted);min-width:14px}
+.pgl span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.notetools{position:sticky;top:46px;z-index:2;display:flex;flex-direction:column;gap:8px;padding:0 12px 10px;background:var(--surface)}
+.search{display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;border:1px solid var(--line-strong);border-radius:var(--radius);background:var(--surface-2);color:var(--muted)}
+.search .i{width:16px;height:16px}
+.search input{border:none;background:transparent;outline:none;font:inherit;font-size:13px;color:var(--ink);flex:1;min-width:0}
+.search:focus-within{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters:empty{display:none}
+.fchip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font:inherit;font-size:12px;color:var(--ink);cursor:pointer}
+.fchip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--c);box-shadow:0 0 0 1px rgba(0,0,0,.18)}
+.notelist{list-style:none;margin:0;padding:0 12px 16px;display:flex;flex-direction:column;gap:8px}
+.notelist .group{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:6px 2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ncard{display:flex;gap:10px;width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);text-align:left;font:inherit;color:var(--ink);cursor:pointer;box-sizing:border-box}
+.ncard:hover{border-color:var(--line-strong);background:var(--surface-2)}
+.ncard .dot{margin-top:5px}
+.ncard .body{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ncard .txt{font-size:13.5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.ncard .meta{font-size:11.5px;color:var(--muted)}
+.ncard mark{background:#fff176;color:#1b2330;border-radius:2px}
+.scrim{display:none}
+@media (max-width:900px){
+  .side{position:fixed;top:var(--appbar-h);bottom:calc(var(--status-h) + env(safe-area-inset-bottom,0px));height:auto;z-index:16;box-shadow:var(--pop-shadow)}
+  .side.pages{left:0;width:min(240px,85vw)}
+  .side.notes{right:0;width:min(340px,92vw)}
+  .scrim{display:block;position:fixed;inset:0;z-index:15;background:rgba(16,24,40,.28)}
+}
+@media (max-width:640px){
+  .brand,.vr,.btn .lbl,.cap,.savestate span,#save .chev{display:none}
+  .titlebar{gap:0;padding-inline:6px}
+  .titlebar .btn{min-width:32px;padding:0 6px}
+  .doc-title{font-size:13px}
+}
+
+/* ================= status bar ================= */
+.statusbar{position:fixed;left:0;right:0;bottom:0;z-index:18;height:var(--status-h);display:flex;align-items:center;gap:14px;padding:0 var(--gutter-r) env(safe-area-inset-bottom,0px) var(--gutter-l);
+  background:var(--surface);border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.statusbar b{color:var(--ink)}
+.statusbar .btn{height:26px;font-size:12.5px}
+.statusbar .btn .i{width:16px;height:16px}
+
+/* ================= the document ================= */
+main{position:relative;z-index:0;flex:1 1 0;min-width:0;max-width:960px;margin:0 auto;padding-block:24px calc(120px + var(--status-h));padding-inline:16px;display:flex;flex-direction:column;gap:16px}
 main.paged{max-width:none;align-items:center;gap:24px}
-.sheet{width:var(--sheet-w);min-height:var(--sheet-h);background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.18);padding:48px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;flex-shrink:0;color:#1b2330}
+.slide,.sheet,.file-head,.notebox{scroll-margin-top:calc(var(--appbar-h) + 16px);scroll-margin-bottom:calc(var(--status-h) + 16px)}
+.sheet{width:var(--sheet-w);min-height:var(--sheet-h);background:#fff;box-shadow:var(--page-shadow);padding:48px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;flex-shrink:0;color:#1b2330}
 .sheet > .slide{box-shadow:none;border-radius:0;flex-shrink:0;align-self:center;width:100%}
 .sheet > .file-head{margin:0;color:#1b2330}
 .sheet > .cont{margin-top:0}
-.savemenu .layout{display:flex;flex-direction:column;gap:4px;padding:6px 10px 8px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:2px}
-.savemenu .layout select{width:100%}
-.spacer{flex:1}
-main{position:relative;z-index:0;max-width:960px;margin:0 auto;padding-block:20px 120px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
-
-/* slide cards: original content */
-.slide{position:relative;background:var(--card);color:var(--card-ink);border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.15);padding:22px 28px 26px;cursor:text;min-width:0;overflow-wrap:anywhere;line-height:1.35}
+.slide{position:relative;background:var(--card);color:var(--card-ink);border-radius:6px;box-shadow:var(--page-shadow);padding:22px 28px 26px;cursor:text;min-width:0;overflow-wrap:anywhere;line-height:1.35}
 .file-head{font-family:var(--display);font-weight:600;font-size:26px;margin:14px 0 0;text-wrap:balance;overflow-wrap:anywhere}
-.slide-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--card-muted);margin-bottom:10px;cursor:default;display:flex;gap:10px;align-items:center}
 .slide .blk{margin:0 0 .45em}
 .slide img{display:block;max-width:100%;height:auto;margin:.6em 0}
 .slide table{border-collapse:collapse;margin:.6em 0;display:block;overflow-x:auto}
 .slide td,.slide th{border:1px solid #c9d0db;padding:4px 8px;vertical-align:top}
 .bul{display:inline-block;min-width:1.2em}
-details.orig{cursor:default;margin-top:12px;font-size:13px;color:var(--card-muted)}
-details.orig summary{cursor:pointer}
-details.orig img{border:1px solid #d3d9e3}
+.blankpage{aspect-ratio:16/9;max-width:100%;display:flex;flex-direction:column}
+.blankpage > .content{flex:1}
+.slide.target-page{outline:3px solid var(--accent);outline-offset:3px}
+.slide.target-page.target-del{outline-color:var(--danger)}
+/* PDF pages: the real page as a picture, opened up in strips where notes go */
+.pagecard{padding:0;overflow:hidden;background:#fff}
+.strip{position:relative;overflow:hidden;width:100%;max-width:100%;background-image:var(--pg);background-size:100% auto;background-repeat:no-repeat;cursor:text;font-size:0;color:transparent;container-type:inline-size}
+.tl{position:absolute;white-space:pre;line-height:1;transform-origin:0 0;color:transparent;font-family:Arial,Helvetica,sans-serif;cursor:text}
+.tl::selection{background:rgba(39,71,201,.3);color:transparent}
+.gapline{position:absolute;left:0;right:0;border-top:2px dashed var(--accent);pointer-events:none;z-index:2}
+.gappill{position:absolute;left:12px;transform:translateY(-50%);z-index:3;font:600 12.5px var(--ui);height:28px;padding:0 13px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);user-select:none;-webkit-user-select:none}
 
-/* your notes */
+/* ================= your notes ================= */
 .mine{outline:none;border-radius:3px;font-family:Caveat,cursive;font-size:24px;color:#1f4fd1;cursor:text;line-height:1.3}
 .slide img.formula{max-width:100%;margin:.3em 0}
 span.mine{padding:0 .2em;background:var(--nb-fill, transparent);border:1px solid var(--nb-border, #9aa3b2)}
 div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5em;background:var(--nb-fill, transparent);border:1px solid var(--nb-border, #9aa3b2)}
+.mine:focus{box-shadow:0 0 0 2px var(--accent)}
+.mine:empty::before{content:"type here";opacity:.45}
 .notebox.no-outline > .mine{border-color:transparent}
 .notebox.no-outline:not(:hover):not(:focus-within) > .mine{box-shadow:none}
-.fmtbar{width:100%;gap:4px}
-.barbtn{font-size:13px;color:var(--muted)}
-/* fewer tools: one row with the everyday ones */
-header.compact h1,header.compact #color,header.compact .boxtools,header.compact #layout,header.compact #clear,header.compact .hint,
-header.compact #fmtbar > :not([data-cmd="insertUnorderedList"]):not(#hlBtn):not(#undoBtn):not(#redoBtn){display:none!important}
-header.compact .fmtbar{width:auto;order:3}
-header.compact .spacer{display:none}
-header.compact .bar{max-width:1200px;flex-wrap:wrap}
-header.compact label.btn{order:1}
-header.compact #tools{order:2}
-header.compact .savewrap{order:4}
-header.compact #notesToggle{order:5}
-header.compact #readBtn{order:5}
-header.compact #lessBtn{order:6;margin-left:auto}
-header.compact #hideBar{order:7}
-header.compact #helpBtn{order:8}
-header.compact{padding-block:6px}
-header.barhidden{display:none}
-.showbar{position:fixed;z-index:30;top:calc(8px + env(safe-area-inset-top, 0px));right:max(12px, env(safe-area-inset-right, 0px));font:13px var(--ui);padding:6px 12px;border-radius:999px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.2);opacity:.85}
-.showbar:hover{opacity:1}
-.blankpage{aspect-ratio:16/9;max-width:100%;display:flex;flex-direction:column}
-.blankpage > .content{flex:1}
-.slide.target-page{outline:3px solid var(--accent);outline-offset:3px}
-.slide.target-page.target-del{outline-color:#c62828}
-#delPageBtn.sure{background:#c62828;color:#fff;border-color:#c62828}
-.fmtbar button:disabled{opacity:.4;cursor:default}
-.fmtbar button{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:30px;padding:0 8px;font-size:13px}
-.fmtbar .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
-.fmtbar .hl{background:#fff176;color:#1b2330;padding:0 3px;border-radius:2px;font-weight:600}
 .mine ul,.mine ol{margin:.15em 0;padding-left:var(--ind,1.4em)}
 /* each list level gets its own bullet (a chosen bullet style on a list wins) */
 .mine ul{list-style-type:disc}
@@ -115,92 +213,77 @@ header.barhidden{display:none}
 .mine :is(ul,ol) ol{list-style-type:lower-alpha}
 .mine :is(ul,ol) :is(ul,ol) ol{list-style-type:lower-roman}
 .mine :is(ul,ol) :is(ul,ol) :is(ul,ol) ol{list-style-type:decimal}
-.mine blockquote{margin:0 0 0 var(--ind,1.4em)!important;padding:0!important;border:none!important}
-.fmtbar select{height:30px;padding:0 6px;font-size:13px}
 .mine li{display:list-item}
-.boxtools{display:flex;align-items:center;gap:6px;padding-left:6px;border-left:1px solid var(--line);font-size:13px;color:var(--muted)}
-.boxtools label{display:flex;align-items:center;gap:4px;cursor:pointer}
-#bNoFill[aria-pressed="true"]{outline:2px solid var(--accent)}
-.formula{display:inline-block;cursor:pointer;padding:0 2px;border-radius:3px}
-.formula:hover{background:rgba(39,71,201,.1)}
-.formula .katex{font-size:1em}
-.fpanel{position:fixed;z-index:40;right:max(16px, env(safe-area-inset-right, 0px));bottom:max(16px, env(safe-area-inset-bottom, 0px));width:min(440px, calc(100vw - 32px));background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.25);padding:12px;display:flex;flex-direction:column;gap:8px}
-.fhead{display:flex;justify-content:space-between;align-items:center;font-weight:600}
-.fhead button{border:none;background:transparent;font-size:18px;padding:2px 8px}
-#fInput{font:15px ui-monospace,Menlo,Consolas,monospace;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
-.fkeys{display:flex;flex-wrap:wrap;gap:4px}
-.fkeys button{min-width:34px;padding:4px 6px;font-size:14px}
-.fpreview{min-height:56px;display:flex;align-items:center;justify-content:center;background:#fff;color:#1b2330;border:1px solid var(--line);border-radius:6px;padding:8px;font-size:22px;overflow-x:auto}
-.fhint{font-size:13px;color:#8a94a3}
-.fhelp{font-size:12px;color:var(--muted);line-height:1.4}
-.factions{display:flex;justify-content:flex-end}
-.pagecard{padding:0;overflow:hidden;background:#fff}
-.strip{position:relative;overflow:hidden;width:100%;max-width:100%;background-image:var(--pg);background-size:100% auto;background-repeat:no-repeat;cursor:text;font-size:0;color:transparent;container-type:inline-size}
-.tl{position:absolute;white-space:pre;line-height:1;transform-origin:0 0;color:transparent;font-family:Arial,Helvetica,sans-serif;cursor:text}
-.tl::selection{background:rgba(39,71,201,.3);color:transparent}
-.gapline{position:absolute;left:0;right:0;border-top:2px dashed var(--accent);pointer-events:none;z-index:2}
-.gappill{position:absolute;left:8px;transform:translateY(-50%);z-index:3;font:600 13px var(--ui);padding:5px 12px;background:var(--accent);color:var(--surface);border:none;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);user-select:none;-webkit-user-select:none}
+.mine blockquote{margin:0 0 0 var(--ind,1.4em)!important;padding:0!important;border:none!important}
+/* a note box with handles, like a text box in Word */
 .notebox{position:relative;display:flex;flex-direction:column;width:100%;max-width:100%;margin:.2em 0 .5em;box-sizing:border-box}
-.notebox > .mine{flex:1 1 auto;min-height:0;overflow:visible;margin:0 !important;padding-right:22px}
+.notebox > .mine{flex:1 1 auto;min-height:0;overflow:visible;margin:0!important;padding-right:22px}
 .notebox.inline{display:inline-flex;width:auto;vertical-align:baseline;margin:0 .15em}
 .notebox.inline > .mine{padding:0 14px 0 .25em}
 .notebox:hover > .mine{box-shadow:0 0 0 1px var(--accent)}
-.grip{position:absolute;width:12px;height:12px;background:#fff;border:2px solid var(--accent);border-radius:2px;box-sizing:border-box;touch-action:none;z-index:3;opacity:0;transition:opacity .15s}
+.pagecard > div.mine{margin:0 14px;padding:8px 14px}
+.pagecard > .notebox{margin:4px 14px;width:calc(100% - 28px);max-width:calc(100% - 28px)}
+.pagecard > .notebox > .mine{padding:8px 22px 8px 14px}
+.grip{position:absolute;width:12px;height:12px;background:#fff;border:2px solid var(--accent);border-radius:2px;box-sizing:border-box;touch-action:none;z-index:3;opacity:0;transition:opacity .15s;color:var(--accent)}
 .notebox:hover > .grip,.notebox:focus-within > .grip{opacity:1}
-.g-float{right:16px;top:-10px;width:22px;height:22px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font:700 13px/1 var(--ui);color:var(--accent);user-select:none;-webkit-user-select:none}
+.grip .i{width:12px;height:12px;stroke-width:2.2}
+.g-float,.g-min,.g-pin,.g-move{top:-11px;width:22px;height:22px;border-width:1.5px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none}
+.g-move{left:-11px;cursor:move}
+.g-min{right:-11px}
+.g-float{right:17px}
+.g-pin{right:45px}
+.notebox.inline > .g-pin{right:17px}
+.notebox.floating > .g-float,.notebox.pinned > .g-pin{background:var(--accent);color:#fff}
+.notebox.pinned > .g-min{display:none}
+/* the pin shows only while you point at its note (pinned or not); hidden, it can't be clicked by accident */
+.notebox > .g-pin,.notebox:focus-within > .g-pin{opacity:0;visibility:hidden;transition:opacity .15s,visibility .15s}
+.notebox:hover > .g-pin{opacity:1;visibility:visible}
+.g-se{right:0;bottom:0;cursor:nwse-resize}
+.g-e{right:0;top:50%;transform:translateY(-50%);cursor:ew-resize}
+.g-s{bottom:0;left:50%;transform:translateX(-50%);cursor:ns-resize}
+.notebox.inline > .g-s{display:none}
+/* touch screens can't hover: handles are bigger, and the pin shows while you're in that note */
+@media (hover:none){.grip{opacity:1;width:16px;height:16px}.g-move,.g-min,.g-float,.g-pin{width:26px;height:26px}.notebox > .g-pin{opacity:0;visibility:hidden}.notebox:focus-within > .g-pin{opacity:1;visibility:visible}}
+.notebox.moving{opacity:.9;z-index:100000!important}
+.notebox.moving > .mine{box-shadow:0 6px 18px rgba(0,0,0,.22);background:rgba(255,255,255,.85)}
+.notebox.flash > .mine{animation:flash 1.6s ease-out}
+@keyframes flash{0%,30%{box-shadow:0 0 0 2px var(--accent),0 0 0 8px rgba(255,213,74,.85)}100%{box-shadow:0 0 0 2px var(--accent),0 0 0 8px rgba(255,213,74,0)}}
+/* floating notes sit on top of the page, like "in front of text" in Word */
 .notebox.floating{position:absolute;margin:0!important;z-index:3;max-width:100%}
 .notebox.floating.collapsed{position:absolute}
-.notebox.floating > .g-float{background:var(--accent);color:#fff}
 .pagecard > .notebox.floating.collapsed > .note-chip{left:calc(var(--ci, 0) * 23px)}
-.g-min{right:-10px;top:-10px;width:22px;height:22px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font:700 15px/1 var(--ui);color:var(--accent);user-select:none;-webkit-user-select:none}
+/* minimised notes become a small pencil icon, like a comment in Word */
 .note-chip{display:none}
 .notebox.collapsed{display:block;position:relative;width:0!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:visible}
 .notebox.inline.collapsed{display:inline-block;vertical-align:top}
 .notebox.collapsed > .mine,.notebox.collapsed > .grip{display:none}
 .notebox.collapsed > .note-chip{display:flex;align-items:center;justify-content:center;position:absolute;z-index:4;left:calc(-24px + var(--ci, 0) * 23px);top:-10px;width:20px;height:20px;padding:0;border-radius:50%;
-  font:11px/1 var(--ui);color:var(--chip-ink,#5a4500);background:var(--chip,#ffd54a);border:1px solid color-mix(in srgb, var(--chip,#ffd54a) 72%, #000);box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer;opacity:.9}
+  color:var(--chip-ink,#5a4500);background:var(--chip,#ffd54a);border:1px solid color-mix(in srgb, var(--chip,#ffd54a) 72%, #000);box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer;opacity:.92;
+  translate:var(--cdx,0px) var(--cdy,0px);touch-action:none}
+.note-chip .i{width:11px;height:11px;stroke-width:2.4}
 .notebox.collapsed > .note-chip:hover{opacity:1;transform:scale(1.15)}
 .pagecard > .notebox.collapsed > .note-chip{left:calc(4px + var(--ci, 0) * 23px)}
-.notebox.inline.collapsed > .note-chip{left:calc(-3px + var(--ci, 0) * 17px);top:-.7em;width:15px;height:15px;font-size:9px}
+.notebox.inline.collapsed > .note-chip{left:calc(-3px + var(--ci, 0) * 17px);top:-.7em;width:15px;height:15px}
+.notebox.inline.collapsed > .note-chip .i{width:9px;height:9px}
+.notebox.chip-drag > .note-chip{cursor:grabbing;opacity:1}
 main.clean .notebox{height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden;width:auto!important}
 main.clean .notebox > *{display:none!important}
-.g-move{left:-10px;top:-10px;width:22px;height:22px;border-radius:50%;cursor:move;display:flex;align-items:center;justify-content:center;font:13px/1 var(--ui);color:var(--accent);user-select:none;-webkit-user-select:none}
-.notebox.moving{opacity:.9;z-index:100000!important}
-.notebox.moving > .mine{box-shadow:0 6px 18px rgba(0,0,0,.22);background:rgba(255,255,255,.85)}
-@media (hover:none){.grip{opacity:1;width:16px;height:16px}.g-move{width:26px;height:26px}}
-.g-se{right:0;bottom:0;cursor:nwse-resize}
-.g-e{right:0;top:50%;transform:translateY(-50%);cursor:ew-resize}
-.g-s{bottom:0;left:50%;transform:translateX(-50%);cursor:ns-resize}
-.notebox.inline > .g-s{display:none}
-.pagecard > div.mine{margin:0 14px;padding:8px 14px}
-.pagecard > .notebox{margin:4px 14px;width:calc(100% - 28px);max-width:calc(100% - 28px)}
-.pagecard > .notebox > .mine{padding:8px 22px 8px 14px}
-.mine:focus{box-shadow:0 0 0 2px var(--accent)}
-.mine:empty::before{content:"type here";opacity:.45}
-
-/* pin a note so it stays open */
-.g-pin{right:42px;top:-10px;width:22px;height:22px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font:11px/1 var(--ui);user-select:none;-webkit-user-select:none;filter:grayscale(1)}
-.notebox.inline > .g-pin{right:16px}
-.notebox.pinned > .g-pin{filter:none;background:var(--accent);border-color:var(--accent)}
-/* the pin shows only while you point at its note (pinned or not); hidden, it can't be clicked by accident */
-.notebox > .g-pin,.notebox:focus-within > .g-pin{opacity:0;visibility:hidden;transition:opacity .15s,visibility .15s}
-.notebox:hover > .g-pin{opacity:1;visibility:visible}
-/* touch screens can't hover: there it shows while you're in that note */
-@media (hover:none){.notebox > .g-pin{opacity:0;visibility:hidden}.notebox:focus-within > .g-pin{opacity:1;visibility:visible}}
-.notebox.pinned > .g-min{display:none}
-/* minimised note icons can be dragged aside; a dashed line points back to the spot */
-.notebox.collapsed > .note-chip{translate:var(--cdx,0px) var(--cdy,0px);touch-action:none}
-.notebox.chip-drag > .note-chip{cursor:grabbing;opacity:1}
+/* several notes selected at once */
+.notebox.multi-sel > .mine{box-shadow:0 0 0 2px var(--accent),0 0 0 6px rgba(39,71,201,.18)!important}
+.notebox.multi-sel.collapsed > .note-chip{outline:2px solid var(--accent);outline-offset:2px}
+.notebox.multi-sel > .g-move{opacity:1;visibility:visible}
 /* study mode: read only, notes can still be opened and minimised */
 main.reading .grip:not(.g-min):not(.g-pin){display:none!important}
 main.reading .slide,main.reading .strip,main.reading .tl,main.reading .mine{cursor:auto}
 main.reading .mine:empty::before{content:none}
-body.reading #tools,body.reading #fmtbar,body.reading #clear{display:none!important}
-#readBtn[aria-pressed="true"]{background:var(--accent);color:var(--surface);border-color:var(--accent)}
 /* alignment guides while moving or resizing a note box */
 .guide{position:fixed;z-index:60;pointer-events:none;border:0 solid #e5398f}
 .guide.v{width:0;border-left-width:1px}
 .guide.h{height:0;border-top-width:1px}
+/* formulas */
+.formula{display:inline-block;cursor:pointer;padding:0 2px;border-radius:3px}
+.formula:hover{background:rgba(39,71,201,.1)}
+.formula .katex{font-size:1em}
 /* pictures, videos and sound in notes */
 .media{display:inline-block;position:relative;max-width:100%;vertical-align:bottom;line-height:0;margin:2px 0;cursor:pointer}
 .media > img,.media > video{display:block;width:100%;height:auto;margin:0!important;max-width:100%}
@@ -210,246 +293,419 @@ body.reading #tools,body.reading #fmtbar,body.reading #clear{display:none!import
 main.reading .slide img.blk{cursor:auto}
 /* spell check */
 ::highlight(spell){text-decoration:underline wavy #e53935;text-decoration-thickness:1.5px;text-underline-offset:2px;text-decoration-skip-ink:none}
-.spellmenu{position:fixed;z-index:47;min-width:190px;max-width:280px;padding:4px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.2);display:flex;flex-direction:column;font:14px var(--ui)}
+
+/* ================= start screen ================= */
+.welcome{max-width:760px;margin:24px auto 0;display:flex;flex-direction:column;gap:28px;text-align:center}
+.welcome h2{margin:0;font:600 40px/1.1 var(--display);letter-spacing:-.02em;text-wrap:balance}
+.welcome .hand{font:700 50px/1 Caveat,cursive;color:var(--accent);letter-spacing:0}
+.welcome .lede{margin:-14px auto 0;max-width:54ch;color:var(--muted);font-size:16px;line-height:1.5}
+.drop{cursor:pointer;border:2px dashed var(--line-strong);border-radius:16px;background:var(--surface);padding:40px 24px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.drop .badge{width:56px;height:56px;border-radius:14px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center}
+.drop .badge .i{width:28px;height:28px}
+.drop b{font-size:18px}
+.drop .or{color:var(--muted)}
+.kinds{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.kinds span{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:12px;color:var(--muted)}
+.steps{list-style:none;margin:0;padding:0;display:flex;gap:20px;flex-wrap:wrap;text-align:left;counter-reset:step}
+.steps li{display:flex;gap:12px;flex:1 1 200px;min-width:0;counter-increment:step;font-size:13px;line-height:1.45;color:var(--muted)}
+.steps li::before{content:counter(step);flex:none;width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-weight:700;display:flex;align-items:center;justify-content:center}
+.steps b{display:block;color:var(--ink);font-size:14px;margin-bottom:2px}
+.private{display:flex;align-items:center;justify-content:center;gap:6px;margin:0;font-size:12.5px;color:var(--muted)}
+.private .i{width:14px;height:14px}
+.dropcover{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;pointer-events:none;background:color-mix(in srgb, var(--accent) 10%, transparent);border:3px dashed var(--accent);box-sizing:border-box}
+.dropcover span{display:inline-flex;align-items:center;gap:10px;padding:14px 22px;border-radius:12px;background:var(--surface);color:var(--accent);font:600 18px var(--display);box-shadow:var(--pop-shadow)}
+
+/* ================= pop-ups ================= */
+.pop{position:fixed;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--pop-shadow)}
+.fpanel{z-index:40;right:var(--gutter-r);bottom:calc(var(--status-h) + 16px + env(safe-area-inset-bottom,0px));width:min(440px, calc(100vw - 32px));padding:12px;display:flex;flex-direction:column;gap:8px}
+.fhead{display:flex;justify-content:space-between;align-items:center;font-weight:600}
+#fInput{font:15px ui-monospace,Menlo,Consolas,monospace;padding:8px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface-2);color:var(--ink)}
+.fkeys{display:flex;flex-wrap:wrap;gap:4px}
+.fkeys button{min-width:34px;height:30px;padding:0 6px;font:inherit;font-size:14px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;cursor:pointer}
+.fkeys button:hover{background:var(--hover)}
+.fpreview{min-height:56px;display:flex;align-items:center;justify-content:center;background:#fff;color:#1b2330;border:1px solid var(--line);border-radius:6px;padding:8px;font-size:22px;overflow-x:auto}
+.fhint{font-size:13px;color:#8a94a3}
+.fhelp{font-size:12px;color:var(--muted);line-height:1.4}
+.factions{display:flex;justify-content:flex-end}
+.mediabar{z-index:45;display:flex;flex-wrap:wrap;gap:2px;padding:4px;max-width:calc(100vw - 24px)}
+.mediabar .btn{height:30px;font-size:12px}
+.spellmenu{z-index:47;min-width:190px;max-width:280px;padding:4px;display:flex;flex-direction:column;font:14px var(--ui)}
 .spellmenu button{all:unset;box-sizing:border-box;padding:7px 10px;border-radius:5px;cursor:pointer;overflow-wrap:anywhere}
-.spellmenu button:hover,.spellmenu button:focus-visible,.spellmenu button.kb{background:var(--bg)}
+.spellmenu button:hover,.spellmenu button:focus-visible,.spellmenu button.kb{background:var(--hover)}
 .spellmenu button.sug{font-weight:600}
 .spellmenu .none{padding:7px 10px;color:var(--muted);font-style:italic}
 .spellmenu hr{border:none;border-top:1px solid var(--line);margin:4px 2px}
-/* colour menu for a minimised note's ✎ icon */
-.chippop{position:fixed;z-index:46;display:flex;flex-direction:column;gap:6px;padding:8px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.2);font-size:12px}
-.chippop .row{display:flex;gap:5px;align-items:center;flex-wrap:wrap;max-width:200px}
-.chippop .cc{width:22px;height:22px;padding:0;border-radius:50%;border:1px solid rgba(0,0,0,.25);cursor:pointer;display:flex;align-items:center;justify-content:center;font:10px/1 var(--ui)}
+/* colour menu for a minimised note's pencil icon */
+.chippop{z-index:46;display:flex;flex-direction:column;gap:6px;padding:10px;font-size:12px}
+.chippop .ttl{font-weight:600}
+.chippop .row{display:flex;gap:5px;align-items:center;flex-wrap:wrap;max-width:210px}
+.chippop .cc{width:22px;height:22px;padding:0;border-radius:50%;border:1px solid rgba(0,0,0,.25);cursor:pointer}
 .chippop .cc[aria-pressed="true"]{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)}
 .chippop input[type=color]{width:26px;height:26px}
-.chippop .favrow:empty::after{content:"None yet: pick a colour, then press ☆ Save";color:var(--muted);font-style:italic}
+.chippop .favrow:empty::after{content:"None yet: pick a colour, then press Save";color:var(--muted);font-style:italic}
 .chippop .lbl{color:var(--muted)}
-.chippop button.txt{font-size:12px;padding:3px 8px}
-.chipsw{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:10px;border:1px solid rgba(0,0,0,.25)}
-.mediabar{position:fixed;z-index:45;display:flex;flex-wrap:wrap;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.2);max-width:calc(100vw - 24px)}
-.mediabar button{font-size:12px;padding:4px 8px}
-.mediabar .danger{color:#c62828}
-.empty{text-align:center;padding:60px 16px;color:var(--muted)}
-.empty h2{font-family:var(--display);color:var(--ink);font-size:26px;margin:0 0 8px;text-wrap:balance}
-.empty p{max-width:54ch;margin:0 auto 14px;line-height:1.5}
-/* several notes selected at once */
-.notebox.multi-sel > .mine{box-shadow:0 0 0 2px var(--accent),0 0 0 6px rgba(39,71,201,.18)!important}
-.notebox.multi-sel.collapsed > .note-chip{outline:2px solid var(--accent);outline-offset:2px}
-.notebox.multi-sel > .g-move{opacity:1;visibility:visible}
-.multibar{position:fixed;z-index:66;left:50%;bottom:max(20px, env(safe-area-inset-bottom, 0px));transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:8px 10px 8px 14px;
-  background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.22);font:14px var(--ui);max-width:calc(100vw - 32px)}
-.multibar button{font-size:13px;padding:5px 12px}
-.multibar [data-act=del]{color:#c62828}
-body.multi .toast{bottom:calc(max(20px, env(safe-area-inset-bottom, 0px)) + 58px)}
+.chippop .btn{height:26px;font-size:12px;padding:0 8px}
+.multibar{z-index:66;left:50%;bottom:calc(var(--status-h) + 16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:8px 10px 8px 14px;border-radius:12px;font:14px var(--ui);max-width:calc(100vw - 32px)}
+.multibar [data-act=del]{color:var(--danger)}
+body.multi .toast{bottom:calc(var(--status-h) + 74px + env(safe-area-inset-bottom,0px))}
 /* short messages that fade away by themselves */
-.toast{position:fixed;z-index:70;left:50%;bottom:max(20px, env(safe-area-inset-bottom, 0px));transform:translate(-50%, 12px);max-width:min(520px, calc(100vw - 32px));
+.toast{position:fixed;z-index:70;left:50%;bottom:calc(var(--status-h) + 16px + env(safe-area-inset-bottom,0px));transform:translate(-50%, 12px);max-width:min(520px, calc(100vw - 32px));
   padding:10px 16px;border-radius:10px;background:#1f2633;color:#fff;font:14px/1.4 var(--ui);box-shadow:0 8px 24px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .25s, transform .25s}
 .toast.show{opacity:1;transform:translate(-50%, 0)}
-@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}.notebox.flash > .mine{animation:none}}
 /* help & settings */
-.settings{position:fixed;z-index:65;top:calc(12px + env(safe-area-inset-top, 0px));right:max(12px, env(safe-area-inset-right, 0px));width:min(420px, calc(100vw - 24px));max-height:calc(100vh - 24px);display:flex;flex-direction:column;
-  background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.28)}
-.sethead{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 8px;border-bottom:1px solid var(--line)}
+.settings{z-index:65;top:calc(var(--appbar-h) + 8px);right:var(--gutter-r);width:min(420px, calc(100vw - 24px));max-height:calc(100dvh - var(--appbar-h) - var(--status-h) - 24px);display:flex;flex-direction:column;border-radius:12px}
+.sethead{display:flex;align-items:center;justify-content:space-between;padding:12px 10px 8px 16px;border-bottom:1px solid var(--line)}
 .sethead h2{margin:0;font:600 17px var(--display)}
-.sethead button{border:none;background:transparent;font-size:22px;line-height:1;padding:2px 8px}
-.setbody{overflow:auto;padding:4px 14px 14px}
+.setbody{overflow:auto;padding:4px 16px 14px}
 .settings section{padding:10px 0;border-bottom:1px solid var(--line)}
 .settings section:last-child{border-bottom:none}
 .settings h3{margin:0 0 6px;font-size:14px}
 .settings .count{color:var(--muted);font-weight:400}
-.howto{margin:0;padding-left:18px;font-size:13px;line-height:1.45;color:var(--ink)}
+.howto{margin:0;padding-left:18px;font-size:13px;line-height:1.45}
 .howto li{margin:3px 0}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:13px}
+.keys dt{white-space:nowrap}
+.keys dd{margin:0;color:var(--muted)}
+kbd{font:12px ui-monospace,Menlo,Consolas,monospace;padding:1px 5px;border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:4px;background:var(--surface-2)}
 .sethint{margin:0 0 8px;font-size:12px;color:var(--muted);line-height:1.4}
 .dictadd{display:flex;gap:6px;margin-bottom:8px}
-.dictadd input{flex:1;min-width:0;font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.dictadd input{flex:1;min-width:0;font:inherit;font-size:14px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line-strong);border-radius:6px;padding:6px 8px}
 .dictlist{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
-.dictlist li{display:inline-flex;align-items:center;gap:2px;padding:2px 2px 2px 10px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:13px}
-.dictlist li button,.favmanage button.x{border:none;background:transparent;padding:2px 7px;border-radius:999px;font-size:15px;line-height:1;color:var(--muted)}
-.dictlist li button:hover,.favmanage button.x:hover{background:#c62828;color:#fff}
-.dictlist .empty{border:none;background:none;padding:0;color:var(--muted);font-style:italic}
+.dictlist li{display:inline-flex;align-items:center;gap:2px;padding:2px 2px 2px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);font-size:13px}
+.dictlist li button,.favmanage button.x{border:none;background:transparent;padding:2px 7px;border-radius:999px;font-size:15px;line-height:1;color:var(--muted);cursor:pointer}
+.dictlist li button:hover,.favmanage button.x:hover{background:var(--danger);color:#fff}
+.dictlist .none,.favmanage .none{border:none;background:none;padding:0;color:var(--muted);font-style:italic;font-size:13px}
 .favmanage{display:flex;flex-wrap:wrap;gap:8px}
 .favmanage .fm{display:inline-flex;align-items:center;gap:2px;padding:2px;border:1px solid var(--line);border-radius:999px}
-.favmanage .dot{width:20px;height:20px;border-radius:50%;border:1px solid rgba(0,0,0,.2)}
-.favmanage .empty{color:var(--muted);font-style:italic;font-size:13px}
-#helpBtn[aria-expanded="true"]{color:var(--accent);border-color:var(--accent)}
+.favmanage .dot{width:20px;height:20px}
+#helpBtn[aria-expanded="true"]{color:var(--accent);background:var(--accent-soft)}
 </style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+<symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 13v8"/><path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="m8 17 4-4 4 4"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-panel-left" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></symbol>
+<symbol id="i-panel-right" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+<symbol id="i-pen" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></symbol>
+<symbol id="i-saved" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="i-move" viewBox="0 0 24 24"><path d="M12 2v20"/><path d="m15 19-3 3-3-3"/><path d="m19 9 3 3-3 3"/><path d="M2 12h20"/><path d="m5 9-3 3 3 3"/><path d="m9 5 3-3 3 3"/></symbol>
+<symbol id="i-float" viewBox="0 0 24 24"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></symbol>
+<symbol id="i-sigma" viewBox="0 0 24 24"><path d="M18 7V5a1 1 0 0 0-1-1H6.5a.5.5 0 0 0-.4.8l4.5 6a2 2 0 0 1 0 2.4l-4.5 6a.5.5 0 0 0 .4.8H17a1 1 0 0 0 1-1v-2"/></symbol>
+<symbol id="i-page-add" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M9 15h6"/><path d="M12 18v-6"/></symbol>
+<symbol id="i-page-remove" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M9 15h6"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/></symbol>
+<symbol id="i-list-num" viewBox="0 0 24 24"><path d="M10 12h11"/><path d="M10 18h11"/><path d="M10 6h11"/><path d="M4 10h2"/><path d="M4 6h1v4"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></symbol>
+<symbol id="i-indent" viewBox="0 0 24 24"><path d="M21 12H11"/><path d="M21 18H11"/><path d="M21 6H11"/><path d="m3 8 4 4-4 4"/></symbol>
+<symbol id="i-outdent" viewBox="0 0 24 24"><path d="M21 12H11"/><path d="M21 18H11"/><path d="M21 6H11"/><path d="m7 8-4 4 4 4"/></symbol>
+<symbol id="i-align-left" viewBox="0 0 24 24"><path d="M21 6H3"/><path d="M15 12H3"/><path d="M17 18H3"/></symbol>
+<symbol id="i-align-center" viewBox="0 0 24 24"><path d="M21 6H3"/><path d="M17 12H7"/><path d="M19 18H5"/></symbol>
+<symbol id="i-align-right" viewBox="0 0 24 24"><path d="M21 6H3"/><path d="M21 12H9"/><path d="M21 18H7"/></symbol>
+<symbol id="i-eraser" viewBox="0 0 24 24"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></symbol>
+<symbol id="i-select" viewBox="0 0 24 24"><path d="M5 3a2 2 0 0 0-2 2"/><path d="M19 3a2 2 0 0 1 2 2"/><path d="M21 19a2 2 0 0 1-2 2"/><path d="M5 21a2 2 0 0 1-2-2"/><path d="M9 3h1"/><path d="M9 21h1"/><path d="M14 3h1"/><path d="M14 21h1"/><path d="M3 9v1"/><path d="M21 9v1"/><path d="M3 14v1"/><path d="M21 14v1"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="m2 2 20 20"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="i-focus" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol>
+</defs></svg>
 
-<header>
-  <div class="bar">
-    <h1>Between the Slides</h1>
-    <label class="btn primary" for="file">Open file<input id="file" type="file" accept=".pdf,.pptx,.docx,.html,image/*" multiple hidden></label>
-    <div class="tools" id="tools">
-      <select id="font" aria-label="Font" title="Font">
-        <optgroup label="Handwriting">
-          <option value="Caveat">Caveat (handwriting)</option>
-          <option value="Patrick Hand">Patrick Hand</option>
-          <option value="Kalam">Kalam</option>
-        </optgroup>
-        <optgroup label="Standard fonts">
-          <option value="Arial">Arial</option>
-          <option value="Helvetica">Helvetica</option>
-          <option value="Calibri">Calibri</option>
-          <option value="Verdana">Verdana</option>
-          <option value="Tahoma">Tahoma</option>
-          <option value="Trebuchet MS">Trebuchet MS</option>
-          <option value="Segoe UI">Segoe UI</option>
-          <option value="Nunito">Nunito</option>
-          <option value="Times New Roman">Times New Roman</option>
-          <option value="Georgia">Georgia</option>
-          <option value="Cambria">Cambria</option>
-          <option value="Garamond">Garamond</option>
-          <option value="Palatino Linotype">Palatino Linotype</option>
-          <option value="Lora">Lora</option>
-          <option value="Courier New">Courier New</option>
-          <option value="Courier Prime">Courier Prime</option>
-          <option value="Comic Sans MS">Comic Sans MS</option>
-          <option value="Impact">Impact</option>
-        </optgroup>
-      </select>
-      <span class="sizebox" title="Text size: type any number and press Enter, or pick one from the list">
-        <input id="size" type="number" min="4" max="200" step="1" inputmode="decimal" aria-label="Text size">
-        <select id="sizePick" aria-label="Pick a text size"><option value="" selected disabled>▾</option></select>
-      </span>
-      <span id="swatches" style="display:flex;gap:4px;align-items:center"></span>
-      <input type="color" id="color" value="#1f4fd1" aria-label="Custom colour">
-      <span id="favText" class="favs" aria-label="Your favourite colours" title="Your favourite colours: click to use, right-click (or press and hold) to remove"></span>
-      <button id="favTextSave" class="favsave" title="Save the current text colour to your favourites">☆</button>
-      <button id="b" title="Bold"><b>B</b></button>
-      <button id="i" title="Italic"><i>I</i></button>
-      <button id="u" title="Underline"><u>U</u></button>
-      <button id="fBtn" title="Insert a formula into the note">∑ Formula</button>
-      <button id="mediaBtn" title="Insert a picture, video or sound into the note">🖼 Media</button>
-      <input id="mediaFile" type="file" accept="image/*,video/*,audio/*" multiple hidden>
-      <span class="boxtools" title="The note's box">
-        <label for="bOutline"><input type="checkbox" id="bOutline" checked> Outline</label>
-        <input type="color" id="bBorder" value="#9aa3b2" aria-label="Outline colour" title="Outline colour">
-        <label for="bFill">Fill <input type="color" id="bFill" value="#fff8c4" aria-label="Fill colour"></label>
-        <button id="bNoFill" title="No fill" aria-pressed="true">No fill</button>
-        <label for="bChip" title="Colour of this note's ✎ icon when it is minimised, to colour-code notes by topic">✎ Icon <input type="color" id="bChip" value="#ffd54a" aria-label="Icon colour"></label>
-        <button id="favChipBtn" class="favsave" title="Icon colours and your favourites, for this note (or new notes)">★</button>
-      </span>
-    </div>
-    <span class="spacer"></span>
-    <select id="layout" aria-label="Page layout" title="Page layout">
-      <option value="default">Layout: Default</option>
-      <option value="a4-portrait">A4 portrait</option>
-      <option value="a4-landscape">A4 landscape</option>
-      <option value="a3-portrait">A3 portrait</option>
-      <option value="a3-landscape">A3 landscape</option>
-    </select>
+<header class="appbar" id="appbar">
+  <div class="titlebar">
+    <button class="btn" id="pagesBtn" aria-pressed="false" aria-controls="pagesPanel" aria-label="Pages" title="Pages: jump to any page"><svg class="i"><use href="#i-panel-left"/></svg></button>
+    <div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#2747c9"/><path d="M7 9h14M7 19h14" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M7 14h9" stroke="#ffd54a" stroke-width="2.4" stroke-linecap="round"/></svg><b>Between the Slides</b></div>
+    <span class="vr"></span>
+    <div class="doc"><span class="doc-title none" id="docTitle">No file open</span><span class="savestate" id="saveState" data-s="saved" title="Your work is saved automatically in this browser"><svg class="i"><use href="#i-saved"/></svg><span>Saved in this browser</span></span></div>
+    <button class="btn" id="undoBtn" aria-label="Back" title="Back: undo the last change (Ctrl+Z)" disabled><svg class="i"><use href="#i-undo"/></svg></button>
+    <button class="btn" id="redoBtn" aria-label="Forward" title="Forward: redo the change you undid (Ctrl+Y)" disabled><svg class="i"><use href="#i-redo"/></svg></button>
+    <span class="vr"></span>
+    <button class="btn" id="focusBtn" aria-pressed="false" title="Focus mode: hide the toolbar, side panels and status bar so only your pages and notes are on screen (Ctrl+Shift+F)"><svg class="i"><use href="#i-focus"/></svg><span class="lbl">Focus</span></button>
+    <button class="btn" id="readBtn" aria-pressed="false" title="Study mode: read without changing anything by accident. Notes can still be opened and minimised."><svg class="i"><use href="#i-book"/></svg><span class="lbl">Study mode</span></button>
+    <button class="btn outline" id="openBtn" title="Open a PDF, PowerPoint (.pptx), Word (.docx), picture or notebook file"><svg class="i"><use href="#i-folder"/></svg><span class="lbl">Open</span></button>
+    <input id="file" type="file" accept=".pdf,.pptx,.docx,.html,.htm,image/*" multiple hidden>
     <span class="savewrap">
-      <button id="save" class="primary" aria-haspopup="true" aria-expanded="false">Download ▾</button>
-      <div class="savemenu" id="saveMenu" hidden>
-        <label class="layout" for="pdfNotes">Notes in the PDF
+      <button id="save" class="btn primary" aria-haspopup="true" aria-expanded="false"><svg class="i"><use href="#i-download"/></svg><span class="lbl">Download</span><svg class="i chev"><use href="#i-down"/></svg></button>
+      <div class="menu" id="saveMenu" hidden>
+        <label for="pdfNotes">Notes in the PDF
           <select id="pdfNotes">
             <option value="page">Shown on the page</option>
             <option value="comments">As comments you click to open</option>
             <option value="none">Left out</option>
           </select>
         </label>
-        <button type="button" data-kind="pdf"><strong>PDF</strong><small>Your pages and notes, in the layout you picked</small></button>
-        <button type="button" data-kind="notebook"><strong>Notebook file</strong><small>Open it later on any device to keep editing</small></button>
+        <button type="button" data-kind="pdf"><strong>PDF</strong><small>Your pages and notes, in the page layout from View</small></button>
+        <button type="button" data-kind="notebook"><strong>Notebook file</strong><small>One .html file: open it later on any device to keep editing</small></button>
       </div>
     </span>
-    <button id="notesToggle" hidden>Hide notes</button>
-    <button id="readBtn" aria-pressed="false" title="Study mode: read without changing anything by accident. Notes can still be opened and minimised.">📖 Study mode</button>
-    <button id="clear">Clear all</button>
-    <button id="lessBtn" class="barbtn" title="Show only the everyday tools">Fewer tools</button>
-    <button id="hideBar" class="barbtn" title="Hide the toolbar">Hide toolbar</button>
-    <button id="helpBtn" class="barbtn" aria-haspopup="dialog" aria-expanded="false" title="Help and settings: how to use the page, your dictionary and favourite colours">⚙ Help &amp; settings</button>
-    <div class="tools fmtbar" id="fmtbar">
-      <button id="undoBtn" title="Back: undo the last change (Ctrl+Z)" disabled>↶</button>
-      <button id="redoBtn" title="Forward: redo the change you undid (Ctrl+Y)" disabled>↷</button>
+    <button class="btn" id="helpBtn" aria-haspopup="dialog" aria-expanded="false" aria-label="Help and settings" title="Help and settings: how to use it, shortcuts, your dictionary and favourite colours"><svg class="i"><use href="#i-help"/></svg></button>
+    <button class="btn" id="notesBtn" aria-pressed="false" aria-controls="notesPanel" aria-label="Notes list" title="Notes: every note in one list, to search and jump to"><svg class="i"><use href="#i-panel-right"/></svg></button>
+  </div>
+
+  <div class="ribbon" id="ribbon">
+    <div class="tabs" role="tablist" aria-label="Tools">
+      <button class="tab" role="tab" id="tab-home" data-tab="home" data-edit aria-selected="true" aria-controls="panel-home">Home</button>
+      <button class="tab" role="tab" id="tab-insert" data-tab="insert" data-edit aria-selected="false" aria-controls="panel-insert" tabindex="-1">Insert</button>
+      <button class="tab" role="tab" id="tab-box" data-tab="box" data-edit aria-selected="false" aria-controls="panel-box" tabindex="-1">Box</button>
+      <button class="tab" role="tab" id="tab-view" data-tab="view" aria-selected="false" aria-controls="panel-view" tabindex="-1">View</button>
+      <span class="spacer"></span>
+      <button class="btn" id="ribbonFold" aria-label="Show tabs only" title="Show tabs only (click a tab to open its tools)"><svg class="i" style="width:16px;height:16px"><use href="#i-up"/></svg></button>
+    </div>
+
+    <div class="panel" role="tabpanel" id="panel-home" aria-labelledby="tab-home" data-edit>
+      <div class="grp"><div class="row" style="gap:6px">
+        <select id="font" aria-label="Font" title="Font" style="width:168px">
+          <optgroup label="Handwriting">
+            <option value="Caveat">Caveat (handwriting)</option>
+            <option value="Patrick Hand">Patrick Hand</option>
+            <option value="Kalam">Kalam</option>
+          </optgroup>
+          <optgroup label="Standard fonts">
+            <option value="Arial">Arial</option>
+            <option value="Helvetica">Helvetica</option>
+            <option value="Calibri">Calibri</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Tahoma">Tahoma</option>
+            <option value="Trebuchet MS">Trebuchet MS</option>
+            <option value="Segoe UI">Segoe UI</option>
+            <option value="Nunito">Nunito</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Cambria">Cambria</option>
+            <option value="Garamond">Garamond</option>
+            <option value="Palatino Linotype">Palatino Linotype</option>
+            <option value="Lora">Lora</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Courier Prime">Courier Prime</option>
+            <option value="Comic Sans MS">Comic Sans MS</option>
+            <option value="Impact">Impact</option>
+          </optgroup>
+        </select>
+        <span class="sizebox" title="Text size: type any number and press Enter, or pick one from the list">
+          <input id="size" type="number" min="4" max="200" step="1" inputmode="decimal" aria-label="Text size">
+          <select id="sizePick" aria-label="Pick a text size"><option value="" selected disabled>▾</option></select>
+        </span>
+      </div><span class="cap">Font</span></div>
       <span class="sep"></span>
-      <button data-cmd="insertUnorderedList" title="Bullet list"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="3" cy="4" r="1" fill="currentColor"/><circle cx="3" cy="8" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><path d="M6 4h8M6 8h8M6 12h8"/></svg></button>
-      <button data-cmd="insertOrderedList" title="Numbered list"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><text x="0.5" y="6" font-size="5" fill="currentColor" stroke="none">1</text><text x="0.5" y="13" font-size="5" fill="currentColor" stroke="none">2</text><path d="M6 4h8M6 11h8"/></svg></button>
-      <button data-cmd="outdent" title="Decrease indent (Shift+Tab)"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h12M7 6.5h7M7 10h7M2 13h12M5 6l-3 2 3 2"/></svg></button>
-      <button data-cmd="indent" title="Increase indent (Tab)"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h12M7 6.5h7M7 10h7M2 13h12M2 6l3 2-3 2"/></svg></button>
-      <select id="listStyle" aria-label="Bullet style" title="Bullet style for the list you are in (each sub-level has its own style)">
-        <option value="" disabled selected>Bullets…</option>
-        <option value="auto">Automatic (per level)</option>
-        <option value="disc">● Round</option>
-        <option value="circle">○ Hollow</option>
-        <option value="square">■ Square</option>
-        <option value="arrow">➤ Arrow</option>
-        <option value="check">✓ Tick</option>
-        <option value="star">★ Star</option>
-        <option value="dash">– Dash</option>
-        <option value="decimal">1. 2. 3.</option>
-        <option value="lower-alpha">a. b. c.</option>
-        <option value="upper-alpha">A. B. C.</option>
-        <option value="lower-roman">i. ii. iii.</option>
-        <option value="upper-roman">I. II. III.</option>
-      </select>
-      <select id="indentSize" aria-label="Indent size" title="How far each indent (and each sub-bullet) moves in, for this note">
-        <option value="0.8em">Indent: Narrow</option>
-        <option value="1.4em" selected>Indent: Normal</option>
-        <option value="2.5em">Indent: Wide</option>
-        <option value="4em">Indent: Extra wide</option>
-      </select>
+      <div class="grp"><div class="row">
+        <span id="swatches" class="row"></span>
+        <input type="color" id="color" value="#1f4fd1" aria-label="Any text colour" title="Any colour">
+        <span id="favText" class="favs" aria-label="Your favourite colours" title="Your favourite colours: click to use, right-click (or press and hold) to remove"></span>
+        <button id="favTextSave" class="btn" style="min-width:28px;height:28px;padding:0;color:var(--muted)" aria-label="Save this colour to your favourites" title="Save the current text colour to your favourites"><svg class="i" style="width:16px;height:16px"><use href="#i-star"/></svg></button>
+      </div><span class="cap">Colour</span></div>
       <span class="sep"></span>
-      <button data-cmd="justifyLeft" title="Align left"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h12M2 6.5h8M2 10h12M2 13.5h8"/></svg></button>
-      <button data-cmd="justifyCenter" title="Centre"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h12M4 6.5h8M2 10h12M4 13.5h8"/></svg></button>
-      <button data-cmd="justifyRight" title="Align right"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h12M6 6.5h8M2 10h12M6 13.5h8"/></svg></button>
+      <div class="grp"><div class="row">
+        <button class="btn" id="b" aria-label="Bold" title="Bold (Ctrl+B)" style="font-weight:700">B</button>
+        <button class="btn" id="i" aria-label="Italic" title="Italic (Ctrl+I)" style="font-style:italic;font-family:Georgia,serif">I</button>
+        <button class="btn" id="u" aria-label="Underline" title="Underline (Ctrl+U)" style="text-decoration:underline">U</button>
+        <button class="btn" data-cmd="strikeThrough" aria-label="Strikethrough" title="Strikethrough" style="text-decoration:line-through">S</button>
+        <button class="btn" data-cmd="superscript" aria-label="Superscript" title="Superscript">x²</button>
+        <button class="btn" data-cmd="subscript" aria-label="Subscript" title="Subscript">x₂</button>
+        <button class="btn" data-cmd="hiliteColor" id="hlBtn" aria-label="Highlight" title="Highlight the selected words"><span class="hlswatch">ab</span></button>
+        <input type="color" id="hlColor" value="#fff176" aria-label="Highlight colour" title="Highlight colour">
+        <button class="btn" data-cmd="removeFormat" aria-label="Clear formatting" title="Clear formatting of the selected words"><svg class="i"><use href="#i-eraser"/></svg></button>
+      </div><span class="cap">Text</span></div>
       <span class="sep"></span>
-      <button data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
-      <button data-cmd="superscript" title="Superscript">x<sup>2</sup></button>
-      <button data-cmd="subscript" title="Subscript">x<sub>2</sub></button>
+      <div class="grp"><div class="row">
+        <button class="btn" data-cmd="insertUnorderedList" aria-label="Bullet list" title="Bullet list"><svg class="i"><use href="#i-list"/></svg></button>
+        <button class="btn" data-cmd="insertOrderedList" aria-label="Numbered list" title="Numbered list"><svg class="i"><use href="#i-list-num"/></svg></button>
+        <button class="btn" data-cmd="outdent" aria-label="Decrease indent" title="Decrease indent (Shift+Tab)"><svg class="i"><use href="#i-outdent"/></svg></button>
+        <button class="btn" data-cmd="indent" aria-label="Increase indent" title="Increase indent (Tab)"><svg class="i"><use href="#i-indent"/></svg></button>
+        <select id="listStyle" aria-label="Bullet style" title="Bullet style for the list you are in (each sub-level has its own style)" style="margin-left:4px;width:96px">
+          <option value="" disabled selected>Bullets…</option>
+          <option value="auto">Automatic (per level)</option>
+          <option value="disc">● Round</option>
+          <option value="circle">○ Hollow</option>
+          <option value="square">■ Square</option>
+          <option value="arrow">➤ Arrow</option>
+          <option value="check">✓ Tick</option>
+          <option value="star">★ Star</option>
+          <option value="dash">– Dash</option>
+          <option value="decimal">1. 2. 3.</option>
+          <option value="lower-alpha">a. b. c.</option>
+          <option value="upper-alpha">A. B. C.</option>
+          <option value="lower-roman">i. ii. iii.</option>
+          <option value="upper-roman">I. II. III.</option>
+        </select>
+        <select id="indentSize" aria-label="Indent size" title="How far each indent (and each sub-bullet) moves in, for this note" style="margin-left:4px;width:132px">
+          <option value="0.8em">Indent: Narrow</option>
+          <option value="1.4em" selected>Indent: Normal</option>
+          <option value="2.5em">Indent: Wide</option>
+          <option value="4em">Indent: Extra wide</option>
+        </select>
+      </div><span class="cap">Lists</span></div>
       <span class="sep"></span>
-      <button data-cmd="hiliteColor" id="hlBtn" title="Highlight the selected words"><span class="hl">ab</span></button>
-      <input type="color" id="hlColor" value="#fff176" aria-label="Highlight colour" title="Highlight colour">
-      <button data-cmd="removeFormat" title="Clear formatting of the selected words">Clear format</button>
+      <div class="grp"><div class="row">
+        <button class="btn" data-cmd="justifyLeft" aria-label="Align left" title="Align left"><svg class="i"><use href="#i-align-left"/></svg></button>
+        <button class="btn" data-cmd="justifyCenter" aria-label="Centre" title="Centre"><svg class="i"><use href="#i-align-center"/></svg></button>
+        <button class="btn" data-cmd="justifyRight" aria-label="Align right" title="Align right"><svg class="i"><use href="#i-align-right"/></svg></button>
+      </div><span class="cap">Align</span></div>
+    </div>
+
+    <div class="panel" role="tabpanel" id="panel-insert" aria-labelledby="tab-insert" data-edit hidden>
+      <div class="grp"><div class="row">
+        <button class="btn" id="fBtn" title="Insert a formula into the note"><svg class="i"><use href="#i-sigma"/></svg>Formula</button>
+        <button class="btn" id="mediaBtn" title="Insert a picture, video or sound into the note (you can also paste or drop them)"><svg class="i"><use href="#i-image"/></svg>Picture, video or sound</button>
+        <input id="mediaFile" type="file" accept="image/*,video/*,audio/*" multiple hidden>
+      </div><span class="cap">Into the note</span></div>
       <span class="sep"></span>
-      <select id="spellLang" aria-label="Spell check" title="Spell check: misspelt words get a red wavy line; right-click one (or tap it) for suggestions">
-        <option value="en-US">✓ Spelling: US English</option>
-        <option value="en-GB">✓ Spelling: UK English</option>
-        <option value="off">Spelling: off</option>
-      </select>
+      <div class="grp"><div class="row">
+        <button class="btn" id="addPageBtn" title="Add a blank page after the current page (the one you last clicked)"><svg class="i"><use href="#i-page-add"/></svg>Blank page after</button>
+        <button class="btn danger" id="delPageBtn" title="Remove the current page (the one you last clicked)"><svg class="i"><use href="#i-page-remove"/></svg><span>Remove page</span></button>
+      </div><span class="cap">Pages</span></div>
       <span class="sep"></span>
-      <button id="addPageBtn" title="Add a blank page after the current page (the one you last clicked)">+ Page after</button>
-      <button id="delPageBtn" title="Remove the current page (the one you last clicked)">Remove page</button>
-      <button id="selAllBtn" title="Select every note on the current page, to restyle, move or delete them together (Ctrl+A when you're not typing in a note)">Select all</button>
+      <p class="tip">On a PDF page, point between two lines and press “+ Add note here”. On other pages, click where you want to write.</p>
+    </div>
+
+    <div class="panel" role="tabpanel" id="panel-box" aria-labelledby="tab-box" data-edit hidden>
+      <div class="grp"><div class="row" style="gap:8px">
+        <label class="chk" for="bOutline"><input type="checkbox" id="bOutline" checked> Outline</label>
+        <input type="color" id="bBorder" value="#9aa3b2" aria-label="Outline colour" title="Outline colour">
+      </div><span class="cap">Outline</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row" style="gap:6px">
+        <input type="color" id="bFill" value="#fff8c4" aria-label="Fill colour" title="Fill colour">
+        <button class="btn outline" id="bNoFill" aria-pressed="true" title="No fill" style="height:30px">No fill</button>
+      </div><span class="cap">Fill</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row" style="gap:6px">
+        <input type="color" id="bChip" value="#ffd54a" aria-label="Icon colour" title="Colour of this note's pencil icon when it is minimised, to colour-code notes by topic">
+        <button class="btn outline" id="favChipBtn" style="height:30px" title="Icon colours and your favourites, for this note (or new notes)">Icon colours</button>
+      </div><span class="cap">Minimised icon</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row">
+        <button class="btn" id="selAllBtn" title="Select every note on the current page, to restyle, move or delete them together (Ctrl+A when you're not typing in a note)"><svg class="i"><use href="#i-select"/></svg>Select all notes on this page</button>
+      </div><span class="cap">Select</span></div>
+    </div>
+
+    <div class="panel" role="tabpanel" id="panel-view" aria-labelledby="tab-view" hidden>
+      <div class="grp"><div class="row">
+        <select id="layout" aria-label="Page layout" title="Page layout on screen and in the PDF">
+          <option value="default">Layout: Default</option>
+          <option value="a4-portrait">A4 portrait</option>
+          <option value="a4-landscape">A4 landscape</option>
+          <option value="a3-portrait">A3 portrait</option>
+          <option value="a3-landscape">A3 landscape</option>
+        </select>
+      </div><span class="cap">Page layout</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row">
+        <button class="btn notes-toggle" disabled><svg class="i"><use href="#i-eye-off"/></svg><span>Hide notes</span></button>
+        <button class="btn" data-panel="pages" aria-pressed="false"><svg class="i"><use href="#i-panel-left"/></svg>Pages</button>
+        <button class="btn" data-panel="notes" aria-pressed="false"><svg class="i"><use href="#i-panel-right"/></svg>Notes list</button>
+      </div><span class="cap">Show</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row">
+        <select id="spellLang" aria-label="Spell check" title="Spell check: misspelt words get a red wavy line; right-click one (or tap it) for suggestions">
+          <option value="en-US">Spelling: US English</option>
+          <option value="en-GB">Spelling: UK English</option>
+          <option value="off">Spelling: off</option>
+        </select>
+      </div><span class="cap">Proofing</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row seg" id="barModes">
+        <button class="btn" data-mode="full" aria-pressed="true" title="Tabs and tools">Full</button>
+        <button class="btn" data-mode="compact" aria-pressed="false" title="Only the tabs: click one to open its tools">Tabs only</button>
+        <button class="btn" data-mode="hidden" aria-pressed="false" title="Hide the toolbar (bring it back with Show toolbar)">Hidden</button>
+      </div><span class="cap">Toolbar</span></div>
+      <span class="spacer"></span>
+      <div class="grp" style="justify-content:center"><button class="btn outline danger" id="clear"><svg class="i"><use href="#i-trash"/></svg><span>Clear everything</span></button></div>
     </div>
   </div>
 </header>
 
-<button id="showBar" class="showbar" hidden title="Show the toolbar">☰ Show toolbar</button>
-<div id="toast" class="toast" role="status" aria-live="polite"></div>
-<div id="multibar" class="multibar" role="toolbar" aria-label="Selected notes" hidden><span id="multiCount"></span><button type="button" data-act="del">Delete</button><button type="button" data-act="done" class="primary">Done</button></div>
+<button id="showBar" class="showbar" hidden title="Show the toolbar"><svg class="i" style="width:16px;height:16px"><use href="#i-menu"/></svg>Show toolbar</button>
 
-<div class="settings" id="settings" role="dialog" aria-modal="false" aria-labelledby="setTitle" hidden>
-  <div class="sethead"><h2 id="setTitle">Help &amp; settings</h2><button id="setClose" aria-label="Close">×</button></div>
+<button id="focusExit" class="showbar" hidden title="Bring back the toolbar and panels (Esc)"><svg class="i" style="width:16px;height:16px"><use href="#i-focus"/></svg>Exit focus</button>
+
+<div class="workspace">
+  <nav class="side pages" id="pagesPanel" aria-label="Pages" hidden>
+    <div class="sidehead"><h2>Pages</h2><span class="count" id="pageCount"></span><button class="btn" data-close="pages" aria-label="Close the pages panel"><svg class="i"><use href="#i-x"/></svg></button></div>
+    <ol class="pagelist" id="pageList"></ol>
+  </nav>
+  <main id="main"></main>
+  <aside class="side notes" id="notesPanel" aria-label="Notes" hidden>
+    <div class="sidehead"><h2>Notes</h2><span class="count" id="noteCount"></span><button class="btn" data-close="notes" aria-label="Close the notes list"><svg class="i"><use href="#i-x"/></svg></button></div>
+    <div class="notetools">
+      <label class="search"><svg class="i"><use href="#i-search"/></svg><input id="noteSearch" type="search" placeholder="Search your notes" aria-label="Search your notes" autocomplete="off"></label>
+      <div class="filters" id="noteFilters" role="group" aria-label="Show notes by icon colour"></div>
+    </div>
+    <ol class="notelist" id="noteList"></ol>
+  </aside>
+</div>
+<div class="scrim" id="scrim" hidden></div>
+
+<footer class="statusbar" id="statusbar">
+  <span id="pageInfo"></span>
+  <span id="noteInfo"></span>
+  <span class="spacer"></span>
+  <button class="btn notes-toggle" id="notesToggle" disabled><svg class="i"><use href="#i-eye-off"/></svg><span>Hide notes</span></button>
+</footer>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="multibar" class="pop multibar" role="toolbar" aria-label="Selected notes" hidden><span id="multiCount"></span><button type="button" class="btn" data-act="del">Delete</button><button type="button" class="btn primary" data-act="done">Done</button></div>
+<div class="dropcover" id="dropCover" hidden><span><svg class="i" style="width:22px;height:22px"><use href="#i-upload"/></svg>Drop to open</span></div>
+
+<div class="pop settings" id="settings" role="dialog" aria-modal="false" aria-labelledby="setTitle" hidden>
+  <div class="sethead"><h2 id="setTitle">Help &amp; settings</h2><button class="btn" id="setClose" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
   <div class="setbody">
     <section>
       <h3>How to use it</h3>
       <ul class="howto">
-        <li><b>Open file</b> to bring in a PDF, PowerPoint (.pptx) or Word (.docx) file.</li>
+        <li><b>Open</b> a PDF, PowerPoint (.pptx) or Word (.docx) file, or drop one anywhere on the page.</li>
         <li>On a PDF page, point at a spot and press <b>+ Add note here</b>: the page opens up between the lines. On other pages, click where you want to write.</li>
-        <li>The font, size and colour in the toolbar are used for new notes. Click in a note to style it, or select words to style only those.</li>
-        <li>Drag a note’s edges to resize it, or its <b>✥</b> handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
-        <li><b>⇄</b> floats a note on top of the page, <b>–</b> minimises it to a ✎ icon (drag the icon aside, right-click it to colour it), and <b>📌</b> keeps it open.</li>
-        <li>Misspelt words get a red wavy line: right-click one (or tap it) for suggestions.</li>
-        <li><b>↶ Back / ↷ Forward</b> (Ctrl+Z / Ctrl+Y) undo and redo any change. <b>📖 Study mode</b> stops accidental changes.</li>
-        <li>You can select and copy text from PDF pages. Everything is saved in this browser; <b>Download</b> a PDF, or a notebook file to keep editing on another device.</li>
+        <li>The <b>Home</b> tab styles your notes: the font, size and colour are used for new notes, or click in a note (or select words) to change just that.</li>
+        <li>Drag a note’s edges to resize it, or its move handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
+        <li>On each note: the arrows float it on top of the page, the minus minimises it to a pencil icon (drag the icon aside, right-click it to colour it), and the pin keeps it open.</li>
+        <li><b>Pages</b> (left) jumps to any page. <b>Notes</b> (right) lists every note to search, filter by icon colour and jump to.</li>
+        <li><b>Focus</b> hides the toolbar, side panels and status bar so only your pages and notes are left (Esc brings them back). Each panel also closes with its ×, and View › Toolbar can shrink the toolbar to tabs only.</li>
+        <li><b>Study mode</b> stops accidental changes while you revise. Everything is saved in this browser; <b>Download</b> a PDF, or a notebook file to keep editing on another device.</li>
       </ul>
+    </section>
+    <section>
+      <h3>Keyboard shortcuts</h3>
+      <dl class="keys">
+        <dt><kbd>Ctrl</kbd> <kbd>Z</kbd> / <kbd>Ctrl</kbd> <kbd>Y</kbd></dt><dd>Back and Forward (undo and redo)</dd>
+        <dt><kbd>Ctrl</kbd> <kbd>B</kbd> <kbd>I</kbd> <kbd>U</kbd></dt><dd>Bold, italic, underline</dd>
+        <dt><kbd>Tab</kbd> / <kbd>Shift</kbd> <kbd>Tab</kbd></dt><dd>Indent or outdent a list</dd>
+        <dt><kbd>Ctrl</kbd> <kbd>A</kbd></dt><dd>In a note: its text. Elsewhere: every note on the page</dd>
+        <dt>Arrow keys</dt><dd>Move selected notes (with <kbd>Shift</kbd>: 10 px)</dd>
+        <dt><kbd>Delete</kbd></dt><dd>Delete the selected notes, picture or video</dd>
+        <dt><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>F</kbd></dt><dd>Focus mode on or off</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Close a menu or end a selection</dd>
+      </dl>
     </section>
     <section>
       <h3>Custom dictionary <span class="count" id="dictCount"></span></h3>
       <p class="sethint">Words you add here (or with “Add to dictionary” on a misspelt word) are never marked as mistakes.</p>
-      <form class="dictadd" id="dictAddForm"><input id="dictAdd" placeholder="Add a word" autocomplete="off" spellcheck="false" aria-label="Word to add"><button type="submit">Add</button></form>
+      <form class="dictadd" id="dictAddForm"><input id="dictAdd" placeholder="Add a word" autocomplete="off" spellcheck="false" aria-label="Word to add"><button type="submit" class="btn outline">Add</button></form>
       <ul class="dictlist" id="dictList"></ul>
     </section>
     <section>
       <h3>Favourite colours</h3>
-      <p class="sethint">Save colours with <b>☆</b> next to the text colour, or <b>☆ Save</b> in a ✎ icon’s colour menu. They show up in both.</p>
+      <p class="sethint">Save colours with the star next to the text colour, or <b>Save</b> in a pencil icon’s colour menu. They show up in both.</p>
       <div class="favmanage" id="favManage"></div>
     </section>
   </div>
 </div>
-<main id="main"></main>
 
-<div class="fpanel" id="formulaPanel" hidden>
-  <div class="fhead">Formula <button id="fClose" aria-label="Close">×</button></div>
+<div class="pop fpanel" id="formulaPanel" hidden>
+  <div class="fhead">Formula <button class="btn" id="fClose" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
   <input id="fInput" autocomplete="off" spellcheck="false" placeholder="e.g.  w_i = (P_i)/(sum_(i=1)^N P_i)">
   <div class="fkeys" id="fKeys">
     <button data-ins="()/()" data-back="4" title="Fraction">a/b</button>
@@ -468,14 +724,26 @@ body.multi .toast{bottom:calc(max(20px, env(safe-area-inset-bottom, 0px)) + 58px
   </div>
   <div class="fpreview" id="fPreview"></div>
   <div class="fhelp">Type <b>/</b> for a fraction (use brackets for longer parts: <b>(a+b)/(c+d)</b>), <b>^</b> for a power, <b>_</b> for a small low letter, <b>sqrt()</b>, <b>sum</b>. Press Enter to insert.</div>
-  <div class="factions"><button id="fInsert" class="primary">Insert</button></div>
+  <div class="factions"><button class="btn primary" id="fInsert">Insert</button></div>
 </div>
 
 <template id="emptyTpl">
-  <div class="empty">
-    <h2>Open your slides to start taking notes</h2>
-    <p>Open a PowerPoint (.pptx), PDF or Word (.docx) file. The text comes in with its headings, bold, bullets and the main pictures. Nothing in it can be changed.</p>
-    <p>Then click anywhere in the text to type your own words right there, in your own font, size and colour.</p>
+  <div class="welcome">
+    <h2>Take notes right <span class="hand">between the lines</span></h2>
+    <p class="lede">Open your lecture slides and write your own notes in the gaps, in your own handwriting font, size and colour.</p>
+    <div class="drop" data-open>
+      <span class="badge"><svg class="i"><use href="#i-upload"/></svg></span>
+      <b>Drop your slides here</b>
+      <span class="or">or</span>
+      <button type="button" class="btn primary big"><svg class="i"><use href="#i-folder"/></svg>Choose a file</button>
+      <div class="kinds"><span>PDF</span><span>PowerPoint .pptx</span><span>Word .docx</span><span>Pictures</span><span>Notebook .html</span></div>
+    </div>
+    <ol class="steps">
+      <li><span><b>Open</b>Background graphics, side bands and slide numbers are cleaned away.</span></li>
+      <li><span><b>Write between the lines</b>Point at a gap and press “+ Add note here”. The page opens up for you.</span></li>
+      <li><span><b>Revise and download</b>Study mode, a searchable notes list, and PDF or notebook downloads.</span></li>
+    </ol>
+    <p class="private"><svg class="i"><use href="#i-lock"/></svg>Everything stays on this device. Your notes are saved in this browser.</p>
   </div>
 </template>
 
@@ -483,23 +751,38 @@ body.multi .toast{bottom:calc(max(20px, env(safe-area-inset-bottom, 0px)) + 58px
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
-// a copy of this app, for the downloadable notebook file
-const APP_HTML = (() => { const c = document.body.cloneNode(true); c.querySelector('#notebook-data')?.remove(); const m = c.querySelector('#main'); if (m) m.innerHTML = ''; return c.innerHTML; })();
+
+// a copy of this app as it is before anything is opened, for the downloadable notebook file
+const APP_HTML = (() => {
+  const c = document.documentElement.cloneNode(true);
+  c.querySelector('#notebook-data')?.remove();
+  const m = c.querySelector('#main'); if (m) m.innerHTML = '';
+  return '<!doctype html>\n' + c.outerHTML;
+})();
 const $ = s => document.querySelector(s);
 const main = $('#main');
-const COLORS = ['#1f4fd1','#c62828','#2e7d32','#7b1fa2','#d35400','#1d1d1f'];
+const icon = id => `<svg class="i" aria-hidden="true"><use href="#i-${id}"/></svg>`;
+// remembered settings (in a private window, or with storage blocked, they just aren't remembered)
+const pref = {
+  get(k, d = null){ try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem(k, v); } catch {} },
+  json(k, d){ try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+  setJson(k, v){ pref.set(k, JSON.stringify(v)); },
+};
+const COLORS = [['#1f4fd1', 'Blue'], ['#c62828', 'Red'], ['#2e7d32', 'Green'], ['#7b1fa2', 'Purple'], ['#d35400', 'Orange'], ['#1d1d1f', 'Black']];
 const SIZES = [8,9,10,11,12,14,16,18,20,24,28,32,36,40,48,60,72];
 // the fallback used if a font isn't on this device
 const SERIF = ['Lora', 'Times New Roman', 'Georgia', 'Cambria', 'Garamond', 'Palatino Linotype'], MONO = ['Courier New', 'Courier Prime'], HAND = ['Caveat', 'Patrick Hand', 'Kalam', 'Comic Sans MS'];
 const fontCss = f => `"${f}", ${SERIF.includes(f) ? 'serif' : MONO.includes(f) ? 'monospace' : HAND.includes(f) ? 'cursive' : 'sans-serif'}`;
 let style = {font:'Caveat', size:24, color:'#1f4fd1'};
-let active = null, savedRange = null, slideCount = 0;
-let reading = false;          // study mode: read only
-try { reading = localStorage.getItem('study-mode') === '1'; } catch {}
+let active = null, savedRange = null;
+let reading = pref.get('study-mode') === '1';          // study mode: read only
+// the note you are writing in, if it is still on the page
+const noteActive = () => active && active.isConnected ? active : null;
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 // messages pop up as a toast that fades away after a few seconds (progress messages update the same toast)
 let toastTimer = null;
-function status(t){
+function toast(t){
   const el = $('#toast'); clearTimeout(toastTimer);
   if (!t) { el.classList.remove('show'); return; }
   el.textContent = t; el.classList.add('show');
@@ -508,27 +791,27 @@ function status(t){
 
 /* ================= toolbar ================= */
 SIZES.forEach(s => $('#sizePick').add(new Option(s, s)));
-COLORS.forEach(c => {
+COLORS.forEach(([c, name]) => {
   const b = document.createElement('button');
-  b.className = 'sw'; b.style.background = c; b.dataset.c = c; b.setAttribute('aria-label', 'Colour ' + c);
+  b.type = 'button'; b.className = 'sw'; b.style.setProperty('--c', c); b.dataset.c = c; b.title = name; b.setAttribute('aria-label', name);
   $('#swatches').append(b);
 });
 function showStyle(s){
   $('#font').value = s.font; $('#size').value = s.size; $('#color').value = s.color;
   document.querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === s.color));
 }
-function hint(){}          // the guide now lives in ⚙ Help & settings
-showStyle(style); hint();
-document.querySelectorAll('#tools button').forEach(b => b.addEventListener('mousedown', e => e.preventDefault()));
+showStyle(style);
+// pressing a toolbar button keeps the cursor (and any selected words) in the note
+$('#appbar').addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });
 
 document.addEventListener('selectionchange', () => {
   const sel = getSelection(); if (!sel.rangeCount) return;
   const r = sel.getRangeAt(0), n = r.commonAncestorContainer;
   const el = (n.nodeType === 1 ? n : n.parentElement)?.closest('.mine');
-  if (el) { active = el; savedRange = r.cloneRange(); showStyle(styleAt(r, el)); const nb = el.closest('.notebox'); if (nb) showBox(boxOf(nb)); $('#indentSize').value = el.style.getPropertyValue('--ind').trim() || '1.4em'; hint(); }
+  if (el) { active = el; savedRange = r.cloneRange(); showStyle(styleAt(r, el)); const nb = el.closest('.notebox'); if (nb) showBox(boxOf(nb)); $('#indentSize').value = el.style.getPropertyValue('--ind').trim() || '1.4em'; }
 });
 document.addEventListener('mousedown', e => {
-  if (!e.target.closest('.mine, .notebox, .gappill, header, .fpanel, .mediabar')) { active = null; savedRange = null; showStyle(style); hint(); }
+  if (!e.target.closest('.mine, .notebox, .gappill, header, .fpanel, .mediabar, .chippop, .spellmenu, .multibar')) { active = null; savedRange = null; showStyle(style); }
 });
 function noteStyle(el){
   return {font: el.style.fontFamily.split(',')[0].replace(/"/g,'').trim() || style.font,
@@ -558,7 +841,7 @@ function apply(kind, value){
     multi.forEach(b => { const m = b.querySelector(':scope > .mine'); if (m) styleWhole(m, kind, value); });
     showStyle({...noteStyle([...multi][0].querySelector('.mine')), [kind]: value}); saveSoon(); return;
   }
-  if (!active || !document.body.contains(active)) { active = null; style[kind] = value; showStyle(style); saveSoon(); return; }
+  if (!noteActive()) { active = null; style[kind] = value; showStyle(style); saveSoon(); return; }
   restoreSel();
   if (savedRange && !savedRange.collapsed) {
     document.execCommand('styleWithCSS', false, true);
@@ -575,11 +858,7 @@ function apply(kind, value){
         const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
       }
     }
-  } else {
-    const prop = {font:'fontFamily', size:'fontSize', color:'color'}[kind];
-    active.style[prop] = kind === 'font' ? fontCss(value) : kind === 'size' ? value + 'px' : value;
-    active.querySelectorAll('*').forEach(el => { el.style[prop] = ''; if (el.tagName === 'FONT') el.removeAttribute({font:'face',color:'color',size:'size'}[kind]); });
-  }
+  } else styleWhole(active, kind, value);
   const s = getSelection(); savedRange = s.rangeCount ? s.getRangeAt(0).cloneRange() : null;
   showStyle({...noteStyle(active), [kind]: value});
   saveSoon();
@@ -593,7 +872,7 @@ function applySize(){
 }
 function applySizeNow(){
   const v = Math.round(Math.min(200, Math.max(4, parseFloat($('#size').value))) * 2) / 2;
-  if (!isFinite(v)) { showStyle(active && document.body.contains(active) ? noteStyle(active) : style); return; }
+  if (!isFinite(v)) { showStyle(noteActive() ? noteStyle(active) : style); return; }
   $('#size').value = v; apply('size', v);
 }
 $('#size').addEventListener('change', applySize);
@@ -602,17 +881,16 @@ $('#size').addEventListener('keydown', e => { if (e.key === 'Enter') { e.prevent
 $('#color').oninput = e => apply('color', e.target.value);
 $('#swatches').onclick = e => { const c = e.target.dataset?.c; if (c) apply('color', c); };
 // Word-style formatting for the note you are writing in
-$('#fmtbar').addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });
-$('#fmtbar').addEventListener('click', e => {
+$('#ribbon').addEventListener('click', e => {
   const btn = e.target.closest('button[data-cmd]'); if (!btn) return;
   const cmd = btn.dataset.cmd;
   if (multi.size) {
     if (/^justify/.test(cmd)) { multi.forEach(b => { const m = b.querySelector(':scope > .mine'); if (m) m.style.textAlign = {justifyLeft: '', justifyCenter: 'center', justifyRight: 'right'}[cmd]; }); saveSoon(); }
-    else status('With several notes selected you can change the font, size, colour, bold/italic/underline, alignment and box colours. Click inside one note for the rest.');
+    else toast('With several notes selected you can change the font, size, colour, bold/italic/underline, alignment and box colours. Click inside one note for the rest.');
     return;
   }
-  if (!active || !document.body.contains(active)) { status('Click inside a note first, then choose the formatting.'); return; }
-  if (/List|indent|outdent|justify/.test(cmd) && active.tagName === 'SPAN') { status('Lists, indents and alignment work in notes on their own line, not notes inside a sentence.'); return; }
+  if (!noteActive()) { toast('Click inside a note first, then choose the formatting.'); return; }
+  if (/List|indent|outdent|justify/.test(cmd) && active.tagName === 'SPAN') { toast('Lists, indents and alignment work in notes on their own line, not notes inside a sentence.'); return; }
   restoreSel();
   document.execCommand('styleWithCSS', false, cmd === 'hiliteColor');
   document.execCommand(cmd, false, cmd === 'hiliteColor' ? $('#hlColor').value : null);
@@ -628,8 +906,8 @@ function listAtSel(){
 }
 $('#listStyle').onchange = e => {
   const v = e.target.value; e.target.value = '';
-  if (!active || !document.body.contains(active)) { status('Click inside a note first, then choose the bullet style.'); return; }
-  if (active.tagName === 'SPAN') { status('Lists work in notes on their own line, not notes inside a sentence.'); return; }
+  if (!noteActive()) { toast('Click inside a note first, then choose the bullet style.'); return; }
+  if (active.tagName === 'SPAN') { toast('Lists work in notes on their own line, not notes inside a sentence.'); return; }
   restoreSel();
   const ordered = /decimal|alpha|roman/.test(v);
   let list = listAtSel();
@@ -649,7 +927,7 @@ $('#listStyle').onchange = e => {
   saveSoon();
 };
 $('#indentSize').onchange = e => {
-  if (!active || !document.body.contains(active)) { status('Click inside a note first, then choose the indent size.'); return; }
+  if (!noteActive()) { toast('Click inside a note first, then choose the indent size.'); return; }
   active.style.setProperty('--ind', e.target.value); restoreSel(); saveSoon();
 };
 $('#hlColor').oninput = e => { $('#hlBtn .hl').style.background = e.target.value; };
@@ -681,27 +959,25 @@ function raise(box){
   if (cur && cur === zTop) return;
   box.style.zIndex = ++zTop;
 }
-function focusNote(el){
+function focusNote(el, opts){
   raise(el.closest('.notebox'));
-  el.focus();
+  el.focus(opts);
   const r = document.createRange(); r.selectNodeContents(el); r.collapse(false);
   const s = getSelection(); s.removeAllRanges(); s.addRange(r);
-  active = el; savedRange = r; hint();
+  active = el; savedRange = r;
 }
 function caretAt(x, y){
   if (document.caretPositionFromPoint) { const p = document.caretPositionFromPoint(x, y); return p && {node: p.offsetNode, offset: p.offset}; }
   const r = document.caretRangeFromPoint && document.caretRangeFromPoint(x, y);
   return r && {node: r.startContainer, offset: r.startOffset};
 }
-// a note box with handles on its right edge, bottom edge and corner, like a text box in Word
-// minimise a note to a small tab (like a comment in Word), or open it again
+// minimise a note to a small pencil icon (like a comment in Word), or open it again
 function setCollapsed(box, on){
   if (on && box.classList.contains('pinned')) return;
   box.classList.toggle('collapsed', on);
   const chip = box.querySelector(':scope > .note-chip');
   if (on && chip) {
-    const t = (box.querySelector('.mine')?.innerText || '').trim().replace(/\s+/g, ' ') || 'Note';
-    chip.textContent = '✎';
+    const m = box.querySelector(':scope > .mine'), t = (m && noteSummary(m)) || 'Note';
     const short = t.length > 300 ? t.slice(0, 300) + '…' : t;
     chip.title = short + '\n\nClick to open · drag to move this icon aside · right-click (or press and hold) to change its colour';
     chip.setAttribute('aria-label', 'Show note: ' + short);
@@ -717,9 +993,17 @@ function notesBtnMode(){
   return boxes.some(b => !b.classList.contains('pinned')) ? 'hide' : null;
 }
 function updateNotesBtn(){
-  const btn = $('#notesToggle'), mode = notesBtnMode();
-  btn.hidden = !mode; btn.dataset.mode = mode || '';
-  btn.textContent = mode === 'show' ? 'Show notes' : 'Hide notes';
+  const mode = notesBtnMode() || '';
+  for (const b of document.querySelectorAll('.notes-toggle')) {
+    b.disabled = !mode;
+    if (b.dataset.mode === mode) continue;
+    b.dataset.mode = mode;
+    b.innerHTML = icon(mode === 'show' ? 'eye' : 'eye-off') + `<span>${mode === 'show' ? 'Show notes' : 'Hide notes'}</span>`;
+  }
+  // the status bar's count
+  const boxes = [...main.querySelectorAll('.notebox')].filter(hasContent), n = boxes.length;
+  const pinned = boxes.filter(b => b.classList.contains('pinned')).length, mini = boxes.filter(b => b.classList.contains('collapsed')).length;
+  $('#noteInfo').textContent = n ? [`${n} note${n > 1 ? 's' : ''}`, pinned && `${pinned} pinned`, mini && `${mini} minimised`].filter(Boolean).join(' · ') : '';
 }
 function afterNotesToggle(){ updateNotesBtn(); if (LAYOUTS[layout]) paginateView(); spreadChips(); saveSoon(); }
 // minimised notes at (nearly) the same spot get their icons side by side instead of on top of each other
@@ -760,9 +1044,9 @@ function startChipDrag(chip, e){
   const up = ev => {
     chip.removeEventListener('pointermove', move); chip.removeEventListener('pointerup', up); chip.removeEventListener('pointercancel', up);
     box.classList.remove('chip-drag'); clearTimeout(hold);
-    if (held) { swallowClick = true; setTimeout(() => { swallowClick = false; }, 600); return; }
+    if (held) { swallow(); return; }
     if (!moved) return;
-    swallowClick = true; setTimeout(() => { swallowClick = false; }, 600);
+    swallow();
     setChipOffset(box, ox + (ev.clientX - sx) / z, oy + (ev.clientY - sy) / z);
     saveSoon();
   };
@@ -772,32 +1056,28 @@ function togglePin(box){
   const on = !box.classList.contains('pinned');
   box.classList.toggle('pinned', on);
   const g = box.querySelector(':scope > .g-pin'); if (g) g.title = on ? 'Unpin: let this note be minimised again' : 'Pin to page: keep this note open';
-  status(on ? 'Pinned: this note stays open until you unpin it (📌).' : 'Unpinned.');
+  toast(on ? 'Pinned: this note stays open until you unpin it.' : 'Unpinned.');
   updateNotesBtn(); saveSoon();
 }
+// a note box's handles: float, minimise, pin and move buttons, and resize handles on its right edge, bottom edge and corner
 function addGrips(box){
   box.querySelectorAll(':scope > .grip, :scope > .note-chip').forEach(g => g.remove());
-  if (!box.classList.contains('inline')) {
-    const fl = document.createElement('span'); fl.className = 'grip g-float'; fl.dataset.dir = 'float'; fl.textContent = '⇄';
-    fl.title = 'Put this note beside the text (on top of the page) or back between the lines'; fl.setAttribute('aria-hidden', 'true'); box.append(fl);
-  }
-  const mn = document.createElement('span'); mn.className = 'grip g-min'; mn.dataset.dir = 'min'; mn.textContent = '–';
-  mn.title = 'Minimise this note'; mn.setAttribute('aria-hidden', 'true'); box.append(mn);
-  const pin = document.createElement('span'); pin.className = 'grip g-pin'; pin.dataset.dir = 'pin'; pin.textContent = '📌';
-  pin.title = box.classList.contains('pinned') ? 'Unpin: let this note be minimised again' : 'Pin to page: keep this note open'; pin.setAttribute('aria-hidden', 'true'); box.append(pin);
-  const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'note-chip'; chip.title = 'Show this note';
+  const inline = box.classList.contains('inline');
+  const grip = (dir, ico, title) => {
+    const g = document.createElement('span'); g.className = 'grip g-' + dir; g.dataset.dir = dir; g.title = title; g.setAttribute('aria-hidden', 'true');
+    if (ico) g.innerHTML = icon(ico);
+    box.append(g);
+  };
+  if (!inline) grip('float', 'float', 'Put this note beside the text (on top of the page) or back between the lines');
+  grip('min', 'minus', 'Minimise this note');
+  grip('pin', 'pin', box.classList.contains('pinned') ? 'Unpin: let this note be minimised again' : 'Pin to page: keep this note open');
+  const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'note-chip'; chip.title = 'Show this note'; chip.innerHTML = icon('pen');
   box.append(chip);
   if (box.classList.contains('collapsed')) setCollapsed(box, true);
-  if (!box.classList.contains('inline')) {
-    const m = document.createElement('span'); m.className = 'grip g-move'; m.dataset.dir = 'move'; m.textContent = '✥';
-    m.title = 'Drag to move this note'; m.setAttribute('aria-hidden', 'true');
-    box.append(m);
-  }
-  for (const d of ['e', 's', 'se']) {
-    const g = document.createElement('span'); g.className = 'grip g-' + d; g.dataset.dir = d;
-    g.title = d === 'e' ? 'Drag to change the width' : d === 's' ? 'Drag to change the height' : 'Drag to resize';
-    box.append(g);
-  }
+  if (!inline) grip('move', 'move', 'Drag to move this note');
+  grip('e', null, 'Drag to change the width');
+  grip('s', null, 'Drag to change the height');
+  grip('se', null, 'Drag to resize');
 }
 function makeBox(inline){
   const box = document.createElement(inline ? 'span' : 'div'); box.className = inline ? 'notebox inline' : 'notebox';
@@ -806,7 +1086,6 @@ function makeBox(inline){
   if (!inline || boxStyle.fill || !boxStyle.outline || boxStyle.border !== '#9aa3b2' || (boxStyle.chip || CHIP) !== CHIP) applyBoxVars(box, boxStyle);
   return {box, el};
 }
-// notes made before resizing existed get a box and handles too
 // pictures, videos and sound inside a note (also pasted or dropped ones) sit in a box you can click to select
 function wrapMedia(root){
   for (const m of root.querySelectorAll('.mine img, .mine video, .mine audio')) {
@@ -822,16 +1101,46 @@ function mediaAt(t){
   if (!['IMG', 'VIDEO', 'AUDIO'].includes(t.tagName) || t.closest('details, .formula, .katex') || t.classList.contains('formula') || !t.closest('.slide')) return null;
   return t;
 }
+// after loading: every note gets a box and today's handles (notes saved by older versions too)
 function upgradeNotes(){
   wrapMedia(main);
-  for (const b of main.querySelectorAll('.notebox')) zTop = Math.max(zTop, +b.style.zIndex || 0);
-  main.querySelectorAll('.notebox').forEach(b => { if (b.style.height) { b.style.minHeight = b.style.height; b.style.height = ''; } if ((!b.classList.contains('inline') && (!b.querySelector(':scope > .g-move') || !b.querySelector(':scope > .g-float'))) || !b.querySelector(':scope > .note-chip') || !b.querySelector(':scope > .g-pin')) addGrips(b); });
   main.querySelectorAll('.mine').forEach(el => {
-    if (el.parentElement?.classList.contains('notebox')) { if (!el.parentElement.querySelector(':scope > .g-e')) addGrips(el.parentElement); return; }
+    if (el.parentElement?.classList.contains('notebox')) return;
     const inline = el.tagName === 'SPAN';
     const box = document.createElement(inline ? 'span' : 'div'); box.className = inline ? 'notebox inline' : 'notebox';
-    el.replaceWith(box); box.append(el); addGrips(box);
+    el.replaceWith(box); box.append(el);
   });
+  for (const b of main.querySelectorAll('.notebox')) {
+    zTop = Math.max(zTop, +b.style.zIndex || 0);
+    if (b.style.height) { b.style.minHeight = b.style.height; b.style.height = ''; }
+    addGrips(b);
+  }
+}
+// a note with something in it (an empty one is removed when you leave it)
+function hasContent(box){
+  const m = box.querySelector(':scope > .mine');
+  return !!(m && (m.textContent.trim() || m.querySelector('img, .media, .formula')));
+}
+// a note's words as one line of plain text (formulas as typed; pictures, videos and sound named)
+function noteSummary(m){
+  let t = '';
+  const walk = n => {
+    for (const c of n.childNodes) {
+      if (c.nodeType === 3) { t += c.data; continue; }
+      if (c.nodeType !== 1) continue;
+      if (c.classList.contains('formula')) { t += ` ${c.dataset.src || ''} `; continue; }
+      if (c.classList.contains('media') || /^(IMG|VIDEO|AUDIO)$/.test(c.tagName)) {
+        const k = c.matches('img, video, audio') ? c : c.querySelector('img, video, audio');
+        t += k ? ` (${{IMG: 'picture', VIDEO: 'video', AUDIO: 'sound'}[k.tagName]}) ` : ' '; continue;
+      }
+      const block = /^(BR|DIV|P|LI|UL|OL|BLOCKQUOTE|H\d|TABLE|TR|TD)$/.test(c.tagName);
+      if (block) t += ' ';
+      walk(c);
+      if (block) t += ' ';
+    }
+  };
+  walk(m);
+  return t.replace(/\s+/g, ' ').trim();
 }
 function addBlockNote(after, slide){
   const {box, el} = makeBox();
@@ -842,21 +1151,17 @@ main.addEventListener('pointerdown', e => {
   const chip = e.target.closest('.note-chip');
   if (chip && e.button === 0) return startChipDrag(chip, e);
   const g = e.target.closest('.grip'); if (!g) return;
-  if (reading && !['min', 'pin'].includes(g.dataset.dir)) return;
-  if (g.dataset.dir === 'pin') {
-    e.preventDefault(); e.stopPropagation(); swallowClick = true; setTimeout(() => { swallowClick = false; }, 600);
-    togglePin(g.parentElement); return;
+  const kind = g.dataset.dir;
+  if (reading && !['min', 'pin'].includes(kind)) return;
+  if (['pin', 'float', 'min'].includes(kind)) {           // buttons: act on the press, and ignore the click that follows
+    e.preventDefault(); e.stopPropagation(); swallow();
+    const box = g.parentElement;
+    if (kind === 'pin') togglePin(box);
+    else if (kind === 'float') toggleFloat(box);
+    else { if (box.contains(document.activeElement)) document.activeElement.blur(); setCollapsed(box, true); afterNotesToggle(); }
+    return;
   }
-  if (g.dataset.dir === 'float') {
-    e.preventDefault(); e.stopPropagation(); swallowClick = true; setTimeout(() => { swallowClick = false; }, 600);
-    toggleFloat(g.parentElement); return;
-  }
-  if (g.dataset.dir === 'min') {
-    e.preventDefault(); e.stopPropagation(); swallowClick = true; setTimeout(() => { swallowClick = false; }, 600);
-    const box = g.parentElement; if (box.contains(document.activeElement)) document.activeElement.blur();
-    setCollapsed(box, true); afterNotesToggle(); return;
-  }
-  if (g.dataset.dir === 'move') return startMove(g.parentElement, g, e);
+  if (kind === 'move') return startMove(g.parentElement, g, e);
   e.preventDefault();
   const box = g.parentElement, r = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, dir = g.dataset.dir || 'se';
   const holder = box.closest('.content, .slide') || box.parentElement;
@@ -879,7 +1184,9 @@ main.addEventListener('pointerdown', e => {
   const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); hideGuides(); saveSoon(); };
   g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
 });
+// a press that already did something: the click that ends it is ignored
 let swallowClick = false;
+function swallow(ms = 600){ swallowClick = true; setTimeout(() => { swallowClick = false; }, ms); }
 main.addEventListener('click', e => {
   if (swallowClick) { swallowClick = false; return; }
   const chip = e.target.closest('.note-chip');
@@ -954,7 +1261,7 @@ async function readPptx(buf, name){
   const firstCard = main.children.length;
   const ids = [...pres.getElementsByTagNameNS('*', 'sldId')].map(s => s.getAttribute('r:id'));
   for (let n = 0; n < ids.length; n++) {
-    status(`Reading ${name}: slide ${n + 1} of ${ids.length}`);
+    toast(`Reading ${name}: slide ${n + 1} of ${ids.length}`);
     const path = resolve('ppt/presentation.xml', prel[ids[n]]);
     const doc = await xml(path); if (!doc) continue;
     const srel = rels(await xml(path.replace(/slides\/(slide\d+\.xml)$/, 'slides/_rels/$1.rels')));
@@ -1064,7 +1371,7 @@ async function readPdf(buf, name){
   // first look: pictures that sit in the same place on many pages are template artwork
   const placed = [], count = {};
   for (let p = 1; p <= n; p++) {
-    status(`Reading ${name}: checking page ${p} of ${n}`);
+    toast(`Reading ${name}: checking page ${p} of ${n}`);
     const page = await pdf.getPage(p), vp = page.getViewport({scale: 1}), ops = await page.getOperatorList();
     const keys = new Set(); let ctm = [1, 0, 0, 1, 0, 0]; const stack = [];
     for (let k = 0; k < ops.fnArray.length; k++) {
@@ -1087,7 +1394,7 @@ async function readPdf(buf, name){
   const repeated = Object.keys(count).filter(k => count[k] >= limit).map(k => k.split(',').map(Number));
 
   for (let p = 1; p <= n; p++) {
-    status(`Reading ${name}: page ${p} of ${n}`);
+    toast(`Reading ${name}: page ${p} of ${n}`);
     const page = await pdf.getPage(p);
     const S = 2, v = page.getViewport({scale: S}), W = v.width / S, H = v.height / S;
     const cv = document.createElement('canvas'); cv.width = v.width; cv.height = v.height;
@@ -1117,7 +1424,7 @@ async function readPdf(buf, name){
     const tc = await page.getTextContent();
     const isSlideNo = i => {
       if (!/^\s*\d{1,3}\s*$/.test(i.str || '')) return false;
-      const t = i.transform, [x, y] = v.convertToViewportPoint(t[4], t[5]);
+      const t = i.transform, y = v.convertToViewportPoint(t[4], t[5])[1];
       return y / S > H * 0.85 || y / S < H * 0.08;
     };
     for (const i of tc.items.filter(isSlideNo)) {
@@ -1196,11 +1503,7 @@ function makeStrip(card, y0, y1){
     sp.dataset.w = (w / W).toFixed(5);
     s.append(sp, eol ? document.createElement('br') : document.createTextNode(' '));
   }
-  requestAnimationFrame(() => s.querySelectorAll('.tl').forEach(sp => {
-    if (sp.style.transform || !s.isConnected) return;
-    const target = +sp.dataset.w * s.clientWidth, actual = sp.getBoundingClientRect().width;
-    if (actual > 0 && target > 0) sp.style.transform = `scaleX(${(target / actual).toFixed(4)})`;
-  }));
+  requestAnimationFrame(() => measureStrip(s));
   return s;
 }
 const textCache = new WeakMap();
@@ -1253,7 +1556,7 @@ function blankPage(){
 function addPageAfter(card){
   const {page, note} = blankPage();
   if (card) card.after(page);
-  else { main.querySelector('.empty')?.remove(); main.append(page); }
+  else { main.querySelector('.welcome')?.remove(); main.append(page); }
   if (LAYOUTS[layout]) paginateView();
   page.scrollIntoView({block: 'center', behavior: 'smooth'});
   focusNote(note); updateNotesBtn(); saveSoon();
@@ -1262,7 +1565,7 @@ function addPageAfter(card){
 let lastCard = null;
 main.addEventListener('pointerdown', e => { const c = e.target.closest('.slide'); if (c) lastCard = c; }, true);
 function currentCard(){
-  const a = active && document.body.contains(active) ? active.closest('.slide') : null; if (a) return a;
+  const a = noteActive() ? active.closest('.slide') : null; if (a) return a;
   if (lastCard && lastCard.isConnected) { const r = lastCard.getBoundingClientRect(); if (r.bottom > 0 && r.top < innerHeight) return lastCard; }
   const mid = innerHeight / 2; let best = null;
   for (const c of main.querySelectorAll('.slide')) { const r = c.getBoundingClientRect(); const d = r.top > mid ? r.top - mid : r.bottom < mid ? mid - r.bottom : 0; if (!best || d < best.d) best = {c, d}; }
@@ -1275,7 +1578,7 @@ function markPage(on, del){
 }
 const delBtn = $('#delPageBtn');
 let removeTimer = null;
-function resetRemove(){ clearTimeout(removeTimer); delBtn.textContent = 'Remove page'; delBtn.classList.remove('sure'); }
+function resetRemove(){ clearTimeout(removeTimer); delBtn.querySelector('span').textContent = 'Remove page'; delBtn.classList.remove('sure'); }
 for (const [b, del] of [[$('#addPageBtn'), false], [delBtn, true]]) {
   b.addEventListener('mouseenter', () => markPage(true, del)); b.addEventListener('focus', () => markPage(true, del));
   b.addEventListener('mouseleave', () => { if (!delBtn.classList.contains('sure')) markPage(false); }); b.addEventListener('blur', () => markPage(false));
@@ -1283,9 +1586,9 @@ for (const [b, del] of [[$('#addPageBtn'), false], [delBtn, true]]) {
 $('#addPageBtn').onclick = () => { markPage(false); addPageAfter(currentCard()); };
 delBtn.onclick = () => {
   const card = currentCard();
-  if (!card) { status('There is no page to remove.'); return; }
+  if (!card) { toast('There is no page to remove.'); return; }
   if (!delBtn.classList.contains('sure')) {
-    delBtn.textContent = 'Remove? Click again'; delBtn.classList.add('sure'); markPage(true, true);
+    delBtn.querySelector('span').textContent = 'Remove? Click again'; delBtn.classList.add('sure'); markPage(true, true);
     removeTimer = setTimeout(() => { resetRemove(); markPage(false); }, 3000); return;
   }
   resetRemove(); markPage(false); hideGap(); clearMediaSel();
@@ -1293,7 +1596,7 @@ delBtn.onclick = () => {
   card.remove();
   if (!main.querySelector('.slide')) { main.innerHTML = ''; showEmpty(); }
   if (LAYOUTS[layout]) paginateView();
-  updateNotesBtn(); saveSoon(); status('Page removed. Press ↶ (Back) to bring it back.');
+  updateNotesBtn(); saveSoon(); toast('Page removed. Press Back (Ctrl+Z) to bring it back.');
 };
 
 // put an existing note box at a spot on a page (page units from the top)
@@ -1556,29 +1859,6 @@ function dropRepeats(cards){
   const limit = Math.max(2, Math.ceil(cards.length * 0.3));
   cards.forEach(c => c.querySelectorAll('img[data-k]').forEach(i => { if (count[i.dataset.k] >= limit) i.remove(); }));
 }
-function getObj(page, id){
-  return new Promise(res => {
-    const store = String(id).startsWith('g_') ? page.commonObjs : page.objs;
-    const t = setTimeout(() => res(null), 3000);
-    try { store.get(id, o => { clearTimeout(t); res(o); }); } catch { clearTimeout(t); res(null); }
-  });
-}
-function imgToUrl(img){
-  try {
-    const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
-    const ctx = c.getContext('2d');
-    if (img.bitmap) ctx.drawImage(img.bitmap, 0, 0);
-    else if (img.data) {
-      const id = ctx.createImageData(img.width, img.height), d = img.data, o = id.data, n = img.width * img.height;
-      if (img.kind === 3) o.set(d.subarray(0, n * 4));
-      else if (img.kind === 2) for (let i = 0; i < n; i++) { o[i*4] = d[i*3]; o[i*4+1] = d[i*3+1]; o[i*4+2] = d[i*3+2]; o[i*4+3] = 255; }
-      else { const rb = (img.width + 7) >> 3; for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) { const v = (d[y*rb + (x >> 3)] >> (7 - (x & 7))) & 1 ? 255 : 0; const i = (y*img.width + x) * 4; o[i] = o[i+1] = o[i+2] = v; o[i+3] = 255; } }
-      ctx.putImageData(id, 0, 0);
-    } else return null;
-    return c.toDataURL(img.kind === 3 ? 'image/png' : 'image/jpeg', 0.85);
-  } catch { return null; }
-}
-
 // ---------- Word ----------
 function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.append(s); }); }
 async function readDocx(buf, name){
@@ -1591,62 +1871,98 @@ async function readDocx(buf, name){
 
 // ---------- pictures ----------
 async function readImage(file){
-  const url = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(file); });
+  const url = await readAsUrl(file);
   const card = slideCard();
   card.querySelector('.content').innerHTML = `<img class="blk" alt="${esc(file.name)}" src="${url}">`;
 }
 
-$('#file').onchange = async e => {
-  const picked = [...e.target.files]; e.target.value = '';
-  main.querySelector('.empty')?.remove();
+// open files (from Open, or dropped on the page): each one is added after what is already open
+async function openFiles(picked){
+  if (!picked.length) return;
+  const hadPages = !!main.querySelector('.slide');
+  main.querySelector('.welcome')?.remove();
+  let first = null;
   for (const f of picked) {
     const ext = f.name.split('.').pop().toLowerCase();
     if (ext === 'html' || ext === 'htm') {
       const data = readNotebookHtml(await f.text());
-      if (data) loadNotebook(data, !main.querySelector('.slide')); else status(`“${f.name}” isn't a notebook file saved from this page.`);
+      if (data) loadNotebook(data, !main.querySelector('.slide')); else toast(`“${f.name}” isn't a notebook file saved from this page.`);
       continue;
     }
+    const read = {pptx: readPptx, pdf: readPdf, docx: readDocx}[ext] || (f.type.startsWith('image/') ? readImage : null);
+    if (!read) { toast(`“${f.name}” can't be opened. Use a .pdf, .pptx or .docx file (an old .ppt or .doc file can be saved as one of these).`); continue; }
     const head = document.createElement('h2'); head.className = 'file-head';
     head.textContent = f.name.replace(/\.[^.]+$/, '').replace(/_+/g, ' ').trim();
     main.append(head);
     try {
-      if (ext === 'pptx') await readPptx(await f.arrayBuffer(), f.name);
-      else if (ext === 'pdf') await readPdf(await f.arrayBuffer(), f.name);
-      else if (ext === 'docx') await readDocx(await f.arrayBuffer(), f.name);
-      else if (f.type.startsWith('image/')) await readImage(f);
-      else { status(`“${f.name}” can't be opened. Use a .pptx, .pdf or .docx file (an old .ppt or .doc file can be saved as one of these).`); continue; }
-      status('');
-    } catch (err) { console.error(err); status(`“${f.name}” couldn't be read. Try saving it as a PDF and opening that.`); }
+      await (read === readImage ? readImage(f) : read(await f.arrayBuffer(), f.name));
+      first ??= head;
+      toast('');
+    } catch (err) {
+      console.error(err); toast(`“${f.name}” couldn't be read. Try saving it as a PDF and opening that.`);
+      if (!head.nextElementSibling) head.remove();
+    }
   }
   if (!main.children.length) showEmpty();
   paginateView();
   saveSoon();
-};
+  if (hadPages && first?.isConnected) first.scrollIntoView({block: 'start', behavior: smoothScroll()});
+}
+$('#file').onchange = e => { const picked = [...e.target.files]; e.target.value = ''; openFiles(picked); };
+$('#openBtn').onclick = () => $('#file').click();
+main.addEventListener('click', e => { if (e.target.closest('[data-open]')) $('#file').click(); });
+const smoothScroll = () => matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
 
+let clearTimer = null;
 $('#clear').onclick = () => {
-  const b = $('#clear');
-  if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'Remove everything?'; setTimeout(() => { b.dataset.sure = ''; b.textContent = 'Clear all'; }, 3000); return; }
-  b.dataset.sure = ''; b.textContent = 'Clear all';
-  main.innerHTML = ''; slideCount = 0; clearMediaSel(); active = null; savedRange = null; showEmpty(); paginateView(); saveSoon();
+  const b = $('#clear'), label = b.querySelector('span');
+  clearTimeout(clearTimer);
+  if (!b.classList.contains('sure')) {
+    b.classList.add('sure'); label.textContent = 'Remove everything? Click again';
+    clearTimer = setTimeout(() => { b.classList.remove('sure'); label.textContent = 'Clear everything'; }, 3000);
+    return;
+  }
+  b.classList.remove('sure'); label.textContent = 'Clear everything';
+  main.innerHTML = ''; clearMediaSel(); clearMulti(); active = null; savedRange = null; showEmpty(); paginateView(); saveSoon();
+  toast('Everything was cleared. Press Back (Ctrl+Z) to bring it back.');
 };
 function showEmpty(){ main.append($('#emptyTpl').content.cloneNode(true)); }
 
 /* ================= remember in this browser ================= */
 let db = null, timer = null;
 function openDb(){ return new Promise(res => { try { const r = indexedDB.open('between-slides-text', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch { res(null); } }); }
-function put(k, v){ try { db && db.transaction('kv', 'readwrite').objectStore('kv').put(v, k); } catch {} }
 function get(k){ return new Promise(res => { try { const r = db.transaction('kv').objectStore('kv').get(k); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch { res(null); } }); }
+// store several values at once; true once they are safely written
+function putAll(values){
+  return new Promise(res => {
+    if (!db) return res(false);
+    try {
+      const tx = db.transaction('kv', 'readwrite'), store = tx.objectStore('kv');
+      for (const [k, v] of Object.entries(values)) store.put(v, k);
+      tx.oncomplete = () => res(true); tx.onerror = tx.onabort = () => res(false);
+    } catch { res(false); }
+  });
+}
+// the note beside the file name: saving, saved, or (storage full or blocked) not saved
+function setSaveState(s){
+  const el = $('#saveState'); if (el.dataset.s === s) return;
+  el.dataset.s = s;
+  el.innerHTML = icon(s === 'error' ? 'alert' : 'saved') + `<span>${{saved: 'Saved in this browser', saving: 'Saving…', error: 'Not saved in this browser'}[s]}</span>`;
+  el.title = s === 'error' ? 'This browser’s storage is full or blocked. Download a notebook file to keep your work.' : 'Your work is saved automatically in this browser';
+}
 function saveSoon(){
   placeFloats();
-  paginateSoon(); updateNotesBtn();
+  paginateSoon(); updateNotesBtn(); panelsSoon();
+  setSaveState('saving');
   clearTimeout(timer);
   timer = setTimeout(saveNow, 500);
 }
-function saveNow(){
+async function saveNow(){
   timer = null;
-  const doc = main.querySelector('.empty') ? '' : currentDoc();
-  put('doc', doc); put('style', style); put('count', slideCount);
+  const doc = main.querySelector('.welcome') ? '' : currentDoc();
   snapshot(doc);
+  const ok = await putAll({doc, style});
+  if (!timer) setSaveState(ok ? 'saved' : 'error');
 }
 // save straight away if a save is waiting (e.g. before going Back)
 function flushSave(){ if (timer) { clearTimeout(timer); saveNow(); } }
@@ -1658,8 +1974,8 @@ function notebookName(){
 }
 function currentDoc(){
   const c = main.cloneNode(true);
-  c.querySelectorAll('.gapline, .gappill, .empty, .cardbar').forEach(x => x.remove());
-  c.querySelectorAll('.media-sel, .target-page, .multi-sel').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel'));
+  c.querySelectorAll('.gapline, .gappill, .welcome, .empty, .cardbar').forEach(x => x.remove());
+  c.querySelectorAll('.media-sel, .target-page, .multi-sel, .flash').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel', 'flash'));
   c.querySelectorAll('.mine').forEach(x => { x.contentEditable = 'true'; });
   flatten(c);
   return c.innerHTML;
@@ -1676,11 +1992,8 @@ async function saveFile(filename, blob){
 
 // Notebook file: this whole app plus your pages and notes, in one .html file you can open anywhere
 async function downloadNotebook(){
-  const data = JSON.stringify({v: 1, doc: currentDoc(), style, count: slideCount, favs}).replace(/</g, '\\u003c');
-  const html = '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
-    '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">' +
-    '<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>' +
-    `<script id="notebook-data" type="application/json">${data}<\/script>` + APP_HTML + '</body></html>';
+  const data = JSON.stringify({v: 1, doc: currentDoc(), style, favs}).replace(/</g, '\\u003c');
+  const html = APP_HTML.replace(/<body[^>]*>/, m => `${m}\n<script id="notebook-data" type="application/json">${data}<\/script>`);
   await saveFile(notebookName() + ' (notes).html', new Blob([html], {type: 'text/html'}));
 }
 function readNotebookHtml(text){
@@ -1691,8 +2004,8 @@ function readNotebookHtml(text){
 function loadNotebook(data, replace){
   if (Array.isArray(data.favs)) { const add = data.favs.filter(c => /^#[0-9a-f]{6}$/i.test(c) && !favs.includes(c.toLowerCase())).map(c => c.toLowerCase()); if (add.length) { favs = favs.concat(add).slice(0, 16); storeFavs(); } }
   if (data.style) { style = data.style; showStyle(style); }
-  if (replace) { main.innerHTML = data.doc || ''; slideCount = data.count || 0; }
-  else { main.querySelector('.empty')?.remove(); main.insertAdjacentHTML('beforeend', data.doc || ''); }
+  if (replace) main.innerHTML = data.doc || '';
+  else { main.querySelector('.welcome')?.remove(); main.insertAdjacentHTML('beforeend', data.doc || ''); }
   main.querySelectorAll('.slide-label, .gapline, .gappill').forEach(e => e.remove());
   upgradeNotes(); applyReadMode();
   if (!main.children.length) showEmpty();
@@ -1847,7 +2160,7 @@ async function downloadPdf(){
     const cards = size ? [...main.querySelectorAll('.sheet')] : [...main.querySelectorAll('.slide')];
     const pages = [];
     for (let i = 0; i < cards.length; i++) {
-      status(`Making your PDF: page ${i + 1} of ${cards.length}`);
+      toast(`Making your PDF: page ${i + 1} of ${cards.length}`);
       const card = cards[i], cr = card.getBoundingClientRect();
       const annots = [];
       if (mode === 'comments') for (const b of card.querySelectorAll('.notebox')) {
@@ -1870,14 +2183,14 @@ async function downloadPdf(){
 
 // page sizes in points (1/72 inch)
 const LAYOUTS = {'default': null, 'a4-portrait': [595.28, 841.89], 'a4-landscape': [841.89, 595.28], 'a3-portrait': [841.89, 1190.55], 'a3-landscape': [1190.55, 841.89]};
-let layout = 'default';
-try { const l = localStorage.getItem('pdf-layout'); if (l && l in LAYOUTS) layout = l; } catch {}
+let layout = pref.get('pdf-layout', 'default');
+if (!(layout in LAYOUTS)) layout = 'default';
 $('#layout').value = layout;
-$('#layout').onchange = e => { layout = e.target.value; try { localStorage.setItem('pdf-layout', layout); } catch {} paginateView(); };
+$('#layout').onchange = e => { layout = e.target.value; pref.set('pdf-layout', layout); paginateView(); };
 // ================= page layout on screen: A4 / A3 sheets, portrait or landscape =================
 let viewZoom = 1, pageTimer = null;
 const pxSize = ([pw, ph]) => [Math.round(pw * 96 / 72), Math.round(ph * 96 / 72)];   // points to screen pixels
-const SHEET_MARGIN = 48, SHEET_GAP = 14;
+const SHEET_MARGIN = 48;
 // undo the sheets: back to one list of headings and slides, with split slides joined up again
 // how much an element is shrunk on screen by the page view and slide fitting
 function zoomOf(el){ let z = 1; for (let n = el; n && n.style; n = n.parentElement) { const v = parseFloat(n.style.zoom); if (v) z *= v; } return z; }
@@ -1915,7 +2228,7 @@ function paginateView(){
   } else {
     const [W, H] = pxSize(size);
     main.style.setProperty('--sheet-w', W + 'px'); main.style.setProperty('--sheet-h', H + 'px');
-    const avail = document.documentElement.clientWidth - 32;
+    const avail = main.getBoundingClientRect().width - 32;       // the page column, between the side panels
     viewZoom = Math.min(1, avail / W); main.style.zoom = viewZoom === 1 ? '' : viewZoom;
     // like Default: each slide (with its notes) gets its own sheet, shrunk to fit if it is too big
     const z = viewZoom, ROOM = (H - 2 * SHEET_MARGIN) * z;
@@ -1948,10 +2261,12 @@ function paginateView(){
   }
 }
 function paginateSoon(){ if (LAYOUTS[layout]) { clearTimeout(pageTimer); pageTimer = setTimeout(paginateView, 700); } }
+// the page column changed width (window resized, a side panel opened or closed)
+function relayout(){ if (LAYOUTS[layout]) paginateView(); else { placeFloats(); spreadChips(); } }
 let resizeTimer = null;
-window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (LAYOUTS[layout]) paginateView(); else { placeFloats(); spreadChips(); } }, 250); });
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(relayout, 250); });
 
-$('#notesToggle').onclick = () => {
+document.querySelectorAll('.notes-toggle').forEach(b => b.onclick = () => {
   const hide = notesBtnMode() === 'hide';            // do exactly what the button says
   if (hide && document.activeElement?.closest?.('.notebox')) document.activeElement.blur();
   for (const b of main.querySelectorAll('.notebox')) {
@@ -1959,11 +2274,11 @@ $('#notesToggle').onclick = () => {
     else b.classList.remove('collapsed');             // every note opens, pinned or not
   }
   afterNotesToggle();
-};
+});
 // ================= box outline & fill =================
 const CHIP = '#ffd54a';            // the usual yellow ✎ icon
 let boxStyle = {outline: true, border: '#9aa3b2', fill: '', chip: CHIP};
-try { const b = JSON.parse(localStorage.getItem('box-style') || 'null'); if (b) boxStyle = Object.assign(boxStyle, b); } catch {}
+Object.assign(boxStyle, pref.json('box-style', {}));
 function applyBoxVars(box, b){
   box.classList.toggle('no-outline', !b.outline);
   box.style.setProperty('--nb-border', b.border);
@@ -1994,14 +2309,14 @@ function setBox(kind, value){
     multi.forEach(bx => { const b = boxOf(bx); if (kind === 'outline') b.outline = value; if (kind === 'border') { b.border = value; b.outline = true; } if (kind === 'fill') b.fill = value; if (kind === 'chip') b.chip = value; applyBoxVars(bx, b); });
     showBox(boxOf([...multi][0])); saveSoon(); return;
   }
-  const box = active && document.body.contains(active) ? active.closest('.notebox') : null;
+  const box = noteActive() ? active.closest('.notebox') : null;
   const b = box ? boxOf(box) : boxStyle;
   if (kind === 'outline') b.outline = value;
   if (kind === 'border') { b.border = value; b.outline = true; }
   if (kind === 'fill') b.fill = value;
   if (kind === 'chip') b.chip = value;
   if (box) applyBoxVars(box, b);
-  else { boxStyle = b; try { localStorage.setItem('box-style', JSON.stringify(boxStyle)); } catch {} }
+  else { boxStyle = b; pref.setJson('box-style', boxStyle); }
   showBox(b); saveSoon();
 }
 $('#bOutline').onchange = e => setBox('outline', e.target.checked);
@@ -2011,13 +2326,13 @@ $('#bNoFill').onclick = () => setBox('fill', '');
 $('#bChip').oninput = e => setBox('chip', e.target.value);
 showBox(boxStyle);
 
-// right-click (or press and hold) a minimised note's ✎ icon to colour it
+// right-click (or press and hold) a minimised note's pencil icon to colour it
 const CHIP_COLORS = [['#ffd54a', 'Yellow'], ['#ff9f43', 'Orange'], ['#ef5350', 'Red'], ['#f48fb1', 'Pink'], ['#ab47bc', 'Purple'],
   ['#42a5f5', 'Blue'], ['#26c6da', 'Teal'], ['#66bb6a', 'Green'], ['#8d6e63', 'Brown'], ['#78909c', 'Grey'], ['#263238', 'Black']];
-const chipPop = document.createElement('div'); chipPop.className = 'chippop'; chipPop.hidden = true;
+const chipPop = document.createElement('div'); chipPop.className = 'pop chippop'; chipPop.hidden = true;
 chipPop.innerHTML = '<div class="ttl">Icon colour</div><div class="row">' + CHIP_COLORS.map(([c, n]) => `<button type="button" class="cc" data-c="${c}" title="${n}" aria-label="${n}" style="background:${c}"></button>`).join('') +
-  '</div><div class="lbl">★ Favourites</div><div class="row favrow"></div>' +
-  '<div class="row"><input type="color" aria-label="Any colour" title="Any colour"><button type="button" class="txt" data-save title="Save this icon colour to your favourites">☆ Save</button><button type="button" class="txt" data-reset>Reset</button><button type="button" class="txt" data-all title="Use this colour for new notes too">Use for new notes</button></div>';
+  '</div><div class="lbl">Favourites</div><div class="row favrow"></div>' +
+  '<div class="row"><input type="color" aria-label="Any colour" title="Any colour"><button type="button" class="btn outline" data-save title="Save this icon colour to your favourites">Save</button><button type="button" class="btn outline" data-reset>Reset</button><button type="button" class="btn outline" data-all title="Use this colour for new notes too">Use for new notes</button></div>';
 document.body.append(chipPop);
 let chipBox = null, chipFrom = null;       // the note whose icon is being coloured (null: the colour for new notes), and what opened the menu
 const chipNow = () => chipBox ? chipOf(chipBox) : (boxStyle.chip || CHIP);
@@ -2055,7 +2370,7 @@ function closeChipPop(){ chipPop.hidden = true; chipBox = null; chipFrom = null;
 function pickChip(c){
   if (chipMulti && multi.size) { multi.forEach(b => setChipColor(b, c, true)); saveSoon(); markChip(); return; }
   if (chipBox) { setChipColor(chipBox, c); if (active && chipBox.contains(active)) showBox(boxOf(chipBox)); }
-  else { boxStyle.chip = c; try { localStorage.setItem('box-style', JSON.stringify(boxStyle)); } catch {} if (!active || !document.body.contains(active)) showBox(boxStyle); }
+  else { boxStyle.chip = c; pref.setJson('box-style', boxStyle); if (!noteActive()) showBox(boxStyle); }
   markChip();
 }
 chipPop.addEventListener('mousedown', e => { if (e.target.tagName !== 'INPUT') e.preventDefault(); });
@@ -2066,45 +2381,41 @@ chipPop.addEventListener('click', e => {
   else if ('save' in b.dataset) addFav(chipNow());
   else if ('reset' in b.dataset) { pickChip(CHIP); closeChipPop(); }
   else if ('all' in b.dataset && chipBox) {
-    boxStyle.chip = chipOf(chipBox); try { localStorage.setItem('box-style', JSON.stringify(boxStyle)); } catch {}
-    if (!active) showBox(boxStyle); status('New notes will get this icon colour.'); closeChipPop();
+    boxStyle.chip = chipOf(chipBox); pref.setJson('box-style', boxStyle);
+    if (!active) showBox(boxStyle); toast('New notes will get this icon colour.'); closeChipPop();
   }
 });
 chipPop.querySelector('input').addEventListener('input', e => pickChip(e.target.value));
 document.addEventListener('mousedown', e => { if (!chipPop.hidden && !chipPop.contains(e.target) && e.target !== chipFrom) closeChipPop(); });
-// ★ in the toolbar: icon colours for the note you're in, or for new notes
-$('#favChipBtn').addEventListener('mousedown', e => e.preventDefault());
+// Icon colours in the Box tab: for the note you're in, or for new notes
 $('#favChipBtn').onclick = e => {
   if (!chipPop.hidden && chipFrom === e.currentTarget) { closeChipPop(); return; }
-  const box = multi.size ? [...multi][0] : active && document.body.contains(active) ? active.closest('.notebox') : null, r = e.currentTarget.getBoundingClientRect();
+  const box = multi.size ? [...multi][0] : noteActive() ? active.closest('.notebox') : null, r = e.currentTarget.getBoundingClientRect();
   openChipPop(box, r.left, r.bottom - 6, e.currentTarget);
   chipMulti = multi.size > 0;
   if (chipMulti) { chipPop.querySelector('.ttl').textContent = `Icon colour for ${multi.size} selected note${multi.size > 1 ? 's' : ''}`; chipPop.querySelector('[data-all]').hidden = true; }
 };
 
 // ================= favourite colours: one list, used for text colours and ✎ icon colours =================
-let favs = [];
-try { favs = (JSON.parse(localStorage.getItem('fav-colors') || '[]') || []).filter(c => /^#[0-9a-f]{6}$/i.test(c)); } catch {}
-function storeFavs(){ try { localStorage.setItem('fav-colors', JSON.stringify(favs)); } catch {} renderFavs(); }
+let favs = [].concat(pref.json('fav-colors', [])).filter(c => /^#[0-9a-f]{6}$/i.test(c));
+function storeFavs(){ pref.setJson('fav-colors', favs); renderFavs(); }
 function addFav(c){
   c = (c || '').toLowerCase(); if (!/^#[0-9a-f]{6}$/.test(c)) return;
-  if (favs.includes(c)) { status('That colour is already in your favourites.'); return; }
-  if (favs.length >= 16) { status('You have 16 favourites: right-click one (or press and hold) to remove it first.'); return; }
-  favs.push(c); storeFavs(); status('Saved to your favourite colours ★');
+  if (favs.includes(c)) { toast('That colour is already in your favourites.'); return; }
+  if (favs.length >= 16) { toast('You have 16 favourites: right-click one (or press and hold) to remove it first.'); return; }
+  favs.push(c); storeFavs(); toast('Saved to your favourite colours.');
 }
-function removeFav(c){ favs = favs.filter(x => x !== c); storeFavs(); status('Removed from your favourite colours.'); }
+function removeFav(c){ favs = favs.filter(x => x !== c); storeFavs(); toast('Removed from your favourite colours.'); }
 function renderFavs(){
-  const sw = c => `<button type="button" class="sw fav" data-c="${c}" style="background:${c}" title="${c}: click to use · right-click (or press and hold) to remove" aria-label="Favourite colour ${c}"></button>`;
+  const sw = c => `<button type="button" class="sw fav" data-c="${c}" style="--c:${c}" title="${c}: click to use · right-click (or press and hold) to remove" aria-label="Favourite colour ${c}"></button>`;
   $('#favText').innerHTML = favs.map(sw).join('');
   chipPop.querySelector('.favrow').innerHTML = favs.map(c => `<button type="button" class="cc fav" data-c="${c}" style="background:${c}" title="${c}: click to use · right-click (or press and hold) to remove" aria-label="Favourite colour ${c}"></button>`).join('');
   const cur = $('#color').value.toLowerCase();
   $('#favText').querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === cur));
   if (!chipPop.hidden) markChip();
-  if (typeof renderFavManage === 'function') renderFavManage();
+  renderFavManage();
 }
-$('#favText').addEventListener('mousedown', e => e.preventDefault());       // keep the selected words selected
 $('#favText').addEventListener('click', e => { const b = e.target.closest('.fav'); if (!b) return; if (favHeld) { favHeld = false; return; } apply('color', b.dataset.c); });
-$('#favTextSave').addEventListener('mousedown', e => e.preventDefault());
 $('#favTextSave').onclick = () => addFav($('#color').value);
 // remove a favourite: right-click, or press and hold on a touch screen
 let favHeld = false;
@@ -2118,8 +2429,6 @@ document.addEventListener('pointerdown', e => {
 });
 renderFavs();
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !chipPop.hidden) closeChipPop(); });
-addEventListener('scroll', () => requestAnimationFrame(followChip), {passive: true});
-addEventListener('resize', () => requestAnimationFrame(followChip));
 main.addEventListener('contextmenu', e => {
   const chip = e.target.closest('.note-chip'); if (!chip) return;
   e.preventDefault(); openChipPop(chip.parentElement, e.clientX, e.clientY);
@@ -2187,7 +2496,7 @@ const fPanel = $('#formulaPanel'), fInput = $('#fInput'), fPreview = $('#fPrevie
 async function openFormula(existing){
   editingFormula = existing || null;
   if (!existing) {
-    if (!active || !document.body.contains(active) || !savedRange) { status('Click inside a note first, then press ∑ Formula.'); return; }
+    if (!noteActive() || !savedRange) { toast('Click inside a note first, then press Formula.'); return; }
     formulaRange = savedRange.cloneRange();
   }
   fInput.value = existing ? existing.dataset.src || '' : '';
@@ -2233,8 +2542,8 @@ $('#fBtn').onclick = () => openFormula(null);
 function readAsUrl(file){ return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(file); }); }
 let mediaTarget = null;
 $('#mediaBtn').onclick = () => {
-  mediaTarget = active && document.body.contains(active) ? {note: active, range: savedRange && savedRange.cloneRange()} : null;
-  if (!mediaTarget && !main.querySelector('.slide')) { status('Open your slides first (or add a page), then insert media.'); return; }
+  mediaTarget = noteActive() ? {note: active, range: savedRange && savedRange.cloneRange()} : null;
+  if (!mediaTarget && !main.querySelector('.slide')) { toast('Open your slides first (or add a page), then insert media.'); return; }
   $('#mediaFile').click();
 };
 $('#mediaFile').onchange = async e => {
@@ -2253,8 +2562,8 @@ async function insertMediaFiles(files, note, range){
   const nodes = [];
   for (const f of files) {
     const kind = f.type.split('/')[0];
-    if (!['image', 'video', 'audio'].includes(kind)) { status(`“${f.name}” isn't a picture, video or sound file.`); continue; }
-    if (f.size > 40e6) status(`“${f.name}” is large, so saving may be slow.`);
+    if (!['image', 'video', 'audio'].includes(kind)) { toast(`“${f.name}” isn't a picture, video or sound file.`); continue; }
+    if (f.size > 40e6) toast(`“${f.name}” is large, so saving may be slow.`);
     const url = await readAsUrl(f);
     const wrap = document.createElement('span'); wrap.className = 'media'; wrap.contentEditable = 'false'; wrap.title = 'Click to select (resize or remove)';
     const m = document.createElement(kind === 'image' ? 'img' : kind);
@@ -2272,7 +2581,7 @@ async function insertMediaFiles(files, note, range){
   const r = document.createRange(); r.setStartAfter(last); r.collapse(true);
   const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
   active = note; savedRange = r.cloneRange();
-  updateNotesBtn(); saveSoon(); status('');
+  updateNotesBtn(); saveSoon(); toast('');
 }
 // pasting or dropping a picture, video or sound file into a note inserts it like 🖼 Media
 main.addEventListener('paste', e => {
@@ -2292,8 +2601,9 @@ main.addEventListener('drop', e => {
   insertMediaFiles(files, note, range);
 });
 // click a picture, video or sound (yours or one in the slides) to select it: resize it, add a note under it, or remove it
-const mediaBar = document.createElement('div'); mediaBar.className = 'mediabar'; mediaBar.hidden = true;
-mediaBar.innerHTML = '<button type="button" data-w="25%">Small</button><button type="button" data-w="50%">Medium</button><button type="button" data-w="75%">Large</button><button type="button" data-w="100%">Full width</button><button type="button" data-act="note">+ Note below</button><button type="button" data-act="remove" class="danger">Remove</button>';
+const mediaBar = document.createElement('div'); mediaBar.className = 'pop mediabar'; mediaBar.hidden = true;
+mediaBar.innerHTML = ['25%:Small', '50%:Medium', '75%:Large', '100%:Full width'].map(x => { const [w, t] = x.split(':'); return `<button type="button" class="btn" data-w="${w}">${t}</button>`; }).join('') +
+  '<button type="button" class="btn" data-act="note">+ Note below</button><button type="button" class="btn danger" data-act="remove">' + icon('trash') + 'Remove</button>';
 document.body.append(mediaBar);
 let mediaSel = null;
 function selectMedia(el){
@@ -2310,14 +2620,12 @@ function placeMediaBar(){
   mediaBar.style.left = Math.max(12, Math.min(innerWidth - w - 12, r.left)) + 'px';
   mediaBar.style.top = (r.bottom + h + 12 < innerHeight ? r.bottom + 8 : Math.max(8, r.top - h - 8)) + 'px';
 }
-addEventListener('scroll', () => requestAnimationFrame(placeMediaBar), {passive: true});
-addEventListener('resize', () => requestAnimationFrame(placeMediaBar));
 function removeMedia(){
   if (!mediaSel) return;
   const el = mediaSel, note = el.closest('.mine'); clearMediaSel();
   const nx = el.nextSibling; if (note && nx && nx.nodeType === 3 && nx.data === ' ') nx.remove();
   el.remove();
-  status('Removed. Press ↶ (Back) to bring it back.');
+  toast('Removed. Press Back (Ctrl+Z) to bring it back.');
   if (note && !note.textContent.trim() && !note.querySelector('img, .media')) focusNote(note);
   saveSoon();
 }
@@ -2339,15 +2647,19 @@ document.addEventListener('keydown', e => {
 function applyReadMode(){
   main.classList.toggle('reading', reading); document.body.classList.toggle('reading', reading);
   main.querySelectorAll('.mine').forEach(el => { el.contentEditable = reading ? 'false' : 'true'; });
-  const b = $('#readBtn'); b.setAttribute('aria-pressed', reading); b.textContent = reading ? '✎ Back to editing' : '📖 Study mode';
+  const b = $('#readBtn'); b.setAttribute('aria-pressed', reading);
+  b.innerHTML = icon(reading ? 'pen' : 'book') + `<span class="lbl">${reading ? 'Back to editing' : 'Study mode'}</span>`;
+  // the editing tabs are put away while you study, and come back after
+  if (reading && ribbonTab !== 'view') { tabBeforeStudy = ribbonTab; selectTab('view'); }
+  else if (!reading && tabBeforeStudy) { selectTab(tabBeforeStudy); tabBeforeStudy = null; }
   updateUndoBtns();
 }
 $('#readBtn').onclick = () => {
   reading = !reading;
-  try { localStorage.setItem('study-mode', reading ? '1' : '0'); } catch {}
+  pref.set('study-mode', reading ? '1' : '0');
   if (reading) { if (document.activeElement?.closest?.('.mine')) document.activeElement.blur(); active = null; savedRange = null; hideGap(); clearMediaSel(); fPanel.hidden = true; }
-  applyReadMode(); hint(); spellAll();
-  status(reading ? 'Study mode: nothing can be changed by accident. You can still open and minimise notes.' : '');
+  applyReadMode(); spellAll();
+  toast(reading ? 'Study mode: nothing can be changed by accident. You can still open and minimise notes.' : '');
 };
 
 // ================= spell check =================
@@ -2357,9 +2669,9 @@ const SPELL_LIB = 'https://cdn.jsdelivr.net/npm/typo-js@1.2.4/typo.js';
 const SPELL_DICTS = {'en-US': ['https://cdn.jsdelivr.net/npm/dictionary-en@4.0.0/index', 'en_US'], 'en-GB': ['https://cdn.jsdelivr.net/npm/dictionary-en-gb@3.0.0/index', 'en_GB']};
 const canHighlight = !!(window.CSS && CSS.highlights && window.Highlight);
 let spellLang = /^en-(GB|AU|NZ|IE|ZA|IN)/i.test(navigator.language || '') ? 'en-GB' : 'en-US';
-try { const l = localStorage.getItem('spell-lang'); if (l && (l in SPELL_DICTS || l === 'off')) spellLang = l; } catch {}
-let spellDict = null, spellFailed = false, spellLoading = null, spellCache = new Map();
-let userWords = new Set(); try { userWords = new Set(JSON.parse(localStorage.getItem('spell-words') || '[]')); } catch {}
+{ const l = pref.get('spell-lang'); if (l && (l in SPELL_DICTS || l === 'off')) spellLang = l; }
+let spellDict = null, spellLoading = null, spellCache = new Map();
+let userWords = new Set([].concat(pref.json('spell-words', [])));
 const ignoredWords = new Set();
 const spellHl = canHighlight ? new Highlight() : null;
 if (spellHl) CSS.highlights.set('spell', spellHl);
@@ -2395,10 +2707,10 @@ function loadSpell(){
       const [base, code] = SPELL_DICTS[lang];
       const [aff, dic] = await Promise.all([spellFetch(base + '.aff'), spellFetch(base + '.dic')]);
       await new Promise(r => setTimeout(r, 0));
-      if (lang === spellLang) { spellDict = new Typo(code, aff, dic); spellFailed = false; spellCache = new Map(); spellRetry = 0; }
+      if (lang === spellLang) { spellDict = new Typo(code, aff, dic); spellCache = new Map(); spellRetry = 0; }
     } catch (err) {
       console.warn('Spell check dictionary could not load; using the browser spell check', err);
-      spellFailed = true; spellDict = null;
+      spellDict = null;
       if (spellRetry++ < 3) setTimeout(loadSpell, 5000 * spellRetry);       // try again later (e.g. back online)
     }
     spellLoading = null; spellAll();
@@ -2468,17 +2780,17 @@ function spellAll(){
   paintSpell();
 }
 // moving the cursor off a word you just typed marks it if it is misspelt
-document.addEventListener('selectionchange', () => { if (spellDict && active && document.body.contains(active)) spellSoon(active); });
+document.addEventListener('selectionchange', () => { if (spellDict && noteActive()) spellSoon(active); });
 const spellSel = $('#spellLang'); spellSel.value = spellLang;
 spellSel.onchange = () => {
-  spellLang = spellSel.value; try { localStorage.setItem('spell-lang', spellLang); } catch {}
+  spellLang = spellSel.value; pref.set('spell-lang', spellLang);
   document.documentElement.lang = spellLang === 'off' ? 'en' : spellLang; spellRetry = 0;
-  spellDict = null; spellFailed = false; spellLoading = null; spellCache = new Map();
+  spellDict = null; spellLoading = null; spellCache = new Map();
   spellAll(); loadSpell();
-  if (active && document.body.contains(active)) restoreSel();
+  if (noteActive()) restoreSel();
 };
 // the suggestions menu
-const spellMenu = document.createElement('div'); spellMenu.className = 'spellmenu'; spellMenu.hidden = true; spellMenu.setAttribute('role', 'menu');
+const spellMenu = document.createElement('div'); spellMenu.className = 'pop spellmenu'; spellMenu.hidden = true; spellMenu.setAttribute('role', 'menu');
 document.body.append(spellMenu);
 let spellHitNow = null;
 function spellHit(note, x, y){
@@ -2502,7 +2814,7 @@ function hitRange(hit){
 function fixWord(hit, w){
   const note = hit.note, sel = getSelection();
   let r = hitRange(hit);
-  if (!r) { status('That word has changed, so it can’t be replaced.'); return; }
+  if (!r) { toast('That word has changed, so it can’t be replaced.'); return; }
   note.focus({preventScroll: true});
   sel.removeAllRanges(); sel.addRange(r);
   const before = note.textContent;
@@ -2544,7 +2856,7 @@ function spellAct(b){
   if (b.dataset.act === 'fix') fixWord(hit, b.dataset.w);
   else {
     const lw = hit.word.toLowerCase();
-    if (b.dataset.act === 'add') { userWords.add(lw); saveUserWords(); status(`“${hit.word}” added to your dictionary.`); }
+    if (b.dataset.act === 'add') { userWords.add(lw); saveUserWords(); toast(`“${hit.word}” added to your dictionary.`); }
     else ignoredWords.add(lw);
     spellCache = new Map(); spellAll();
     hit.note.focus({preventScroll: true});
@@ -2560,7 +2872,7 @@ spellMenu.addEventListener('pointerdown', e => {
   const b = e.target.closest('button'); if (!b) return;
   spellPressed = true; setTimeout(() => { spellPressed = false; }, 700);
   // the menu closes now, so the click that ends this press would land on the page underneath: ignore it
-  swallowClick = true; setTimeout(() => { swallowClick = false; }, 700);
+  swallow(700);
   spellAct(b);
 });
 spellMenu.addEventListener('click', e => { if (spellPressed) { spellPressed = false; return; } spellAct(e.target.closest('button')); });
@@ -2578,12 +2890,12 @@ document.addEventListener('keydown', e => {
 }, true);
 document.addEventListener('mousedown', e => { if (!spellMenu.hidden && !spellMenu.contains(e.target)) closeSpellMenu(); });
 // the menu stays with its word when the page scrolls (it closes only if the word scrolls out of sight)
-addEventListener('scroll', () => requestAnimationFrame(() => {
+function followSpellMenu(){
   if (spellMenu.hidden || !spellHitNow) return;
   const r = hitRange(spellHitNow), q = r && r.getBoundingClientRect();
   if (!q || q.bottom < 0 || q.top > innerHeight) { closeSpellMenu(); return; }
   spellAt = {x: q.left + Math.min(q.width / 2, 20), y: q.bottom}; placeSpellMenu(spellAt.x, spellAt.y);
-}), {passive: true});
+}
 main.addEventListener('contextmenu', e => {
   if (!spellDict || reading) return;
   const note = e.target.closest('.mine'); if (!note) return;
@@ -2652,11 +2964,11 @@ function clearMulti(){
   showStyle(style); showBox(boxStyle);
 }
 function selectAllNotes(card){
-  if (reading) { status('Select all works when you’re editing (not in Study mode).'); return; }
+  if (reading) { toast('Select all works when you’re editing (not in Study mode).'); return; }
   card = card || currentCard();
   // (an empty note you just clicked into is about to disappear, so it isn't counted)
-  const boxes = card ? [...card.querySelectorAll('.notebox')].filter(b => { const m = b.querySelector(':scope > .mine'); return m && (m.textContent.trim() || m.querySelector('img, .media, .formula')); }) : [];
-  if (!boxes.length) { status('There are no notes on this page to select.'); return; }
+  const boxes = card ? [...card.querySelectorAll('.notebox')].filter(hasContent) : [];
+  if (!boxes.length) { toast('There are no notes on this page to select.'); return; }
   if (document.activeElement?.closest?.('.mine')) document.activeElement.blur();
   getSelection().removeAllRanges(); active = null; savedRange = null;
   clearMulti();
@@ -2664,7 +2976,7 @@ function selectAllNotes(card){
   $('#multiCount').textContent = `${boxes.length} note${boxes.length > 1 ? 's' : ''} selected`;
   $('#multibar').hidden = false; document.body.classList.add('multi');
   showStyle(noteStyle(boxes[0].querySelector('.mine'))); showBox(boxOf(boxes[0]));
-  status('Change the font, size or colours in the toolbar, drag a ✥ handle or use the arrow keys to move them, or press Delete. Esc to finish.');
+  toast('Change the font, size or colours in the toolbar, drag a move handle or use the arrow keys to move them, or press Delete. Esc to finish.');
 }
 function deleteMulti(){
   const n = multi.size; if (!n) return;
@@ -2672,7 +2984,7 @@ function deleteMulti(){
   multi.clear(); clearMulti(); $('#multibar').hidden = true; document.body.classList.remove('multi');
   if (LAYOUTS[layout]) paginateView();
   updateNotesBtn(); saveSoon();
-  status(`Deleted ${n} note${n > 1 ? 's' : ''}. Press ↶ Back to bring ${n > 1 ? 'them' : 'it'} back.`);
+  toast(`Deleted ${n} note${n > 1 ? 's' : ''}. Press Back (Ctrl+Z) to bring ${n > 1 ? 'them' : 'it'} back.`);
 }
 // nudge with the arrow keys (Shift: 10 px). Notes between the lines move across; floating notes move anywhere
 function nudgeMulti(dx, dy){
@@ -2683,7 +2995,7 @@ function nudgeMulti(dx, dy){
   }
   placeFloats(); spreadChips(); saveSoon();
 }
-// drag one selected note's ✥ handle: they all move together
+// drag one selected note's move handle: they all move together
 function startGroupMove(g, e){
   const items = [...multi].filter(b => b.isConnected).map(b => b.classList.contains('floating')
     ? {b, float: true, br: b.getBoundingClientRect(), cr: b.parentElement.getBoundingClientRect(), z: zoomOf(b) || 1}
@@ -2714,9 +3026,8 @@ main.addEventListener('pointerdown', e => {
   const box = g.parentElement;
   if (multi.has(box) && multi.size > 1) { e.preventDefault(); e.stopImmediatePropagation(); startGroupMove(g, e); }
 }, true);
-$('#selAllBtn').addEventListener('mousedown', e => e.preventDefault());
 $('#selAllBtn').onclick = () => selectAllNotes();
-$('#multibar').addEventListener('mousedown', e => e.preventDefault());
+$('#multibar').addEventListener('mousedown', e => e.preventDefault());       // keep the notes selected
 $('#multibar').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.act === 'del') deleteMulti(); else clearMulti(); });
 const typingIn = t => t?.closest?.('input, textarea, select, [contenteditable="true"], .mine');
 document.addEventListener('keydown', e => {
@@ -2744,9 +3055,9 @@ document.addEventListener('mousedown', e => {
 main.addEventListener('focusin', e => { if (multi.size && e.target.closest?.('.mine')) clearMulti(); });
 
 // ================= ⚙ Help & settings =================
-const setPanel = $('#settings'), helpBtn = $('#helpBtn');
+const settingsBox = $('#settings'), helpBtn = $('#helpBtn');
 function saveUserWords(){
-  try { localStorage.setItem('spell-words', JSON.stringify([...userWords])); } catch {}
+  pref.setJson('spell-words', [...userWords]);
   spellCache = new Map(); spellAll(); renderDict();
 }
 function renderDict(){
@@ -2756,20 +3067,20 @@ function renderDict(){
     const li = document.createElement('li'), sp = document.createElement('span'), x = document.createElement('button');
     sp.textContent = w; x.type = 'button'; x.textContent = '×'; x.dataset.w = w; x.title = `Remove “${w}”`; x.setAttribute('aria-label', `Remove ${w} from the dictionary`);
     li.append(sp, x); return li;
-  }) : [Object.assign(document.createElement('li'), {className: 'empty', textContent: 'No words yet.'})]));
+  }) : [Object.assign(document.createElement('li'), {className: 'none', textContent: 'No words yet.'})]));
 }
 function renderFavManage(){
   const box = $('#favManage');
   box.replaceChildren(...(favs.length ? favs.map(c => {
     const d = document.createElement('span'); d.className = 'fm';
-    d.innerHTML = `<span class="dot" style="background:${c}" title="${c}"></span><button type="button" class="x" data-c="${c}" title="Remove ${c}" aria-label="Remove favourite colour ${c}">×</button>`;
+    d.innerHTML = `<span class="dot" style="--c:${c}" title="${c}"></span><button type="button" class="x" data-c="${c}" title="Remove ${c}" aria-label="Remove favourite colour ${c}">×</button>`;
     return d;
-  }) : [Object.assign(document.createElement('span'), {className: 'empty', textContent: 'No favourite colours yet.'})]));
+  }) : [Object.assign(document.createElement('span'), {className: 'none', textContent: 'No favourite colours yet.'})]));
 }
 $('#dictList').addEventListener('click', e => {
   const b = e.target.closest('button[data-w]'); if (!b) return;
   const items = [...$('#dictList').querySelectorAll('button[data-w]')], i = items.indexOf(b);
-  userWords.delete(b.dataset.w); saveUserWords(); status(`“${b.dataset.w}” removed from your dictionary.`);
+  userWords.delete(b.dataset.w); saveUserWords(); toast(`“${b.dataset.w}” removed from your dictionary.`);
   const next = $('#dictList').querySelectorAll('button[data-w]'); (next[Math.min(i, next.length - 1)] || $('#dictAdd')).focus();
 });
 $('#dictAddForm').addEventListener('submit', e => {
@@ -2777,15 +3088,15 @@ $('#dictAddForm').addEventListener('submit', e => {
   const words = $('#dictAdd').value.split(/[\s,]+/).map(w => w.replace(/^[^\p{L}]+|[^\p{L}']+$/gu, '').toLowerCase()).filter(Boolean);
   if (!words.length) return;
   words.forEach(w => userWords.add(w)); $('#dictAdd').value = ''; saveUserWords();
-  status(words.length === 1 ? `“${words[0]}” added to your dictionary.` : `${words.length} words added to your dictionary.`);
+  toast(words.length === 1 ? `“${words[0]}” added to your dictionary.` : `${words.length} words added to your dictionary.`);
 });
 $('#favManage').addEventListener('click', e => { const b = e.target.closest('button[data-c]'); if (b) removeFav(b.dataset.c); });
-function openSettings(){ renderDict(); renderFavManage(); setPanel.hidden = false; helpBtn.setAttribute('aria-expanded', 'true'); $('#setClose').focus(); }
-function closeSettings(back){ if (setPanel.hidden) return; setPanel.hidden = true; helpBtn.setAttribute('aria-expanded', 'false'); if (back) helpBtn.focus(); }
-helpBtn.onclick = () => setPanel.hidden ? openSettings() : closeSettings();
+function openSettings(){ renderDict(); renderFavManage(); settingsBox.hidden = false; helpBtn.setAttribute('aria-expanded', 'true'); $('#setClose').focus(); }
+function closeSettings(back){ if (settingsBox.hidden) return; settingsBox.hidden = true; helpBtn.setAttribute('aria-expanded', 'false'); if (back) helpBtn.focus(); }
+helpBtn.onclick = () => settingsBox.hidden ? openSettings() : closeSettings();
 $('#setClose').onclick = () => closeSettings(true);
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !setPanel.hidden) closeSettings(true); });
-document.addEventListener('mousedown', e => { if (!setPanel.hidden && !setPanel.contains(e.target) && !helpBtn.contains(e.target)) closeSettings(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !settingsBox.hidden) closeSettings(true); });
+document.addEventListener('mousedown', e => { if (!settingsBox.hidden && !settingsBox.contains(e.target) && !helpBtn.contains(e.target)) closeSettings(); });
 // a dictionary change made elsewhere (another tab) shows up here too
 addEventListener('storage', e => { if (e.key === 'spell-words') { try { userWords = new Set(JSON.parse(e.newValue || '[]')); } catch {} spellCache = new Map(); spellAll(); renderDict(); } });
 
@@ -2816,12 +3127,11 @@ function stepHistory(by){
   if (!main.children.length) showEmpty();
   upgradeNotes(); applyReadMode();
   paginateView(); window.scrollTo(0, scrollY);
-  hist.stack[j] = packDoc(main.querySelector('.empty') ? '' : currentDoc());   // so the next save doesn't count as a new change
-  updateUndoBtns(); updateNotesBtn(); hint(); saveSoon();
+  hist.stack[j] = packDoc(main.querySelector('.welcome') ? '' : currentDoc());   // so the next save doesn't count as a new change
+  updateUndoBtns(); updateNotesBtn(); saveSoon();
 }
 $('#undoBtn').onclick = () => stepHistory(-1);
 $('#redoBtn').onclick = () => stepHistory(1);
-$('#undoBtn').addEventListener('mousedown', e => e.preventDefault()); $('#redoBtn').addEventListener('mousedown', e => e.preventDefault());
 document.addEventListener('keydown', e => {
   if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
   if (e.target.closest?.('input, textarea, select')) return;
@@ -2834,53 +3144,318 @@ document.addEventListener('beforeinput', e => {
   if (e.inputType === 'historyUndo' || e.inputType === 'historyRedo') { e.preventDefault(); stepHistory(e.inputType === 'historyUndo' ? -1 : 1); }
 });
 
-// toolbar size: all tools, fewer tools, or hidden
-function setBar(mode){
-  const h = $('header');
-  h.classList.toggle('compact', mode === 'compact');
-  h.classList.toggle('barhidden', mode === 'hidden');
-  $('#showBar').hidden = mode !== 'hidden';
-  $('#lessBtn').textContent = mode === 'compact' ? 'More' : 'Fewer tools';
-  $('#hideBar').textContent = mode === 'compact' ? 'Hide' : 'Hide toolbar';
-  $('#lessBtn').title = mode === 'compact' ? 'Show all the tools' : 'Show only the everyday tools';
-  try { localStorage.setItem('bar-mode', mode); } catch {}
-  barMode = mode;
+// ================= ribbon: Home · Insert · Box · View, shown in full, as tabs only, or hidden =================
+const ribbon = $('#ribbon'), appbar = $('#appbar');
+const tabs = [...ribbon.querySelectorAll('.tab')];
+let ribbonTab = 'home', tabBeforeStudy = null, barMode = 'full';
+function selectTab(name, focus){
+  ribbonTab = name;
+  for (const t of tabs) {
+    const on = t.dataset.tab === name;
+    t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1;
+    $('#panel-' + t.dataset.tab).hidden = !on;
+    if (on && focus) t.focus();
+  }
 }
-let barMode = 'full';
-$('#lessBtn').onclick = () => setBar(barMode === 'compact' ? 'full' : 'compact');
-let lastBar = 'full';
-try { const l = localStorage.getItem('bar-last'); if (l === 'compact') lastBar = l; } catch {}
-$('#hideBar').onclick = () => { lastBar = barMode; try { localStorage.setItem('bar-last', lastBar); } catch {} setBar('hidden'); };
-$('#showBar').onclick = () => setBar(lastBar === 'hidden' ? 'full' : lastBar);
-try { const m = localStorage.getItem('bar-mode'); if (m === 'compact' || m === 'hidden') setBar(m); } catch {}
+ribbon.querySelector('.tabs').addEventListener('click', e => {
+  const t = e.target.closest('.tab'); if (!t) return;
+  // tabs only: a tab opens its tools over the page until you go back to the page (or press it again)
+  if (barMode === 'compact') ribbon.classList.toggle('peek', !(t.dataset.tab === ribbonTab && ribbon.classList.contains('peek')));
+  selectTab(t.dataset.tab);
+});
+ribbon.querySelector('.tabs').addEventListener('keydown', e => {
+  if (!e.target.classList.contains('tab') || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+  e.preventDefault();
+  const shown = tabs.filter(t => t.offsetParent), i = shown.indexOf(e.target);
+  const j = e.key === 'Home' ? 0 : e.key === 'End' ? shown.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + shown.length) % shown.length;
+  selectTab(shown[j].dataset.tab, true);
+});
+document.addEventListener('mousedown', e => { if (ribbon.classList.contains('peek') && !e.target.closest('#appbar, .pop')) ribbon.classList.remove('peek'); });
+function setBar(mode){
+  barMode = mode;
+  ribbon.classList.toggle('compact', mode === 'compact'); ribbon.classList.remove('peek');
+  appbar.classList.toggle('barhidden', mode === 'hidden');
+  $('#showBar').hidden = mode !== 'hidden';
+  $('#barModes').querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === mode));
+  const fold = $('#ribbonFold'), compact = mode === 'compact';
+  fold.innerHTML = icon(compact ? 'down' : 'up');
+  fold.title = compact ? 'Show the tools under the tabs again' : 'Show tabs only (click a tab to open its tools)';
+  fold.setAttribute('aria-label', compact ? 'Show the full toolbar' : 'Show tabs only');
+  if (mode !== 'hidden') pref.set('bar-last', mode);
+  pref.set('bar-mode', mode);
+}
+$('#barModes').addEventListener('click', e => {
+  const b = e.target.closest('[data-mode]'); if (!b) return;
+  setBar(b.dataset.mode);
+  if (b.dataset.mode === 'hidden') toast('Toolbar hidden. Bring it back with Show toolbar at the top right.');
+});
+$('#ribbonFold').onclick = () => setBar(barMode === 'compact' ? 'full' : 'compact');
+$('#showBar').onclick = () => setBar(pref.get('bar-last') === 'compact' ? 'compact' : 'full');
+{ const m = pref.get('bar-mode'); if (m === 'compact' || m === 'hidden') setBar(m); }
+// the side panels stick just under the app bar, however tall it is
+new ResizeObserver(() => document.documentElement.style.setProperty('--appbar-h', appbar.offsetHeight + 'px')).observe(appbar);
+
+// ================= side panels: Pages (left) and Notes (right) =================
+const narrow = matchMedia('(max-width: 900px)');
+const panelOpen = {pages: false, notes: false};
+const panelEl = {pages: $('#pagesPanel'), notes: $('#notesPanel')};
+function setPanel(name, on, quiet){
+  if (on && narrow.matches) for (const k in panelOpen) if (k !== name && panelOpen[k]) setPanel(k, false, true);   // one drawer at a time on small screens
+  if (on && focusMode) setFocus(false);
+  panelOpen[name] = on;
+  panelEl[name].hidden = !on;
+  document.querySelectorAll(`#${name}Btn, [data-panel="${name}"]`).forEach(b => b.setAttribute('aria-pressed', on));
+  $('#scrim').hidden = !(narrow.matches && (panelOpen.pages || panelOpen.notes));
+  if (!narrow.matches && !quiet) pref.set('panel-' + name, on ? '1' : '0');
+  if (on) refreshPanels();
+  if (!narrow.matches) relayout();       // the page column changed width
+}
+$('#pagesBtn').onclick = () => setPanel('pages', !panelOpen.pages);
+$('#notesBtn').onclick = () => setPanel('notes', !panelOpen.notes);
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-panel], [data-close]'); if (!t) return;
+  if (t.dataset.panel) setPanel(t.dataset.panel, !panelOpen[t.dataset.panel]); else setPanel(t.dataset.close, false);
+});
+$('#scrim').onclick = () => { setPanel('pages', false); setPanel('notes', false); };
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && narrow.matches && (panelOpen.pages || panelOpen.notes)) { setPanel('pages', false); setPanel('notes', false); }
+});
+function restorePanels(){
+  const wide = !narrow.matches;
+  setPanel('pages', wide && pref.get('panel-pages', innerWidth >= 1200 ? '1' : '0') === '1', true);
+  setPanel('notes', wide && pref.get('panel-notes', '0') === '1', true);
+}
+narrow.addEventListener('change', restorePanels);
+
+// a page's title: the biggest words near the top of a PDF page, else its first line
+function pageTitle(card){
+  if (card.classList.contains('blankpage')) return 'Blank page';
+  if (card.classList.contains('pagecard')) {
+    let items = textCache.get(card);
+    if (!items) { try { items = JSON.parse(card.dataset.text || '[]'); } catch { items = []; } textCache.set(card, items); }
+    const top = items.filter(it => it[2] < (+card.dataset.h || 1) * 0.4);
+    const big = (top.length ? top : items).reduce((a, b) => (!a || b[3] > a[3] ? b : a), null);
+    return big ? items.filter(it => Math.abs(it[2] - big[2]) < big[3] * 0.4).map(it => it[0]).join(' ').replace(/\s+/g, ' ').trim() : '';
+  }
+  const b = card.querySelector('.content > .blk');
+  return (b?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120);
+}
+function renderPages(){
+  const list = $('#pageList'), slides = main.querySelectorAll('.slide');
+  $('#pageCount').textContent = slides.length || '';
+  if (!slides.length) { list.innerHTML = '<li class="sideempty">Open a file and its pages show up here.</li>'; return; }
+  const frag = document.createDocumentFragment();
+  let n = 0;
+  for (const el of main.querySelectorAll('.file-head, .slide')) {
+    const li = document.createElement('li');
+    if (el.classList.contains('file-head')) { li.className = 'group'; li.textContent = el.textContent; frag.append(li); continue; }
+    const i = n++, title = pageTitle(el) || 'Page ' + (i + 1), notes = [...el.querySelectorAll('.notebox')].filter(hasContent).length;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'pg'; b.dataset.i = i;
+    const th = document.createElement('span'); th.className = 'thumb';
+    if (el.classList.contains('pagecard')) { th.classList.add('img'); th.style.setProperty('--pg', el.style.getPropertyValue('--pg')); th.style.aspectRatio = `${el.dataset.w} / ${el.dataset.h}`; }
+    else {
+      const t = document.createElement('b'); t.textContent = title.slice(0, 80);
+      th.append(t, (el.querySelector('.content')?.textContent || '').replace(/\s+/g, ' ').trim().slice(title.length, title.length + 160));
+    }
+    if (notes) { const c = document.createElement('span'); c.className = 'n'; c.textContent = notes; th.append(c); }
+    const label = document.createElement('span'); label.className = 'pgl';
+    label.append(Object.assign(document.createElement('span'), {textContent: i + 1}), Object.assign(document.createElement('span'), {textContent: title}));
+    b.append(th, label);
+    b.setAttribute('aria-label', `Page ${i + 1}: ${title}${notes ? `, ${notes} note${notes > 1 ? 's' : ''}` : ''}`);
+    li.append(b); frag.append(li);
+  }
+  list.replaceChildren(frag); pageMark = -1; trackPage();
+}
+$('#pageList').addEventListener('click', e => {
+  const b = e.target.closest('.pg'); if (!b) return;
+  const card = main.querySelectorAll('.slide')[+b.dataset.i]; if (!card) return;
+  (card.closest('.sheet') || card).scrollIntoView({block: 'start', behavior: smoothScroll()});
+  lastCard = card;
+  if (narrow.matches) setPanel('pages', false);
+});
+// which page you're looking at: the status bar says so, and the Pages panel marks it
+let pageMark = -1;
+function trackPage(){
+  const slides = main.querySelectorAll('.slide'), info = $('#pageInfo');
+  if (!slides.length) { info.textContent = ''; pageMark = -1; return; }
+  const top = appbar.offsetHeight, y = top + (innerHeight - top) * 0.3;
+  let i = 0;
+  for (; i < slides.length - 1; i++) if (slides[i].getBoundingClientRect().bottom > y) break;
+  info.innerHTML = `Page <b>${i + 1}</b> of ${slides.length}`;
+  if (i === pageMark) return;
+  pageMark = i;
+  const list = $('#pageList');
+  list.querySelector('[aria-current]')?.removeAttribute('aria-current');
+  const b = list.querySelector(`.pg[data-i="${i}"]`); if (!b || !panelOpen.pages) return;
+  b.setAttribute('aria-current', 'true');
+  const p = panelEl.pages, br = b.getBoundingClientRect(), pr = p.getBoundingClientRect();
+  if (br.top < pr.top + 44 || br.bottom > pr.bottom) p.scrollTop += br.top - pr.top - pr.height / 3;
+}
+
+// the Notes list: every note by page, with search and icon-colour filters; click one to go to it
+let noteQuery = '', noteColor = null, shownNotes = [];
+const colourName = c => (CHIP_COLORS.find(([h]) => h === c) || [, 'Custom'])[1];
+function noteKind(b){
+  return [b.classList.contains('floating') ? 'Floating' : b.classList.contains('inline') ? 'In the text' : 'Between the lines',
+    b.classList.contains('pinned') && 'pinned open', b.classList.contains('collapsed') && 'minimised'].filter(Boolean).join(' · ');
+}
+function markText(el, text, q){
+  if (!q) { el.textContent = text; return; }
+  const low = text.toLowerCase(); let at = 0;
+  for (let k = low.indexOf(q); k >= 0; k = low.indexOf(q, at)) {
+    el.append(text.slice(at, k), Object.assign(document.createElement('mark'), {textContent: text.slice(k, k + q.length)}));
+    at = k + q.length;
+  }
+  el.append(text.slice(at));
+}
+function renderNotes(){
+  const all = [];
+  main.querySelectorAll('.slide').forEach((s, i) => s.querySelectorAll('.notebox').forEach(b => { if (hasContent(b)) all.push({b, i, s}); }));
+  $('#noteCount').textContent = all.length || '';
+  const used = [...new Set(all.map(x => chipOf(x.b).toLowerCase()))];
+  if (noteColor && !used.includes(noteColor)) noteColor = null;
+  $('#noteFilters').replaceChildren(...(used.length > 1 ? [null, ...used].map(c => {
+    const f = document.createElement('button'); f.type = 'button'; f.className = 'fchip'; f.dataset.c = c || ''; f.setAttribute('aria-pressed', c === noteColor);
+    if (!c) f.textContent = 'All';
+    else { const d = document.createElement('span'); d.className = 'dot'; d.style.setProperty('--c', c); f.append(d, colourName(c)); f.title = 'Only notes with this icon colour'; }
+    return f;
+  }) : []));
+  const q = noteQuery.trim().toLowerCase(), list = $('#noteList'), frag = document.createDocumentFragment();
+  shownNotes = []; let lastI = -1;
+  for (const {b, i, s} of all) {
+    if (noteColor && chipOf(b).toLowerCase() !== noteColor) continue;
+    let text = noteSummary(b.querySelector(':scope > .mine'));
+    const at = q ? text.toLowerCase().indexOf(q) : 0;
+    if (at < 0) continue;
+    if (at > 120) text = '…' + text.slice(at - 60);         // show the part that matched
+    if (i !== lastI) {
+      lastI = i;
+      const t = pageTitle(s);
+      frag.append(Object.assign(document.createElement('li'), {className: 'group', textContent: `Page ${i + 1}${t ? ' · ' + t : ''}`}));
+    }
+    const li = document.createElement('li'), c = document.createElement('button');
+    c.type = 'button'; c.className = 'ncard'; c.dataset.k = shownNotes.push(b) - 1;
+    const dot = document.createElement('span'); dot.className = 'dot'; dot.style.setProperty('--c', chipOf(b));
+    const body = document.createElement('span'); body.className = 'body';
+    const txt = document.createElement('span'); txt.className = 'txt'; markText(txt, text, q);
+    body.append(txt, Object.assign(document.createElement('span'), {className: 'meta', textContent: noteKind(b)}));
+    c.append(dot, body); li.append(c); frag.append(li);
+  }
+  if (!shownNotes.length) frag.append(Object.assign(document.createElement('li'), {className: 'sideempty',
+    textContent: all.length ? `No notes match${q ? ` “${noteQuery.trim()}”` : ' this colour'}.` : 'No notes yet. On a PDF page, point between two lines and press “+ Add note here”.'}));
+  list.replaceChildren(frag);
+}
+$('#noteFilters').addEventListener('click', e => { const f = e.target.closest('.fchip'); if (f) { noteColor = f.dataset.c || null; renderNotes(); } });
+$('#noteSearch').addEventListener('input', e => { noteQuery = e.target.value; renderNotes(); });
+$('#noteList').addEventListener('click', e => { const c = e.target.closest('.ncard'); if (c) jumpToNote(shownNotes[+c.dataset.k]); });
+function jumpToNote(box){
+  if (!box?.isConnected) return;
+  if (narrow.matches) setPanel('notes', false);
+  if (box.classList.contains('collapsed')) { setCollapsed(box, false); afterNotesToggle(); }
+  raise(box);
+  box.scrollIntoView({block: 'center', behavior: smoothScroll()});
+  box.classList.remove('flash'); void box.offsetWidth; box.classList.add('flash');
+  setTimeout(() => box.classList.remove('flash'), 1700);
+  const m = box.querySelector(':scope > .mine');
+  if (m && !reading) focusNote(m, {preventScroll: true});
+}
+
+// after changes: the file name, the panels and the page count catch up
+let panelTimer = null;
+function panelsSoon(){ clearTimeout(panelTimer); panelTimer = setTimeout(refreshPanels, 300); }
+function refreshPanels(){
+  clearTimeout(panelTimer);
+  const name = main.querySelector('.slide') ? notebookName() : '', t = $('#docTitle');
+  t.textContent = name || 'No file open'; t.classList.toggle('none', !name); t.title = name;
+  document.title = name ? `${name} · Between the Slides` : 'Between the Slides';
+  if (panelOpen.pages) renderPages(); else pageMark = -1;
+  if (panelOpen.notes) renderNotes();
+  trackPage();
+}
+
+// ================= focus mode: only your pages and notes on screen =================
+let focusMode = false;
+function setFocus(on){
+  focusMode = on;
+  document.body.classList.toggle('focus', on);
+  $('#focusExit').hidden = !on;
+  $('#focusBtn').setAttribute('aria-pressed', on);
+  if (on) { for (const k in panelOpen) if (panelOpen[k]) { panelEl[k].hidden = true; } $('#scrim').hidden = true; }
+  else for (const k in panelOpen) panelEl[k].hidden = !panelOpen[k];
+  relayout();
+}
+$('#focusBtn').onclick = () => { setFocus(true); toast('Focus mode: just your pages and notes. Press Esc or Exit focus to bring the tools back.'); };
+$('#focusExit').onclick = () => setFocus(false);
+document.addEventListener('keydown', e => {
+  if (!focusMode) {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') { e.preventDefault(); $('#focusBtn').click(); }
+    return;
+  }
+  // Esc leaves focus mode, unless it is closing a menu or ending a selection first
+  if (e.key === 'Escape' && spellMenu.hidden && chipPop.hidden && !mediaSel && !multi.size && fPanel.hidden) setFocus(false);
+  else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') { e.preventDefault(); setFocus(false); }
+});
+
+// ================= drop files anywhere to open them =================
+const dropCover = $('#dropCover');
+let dragDepth = 0;
+const draggingFiles = e => [...(e.dataTransfer?.types || [])].includes('Files');
+addEventListener('dragenter', e => { if (draggingFiles(e)) { dragDepth++; dropCover.hidden = !!e.target.closest?.('.mine'); } });
+addEventListener('dragover', e => { if (draggingFiles(e)) { e.preventDefault(); dropCover.hidden = !!e.target.closest?.('.mine'); } });
+addEventListener('dragleave', e => { if (draggingFiles(e) && --dragDepth <= 0) { dragDepth = 0; dropCover.hidden = true; } });
+addEventListener('drop', e => {
+  dragDepth = 0; dropCover.hidden = true;
+  if (!draggingFiles(e) || e.defaultPrevented) return;      // pictures dropped into a note are handled there
+  e.preventDefault();
+  openFiles([...e.dataTransfer.files]);
+});
+
+// pop-ups follow what they belong to when the page scrolls or resizes
+let viewQueued = false;
+function onView(){
+  if (viewQueued) return; viewQueued = true;
+  requestAnimationFrame(() => { viewQueued = false; followChip(); placeMediaBar(); followSpellMenu(); trackPage(); });
+}
+addEventListener('scroll', onView, {passive: true});
+addEventListener('resize', onView);
+restorePanels();
+
 const saveMenu = $('#saveMenu');
 $('#save').onclick = e => { e.stopPropagation(); saveMenu.hidden = !saveMenu.hidden; $('#save').setAttribute('aria-expanded', !saveMenu.hidden); };
 document.addEventListener('click', e => { if (!e.target.closest('.savewrap')) { saveMenu.hidden = true; $('#save').setAttribute('aria-expanded', 'false'); } });
 saveMenu.addEventListener('click', async e => {
   const b = e.target.closest('button[data-kind]'); if (!b) return;
   saveMenu.hidden = true;
-  if (!main.querySelector('.slide')) { status('Open your slides first, then download.'); return; }
+  if (!main.querySelector('.slide')) { toast('Open your slides first, then download.'); return; }
   try {
     if (b.dataset.kind === 'pdf') await downloadPdf(); else await downloadNotebook();
-    status('Downloaded. Check your Downloads folder.');
+    toast('Downloaded. Check your Downloads folder.');
   } catch (err) {
     console.error(err);
-    status(err && err.code === 'declined' ? 'Download cancelled.' : 'The download didn’t work. Please try again.');
+    toast(err && err.code === 'declined' ? 'Download cancelled.' : 'The download didn’t work. Please try again.');
   }
 });
 
-showEmpty(); resetHistory(''); applyReadMode(); hint();
+// Ctrl+S: your work already saves itself; offer the downloads instead of the browser's "save page"
+document.addEventListener('keydown', e => {
+  if (!(e.ctrlKey || e.metaKey) || e.altKey || e.key.toLowerCase() !== 's') return;
+  e.preventDefault(); flushSave();
+  if (main.querySelector('.slide')) { saveMenu.hidden = false; $('#save').setAttribute('aria-expanded', 'true'); }
+  toast('Your work saves itself in this browser. To keep a copy, download a PDF or a notebook file.');
+});
+
+showEmpty(); resetHistory(''); applyReadMode(); refreshPanels();
 (async () => {
   db = await openDb();
+  if (!db) setSaveState('error');
   const emb = document.getElementById('notebook-data');
   if (emb) { try { loadNotebook(JSON.parse(emb.textContent), true); resetHistory(currentDoc()); saveSoon(); return; } catch {} }
   if (!db) return;
-  const [d, s, n] = await Promise.all([get('doc'), get('style'), get('count')]);
+  const [d, s] = await Promise.all([get('doc'), get('style')]);
   if (s) { style = s; showStyle(style); }
-  if (d) { main.innerHTML = d; slideCount = n || 0; main.querySelectorAll('.slide-label').forEach(e => e.remove()); upgradeNotes(); applyReadMode(); }
-  requestAnimationFrame(() => { main.querySelectorAll('.strip').forEach(measureStrip); paginateView(); updateNotesBtn(); resetHistory(main.querySelector('.empty') ? '' : currentDoc()); });
+  if (d) { main.innerHTML = d; main.querySelectorAll('.slide-label').forEach(e => e.remove()); upgradeNotes(); applyReadMode(); }
+  requestAnimationFrame(() => { main.querySelectorAll('.strip').forEach(measureStrip); paginateView(); updateNotesBtn(); refreshPanels(); resetHistory(main.querySelector('.welcome') ? '' : currentDoc()); });
 })();
 </script>
-
 </body>
 </html>
