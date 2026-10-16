@@ -735,6 +735,53 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none!importa
 .qtip kbd{font:11.5px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:0 5px;border:1px solid color-mix(in srgb,var(--bg) 40%,transparent);border-radius:4px;background:transparent;color:inherit}
 .qtip .d{margin-top:2px;font-size:13.5px;opacity:.75;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
 @media (prefers-reduced-motion:reduce){.qtip{transition:none}}
+/* ================= side notes: a notes page beside each slide ================= */
+.sidepage{display:none;position:relative;box-sizing:border-box;min-width:0;min-height:120px;background-color:#fdf6e3;color:#1b2330;border:1.5px solid var(--pencil);border-radius:5px 7px 6px 4px / 4px 6px 7px 5px;cursor:text;overflow-wrap:anywhere;--sp-line:rgba(47,43,36,.14)}
+main.side-on .sidepage{display:block}
+.sidepage.dark{color:#ece6d6;--sp-line:rgba(236,230,214,.17)}
+.sidepage.dark .mine[style*="rgb(31, 79, 209)"]{color:#a9c4ff!important}
+/* the paper: plain, lined, squared or dotted (the small previews in the Background pop-up use the same patterns) */
+:is(.sidepage,.sidebg .pv)[data-pat="lined"]{background-image:linear-gradient(transparent 31px,var(--sp-line) 31px);background-size:100% 32px;background-position:0 38px}
+:is(.sidepage,.sidebg .pv)[data-pat="grid"]{background-image:linear-gradient(var(--sp-line) 1px,transparent 1px),linear-gradient(90deg,var(--sp-line) 1px,transparent 1px);background-size:24px 24px}
+:is(.sidepage,.sidebg .pv)[data-pat="dots"]{background-image:radial-gradient(var(--sp-line) 1.3px,transparent 1.8px);background-size:22px 22px;background-position:11px 11px}
+.sidepage::before{content:attr(data-label);display:none;position:absolute;left:12px;top:7px;font:13px var(--ui);opacity:.6;pointer-events:none}
+.sidepage .g-float{display:none}
+.sidepage > .notebox.floating.collapsed > .note-chip{left:calc(4px + var(--ci, 0) * 23px)}
+/* beside the slides: two columns, each side page in the row of its slide (the row is as tall as the taller of the two) */
+main.side-on{max-width:1500px}
+main.side-on:not(.side-split){display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);column-gap:18px;row-gap:16px;align-items:start}
+main.side-on:not(.side-split) > .file-head{grid-column:1 / -1}
+main.side-on:not(.side-split) > .slide{grid-column:1}
+main.side-on:not(.side-split) > .sidepage{grid-column:2;align-self:stretch}
+/* sync scrolling off: the side pages stand in a column of their own on the right, which scrolls by itself */
+main.side-split{--sw:min(400px,34vw);padding-right:calc(var(--sw) + 32px)}
+.sidewrap{position:absolute;top:0;bottom:0;right:16px;width:var(--sw);pointer-events:none}
+.sidecol{position:sticky;top:var(--appbar-h);height:calc(100dvh - var(--appbar-h) - var(--status-h));overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;pointer-events:auto;display:flex;flex-direction:column;gap:18px;padding:14px 8px 80px 24px;box-sizing:border-box}
+main.side-split .sidepage{flex:none}
+main.side-split .sidepage::before{display:block}
+@media (max-width:760px){main.side-on:not(.side-split){grid-template-columns:minmax(0,1fr)}main.side-on:not(.side-split) > .sidepage{grid-column:1;align-self:start}}
+/* joining a highlight to a note: click the note */
+body.side-picking .sidepage,body.side-picking .sidepage .mine{cursor:crosshair}
+body.side-picking .sidepage .notebox:not(.collapsed) > .mine{box-shadow:0 0 0 2px var(--accent)} /* taste-skill-ignore: a ring marking what can be picked */
+body:not(.side-visible) #annoBar [data-side]{display:none}
+/* the lines between a highlight and its note: faint, and bold when you point at either end */
+.sidelines{position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:5;pointer-events:none}
+.sidelines .sl{fill:none;stroke-linecap:round;stroke-width:1.5px;opacity:.35}
+.sidelines .sd{opacity:.35}
+.sidelines .sa{display:none}
+.sidelines .hot{opacity:1}
+.sidelines .sl.hot{stroke-width:2.5px}
+.sidelines .sa.hot{display:inline}
+/* View tab: the background pop-up */
+.sidebg{z-index:55;width:min(300px,calc(100vw - 16px));padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px;box-sizing:border-box;font:15px var(--ui)}
+.sidebg h3{margin:0;font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sidebg .sws{display:flex;flex-wrap:wrap;align-items:center;gap:0 2px}
+.sidebg .pats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.sidebg .pat{display:flex;flex-direction:column;align-items:center;gap:4px;height:auto;padding:6px 4px 5px;font-size:13.5px}
+.sidebg .pv{display:block;width:100%;height:26px;box-sizing:border-box;border:1px solid var(--line-strong);border-radius:3px;background-color:var(--pvbg,#fff);--sp-line:rgba(47,43,36,.3)}
+.sidebg .pv.dark{--sp-line:rgba(236,230,214,.3)}
+.sidebg .cust{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+main.reading .sidepage{cursor:auto}
 </style>
 <script>
 // a saved Light or Dark theme is set before the page paints, so it doesn't flash the other one first
@@ -812,6 +859,12 @@ try {
 <symbol id="i-monitor" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></symbol>
 <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
 <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+<symbol id="i-unlink" viewBox="0 0 24 24"><path d="m18.84 12.25 1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71"/><path d="m5.17 11.75-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71"/><path d="M8 2v3"/><path d="M2 8h3"/><path d="M16 19v3"/><path d="M19 16h3"/></symbol>
+<symbol id="i-sidepage" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 3v18"/><path d="M15.5 8h2"/><path d="M15.5 12h2"/></symbol>
+<symbol id="i-sync" viewBox="0 0 24 24"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></symbol>
+<symbol id="i-palette" viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></symbol>
+<symbol id="i-spline" viewBox="0 0 24 24"><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M5 17A12 12 0 0 1 17 5"/></symbol>
 </defs></svg>
 
 <header class="appbar" id="appbar">
@@ -1017,6 +1070,13 @@ try {
         <button class="btn" data-pick="light" aria-pressed="false" title="Light: always use the light theme"><svg class="i"><use href="#i-sun"/></svg>Light</button>
         <button class="btn" data-pick="dark" aria-pressed="false" title="Dark: always use the dark theme"><svg class="i"><use href="#i-moon"/></svg>Dark</button>
       </div><span class="cap">Theme</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row" id="sideCtl">
+        <button class="btn" id="sideBtn" aria-pressed="false" title="Side notes: a page for your own notes beside every slide, in the same row"><svg class="i"><use href="#i-sidepage"/></svg>Side notes</button>
+        <button class="btn" id="sideSync" aria-pressed="true" title="Sync scrolling: on, each side page scrolls with its slide; off, the side pages move to a column on the right that scrolls by itself"><svg class="i"><use href="#i-sync"/></svg>Sync scrolling</button>
+        <button class="btn" id="sideLinks" aria-pressed="true" title="Link lines: show the lines that join a highlight to its side note"><svg class="i"><use href="#i-spline"/></svg>Link lines</button>
+        <button class="btn" id="sideBgBtn" aria-haspopup="dialog" aria-expanded="false" title="Background: the colour and pattern of the side pages"><svg class="i"><use href="#i-palette"/></svg>Background</button>
+      </div><span class="cap">Side notes</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row seg" id="barModes">
         <button class="btn" data-mode="full" aria-pressed="true" title="Tabs and tools">Full</button>
@@ -1625,6 +1685,7 @@ function upgradeNotes(){
     if (b.style.height) { b.style.minHeight = b.style.height; b.style.height = ''; }
     addGrips(b);
   }
+  sideRead();
 }
 // a note with something in it (an empty one is removed when you leave it)
 function hasContent(box){
@@ -1707,6 +1768,7 @@ main.addEventListener('click', e => {
   const fx = e.target.closest('.formula'); if (fx && fx.closest('.mine')) { openFormula(fx); return; }
   const media = mediaAt(e.target);
   if (media) { selectMedia(media); return; }
+  if (e.target.closest('.sidepage') && !e.target.closest('.mine, .notebox, a')) return sideClick(e);
   if (e.target.closest('.mine, .notebox, .gappill, details, summary, .slide-label, a')) return;
   const strip = e.target.closest('.strip');
   if (strip) { if (!getSelection().toString()) showGap(strip, e.clientY, e.clientX); return; }
@@ -2094,7 +2156,7 @@ function blankPage(){
 }
 function addPageAfter(card){
   const {page, note} = blankPage();
-  if (card) card.after(page);
+  if (card) (sideOf(card) || card).after(page);
   else { main.querySelector('.welcome')?.remove(); main.append(page); }
   if (LAYOUTS[layout]) paginateView();
   page.scrollIntoView({block: 'center', behavior: 'smooth'});
@@ -2132,7 +2194,7 @@ delBtn.onclick = () => {
   }
   resetRemove(); markPage(false); hideGap(); clearMediaSel();
   if (active && card.contains(active)) { active = null; savedRange = null; }
-  card.remove();
+  sideOf(card)?.remove(); card.remove();
   if (!main.querySelector('.slide')) { main.innerHTML = ''; showEmpty(); }
   if (LAYOUTS[layout]) paginateView();
   updateNotesBtn(); saveSoon(); toast('Page removed. Press Back (Ctrl+Z) to bring it back.');
@@ -2155,7 +2217,7 @@ function insertBoxAt(card, y, box){
 // ---------- floating notes: a note box on top of the page (like "in front of text" in Word), so it can sit beside a line ----------
 function placeFloats(root){
   for (const box of (root || main).querySelectorAll('.notebox.floating')) {
-    const card = box.parentElement; if (!card || !card.classList.contains('slide')) continue;
+    const card = box.parentElement; if (!card || !card.matches('.slide, .sidepage')) continue;
     const s = zoomOf(card) || 1, cr = card.getBoundingClientRect(), py = +box.dataset.py || 0;
     if (card.classList.contains('pagecard')) {
       const strips = [...card.querySelectorAll(':scope > .strip')];
@@ -2166,6 +2228,10 @@ function placeFloats(root){
       box.style.top = ((sr.top - cr.top + (Math.min(py, y1) - y0) / (y1 - y0) * sr.height) / s + (+box.dataset.oy || 0)).toFixed(2) + 'px';
     } else box.style.top = py.toFixed(2) + 'px';
     box.style.left = ((+box.dataset.px || 0) * 100).toFixed(4) + '%';
+    if (card.classList.contains('sidepage') && box.offsetWidth) {         // a side note stays inside its page, even where the page is narrower
+      const over = box.offsetLeft + box.offsetWidth - (card.clientWidth - 8);
+      if (over > 0) box.style.left = Math.max(20, box.offsetLeft - over) + 'px';
+    }
   }
 }
 function toggleFloat(box){
@@ -2210,7 +2276,7 @@ function snapKeys(redo){
   return () => { removeEventListener('keydown', on, true); removeEventListener('keyup', on, true); };
 }
 function snapTargets(box, extra){
-  const card = box.closest('.slide'), xs = [], ys = [];
+  const card = box.closest('.slide, .sidepage'), xs = [], ys = [];
   if (!card) return {xs, ys};
   for (const o of card.querySelectorAll('.notebox:not(.collapsed)')) {
     if (o === box || box.contains(o) || o.contains(box)) continue;
@@ -2284,7 +2350,7 @@ function startFloatMove(box, g, e){
   capture(); box.classList.add('moving');
   const move = ev => {
     last = {clientX: ev.clientX ?? last.clientX, clientY: ev.clientY ?? last.clientY, altKey: ev.altKey, shiftKey: ev.shiftKey};
-    if (ev.clientX != null) {
+    if (ev.clientX != null && !card.classList.contains('sidepage')) {      // (a side note stays on its own side page)
       const over = document.elementsFromPoint(last.clientX, last.clientY).filter(el => !box.contains(el)).map(el => el.closest('.slide')).find(Boolean);
       if (over && over !== dest) {
         dest.classList.remove('drop-target'); dest = over; dr = over.getBoundingClientRect();
@@ -2613,7 +2679,7 @@ function updateTab(){
   $('#favicon').href = 'data:image/svg+xml,' + encodeURIComponent(svg);
 }
 function saveSoon(){
-  placeFloats();
+  placeFloats(); sideSoon();
   paginateSoon(); updateNotesBtn(); panelsSoon();
   setSaveState('saving');
   clearTimeout(timer);
@@ -2651,6 +2717,7 @@ function currentDoc(){
   c.querySelectorAll('.gapline, .gappill, .welcome, .empty, .cardbar, .pptx-tip').forEach(x => x.remove());
   c.querySelectorAll('.media-sel, .target-page, .multi-sel, .flash, .drop-target, .touched').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel', 'flash', 'drop-target', 'touched'));
   c.querySelectorAll('.mine').forEach(x => { x.contentEditable = 'true'; });
+  sideJoin(c);                                  // each side page is stored right after its slide, whichever way it is shown
   flatten(c);
   c.querySelectorAll('svg.ink').forEach(x => x.remove());          // drawn again from data-ink
   return c.innerHTML;
@@ -2693,12 +2760,15 @@ function notebookPrefs(data){
 
 // PDF: each page drawn exactly as you see it, with your notes, one PDF page per slide
 function loadImg(src){ return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
-async function paintCard(card, scale){
-  const r = card.getBoundingClientRect(), ox = r.left, oy = r.top;
+async function paintCard(card, scale, side){
+  const cr0 = card.getBoundingClientRect(), sr0 = side ? side.getBoundingClientRect() : null;       // side: the side page beside this slide, painted too
+  const r = sr0 ? {left: Math.min(cr0.left, sr0.left), top: Math.min(cr0.top, sr0.top), width: Math.max(cr0.right, sr0.right) - Math.min(cr0.left, sr0.left), height: Math.max(cr0.bottom, sr0.bottom) - Math.min(cr0.top, sr0.top)} : cr0, ox = r.left, oy = r.top;
+  const roots = side ? [card, side] : [card], qa = sel => roots.flatMap(x => [...x.querySelectorAll(sel)]);
   const c = document.createElement('canvas');
   c.width = Math.round(r.width * scale); c.height = Math.round(r.height * scale);
   const ctx = c.getContext('2d'); ctx.scale(scale, scale);
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, r.width, r.height);
+  if (sr0) { ctx.fillStyle = side.dataset.bg || '#fff'; ctx.fillRect(sr0.left - ox, sr0.top - oy, sr0.width, sr0.height); ctx.strokeStyle = '#8f8d86'; ctx.lineWidth = 1; ctx.strokeRect(sr0.left - ox + .5, sr0.top - oy + .5, sr0.width - 1, sr0.height - 1); }
   const pcs = card.classList.contains('pagecard') ? [card] : [...card.querySelectorAll('.pagecard')];
   for (const pc of pcs) {
     const m = pc.style.getPropertyValue('--pg').match(/url\(["']?(.*?)["']?\)$/);
@@ -2710,18 +2780,18 @@ async function paintCard(card, scale){
       paintInk(ctx, pc, s, sr.left - ox, sr.top - oy);
     }
   }
-  for (const im of card.querySelectorAll('img')) {
+  for (const im of qa('img')) {
     if (im.closest('details:not([open])')) continue;
     const ir = im.getBoundingClientRect(); if (!ir.width || !im.complete) continue;
     try { ctx.drawImage(im, ir.left - ox, ir.top - oy, ir.width, ir.height); } catch {}
   }
-  for (const vd of card.querySelectorAll('video')) {          // a video shows the frame on screen
+  for (const vd of qa('video')) {          // a video shows the frame on screen
     const vr = vd.getBoundingClientRect(); if (!vr.width || vd.readyState < 2) continue;
     try { ctx.drawImage(vd, vr.left - ox, vr.top - oy, vr.width, vr.height); } catch {}
   }
   ctx.lineWidth = 1;
   const seen = c => c && c !== 'transparent' && !/rgba\(.*,\s*0\)$/.test(c);
-  for (const n of card.querySelectorAll('.mine')) {
+  for (const n of qa('.mine')) {
     const ns = getComputedStyle(n);
     for (const nr of n.getClientRects()) {
       if (seen(ns.backgroundColor)) { ctx.fillStyle = ns.backgroundColor; ctx.fillRect(nr.left - ox, nr.top - oy, nr.width, nr.height); }
@@ -2729,15 +2799,15 @@ async function paintCard(card, scale){
     }
   }
   ctx.strokeStyle = '#c9d0db';
-  for (const td of card.querySelectorAll('td, th')) { const tr = td.getBoundingClientRect(); ctx.strokeRect(tr.left - ox, tr.top - oy, tr.width, tr.height); }
+  for (const td of qa('td, th')) { const tr = td.getBoundingClientRect(); ctx.strokeRect(tr.left - ox, tr.top - oy, tr.width, tr.height); }
   // highlighted words inside notes
-  for (const h of card.querySelectorAll('.mine span, .mine font, .mine mark, .slide mark.anno')) {
+  for (const h of qa('.mine span, .mine font, .mine mark, .slide mark.anno')) {
     const bg = getComputedStyle(h).backgroundColor;
     if (!seen(bg)) continue;
     ctx.fillStyle = bg; for (const hr of h.getClientRects()) ctx.fillRect(hr.left - ox, hr.top - oy, hr.width, hr.height);
   }
   // list bullets and numbers
-  for (const li of card.querySelectorAll('li')) {
+  for (const li of qa('li')) {
     const ls = getComputedStyle(li); if (ls.display !== 'list-item' || ls.listStyleType === 'none') continue;
     const first = document.createTreeWalker(li, NodeFilter.SHOW_TEXT, {acceptNode: t => t.data.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP}).nextNode();
     const lr = li.getBoundingClientRect(); if (!lr.width) continue;
@@ -2750,9 +2820,9 @@ async function paintCard(card, scale){
     ctx.fillText(mark, lr.left - ox - w - fs * 0.35, top - oy + h * 0.78);
   }
   // text, word by word, exactly where the browser laid it out
-  const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
+  const textNodes = function* () { for (const root of roots) { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); for (let t = w.nextNode(); t; t = w.nextNode()) yield [t, root]; } };
   const range = document.createRange();
-  for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+  for (const [t, root] of textNodes()) {
     const el = t.parentElement;
     if (!el || !t.data.trim() || el.closest('.tl, .grip, .gappill, .gapline, .cardbar, .katex-mathml, .note-chip, summary, details:not([open])')) continue;
     const cs = getComputedStyle(el);
@@ -2760,7 +2830,7 @@ async function paintCard(card, scale){
     ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${(parseFloat(cs.fontSize) * zoomOf(el)).toFixed(2)}px ${cs.fontFamily}`;
     ctx.fillStyle = cs.color; ctx.textBaseline = 'alphabetic';
     const deco = [];
-    for (let d = el; d && d !== card; d = d.parentElement) deco.push(getComputedStyle(d).textDecorationLine || '');
+    for (let d = el; d && d !== root; d = d.parentElement) deco.push(getComputedStyle(d).textDecorationLine || '');
     const underline = deco.some(x => /underline/.test(x)), strike = deco.some(x => /line-through/.test(x));
     for (const w of t.data.matchAll(/\S+/g)) {
       range.setStart(t, w.index); range.setEnd(t, w.index + w[0].length);
@@ -2774,16 +2844,17 @@ async function paintCard(card, scale){
     }
   }
   // formulas: fraction lines and drawn symbols (square roots, big brackets)
-  for (const fl of card.querySelectorAll('.formula .frac-line')) {
+  for (const fl of qa('.formula .frac-line')) {
     const r = fl.getBoundingClientRect(); if (!r.width) continue;
     ctx.fillStyle = getComputedStyle(fl).borderBottomColor; ctx.fillRect(r.left - ox, r.top - oy, r.width, Math.max(1, r.height));
   }
-  for (const sv of card.querySelectorAll('.formula svg')) {
+  for (const sv of qa('.formula svg')) {
     const r = sv.getBoundingClientRect(); if (!r.width || !r.height) continue;
     const col = getComputedStyle(sv).color;
     const xml = new XMLSerializer().serializeToString(sv).replace(/currentColor/g, col).replace('<svg', sv.getAttribute('xmlns') ? '<svg' : '<svg xmlns="http://www.w3.org/2000/svg"').replace('<svg', `<svg fill="${col}"`);
     try { const im = await loadImg('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml)); ctx.drawImage(im, r.left - ox, r.top - oy, r.width, r.height); } catch {}
   }
+  if (side) sidePaintLines(ctx, card, side, ox, oy);
   return c;
 }
 function listMark(li, t){
@@ -2836,14 +2907,15 @@ async function downloadPdf(){
   else main.classList.add('clean');            // notes take no room, so the pages look like the originals
   try {
     const size = LAYOUTS[layout];
+    sideForce = true;              // side pages sit beside their slides while the PDF is made
     paginateView();
     const cards = size ? [...main.querySelectorAll('.sheet')] : [...main.querySelectorAll('.slide')];
     const pages = [];
     for (let i = 0; i < cards.length; i++) {
       toast(`Making your PDF: page ${i + 1} of ${cards.length}`);
       const card = cards[i], cr = card.getBoundingClientRect();
-      const annots = [];
-      if (mode === 'comments') for (const b of card.querySelectorAll('.notebox')) {
+      const annots = [], sp = !size && sideShown() ? sideOf(card) : null;
+      if (mode === 'comments') for (const b of [...card.querySelectorAll('.notebox'), ...(sp ? sp.querySelectorAll('.notebox') : [])]) {
         const text = (b.querySelector('.mine')?.innerText || '').trim(); if (!text) continue;
         const br = b.getBoundingClientRect();
         annots.push({fx: (br.left - cr.left) / cr.width, fy: (br.top - cr.top) / cr.height, text, color: chipOf(b)});
@@ -2852,13 +2924,14 @@ async function downloadPdf(){
         const mr = markRect(pg, c.id); if (!mr) continue;
         annots.push({fx: (mr.left - cr.left) / cr.width, fy: (mr.top - cr.top) / cr.height, text: `${c.text}\n\nOn: “${c.quote}”`, color: c.color});
       }
-      const canvas = await paintCard(card, 2 / viewZoom);
+      const canvas = await paintCard(card, 2 / viewZoom, mode === 'page' ? sp : null);
       const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
       pages.push({w: canvas.width, h: canvas.height, pw: size?.[0], ph: size?.[1], annots, jpeg: new Uint8Array(await blob.arrayBuffer())});
     }
     const extra = [size ? layout.replace('-', ' ') : '', mode === 'comments' ? 'comments' : mode === 'none' ? 'no notes' : ''].filter(Boolean).join(', ');
     await saveFile(notebookName() + ` (notes${extra ? ', ' + extra : ''}).pdf`, makePdf(pages));
   } finally {
+    sideForce = false;
     main.classList.remove('clean');
     boxes.forEach((b, i) => b.classList.toggle('collapsed', wasCollapsed[i]));
     paginateView();
@@ -2870,7 +2943,7 @@ const LAYOUTS = {'default': null, 'a4-portrait': [595.28, 841.89], 'a4-landscape
 let layout = pref.get('pdf-layout', 'default');
 if (!(layout in LAYOUTS)) layout = 'default';
 $('#layout').value = layout;
-$('#layout').onchange = e => { layout = e.target.value; pref.set('pdf-layout', layout); paginateView(); };
+$('#layout').onchange = e => { layout = e.target.value; pref.set('pdf-layout', layout); paginateView(); if (LAYOUTS[layout] && side.on) toast('Side notes are hidden in A4 and A3 layouts. They are still saved, and come back in the Default layout.'); };
 // ================= page layout on screen: A4 / A3 sheets, portrait or landscape =================
 let viewZoom = 1, pageTimer = null;
 const pxSize = ([pw, ph]) => [Math.round(pw * 96 / 72), Math.round(ph * 96 / 72)];   // points to screen pixels
@@ -2906,6 +2979,7 @@ function paginateView(){
   hideGap();
   flatten(main);
   const size = LAYOUTS[layout];
+  if (size) sideJoin(main);
   main.classList.toggle('paged', !!size);
   if (!size || !main.querySelector('.slide')) {
     main.style.zoom = ''; viewZoom = 1;
@@ -2936,7 +3010,7 @@ function paginateView(){
     if (pendingHead.length) { const sheet = document.createElement('div'); sheet.className = 'sheet'; main.append(sheet); pendingHead.forEach(h => sheet.append(h)); }
     main.querySelectorAll('.strip').forEach(measureStrip);
   }
-  placeFloats(); spreadChips(); spellAllSoon();
+  sideLayout(); placeFloats(); spreadChips(); spellAllSoon();
   window.scrollTo(0, scrollY);
   if (focused && focused.isConnected && focused.classList?.contains('mine')) {
     focused.focus({preventScroll: true});
@@ -3665,7 +3739,7 @@ function selectAllNotes(card){
   if (reading) { toast('Select all works when you’re editing (not in Study mode).'); return; }
   card = card || currentCard();
   // (an empty note you just clicked into is about to disappear, so it isn't counted)
-  const boxes = card ? [...card.querySelectorAll('.notebox')].filter(hasContent) : [];
+  const boxes = card ? [...card.querySelectorAll('.notebox'), ...(sideShown() ? sideOf(card)?.querySelectorAll('.notebox') || [] : [])].filter(hasContent) : [];
   if (!boxes.length) { toast('There are no notes on this page to select.'); return; }
   if (document.activeElement?.closest?.('.mine')) document.activeElement.blur();
   getSelection().removeAllRanges(); active = null; savedRange = null;
@@ -4002,7 +4076,7 @@ function trackPage(){
 let noteQuery = '', noteColor = null, shownNotes = [];
 const colourName = c => (CHIP_COLORS.find(([h]) => h === c) || [, 'Custom'])[1];
 function noteKind(b){
-  return [b.classList.contains('sticky') ? 'Sticky note' : b.classList.contains('floating') ? 'Floating' : b.classList.contains('inline') ? 'In the text' : 'Between the lines',
+  return [b.closest('.sidepage') ? 'Side note' + (b.dataset.link ? ' linked to a highlight' : '') : b.classList.contains('sticky') ? 'Sticky note' : b.classList.contains('floating') ? 'Floating' : b.classList.contains('inline') ? 'In the text' : 'Between the lines',
     b.classList.contains('pinned') && 'pinned open', b.classList.contains('collapsed') && 'minimised'].filter(Boolean).join(' · ');
 }
 function markText(el, text, q){
@@ -4019,6 +4093,7 @@ function renderNotes(){
   const cmts = [];
   main.querySelectorAll('.slide').forEach((s, i) => {
     s.querySelectorAll('.notebox').forEach(b => { if (hasContent(b)) all.push({b, i, s}); });
+    if (sideShown()) sideOf(s)?.querySelectorAll('.notebox').forEach(b => { if (hasContent(b)) all.push({b, i, s}); });
     for (const c of openComments(s)) cmts.push({...c, i, s});
   });
   $('#noteCount').textContent = all.length + cmts.length || '';
@@ -4634,6 +4709,7 @@ function annoSetCm(card, id, text, done){
   saveSoon();
 }
 function annoRemove(card, id){
+  sideUnlinkId(id);
   if (card.classList.contains('pagecard')) setInk(card, inkItems(card).filter(x => !(x.k === 'mark' && x.id === id)));
   else for (const m of card.querySelectorAll(`mark.anno[data-id="${CSS.escape(id)}"]`)) { const p = m.parentNode; m.replaceWith(...m.childNodes); p.normalize(); }
   saveSoon();
@@ -4733,6 +4809,7 @@ annoBar.addEventListener('click', e => {
   if (b.dataset.c) { hlCol = b.dataset.c; pref.set('hl-colour', hlCol); }
   const made = makeHighlight(barRange, hlCol);
   if (made && 'cm' in b.dataset) openAnnoPop(made.card, made.id, true);
+  else if (made && 'side' in b.dataset) sideLinkNew(made.card, made.id);
 });
 
 // ---------- the comment on a highlight ----------
@@ -4770,6 +4847,7 @@ function showAnnoPop(){
   if (cm) { res.innerHTML = icon(cm.done ? 'reopen' : 'check') + (cm.done ? 'Reopen' : 'Resolve'); res.title = cm.done ? 'Reopen: list this comment again' : 'Resolve: this comment is dealt with, so it leaves the Notes list'; }
   const rm = annoPop.querySelector('[data-a=remove]'); rm.hidden = reading || annoCur.fresh;
   annoPop.querySelector('.arow:last-child').hidden = res.hidden && rm.hidden;
+  sideAnnoRow();
   annoPop.hidden = false; placeAnnoPop();
 }
 function openAnnoPop(card, id, fresh){
@@ -4823,6 +4901,327 @@ function jumpToComment(card, id){
   scrollBy({top: r.top - innerHeight * 0.4, behavior: 'instant'});
   openAnnoPop(card, id);
 }
+
+// ================= side notes: a notes page beside each slide, with lines to the highlights they belong to =================
+// A slide can have a side page, <aside class="sidepage" data-for="the slide's id">, which is always stored right after its slide, however it is shown
+// (beside it, or in a column of its own on the right). Its notes are floating note boxes (data-px across, data-py down), and a box can be linked to a
+// highlight on its slide (data-link = the highlight's id). Whether side notes are on, and the paper, are kept on every side page: each notebook has its own.
+const SIDE_BGS = [['#ffffff', 'White'], ['#fdf6e3', 'Cream'], ['#f2f2ee', 'Light grey'], ['#eef7f0', 'Mint'], ['#eef4fb', 'Sky'], ['#2b2f36', 'Dark slate']];
+const SIDE_PATS = [['plain', 'Plain'], ['lined', 'Lined'], ['grid', 'Grid'], ['dots', 'Dots']];
+const sideHex = c => /^#[0-9a-f]{6}$/i.test(c || '') ? c.toLowerCase() : null;
+const sideDefaults = () => ({bg: sideHex(pref.get('side-bg')) || '#fdf6e3', pat: SIDE_PATS.some(p => p[0] === pref.get('side-pat')) ? pref.get('side-pat') : 'plain'});
+const side = {on: false, sync: pref.get('side-sync', '1') !== '0', links: pref.get('side-links', '1') !== '0', ...sideDefaults()};
+let sideForce = false;                              // true while the PDF is made: side pages sit beside their slides whatever the setting
+let sideHover = null, sideLayoutRaf = 0, sideDrawRaf = 0, sidePick = null;
+const sideSmall = matchMedia('(max-width: 760px)');
+const sideShown = () => main.classList.contains('side-on');
+const sideDark = hex => { const n = parseInt(hex.slice(1), 16); return 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) < 128; };
+// the line colour: the highlight's colour, a little deeper so it shows on white
+const sideInk = c => '#' + [1, 3, 5].map(i => Math.round(parseInt(inkHex(c, '#ffe066').slice(i, i + 2), 16) * .55).toString(16).padStart(2, '0')).join('');
+const sideSid = s => s.dataset.sid || (s.dataset.sid = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+// the side page of a slide: the one right after it, or (in the separate column) the one marked for it
+function sideOf(slide){
+  const n = slide.nextElementSibling;
+  if (n?.classList.contains('sidepage')) return n;
+  return slide.dataset.sid ? main.querySelector(`.sidepage[data-for="${CSS.escape(slide.dataset.sid)}"]`) : null;
+}
+function sideSlide(sp){
+  const p = sp.previousElementSibling;
+  if (p?.classList.contains('slide')) return p;
+  return sp.dataset.for ? main.querySelector(`.slide[data-sid="${CSS.escape(sp.dataset.for)}"]`) : null;
+}
+// every note in the notebook's order (a slide's notes, then its side page's)
+function docBoxes(){
+  const out = [];
+  for (const el of main.children) {
+    if (el.classList.contains('sidewrap')) continue;
+    out.push(...el.querySelectorAll('.notebox'));
+    if (el.classList.contains('slide') && !el.nextElementSibling?.classList.contains('sidepage')) { const sp = sideOf(el); if (sp) out.push(...sp.querySelectorAll('.notebox')); }
+  }
+  return out;
+}
+// put the separate column's side pages back right after their slides (also used on the copy that is saved)
+function sideJoin(root){
+  const wrap = root.querySelector(':scope > .sidewrap'); if (!wrap) return;
+  const slides = [...root.querySelectorAll(':scope > .slide')];
+  for (const sp of [...wrap.querySelectorAll('.sidepage')]) {
+    const s = slides.find(x => x.dataset.sid && x.dataset.sid === sp.dataset.for);
+    if (s) s.after(sp); else root.append(sp);
+  }
+  wrap.remove();
+}
+function sideStyle(sp){
+  const set = (k, v) => { if (sp.dataset[k] !== v) sp.dataset[k] = v; };
+  set('on', side.on ? '1' : '0'); set('bg', side.bg); set('pat', side.pat);
+  if (sp.style.backgroundColor !== side.bg) sp.style.backgroundColor = side.bg;
+  sp.classList.toggle('dark', sideDark(side.bg));
+}
+// a notebook that has side pages remembers if they are on, and their paper
+function sideRead(){
+  const sp = main.querySelector('.sidepage');
+  if (sp) {
+    side.on = sp.dataset.on === '1';
+    Object.assign(side, sideDefaults());
+    if (sideHex(sp.dataset.bg)) side.bg = sideHex(sp.dataset.bg);
+    if (SIDE_PATS.some(p => p[0] === sp.dataset.pat)) side.pat = sp.dataset.pat;
+  } else { side.on = false; Object.assign(side, sideDefaults()); }
+  sidePaintUi();
+}
+function sideLayout(){
+  const slides = [...main.querySelectorAll(':scope > .slide')];
+  if (!main.querySelector('.slide')) side.on = false;                // (in A4 and A3 the slides are inside sheets)
+  const vis = side.on && !LAYOUTS[layout] && slides.length > 0;
+  const split = vis && !side.sync && !sideForce && !sideSmall.matches;
+  const was = main.classList.contains('side-on') + ':' + main.classList.contains('side-split');
+  main.classList.toggle('side-on', vis); main.classList.toggle('side-split', split);
+  document.body.classList.toggle('side-visible', vis);
+  const y = scrollY;
+  if (!split) sideJoin(main);
+  if (vis) {
+    let col = main.querySelector(':scope > .sidewrap > .sidecol');
+    if (split && !col) {
+      const wrap = document.createElement('div'); wrap.className = 'sidewrap'; col = document.createElement('div'); col.className = 'sidecol';
+      wrap.append(col); main.append(wrap);
+    }
+    slides.forEach((s, i) => {
+      let sp = sideOf(s);
+      if (!sp) { sp = document.createElement('aside'); sp.className = 'sidepage'; sp.dataset.for = sideSid(s); }
+      if (split) { if (col.children[i] !== sp) col.insertBefore(sp, col.children[i] || null); }
+      else if (sp.previousElementSibling !== s) s.after(sp);
+      sideStyle(sp);
+      sp.dataset.label = 'Page ' + (i + 1); sp.setAttribute('aria-label', 'Side notes for page ' + (i + 1));
+      for (const b of sp.querySelectorAll(':scope > .notebox[data-link]')) if (!annoGet(s, b.dataset.link)) b.removeAttribute('data-link');   // its highlight is gone
+    });
+    placeFloats(); sideSizes();
+  }
+  if (was !== main.classList.contains('side-on') + ':' + main.classList.contains('side-split')) window.scrollTo(0, y);
+  sidePaintUi(); sideDraw();
+}
+// a side page is as tall as its slide at least (in the row; in the separate column by its own height), and taller when its notes need the room
+function sideSizes(){
+  const split = main.classList.contains('side-split');
+  for (const sp of main.querySelectorAll('.sidepage')) {
+    let need = 0;
+    for (const b of sp.querySelectorAll(':scope > .notebox')) need = Math.max(need, b.offsetTop + b.offsetHeight + 28);
+    const s = split && sideSlide(sp);
+    if (s) need = Math.max(need, Math.round(s.getBoundingClientRect().height));
+    const v = need ? need + 'px' : '';
+    if (sp.style.minHeight !== v) sp.style.minHeight = v;
+  }
+}
+function sideSoon(){ if (!sideLayoutRaf) sideLayoutRaf = requestAnimationFrame(() => { sideLayoutRaf = 0; if (side.on || sideShown()) sideLayout(); }); }
+function sideDrawSoon(){ if (!sideDrawRaf) sideDrawRaf = requestAnimationFrame(sideDraw); }
+addEventListener('resize', sideSoon);
+sideSmall.addEventListener('change', sideSoon);
+addEventListener('scroll', sideDrawSoon, {passive: true, capture: true});        // (the column on the right scrolls by itself, so capture)
+new ResizeObserver(sideSoon).observe(main);
+
+// ---------- the lines ----------
+const sideSvg = svgEl('svg', {class: 'sidelines', 'aria-hidden': 'true'});
+sideSvg.hidden = true; document.body.append(sideSvg);
+// where a note's line runs: from the end of the highlight to the left edge of the note
+function sideGeom(card, box){
+  const id = box.dataset.link, h = id && annoGet(card, id); if (!h) return null;
+  const m = markRect(card, id), b = box.getBoundingClientRect();
+  if (!m || !b.width || box.classList.contains('collapsed')) return null;
+  return {id, x1: m.right, y1: m.top + m.height / 2, x2: b.left, y2: b.top + Math.min(18, b.height / 2), col: sideInk(annoColor(h))};
+}
+const sideCurve = g => { const dx = Math.max(30, (g.x2 - g.x1) * .45); return [g.x1 + dx, g.y1, g.x2 - dx, g.y2]; };
+function sideDraw(){
+  sideDrawRaf = 0;
+  sideSvg.replaceChildren();
+  if (!sideShown() || !side.links) { sideSvg.hidden = true; return; }
+  sideSvg.hidden = false;
+  const mr = main.getBoundingClientRect(), top = appbar.offsetParent ? appbar.getBoundingClientRect().bottom : 0, bar = $('.statusbar'), bottom = bar.offsetParent ? bar.getBoundingClientRect().top : innerHeight;
+  sideSvg.style.clipPath = `inset(${Math.max(0, top)}px ${Math.max(0, innerWidth - mr.right)}px ${Math.max(0, innerHeight - bottom)}px ${Math.max(0, mr.left)}px)`;
+  const col = main.querySelector(':scope > .sidewrap > .sidecol'), cr = col?.getBoundingClientRect();
+  for (const sp of main.querySelectorAll('.sidepage')) {
+    const card = sideSlide(sp); if (!card) continue;
+    for (const box of sp.querySelectorAll(':scope > .notebox[data-link]')) {
+      const g = sideGeom(card, box); if (!g) continue;
+      if (cr && (g.y2 < cr.top + 4 || g.y2 > cr.bottom - 4)) continue;          // scrolled out of its column
+      const [cx1, cy1, cx2, cy2] = sideCurve(g), hot = g.id === sideHover ? ' hot' : '';
+      sideSvg.append(
+        svgEl('path', {class: 'sl' + hot, 'data-id': g.id, d: `M${g.x1} ${g.y1}C${cx1} ${cy1} ${cx2} ${cy2} ${g.x2} ${g.y2}`, stroke: g.col}),
+        svgEl('circle', {class: 'sd' + hot, cx: g.x1, cy: g.y1, r: 3, fill: g.col}),
+        svgEl('path', {class: 'sa' + hot, d: `M${g.x2} ${g.y2}l-10 -5.5v11z`, fill: g.col}));
+    }
+  }
+}
+// in the PDF the lines are drawn faintly, from the end of the highlight to the note
+function sidePaintLines(ctx, card, sp, ox, oy){
+  ctx.save(); ctx.lineWidth = 1.5; ctx.globalAlpha = .55; ctx.lineCap = 'round';
+  for (const box of sp.querySelectorAll(':scope > .notebox[data-link]')) {
+    const g = sideGeom(card, box); if (!g) continue;
+    const [cx1, cy1, cx2, cy2] = sideCurve(g);
+    ctx.strokeStyle = ctx.fillStyle = g.col;
+    ctx.beginPath(); ctx.moveTo(g.x1 - ox, g.y1 - oy); ctx.bezierCurveTo(cx1 - ox, cy1 - oy, cx2 - ox, cy2 - oy, g.x2 - ox, g.y2 - oy); ctx.stroke();
+    ctx.beginPath(); ctx.arc(g.x1 - ox, g.y1 - oy, 3, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+}
+// pointing at a highlight or at its note makes the line bold
+main.addEventListener('mousemove', e => {
+  if (!sideShown()) return;
+  let id = null;
+  const a = e.target.closest?.('mark.anno'), nb = e.target.closest?.('.sidepage .notebox[data-link]');
+  if (a) id = a.dataset.id || null;
+  else if (nb) id = nb.dataset.link;
+  else {
+    const strip = !drawing && e.target.closest?.('.strip'), card = strip && strip.closest('.pagecard');
+    if (card && card.dataset.ink) id = markAt(card, strip, e.clientX, e.clientY)?.id || null;
+  }
+  if (id !== sideHover) { sideHover = id; sideDrawSoon(); }
+});
+main.addEventListener('mouseleave', () => { if (sideHover) { sideHover = null; sideDrawSoon(); } });
+
+// ---------- notes on a side page ----------
+// a new note box on a side page, x and y from its top left corner (pixels), already floating
+function sideAddBox(sp, x, y, w, link){
+  const {box, el} = makeBox();
+  box.classList.add('floating'); box.style.width = w + 'px';
+  box.dataset.px = (Math.max(0, x) / sp.clientWidth).toFixed(4); box.dataset.py = Math.max(0, Math.round(y));
+  if (link) box.dataset.link = link;
+  sp.append(box); gripTitles(box); placeFloats(sp);
+  focusNote(el); sideSoon();
+  return box;
+}
+const sideWidth = sp => Math.round(Math.min(280, Math.max(150, sp.clientWidth * .62)));
+function sideClick(e){
+  if (getSelection().toString().trim() || sidePick) return;
+  const sp = e.target.closest('.sidepage'), r = sp.getBoundingClientRect(), w = sideWidth(sp);
+  sideAddBox(sp, Math.max(30, Math.min(sp.clientWidth - w - 10, e.clientX - r.left - 10)), e.clientY - r.top - 20, w);
+}
+// somewhere on the side page for a note that starts at y: not on top of another note
+function sideFree(sp, x, y, w){
+  for (let k = 0; k < 40; k++) {
+    const hit = [...sp.querySelectorAll(':scope > .notebox:not(.collapsed)')].find(b => b.offsetTop < y + 56 && b.offsetTop + b.offsetHeight > y - 4 && b.offsetLeft < x + w && b.offsetLeft + b.offsetWidth > x);
+    if (!hit) break;
+    y = hit.offsetTop + hit.offsetHeight + 10;
+  }
+  return y;
+}
+// highlight the words and open a note beside them on the side page, joined by a line, with the cursor in it
+function sideLinkNew(card, id){
+  const sp = sideShown() && sideOf(card), m = sp && markRect(card, id);
+  if (!sp || !m) { toast('Turn on Side notes in the View tab first.'); return; }
+  sideUnlinkId(id);
+  const r = sp.getBoundingClientRect(), w = sideWidth(sp), x = Math.max(30, Math.min(40, sp.clientWidth - w - 10));
+  sideAddBox(sp, x, sideFree(sp, x, m.top + m.height / 2 - r.top - 24, w), w, id);
+  saveSoon();
+}
+function sideUnlinkId(id){
+  let any = false;
+  main.querySelectorAll('.notebox[data-link]').forEach(b => { if (b.dataset.link === id) { b.removeAttribute('data-link'); any = true; } });
+  if (any) { sideDrawSoon(); saveSoon(); }
+  return any;
+}
+function sideLink(box, id){
+  main.querySelectorAll('.notebox[data-link]').forEach(b => { if (b.dataset.link === id) b.removeAttribute('data-link'); });
+  box.dataset.link = id; saveSoon(); sideSoon();
+}
+// the highlight's pop-up: link it to a note on the side page, go to the note, or unlink
+const sideRow = document.createElement('div');
+sideRow.className = 'arow'; sideRow.hidden = true;
+annoPop.querySelector('.arow:last-child').before(sideRow);
+function sideAnnoRow(){
+  const card = annoCur?.card, sp = card && sideShown() && sideOf(card), box = sp && sp.querySelector(`:scope > .notebox[data-link="${CSS.escape(annoCur.id)}"]`);
+  sideRow.hidden = !sp || (reading && !box);
+  if (sideRow.hidden) return;
+  sideRow.innerHTML = box
+    ? `<button type="button" class="btn" data-a="sidego" title="Go to side note: scroll to the note linked to these words">${icon('link')}Go to side note</button>` + (reading ? '' : `<button type="button" class="btn" data-a="unlink" title="Unlink: keep the note and the highlight, but take the line away">${icon('unlink')}Unlink</button>`)
+    : `<button type="button" class="btn" data-a="sidepick" title="Link to a side note: then click a note on the side page to join it to these words">${icon('link')}Link to a side note…</button>`;
+}
+annoPop.addEventListener('click', e => {
+  const b = e.target.closest('[data-a="sidego"], [data-a="unlink"], [data-a="sidepick"]'); if (!b || !annoCur) return;
+  const {card, id} = annoCur;
+  if (b.dataset.a === 'unlink') { sideUnlinkId(id); showAnnoPop(); toast('Unlinked. The note and the highlight are both still there.'); return; }
+  saveAnnoPopKeep();
+  if (b.dataset.a === 'sidego') { const box = sideOf(card)?.querySelector(`:scope > .notebox[data-link="${CSS.escape(id)}"]`); closeAnnoPop(); if (box) jumpToNote(box); }
+  else { closeAnnoPop(); sidePickStart(card, id); }
+});
+// (keep what was typed in the comment box before the pop-up changes)
+function saveAnnoPopKeep(){
+  if (!annoCur || reading) return;
+  const h = annoGet(annoCur.card, annoCur.id), t = annoTa.value.trim();
+  if (h && t !== (annoCm(h)?.text || '')) annoSetCm(annoCur.card, annoCur.id, t, annoCm(h)?.done);
+}
+function sidePickStart(card, id){
+  const sp = sideOf(card);
+  if (!sp || !sideShown()) { toast('Turn on Side notes in the View tab first.'); return; }
+  if (![...sp.querySelectorAll(':scope > .notebox')].some(hasContent)) { toast('There are no notes on this side page yet. Click the page to write one, then link it.'); return; }
+  sidePick = {card, id, sp}; document.body.classList.add('side-picking');
+  sp.scrollIntoView({block: 'nearest', behavior: smoothScroll()});
+  toast('Click a note on the side page to join it to these words. Press Esc to cancel.');
+}
+function sidePickEnd(){ sidePick = null; document.body.classList.remove('side-picking'); }
+document.addEventListener('mousedown', e => { if (sidePick && e.target.closest?.('.sidepage')) e.preventDefault(); }, true);      // (no cursor in the note you pick)
+document.addEventListener('click', e => {
+  if (!sidePick) return;
+  const b = e.target.closest?.('.sidepage > .notebox');
+  if (b && b.parentElement === sidePick.sp && hasContent(b)) { e.preventDefault(); e.stopPropagation(); sideLink(b, sidePick.id); sidePickEnd(); toast('Joined. Point at the line, the words or the note to see it clearly.'); }
+  else if (e.target.closest?.('.sidepage')) { e.preventDefault(); e.stopPropagation(); }
+  else sidePickEnd();
+}, true);
+document.addEventListener('keydown', e => { if (sidePick && e.key === 'Escape') { e.stopPropagation(); sidePickEnd(); toast(''); } }, true);
+
+// ---------- the View tab: Side notes, Sync scrolling, Link lines and Background ----------
+const sideBgPop = document.createElement('div');
+sideBgPop.id = 'sideBgPop'; sideBgPop.className = 'pop sidebg'; sideBgPop.hidden = true; sideBgPop.setAttribute('role', 'dialog'); sideBgPop.setAttribute('aria-label', 'Side page background');
+sideBgPop.innerHTML = '<h3>Colour</h3><div class="sws">' + SIDE_BGS.map(([c, n]) => `<button type="button" class="sw" data-c="${c}" style="--c:${c}" title="${n}" aria-label="${n}" aria-pressed="false"></button>`).join('') +
+  '</div><label class="cust"><input type="color" id="sideCustom" aria-label="Custom colour"> Custom colour</label><h3>Pattern</h3><div class="pats">' +
+  SIDE_PATS.map(([p, n]) => `<button type="button" class="btn outline pat" data-pat="${p}" title="${n}: ${{plain: 'a blank page', lined: 'ruled lines', grid: 'small squares', dots: 'a grid of dots'}[p]}" aria-pressed="false"><span class="pv" data-pat="${p}"></span>${n}</button>`).join('') + '</div>';
+document.body.append(sideBgPop);
+function sidePaintUi(){
+  const set = (id, on) => $(id)?.setAttribute('aria-pressed', on);
+  set('#sideBtn', side.on); set('#sideSync', side.sync); set('#sideLinks', side.links);
+  sideBgPop.querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === side.bg));
+  sideBgPop.querySelectorAll('.pat').forEach(b => b.setAttribute('aria-pressed', b.dataset.pat === side.pat));
+  sideBgPop.querySelectorAll('.pv').forEach(v => { v.style.setProperty('--pvbg', side.bg); v.classList.toggle('dark', sideDark(side.bg)); });
+  const cu = $('#sideCustom'); if (cu && cu.value !== side.bg) cu.value = side.bg;
+}
+function sideSet(change){
+  Object.assign(side, change);
+  pref.set('side-bg', side.bg); pref.set('side-pat', side.pat);
+  main.querySelectorAll('.sidepage').forEach(sideStyle);
+  sidePaintUi(); saveSoon();
+}
+function placeSideBg(){
+  const b = $('#sideBgBtn').getBoundingClientRect(), w = sideBgPop.offsetWidth;
+  sideBgPop.style.left = Math.max(8, Math.min(innerWidth - w - 8, b.left)) + 'px';
+  sideBgPop.style.top = (b.bottom + 6) + 'px';
+}
+function closeSideBg(){ sideBgPop.hidden = true; $('#sideBgBtn').setAttribute('aria-expanded', 'false'); }
+$('#sideBtn').onclick = () => {
+  if (!main.querySelector('.slide')) { toast('Open a file first, then turn on side notes.'); return; }
+  if (LAYOUTS[layout]) { toast('Side notes show in the Default layout. Choose Layout: Default first.'); return; }
+  side.on = !side.on;
+  main.querySelectorAll('.sidepage').forEach(sideStyle);
+  sideLayout(); saveSoon();
+  toast(side.on ? 'Side notes on: click a side page to write a note beside its slide.' : 'Side notes hidden. They stay saved, and come back when you turn them on.');
+};
+$('#sideSync').onclick = () => {
+  side.sync = !side.sync; pref.set('side-sync', side.sync ? '1' : '0'); sideLayout();
+  if (side.on && !LAYOUTS[layout]) toast(side.sync ? 'Sync scrolling: each side page sits beside its slide again.' : 'Sync scrolling off: the side pages scroll by themselves in a column on the right.');
+};
+$('#sideLinks').onclick = () => { side.links = !side.links; pref.set('side-links', side.links ? '1' : '0'); sidePaintUi(); sideDraw(); };
+$('#sideBgBtn').onclick = e => {
+  e.stopPropagation();
+  if (!sideBgPop.hidden) { closeSideBg(); return; }
+  sideBgPop.hidden = false; $('#sideBgBtn').setAttribute('aria-expanded', 'true'); placeSideBg();
+};
+sideBgPop.addEventListener('click', e => {
+  const sw = e.target.closest('.sw'), pt = e.target.closest('.pat');
+  if (sw) sideSet({bg: sw.dataset.c}); else if (pt) sideSet({pat: pt.dataset.pat});
+});
+$('#sideCustom').addEventListener('input', e => sideSet({bg: e.target.value}));
+document.addEventListener('mousedown', e => { if (!sideBgPop.hidden && !sideBgPop.contains(e.target) && !$('#sideBgBtn').contains(e.target)) closeSideBg(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sideBgPop.hidden) { e.stopPropagation(); closeSideBg(); $('#sideBgBtn').focus(); } }, true);
+addEventListener('resize', () => { if (!sideBgPop.hidden) placeSideBg(); });
+addEventListener('scroll', () => { if (!sideBgPop.hidden) placeSideBg(); }, {passive: true});
+// the bar that shows when you select words: one more choice
+annoBar.insertAdjacentHTML('beforeend', `<button type="button" class="btn" data-side title="Link to side note: highlight the selected words and open a note beside them on the side page, joined by a line">${icon('link')}Link to side note</button>`);
+sidePaintUi();
 
 // ================= the add menu: a note, a sticky note or an equation, Notion style =================
 // "+ Add here" between two lines of a PDF page opens it with a search box; typing / in a note opens it at the cursor
@@ -5436,7 +5835,7 @@ function ckNotes(html){
   const out = []; let nth = 0;
   for (const b of doc.querySelectorAll('.notebox')) {
     if (!hasContent(b)) continue;
-    out.push({nth: nth++, page: pageOf.get(b.closest('.slide')) || 0, text: noteSummary(b.querySelector(':scope > .mine'))});
+    out.push({nth: nth++, page: pageOf.get(b.closest('.slide') || b.closest('.sidepage')?.previousElementSibling) || 0, text: noteSummary(b.querySelector(':scope > .mine'))});
   }
   return out;
 }
@@ -5542,7 +5941,7 @@ function ckGoPage(i){
 // a note is found by its place in the notebook: the n-th note that has something in it
 async function ckGoNote(id, nth){
   if (id !== curId) { await switchDoc(id); await new Promise(r => setTimeout(r, 60)); }
-  const box = [...main.querySelectorAll('.notebox')].filter(hasContent)[nth];
+  const box = docBoxes().filter(hasContent)[nth];
   if (box) jumpToNote(box); else toast('That note has moved or been deleted.');
 }
 function ckChoose(i){
@@ -5613,7 +6012,7 @@ function noteMarkdown(m){
 async function downloadMarkdown(){
   const out = [`# ${notebookName()}`];
   main.querySelectorAll('.slide').forEach((s, i) => {
-    const notes = [...s.querySelectorAll('.notebox')].filter(hasContent).map(b => {
+    const notes = [...s.querySelectorAll('.notebox'), ...(sideOf(s)?.querySelectorAll('.notebox') || [])].filter(hasContent).map(b => {
       const md = noteMarkdown(b.querySelector(':scope > .mine'));
       return b.classList.contains('sticky') ? md.split('\n').map(l => l.trim() ? '> ' + l : '>').join('\n') : md;
     }).filter(Boolean);
