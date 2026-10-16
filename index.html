@@ -996,6 +996,8 @@ const APP_HTML = (() => {
 })();
 const $ = s => document.querySelector(s);
 const main = $('#main');
+// the open notebook's page list; kept here because it is taken out of the sidebar while its notebook is folded (and $ can't find it then)
+const pageList = $('#pageList');
 const icon = id => `<svg class="i" aria-hidden="true"><use href="#i-${id}"/></svg>`;
 // remembered settings (in a private window, or with storage blocked, they just aren't remembered)
 const pref = {
@@ -3575,7 +3577,7 @@ function pageTitle(card){
   return (b?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120);
 }
 function renderPages(){
-  const list = $('#pageList'), slides = main.querySelectorAll('.slide');
+  const list = pageList, slides = main.querySelectorAll('.slide');
   if (!slides.length) { list.innerHTML = '<li class="sideempty">Open a file and its pages show up here.</li>'; return; }
   const frag = document.createDocumentFragment();
   let n = 0;
@@ -3599,7 +3601,7 @@ function renderPages(){
   }
   list.replaceChildren(frag); pageMark = -1; trackPage();
 }
-$('#pageList').addEventListener('click', e => {
+pageList.addEventListener('click', e => {
   const b = e.target.closest('.pg'); if (!b) return;
   const card = main.querySelectorAll('.slide')[+b.dataset.i]; if (!card) return;
   (card.closest('.sheet') || card).scrollIntoView({block: 'start', behavior: smoothScroll()});
@@ -3617,7 +3619,7 @@ function trackPage(){
   info.innerHTML = `Page <b>${i + 1}</b> of ${slides.length}`;
   if (i === pageMark) return;
   pageMark = i;
-  const list = $('#pageList');
+  const list = pageList;
   list.querySelector('[aria-current]')?.removeAttribute('aria-current');
   const b = list.querySelector(`.pg[data-i="${i}"]`); if (!b || !panelOpen.pages) return;
   b.setAttribute('aria-current', 'true');
@@ -3824,7 +3826,7 @@ async function deleteDoc(id){
 }
 function renderDocs(){
   if (renaming) return;                   // don't pull the name box away while you type in it
-  const list = $('#docList'), pages = $('#pageList');
+  const list = $('#docList'), pages = pageList;
   $('#docCount').textContent = docs.length > 1 ? docs.length : '';
   list.replaceChildren(...docs.map(d => {
     const on = d.id === curId, open = on && docPagesOpen, li = document.createElement('li');
