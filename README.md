@@ -4,16 +4,17 @@ A simple web page for taking notes on lecture slides.
 
 ## The workspace
 
-- **Title bar**: the file's name and a *Saved in this browser* indicator, Back / Forward (undo and redo), **Focus**, **Study mode**, **Open**, **Download** and Help. The buttons at each end show or hide the **Pages** and **Notes** panels.
+- **Notebooks**, Notion style: every file you open becomes its own notebook in the **sidebar** (left), with its own notes, Back / Forward history and place on the page. Click a notebook to switch; the one you're in shows thumbnails of its pages. **New notebook** starts one with a blank page, and each notebook's **⋯** renames or deletes it (double-click the name in the title bar to rename too). **Insert › Add a file here** adds a file to the notebook you're in instead of opening a new one. Hide the sidebar with **«** (Ctrl+\\) and point at the left edge of the window to peek at it.
+- **Title bar**: the notebook's name and a *Saved in this browser* indicator, Back / Forward (undo and redo), **Focus**, **Study mode**, **Open**, **Download** and Help. The buttons at each end show or hide the sidebar and the **Notes** panel.
 - **Toolbar tabs**, like Word's ribbon:
   - **Home**: font, text size (type any size and press Enter, or pick one), colours and favourite colours, bold / italic / underline / strikethrough, superscript and subscript, highlighter, clear formatting, bullet and numbered lists (bullet style and indent size menus) and alignment.
   - **Insert**: formulas, pictures / videos / sound, a blank page after the current page, or remove a page.
   - **Box**: a note box's outline and fill, the colour of its minimised icon, and **Select all notes on this page**.
   - **View**: page layout (Default, A4 or A3, portrait or landscape), Hide / Show notes, the side panels, spell check language, toolbar size (**Full**, **Tabs only** or **Hidden**) and **Clear everything**.
-- **Pages panel** (left): a thumbnail of every page with its title and how many notes it has. Click one to jump there; the page you're on is marked.
-- **Notes panel** (right): every note listed by page. Search them, filter by icon colour, and click one to jump to it (a minimised note opens).
+- **Notes panel** (right): every note in the notebook, listed by page. Search them, filter by icon colour, and click one to jump to it (a minimised note opens).
 - **Status bar**: which page you're on, how many notes there are (pinned, minimised), and Hide / Show notes.
 - **Focus mode** (**Focus** in the title bar, or Ctrl+Shift+F) hides the toolbar, both side panels and the status bar so only your pages and notes are on screen. **Exit focus** (top right) or **Esc** brings everything back. You can also close each panel on its own with its ×, or shrink the toolbar to tabs only with the arrow at the end of the tabs.
+- The look is pencil on paper: hand-drawn borders, a handwritten interface font and a dotted paper background (a chalkboard in dark mode). Your slides stay exactly as they are.
 - On a phone the panels open as drawers over the page, and the toolbar tabs scroll sideways.
 
 ## Taking notes
@@ -38,6 +39,8 @@ A simple web page for taking notes on lecture slides.
 
 ## Use it
 
-Open it at **https://ylp-games.github.io/Between-the-lines/**, or open `index.html` in a browser. It is a single file with no build step.
+Open it at **https://ylp-games.github.io/Between-the-lines/**, or open `index.html` in a browser. The app is a single file with no build step.
+
+**Install it as a desktop app**: in Chrome or Edge, press **Install as an app** at the bottom of the sidebar (or the install icon in the address bar). It then opens in its own window, works offline, and appears in "Open with" for PDF, PowerPoint and Word files. `manifest.webmanifest`, `sw.js` (the offline cache) and `icons/` make this work; they are only used when the site is served from the web.
 
 Pushing to `main` publishes the site to GitHub Pages automatically (`.github/workflows/static.yml`).

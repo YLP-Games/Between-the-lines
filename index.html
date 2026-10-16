@@ -5,22 +5,29 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="claude:viewport-fit-sides" content="cover">
 <title>Between the Slides</title>
+<meta name="description" content="Take notes right between the lines of your lecture slides.">
+<meta name="theme-color" content="#f4efe4">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 28 28%22%3E%3Cpath d=%22M5.5 3.2C10 2.6 18.5 2.4 23.4 3.4c1.3 4.6 1.6 15.2.9 21.1-5.3.9-14.7 1-19.9.3C3.6 20 3.5 8.6 5.5 3.2Z%22 fill=%22%233552c4%22/%3E%3Cpath d=%22M8 9.4c3.6-.5 8.2-.4 12.3.2M8.2 19.1c4-.4 8.4-.3 11.9.1%22 stroke=%22%23fff%22 stroke-width=%222.2%22 stroke-linecap=%22round%22 fill=%22none%22/%3E%3Cpath d=%22M8 14.3c2.6-.6 5.8-.5 8.6-.1%22 stroke=%22%23ffd54a%22 stroke-width=%222.8%22 stroke-linecap=%22round%22 fill=%22none%22/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Patrick+Hand&family=Kalam:wght@400;700&family=Nunito:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,700;1,400&family=Courier+Prime:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
 <style>
 /* ================= tokens ================= */
 :root{
-  --bg:#eef1f6; --surface:#fff; --surface-2:#f7f8fb; --hover:#e9edf5; --ink:#18202c; --muted:#5b6678; --line:#e1e6ee; --line-strong:#d5dbe5;
-  --accent:#2747c9; --accent-ink:#fff; --accent-soft:#e6ebfb; --accent-strong:#1a318f; --danger:#b3261e; --ok:#1e6b3f; --mark:#ffd54a;
-  --card:#fff; --card-ink:#1b2330; --card-muted:#6b7686;
-  --radius:8px; --pop-shadow:0 8px 24px rgba(16,24,40,.18); --page-shadow:0 1px 2px rgba(16,24,40,.08),0 4px 16px rgba(16,24,40,.06);
-  --display:"Bricolage Grotesque",system-ui,sans-serif; --ui:system-ui,-apple-system,"Segoe UI",sans-serif;
-  --appbar-h:0px; --status-h:32px; --gutter-l:max(12px,env(safe-area-inset-left,0px)); --gutter-r:max(12px,env(safe-area-inset-right,0px));
+  --bg:#f4efe4; --surface:#fffdf7; --surface-2:#faf6ec; --hover:#efe7d6; --ink:#26231d; --muted:#665f52; --line:#ddd3bf; --line-strong:#bdb29b; --pencil:#2f2b24;
+  --accent:#3552c4; --accent-ink:#fff; --accent-soft:#e2e6f4; --accent-strong:#243c9e; --danger:#b03a28; --ok:#2e6a38; --mark:#ffd54a;
+  --card:#fff; --card-ink:#1b2330; --card-muted:#6b7686; --dot:rgba(47,43,36,.13);
+  --radius:9px; --wob:10px 7px 11px 6px / 6px 11px 7px 10px; --wob-lg:16px 10px 18px 9px / 9px 18px 10px 16px; --wob-pill:255px 15px 225px 15px / 15px 225px 15px 255px;
+  --sketch:2px 3px 0 var(--pencil); --pop-shadow:4px 5px 0 rgba(47,43,36,.85); --page-shadow:4px 5px 0 rgba(47,43,36,.16);
+  --display:"Kalam","Patrick Hand",cursive; --ui:"Patrick Hand","Segoe Print","Comic Sans MS",system-ui,sans-serif;
+  --appbar-h:0px; --status-h:34px; --gutter-l:max(12px,env(safe-area-inset-left,0px)); --gutter-r:max(12px,env(safe-area-inset-right,0px));
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11151c;--surface:#1a2029;--surface-2:#151a22;--hover:#252d39;--ink:#e6eaf0;--muted:#9aa5b4;--line:#2a3240;--line-strong:#364052;--accent:#8fa6ff;--accent-ink:#0f1830;--accent-soft:#232d4a;--accent-strong:#b5c4ff;--danger:#ff8a80;--ok:#7dd3a0;--card:#f4f6fa;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#11151c;--surface:#1a2029;--surface-2:#151a22;--hover:#252d39;--ink:#e6eaf0;--muted:#9aa5b4;--line:#2a3240;--line-strong:#364052;--accent:#8fa6ff;--accent-ink:#0f1830;--accent-soft:#232d4a;--accent-strong:#b5c4ff;--danger:#ff8a80;--ok:#7dd3a0;--card:#f4f6fa;color-scheme:dark}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px var(--ui)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d2320;--surface:#242b26;--surface-2:#202722;--hover:#2f3832;--ink:#ece6d6;--muted:#aaa594;--line:#38423b;--line-strong:#56614f;--pencil:#ddd6c4;--accent:#a4b6ff;--accent-ink:#141a2e;--accent-soft:#2c3550;--accent-strong:#c7d2ff;--danger:#ff9e8c;--ok:#9fd8a5;--card:#f4f1e8;--dot:rgba(236,230,214,.07);--pop-shadow:4px 5px 0 rgba(0,0,0,.55);--page-shadow:4px 5px 0 rgba(0,0,0,.4);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1d2320;--surface:#242b26;--surface-2:#202722;--hover:#2f3832;--ink:#ece6d6;--muted:#aaa594;--line:#38423b;--line-strong:#56614f;--pencil:#ddd6c4;--accent:#a4b6ff;--accent-ink:#141a2e;--accent-soft:#2c3550;--accent-strong:#c7d2ff;--danger:#ff9e8c;--ok:#9fd8a5;--card:#f4f1e8;--dot:rgba(236,230,214,.07);--pop-shadow:4px 5px 0 rgba(0,0,0,.55);--page-shadow:4px 5px 0 rgba(0,0,0,.4);color-scheme:dark}
+body{margin:0;color:var(--ink);font:16px var(--ui);background:var(--bg) radial-gradient(var(--dot) 1px,transparent 1.4px) 0 0/24px 24px}
+/* a little paper grain over everything */
+body::after{content:"";position:fixed;inset:0;z-index:200;pointer-events:none;opacity:.06;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 img{max-width:100%}
 [hidden]{display:none!important}
 .spacer{flex:1}
@@ -124,7 +131,7 @@ body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
 .thumb.img{background:#fff var(--pg) 0 0/100% auto no-repeat;padding:0}
 .thumb b{display:block;font-size:10px;color:#13254a;margin-bottom:2px}
 .thumb .n{position:absolute;right:5px;bottom:5px;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;background:var(--mark);color:#3d3000;font:700 11px/18px var(--ui);text-align:center}
-.pgl{display:flex;gap:8px;font-size:12px;align-items:baseline;min-width:0}
+.pgl{display:flex;gap:8px;font-size:14px;align-items:baseline;min-width:0}
 .pgl span:first-child{color:var(--muted);min-width:14px}
 .pgl span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .notetools{position:sticky;top:46px;z-index:2;display:flex;flex-direction:column;gap:8px;padding:0 12px 10px;background:var(--surface)}
@@ -154,7 +161,7 @@ body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
   .scrim{display:block;position:fixed;inset:0;z-index:15;background:rgba(16,24,40,.28)}
 }
 @media (max-width:640px){
-  .brand,.vr,.btn .lbl,.cap,.savestate span,#save .chev{display:none}
+  .titlebar .brand,.vr,.btn .lbl,.cap,.savestate span,#save .chev{display:none}
   .titlebar{gap:0;padding-inline:6px}
   .titlebar .btn{min-width:32px;padding:0 6px}
   .doc-title{font-size:13px}
@@ -380,9 +387,116 @@ kbd{font:12px ui-monospace,Menlo,Consolas,monospace;padding:1px 5px;border:1px s
 .favmanage .fm{display:inline-flex;align-items:center;gap:2px;padding:2px;border:1px solid var(--line);border-radius:999px}
 .favmanage .dot{width:20px;height:20px}
 #helpBtn[aria-expanded="true"]{color:var(--accent);background:var(--accent-soft)}
+
+/* ================= sketch look: pencil lines on paper ================= */
+.i{stroke-width:2}
+.btn{font-size:16px;border-radius:var(--wob);transition:background-color .15s,transform .1s,box-shadow .1s}
+.btn:active:not(:disabled){transform:translate(1px,1px)}
+.btn.outline{border:1.5px solid var(--pencil)}
+.btn.primary{border:1.5px solid var(--pencil);box-shadow:var(--sketch)}
+.btn.primary:active:not(:disabled){transform:translate(2px,3px);box-shadow:none}
+.btn.sure{box-shadow:none}
+select,#size,input[type=color],.search,.dictadd input,#fInput{border:1.5px solid var(--pencil);border-radius:var(--wob)}
+select{font-size:16px}
+#size{font-size:15px;border-radius:10px 0 0 7px / 7px 0 0 10px}
+#sizePick{border-radius:0 10px 7px 0 / 0 7px 10px 0}
+.appbar{border-bottom:1.5px solid var(--pencil)}
+.ribbon,.panel{border-top-color:var(--line)}
+.doc-title{font:700 17px var(--display)}
+.doc-title.none{font:16px var(--ui)}
+.savestate{font-size:15px}
+.tab{font-size:17.5px;border-bottom:none;padding:0 12px}
+.tab[aria-selected="true"]{font-weight:400;color:var(--ink);background:linear-gradient(100deg,transparent 3%,color-mix(in srgb,var(--accent) 24%,transparent) 6%,color-mix(in srgb,var(--accent) 16%,transparent) 93%,transparent 97%) no-repeat 0 76%/100% 46%}
+.ribbon.compact .tab[aria-selected="true"]:not(.peeking){background:none}
+.cap{font-size:13.5px}
+.sep{background:var(--line-strong)}
+.sw::before{box-shadow:0 0 0 1.5px var(--pencil)}
+.seg{border:1.5px solid var(--pencil);border-radius:var(--wob);background:var(--surface-2)}
+.statusbar{border-top:1.5px solid var(--pencil);font-size:15px}
+.statusbar .btn{font-size:15px}
+.side.notes{border-left:1.5px solid var(--pencil)}
+.sidehead h2{font:700 18px var(--display);text-transform:none;letter-spacing:0;color:var(--ink)}
+.notelist .group,.pagelist .group{font:700 15px var(--display);text-transform:none;letter-spacing:0;color:var(--muted)}
+.ncard{border:1.5px solid var(--pencil);border-radius:var(--wob);box-shadow:2px 2px 0 color-mix(in srgb,var(--pencil) 22%,transparent);transition:transform .1s,box-shadow .1s}
+.ncard:hover{background:var(--surface);box-shadow:var(--sketch);transform:translate(-1px,-1px)}
+.ncard .txt{font-size:16.5px}
+.ncard .meta{font-size:13px}
+.fchip{border:1.5px solid var(--pencil);border-radius:var(--wob);font-size:14px}
+.fchip[aria-pressed="true"]{background:var(--pencil);color:var(--surface);border-color:var(--pencil)}
+.thumb{box-shadow:none;border:1.5px solid var(--pencil);border-radius:3px 5px 4px 6px / 6px 4px 5px 3px}
+.pg[aria-current="true"]{background:color-mix(in srgb,var(--accent) 14%,transparent);box-shadow:none}
+.pg[aria-current="true"] .thumb{box-shadow:2px 2px 0 var(--accent)}
+.pop,.menu{border:1.5px solid var(--pencil);border-radius:var(--wob-lg);box-shadow:var(--pop-shadow)}
+.menu button,.spellmenu button{border-radius:var(--wob)}
+.toast{border-radius:var(--wob-lg);font:16px/1.35 var(--ui);background:var(--pencil);color:var(--bg);box-shadow:none}
+.showbar{border:1.5px solid var(--pencil);box-shadow:var(--sketch);font:15px var(--ui);border-radius:var(--wob-pill)}
+.slide{border:1.5px solid var(--pencil);border-radius:4px 6px 5px 7px / 7px 5px 6px 4px}
+.sheet{border:1.5px solid var(--pencil)}
+.sheet > .slide{border:none}
+.file-head{font:700 30px/1.15 var(--display);letter-spacing:-.01em}
+.gappill{font:16px var(--ui);height:30px;border:1.5px solid var(--pencil);border-radius:var(--wob-pill);box-shadow:2px 2px 0 var(--pencil)}
+.welcome h2{font:700 46px/1.1 var(--display);letter-spacing:-.01em}
+.welcome .hand{font-size:56px}
+.welcome .lede{font-size:18px}
+.drop{border:2px dashed var(--pencil);border-radius:var(--wob-lg);background:var(--surface)}
+.drop b{font:700 21px var(--display)}
+.kinds span{border:1.5px solid var(--line-strong);border-radius:var(--wob);font-size:14px}
+.steps li{font-size:15px}
+.steps b{font:700 17px var(--display)}
+.steps li::before{border:1.5px solid var(--pencil);border-radius:var(--wob)}
+.private{font-size:14px}
+.sethead h2{font:700 20px var(--display)}
+.settings h3{font:700 17px var(--display)}
+.howto,.keys{font-size:15px}
+kbd{border-color:var(--pencil)}
+.dictlist li,.favmanage .fm{border:1.5px solid var(--line-strong)}
+.chippop{font-size:14px}
+.skip{position:absolute;left:12px;top:-60px;z-index:100;padding:8px 14px;background:var(--surface);color:var(--ink);border:1.5px solid var(--pencil);border-radius:var(--wob)}
+.skip:focus{top:10px}
+
+/* ================= the sidebar: your notebooks, Notion style ================= */
+.side.pages{width:252px;border-right:1.5px solid var(--pencil);display:flex;flex-direction:column}
+.side.pages .sidehead.ws{position:static;padding:12px 8px 6px 12px}
+.ws .brand{flex:1;min-width:0;padding:0;gap:8px}
+.ws .brand b{font:700 18px var(--display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sideacts{display:flex;flex-direction:column;padding:2px 6px 6px}
+.srow{display:flex;align-items:center;gap:9px;width:100%;min-height:34px;padding:0 8px;border:none;background:none;border-radius:var(--wob);font:inherit;font-size:16.5px;color:var(--ink);cursor:pointer;text-align:left}
+.srow:hover{background:var(--hover)}
+.srow .i{width:17px;height:17px;color:var(--muted)}
+.sidesec{display:flex;align-items:baseline;gap:8px;padding:10px 14px 4px;font:700 15px var(--display);color:var(--muted)}
+.sidesec .count{font:13px var(--ui)}
+.doclist{list-style:none;margin:0;padding:0 6px 10px}
+.docrow{display:flex;align-items:center;gap:1px;border-radius:var(--wob)}
+.docrow:hover{background:var(--hover)}
+.nb[aria-current="true"] > .docrow{background:color-mix(in srgb,var(--accent) 15%,transparent)}
+.docrow .caret,.docrow .more{flex:none;width:26px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;color:var(--muted);cursor:pointer;border-radius:6px}
+.docrow .caret:hover,.docrow .more:hover{color:var(--ink)}
+.docrow .caret .i{width:15px;height:15px;transition:transform .15s}
+.docrow .caret[aria-expanded="true"] .i{transform:rotate(90deg)}
+.docrow .more{opacity:0}
+.docrow:hover .more,.docrow .more:focus-visible,.docrow .more[aria-expanded="true"]{opacity:1}
+@media (hover:none){.docrow .more{opacity:1}}
+.docbtn{flex:1;min-width:0;display:flex;align-items:center;gap:8px;height:32px;padding:0 4px;border:none;background:none;font:inherit;font-size:16.5px;color:var(--ink);cursor:pointer;text-align:left}
+.docbtn .i{width:16px;height:16px;color:var(--muted)}
+.docbtn .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.docrow input{flex:1;min-width:0;height:28px;margin:2px 4px;padding:0 6px;font:inherit;font-size:15.5px;color:var(--ink);background:var(--surface);border:1.5px solid var(--pencil);border-radius:var(--wob)}
+.nb > .pagelist{padding:4px 2px 8px 24px}
+.sidefoot{margin-top:auto;padding:8px 6px 12px;border-top:1.5px dashed var(--line-strong)}
+.sidefoot:not(:has(:not([hidden]))){display:none}
+.side.pages.peeking{position:fixed;left:0;top:var(--appbar-h);bottom:calc(var(--status-h) + env(safe-area-inset-bottom,0px));height:auto;z-index:17;box-shadow:var(--pop-shadow)}
+.peekzone{position:fixed;left:0;top:var(--appbar-h);bottom:var(--status-h);width:12px;z-index:16}
+body.focus .peekzone{display:none}
+.docmenu{z-index:48;display:flex;flex-direction:column;gap:2px;padding:5px;min-width:190px}
+.docmenu button{display:flex;align-items:center;gap:9px;padding:7px 10px;border:none;background:none;border-radius:var(--wob);font:inherit;font-size:15px;color:var(--ink);cursor:pointer;text-align:left}
+.docmenu button:hover{background:var(--hover)}
+.docmenu .i{width:16px;height:16px}
+.docmenu .danger{color:var(--danger)}
+.docmenu .danger.sure{background:var(--danger);color:#fff}
+@media (max-width:900px){.peekzone{display:none}.side.pages{width:min(270px,86vw)}}
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to your pages</a>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
 <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
 <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></symbol>
@@ -423,13 +537,17 @@ kbd{font:12px ui-monospace,Menlo,Consolas,monospace;padding:1px 5px;border:1px s
 <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="m2 2 20 20"/></symbol>
 <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
 <symbol id="i-focus" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h8"/><path d="M8 17h5"/></symbol>
+<symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+<symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="i-hide-left" viewBox="0 0 24 24"><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></symbol>
 <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol>
 </defs></svg>
 
 <header class="appbar" id="appbar">
   <div class="titlebar">
-    <button class="btn" id="pagesBtn" aria-pressed="false" aria-controls="pagesPanel" aria-label="Pages" title="Pages: jump to any page"><svg class="i"><use href="#i-panel-left"/></svg></button>
-    <div class="brand"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#2747c9"/><path d="M7 9h14M7 19h14" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M7 14h9" stroke="#ffd54a" stroke-width="2.4" stroke-linecap="round"/></svg><b>Between the Slides</b></div>
+    <button class="btn" id="pagesBtn" aria-pressed="false" aria-controls="pagesPanel" aria-label="Sidebar" title="Sidebar: your notebooks and their pages (Ctrl+\)"><svg class="i"><use href="#i-panel-left"/></svg></button>
     <span class="vr"></span>
     <div class="doc"><span class="doc-title none" id="docTitle">No file open</span><span class="savestate" id="saveState" data-s="saved" title="Your work is saved automatically in this browser"><svg class="i"><use href="#i-saved"/></svg><span>Saved in this browser</span></span></div>
     <button class="btn" id="undoBtn" aria-label="Back" title="Back: undo the last change (Ctrl+Z)" disabled><svg class="i"><use href="#i-undo"/></svg></button>
@@ -566,6 +684,7 @@ kbd{font:12px ui-monospace,Menlo,Consolas,monospace;padding:1px 5px;border:1px s
       <span class="sep"></span>
       <div class="grp"><div class="row">
         <button class="btn" id="addPageBtn" title="Add a blank page after the current page (the one you last clicked)"><svg class="i"><use href="#i-page-add"/></svg>Blank page after</button>
+        <button class="btn" id="addHereBtn" title="Add another file to the end of this notebook, instead of opening it as a new one"><svg class="i"><use href="#i-file"/></svg>Add a file here</button>
         <button class="btn danger" id="delPageBtn" title="Remove the current page (the one you last clicked)"><svg class="i"><use href="#i-page-remove"/></svg><span>Remove page</span></button>
       </div><span class="cap">Pages</span></div>
       <span class="sep"></span>
@@ -606,7 +725,7 @@ kbd{font:12px ui-monospace,Menlo,Consolas,monospace;padding:1px 5px;border:1px s
       <span class="sep"></span>
       <div class="grp"><div class="row">
         <button class="btn notes-toggle" disabled><svg class="i"><use href="#i-eye-off"/></svg><span>Hide notes</span></button>
-        <button class="btn" data-panel="pages" aria-pressed="false"><svg class="i"><use href="#i-panel-left"/></svg>Pages</button>
+        <button class="btn" data-panel="pages" aria-pressed="false"><svg class="i"><use href="#i-panel-left"/></svg>Sidebar</button>
         <button class="btn" data-panel="notes" aria-pressed="false"><svg class="i"><use href="#i-panel-right"/></svg>Notes list</button>
       </div><span class="cap">Show</span></div>
       <span class="sep"></span>
@@ -624,7 +743,7 @@ kbd{font:12px ui-monospace,Menlo,Consolas,monospace;padding:1px 5px;border:1px s
         <button class="btn" data-mode="hidden" aria-pressed="false" title="Hide the toolbar (bring it back with Show toolbar)">Hidden</button>
       </div><span class="cap">Toolbar</span></div>
       <span class="spacer"></span>
-      <div class="grp" style="justify-content:center"><button class="btn outline danger" id="clear"><svg class="i"><use href="#i-trash"/></svg><span>Clear everything</span></button></div>
+      <div class="grp" style="justify-content:center"><button class="btn outline danger" id="clear"><svg class="i"><use href="#i-trash"/></svg><span>Clear this notebook</span></button></div>
     </div>
   </div>
 </header>
@@ -634,9 +753,17 @@ kbd{font:12px ui-monospace,Menlo,Consolas,monospace;padding:1px 5px;border:1px s
 <button id="focusExit" class="showbar" hidden title="Bring back the toolbar and panels (Esc)"><svg class="i" style="width:16px;height:16px"><use href="#i-focus"/></svg>Exit focus</button>
 
 <div class="workspace">
-  <nav class="side pages" id="pagesPanel" aria-label="Pages" hidden>
-    <div class="sidehead"><h2>Pages</h2><span class="count" id="pageCount"></span><button class="btn" data-close="pages" aria-label="Close the pages panel"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <nav class="side pages" id="pagesPanel" aria-label="Your notebooks" hidden>
+    <div class="sidehead ws"><span class="brand"><svg width="26" height="26" viewBox="0 0 28 28" aria-hidden="true"><path d="M5.5 3.2C10 2.6 18.5 2.4 23.4 3.4c1.3 4.6 1.6 15.2.9 21.1-5.3.9-14.7 1-19.9.3C3.6 20 3.5 8.6 5.5 3.2Z" fill="#3552c4" stroke="#2f2b24" stroke-width="1.4"/><path d="M8 9.4c3.6-.5 8.2-.4 12.3.2M8.2 19.1c4-.4 8.4-.3 11.9.1" stroke="#fffdf7" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M8 14.3c2.6-.6 5.8-.5 8.6-.1" stroke="#ffd54a" stroke-width="2.6" stroke-linecap="round" fill="none"/></svg><b>Between the Slides</b></span><button class="btn" data-close="pages" id="sideHide" aria-label="Hide the sidebar" title="Hide the sidebar (Ctrl+\). Point at the left edge to peek at it."><svg class="i"><use href="#i-hide-left"/></svg></button></div>
+    <div class="sideacts">
+      <button type="button" class="srow" id="newDocBtn" title="A new notebook with a blank page to write on"><svg class="i"><use href="#i-plus"/></svg>New notebook</button>
+      <button type="button" class="srow" id="sideOpen" title="Open a PDF, PowerPoint or Word file as a new notebook"><svg class="i"><use href="#i-folder"/></svg>Open a file</button>
+      <button type="button" class="srow" id="sideSearch" title="Search the notes in this notebook"><svg class="i"><use href="#i-search"/></svg>Search your notes</button>
+    </div>
+    <div class="sidesec"><span>Notebooks</span><span class="count" id="docCount"></span></div>
+    <ul class="doclist" id="docList"></ul>
     <ol class="pagelist" id="pageList"></ol>
+    <div class="sidefoot"><button type="button" class="srow" id="installBtn" hidden><svg class="i"><use href="#i-download"/></svg>Install as an app</button></div>
   </nav>
   <main id="main"></main>
   <aside class="side notes" id="notesPanel" aria-label="Notes" hidden>
@@ -649,6 +776,7 @@ kbd{font:12px ui-monospace,Menlo,Consolas,monospace;padding:1px 5px;border:1px s
   </aside>
 </div>
 <div class="scrim" id="scrim" hidden></div>
+<div class="peekzone" id="peekZone" hidden></div>
 
 <footer class="statusbar" id="statusbar">
   <span id="pageInfo"></span>
@@ -667,12 +795,14 @@ kbd{font:12px ui-monospace,Menlo,Consolas,monospace;padding:1px 5px;border:1px s
     <section>
       <h3>How to use it</h3>
       <ul class="howto">
-        <li><b>Open</b> a PDF, PowerPoint (.pptx) or Word (.docx) file, or drop one anywhere on the page.</li>
+        <li><b>Open</b> a PDF, PowerPoint (.pptx) or Word (.docx) file, or drop one anywhere on the page. Each file becomes its own <b>notebook</b> in the sidebar; <b>Insert › Add a file here</b> adds one to the notebook you're in instead.</li>
         <li>On a PDF page, point at a spot and press <b>+ Add note here</b>: the page opens up between the lines. On other pages, click where you want to write.</li>
         <li>The <b>Home</b> tab styles your notes: the font, size and colour are used for new notes, or click in a note (or select words) to change just that.</li>
         <li>Drag a note’s edges to resize it, or its move handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
         <li>On each note: the arrows float it on top of the page, the minus minimises it to a pencil icon (drag the icon aside, right-click it to colour it), and the pin keeps it open.</li>
-        <li><b>Pages</b> (left) jumps to any page. <b>Notes</b> (right) lists every note to search, filter by icon colour and jump to.</li>
+        <li>The <b>sidebar</b> (left) lists your notebooks: click one to switch, and the one you're in shows its pages. Use its <b>⋯</b> to rename or delete it. Hide it with <b>«</b> (Ctrl+\) and point at the left edge to peek at it.</li>
+        <li><b>Notes</b> (right) lists every note in the notebook to search, filter by icon colour and jump to.</li>
+        <li>In Chrome or Edge, <b>Install as an app</b> (at the bottom of the sidebar) gives Between the Slides its own window that works offline.</li>
         <li><b>Focus</b> hides the toolbar, side panels and status bar so only your pages and notes are left (Esc brings them back). Each panel also closes with its ×, and View › Toolbar can shrink the toolbar to tabs only.</li>
         <li><b>Study mode</b> stops accidental changes while you revise. Everything is saved in this browser; <b>Download</b> a PDF, or a notebook file to keep editing on another device.</li>
       </ul>
@@ -686,6 +816,7 @@ kbd{font:12px ui-monospace,Menlo,Consolas,monospace;padding:1px 5px;border:1px s
         <dt><kbd>Ctrl</kbd> <kbd>A</kbd></dt><dd>In a note: its text. Elsewhere: every note on the page</dd>
         <dt>Arrow keys</dt><dd>Move selected notes (with <kbd>Shift</kbd>: 10 px)</dd>
         <dt><kbd>Delete</kbd></dt><dd>Delete the selected notes, picture or video</dd>
+        <dt><kbd>Ctrl</kbd> <kbd>\</kbd></dt><dd>Show or hide the sidebar</dd>
         <dt><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>F</kbd></dt><dd>Focus mode on or off</dd>
         <dt><kbd>Esc</kbd></dt><dd>Close a menu or end a selection</dd>
       </dl>
@@ -1876,28 +2007,32 @@ async function readImage(file){
   card.querySelector('.content').innerHTML = `<img class="blk" alt="${esc(file.name)}" src="${url}">`;
 }
 
-// open files (from Open, or dropped on the page): each one is added after what is already open
-async function openFiles(picked){
+// open files (from Open, the sidebar, or dropped on the page): each file becomes its own notebook,
+// unless "Add a file here" was used (or the notebook you're in is still empty)
+async function openFiles(picked, here = false){
   if (!picked.length) return;
-  const hadPages = !!main.querySelector('.slide');
-  main.querySelector('.welcome')?.remove();
-  let first = null;
+  await ready;
+  let hadPages = !!main.querySelector('.slide'), first = null;
   for (const f of picked) {
-    const ext = f.name.split('.').pop().toLowerCase();
-    if (ext === 'html' || ext === 'htm') {
-      const data = readNotebookHtml(await f.text());
-      if (data) loadNotebook(data, !main.querySelector('.slide')); else toast(`“${f.name}” isn't a notebook file saved from this page.`);
-      continue;
+    const ext = f.name.split('.').pop().toLowerCase(), notebook = ext === 'html' || ext === 'htm';
+    const read = notebook ? null : {pptx: readPptx, pdf: readPdf, docx: readDocx}[ext] || (f.type.startsWith('image/') ? readImage : null);
+    if (!notebook && !read) { toast(`“${f.name}” can't be opened. Use a .pdf, .pptx or .docx file (an old .ppt or .doc file can be saved as one of these).`); continue; }
+    const data = notebook ? readNotebookHtml(await f.text()) : null;
+    if (notebook && !data) { toast(`“${f.name}” isn't a notebook file saved from this page.`); continue; }
+    if (!here && main.querySelector('.slide')) { await switchDoc(null); hadPages = false; }
+    main.querySelector('.welcome')?.remove();
+    if (data) {
+      loadNotebook(data, !main.querySelector('.slide'));
+      const d = curDoc(); if (!here && d && data.name) { d.name = data.name; d.named = !!data.named; }
+      saveSoon(); continue;
     }
-    const read = {pptx: readPptx, pdf: readPdf, docx: readDocx}[ext] || (f.type.startsWith('image/') ? readImage : null);
-    if (!read) { toast(`“${f.name}” can't be opened. Use a .pdf, .pptx or .docx file (an old .ppt or .doc file can be saved as one of these).`); continue; }
     const head = document.createElement('h2'); head.className = 'file-head';
     head.textContent = f.name.replace(/\.[^.]+$/, '').replace(/_+/g, ' ').trim();
     main.append(head);
     try {
       await (read === readImage ? readImage(f) : read(await f.arrayBuffer(), f.name));
       first ??= head;
-      toast('');
+      toast(''); saveSoon();
     } catch (err) {
       console.error(err); toast(`“${f.name}” couldn't be read. Try saving it as a PDF and opening that.`);
       if (!head.nextElementSibling) head.remove();
@@ -1908,9 +2043,12 @@ async function openFiles(picked){
   saveSoon();
   if (hadPages && first?.isConnected) first.scrollIntoView({block: 'start', behavior: smoothScroll()});
 }
-$('#file').onchange = e => { const picked = [...e.target.files]; e.target.value = ''; openFiles(picked); };
-$('#openBtn').onclick = () => $('#file').click();
-main.addEventListener('click', e => { if (e.target.closest('[data-open]')) $('#file').click(); });
+let addHere = false;             // the next file picked is added to this notebook
+$('#file').onchange = e => { const picked = [...e.target.files]; e.target.value = ''; openFiles(picked, addHere); addHere = false; };
+const pickFiles = here => { addHere = here; $('#file').click(); };
+$('#openBtn').onclick = () => pickFiles(false);
+$('#addHereBtn').onclick = () => pickFiles(true);
+main.addEventListener('click', e => { if (e.target.closest('[data-open]')) pickFiles(false); });
 const smoothScroll = () => matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
 
 let clearTimer = null;
@@ -1918,13 +2056,13 @@ $('#clear').onclick = () => {
   const b = $('#clear'), label = b.querySelector('span');
   clearTimeout(clearTimer);
   if (!b.classList.contains('sure')) {
-    b.classList.add('sure'); label.textContent = 'Remove everything? Click again';
-    clearTimer = setTimeout(() => { b.classList.remove('sure'); label.textContent = 'Clear everything'; }, 3000);
+    b.classList.add('sure'); label.textContent = 'Clear this notebook? Click again';
+    clearTimer = setTimeout(() => { b.classList.remove('sure'); label.textContent = 'Clear this notebook'; }, 3000);
     return;
   }
-  b.classList.remove('sure'); label.textContent = 'Clear everything';
+  b.classList.remove('sure'); label.textContent = 'Clear this notebook';
   main.innerHTML = ''; clearMediaSel(); clearMulti(); active = null; savedRange = null; showEmpty(); paginateView(); saveSoon();
-  toast('Everything was cleared. Press Back (Ctrl+Z) to bring it back.');
+  toast('This notebook was cleared. Press Back (Ctrl+Z) to bring it back.');
 };
 function showEmpty(){ main.append($('#emptyTpl').content.cloneNode(true)); }
 
@@ -1959,16 +2097,23 @@ function saveSoon(){
 }
 async function saveNow(){
   timer = null;
-  const doc = main.querySelector('.welcome') ? '' : currentDoc();
+  const empty = !!main.querySelector('.welcome'), doc = empty ? '' : currentDoc();
   snapshot(doc);
-  const ok = await putAll({doc, style});
+  const d = curDoc(); if (!d) return;
+  if (!d.named) d.name = empty ? 'Untitled' : notebookName();
+  d.pages = main.querySelectorAll('.slide').length;
+  d.notes = [...main.querySelectorAll('.notebox')].filter(hasContent).length;
+  d.updated = Date.now();
+  const ok = await putAll({['doc:' + d.id]: doc, docs, cur: curId, style});
   if (!timer) setSaveState(ok ? 'saved' : 'error');
+  renderDocs();
 }
-// save straight away if a save is waiting (e.g. before going Back)
-function flushSave(){ if (timer) { clearTimeout(timer); saveNow(); } }
+// save straight away if a save is waiting (e.g. before going Back, or to another notebook)
+function flushSave(){ if (!timer) return Promise.resolve(); clearTimeout(timer); return saveNow(); }
 
 /* ================= download to your device ================= */
 function notebookName(){
+  const d = curDoc(); if (d?.named) return d.name.replace(/[\\/:*?"<>|]+/g, ' ').slice(0, 80).trim() || 'My notes';
   const h = main.querySelector('.file-head');
   return ((h && h.textContent.trim()) || 'My notes').replace(/[\\/:*?"<>|]+/g, ' ').slice(0, 80).trim() || 'My notes';
 }
@@ -1992,7 +2137,7 @@ async function saveFile(filename, blob){
 
 // Notebook file: this whole app plus your pages and notes, in one .html file you can open anywhere
 async function downloadNotebook(){
-  const data = JSON.stringify({v: 1, doc: currentDoc(), style, favs}).replace(/</g, '\\u003c');
+  const data = JSON.stringify({v: 2, id: curId, name: notebookName(), named: !!curDoc()?.named, doc: currentDoc(), style, favs}).replace(/</g, '\\u003c');
   const html = APP_HTML.replace(/<body[^>]*>/, m => `${m}\n<script id="notebook-data" type="application/json">${data}<\/script>`);
   await saveFile(notebookName() + ' (notes).html', new Blob([html], {type: 'text/html'}));
 }
@@ -2002,14 +2147,18 @@ function readNotebookHtml(text){
   try { return JSON.parse(m[1]); } catch { return null; }
 }
 function loadNotebook(data, replace){
-  if (Array.isArray(data.favs)) { const add = data.favs.filter(c => /^#[0-9a-f]{6}$/i.test(c) && !favs.includes(c.toLowerCase())).map(c => c.toLowerCase()); if (add.length) { favs = favs.concat(add).slice(0, 16); storeFavs(); } }
-  if (data.style) { style = data.style; showStyle(style); }
+  notebookPrefs(data);
   if (replace) main.innerHTML = data.doc || '';
   else { main.querySelector('.welcome')?.remove(); main.insertAdjacentHTML('beforeend', data.doc || ''); }
   main.querySelectorAll('.slide-label, .gapline, .gappill').forEach(e => e.remove());
   upgradeNotes(); applyReadMode();
   if (!main.children.length) showEmpty();
   paginateView();
+}
+// a notebook file's favourite colours and text style come along with it
+function notebookPrefs(data){
+  if (Array.isArray(data.favs)) { const add = data.favs.filter(c => /^#[0-9a-f]{6}$/i.test(c) && !favs.includes(c.toLowerCase())).map(c => c.toLowerCase()); if (add.length) { favs = favs.concat(add).slice(0, 16); storeFavs(); } }
+  if (data.style) { style = data.style; showStyle(style); }
 }
 
 // PDF: each page drawn exactly as you see it, with your notes, one PDF page per slide
@@ -3204,6 +3353,7 @@ function setPanel(name, on, quiet){
   if (on && focusMode) setFocus(false);
   panelOpen[name] = on;
   panelEl[name].hidden = !on;
+  if (name === 'pages') { panelEl.pages.classList.remove('peeking'); $('#peekZone').hidden = on; sideHideLabel(); }
   document.querySelectorAll(`#${name}Btn, [data-panel="${name}"]`).forEach(b => b.setAttribute('aria-pressed', on));
   $('#scrim').hidden = !(narrow.matches && (panelOpen.pages || panelOpen.notes));
   if (!narrow.matches && !quiet) pref.set('panel-' + name, on ? '1' : '0');
@@ -3214,7 +3364,8 @@ $('#pagesBtn').onclick = () => setPanel('pages', !panelOpen.pages);
 $('#notesBtn').onclick = () => setPanel('notes', !panelOpen.notes);
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-panel], [data-close]'); if (!t) return;
-  if (t.dataset.panel) setPanel(t.dataset.panel, !panelOpen[t.dataset.panel]); else setPanel(t.dataset.close, false);
+  if (t.dataset.panel) setPanel(t.dataset.panel, !panelOpen[t.dataset.panel]);
+  else setPanel(t.dataset.close, t.dataset.close === 'pages' && panelEl.pages.classList.contains('peeking'));   // a peeking sidebar docks
 });
 $('#scrim').onclick = () => { setPanel('pages', false); setPanel('notes', false); };
 document.addEventListener('keydown', e => {
@@ -3242,7 +3393,6 @@ function pageTitle(card){
 }
 function renderPages(){
   const list = $('#pageList'), slides = main.querySelectorAll('.slide');
-  $('#pageCount').textContent = slides.length || '';
   if (!slides.length) { list.innerHTML = '<li class="sideempty">Open a file and its pages show up here.</li>'; return; }
   const frag = document.createDocumentFragment();
   let n = 0;
@@ -3368,7 +3518,8 @@ function refreshPanels(){
   const name = main.querySelector('.slide') ? notebookName() : '', t = $('#docTitle');
   t.textContent = name || 'No file open'; t.classList.toggle('none', !name); t.title = name;
   document.title = name ? `${name} · Between the Slides` : 'Between the Slides';
-  if (panelOpen.pages) renderPages(); else pageMark = -1;
+  renderDocs();
+  if (panelOpen.pages || panelEl.pages.classList.contains('peeking')) renderPages(); else pageMark = -1;
   if (panelOpen.notes) renderNotes();
   trackPage();
 }
@@ -3418,7 +3569,6 @@ function onView(){
 }
 addEventListener('scroll', onView, {passive: true});
 addEventListener('resize', onView);
-restorePanels();
 
 const saveMenu = $('#saveMenu');
 $('#save').onclick = e => { e.stopPropagation(); saveMenu.hidden = !saveMenu.hidden; $('#save').setAttribute('aria-expanded', !saveMenu.hidden); };
@@ -3444,18 +3594,206 @@ document.addEventListener('keydown', e => {
   toast('Your work saves itself in this browser. To keep a copy, download a PDF or a notebook file.');
 });
 
-showEmpty(); resetHistory(''); applyReadMode(); refreshPanels();
+// ================= notebooks, Notion style: each file you open is its own notebook in the sidebar =================
+// each notebook is stored on its own ("doc:<id>"); "docs" lists them in sidebar order and "cur" is the open one
+let docs = [], curId = null, renaming = null, docPagesOpen = pref.get('doc-pages', '1') === '1';
+const histByDoc = new Map(), scrollByDoc = new Map();
+const newId = () => 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const curDoc = () => docs.find(d => d.id === curId);
+function makeDoc(id = newId(), name = 'Untitled'){
+  const d = {id, name, named: false, pages: 0, notes: 0, updated: Date.now()};
+  docs.unshift(d); return d;
+}
+function delKey(k){ try { db?.transaction('kv', 'readwrite').objectStore('kv').delete(k); } catch {} }
+// put a notebook's pages on screen
+function showDocHtml(html){
+  main.innerHTML = html || '';
+  main.querySelectorAll('.slide-label, .gapline, .gappill').forEach(e => e.remove());
+  if (!main.children.length) showEmpty(); else upgradeNotes();
+  applyReadMode(); paginateView(); updateNotesBtn();
+  requestAnimationFrame(() => main.querySelectorAll('.strip').forEach(measureStrip));
+}
+// open another notebook (no id: a new, empty one); the one you leave is saved first and keeps its Back history and place
+async function switchDoc(id){
+  if (id && id === curId) return;
+  await flushSave();
+  if (curId) { histByDoc.set(curId, {stack: hist.stack, i: hist.i}); scrollByDoc.set(curId, scrollY); }
+  if (document.activeElement?.closest?.('.mine')) document.activeElement.blur();
+  hideGap(); clearMediaSel(); clearMulti(); closeChipPop(); closeSpellMenu(); hideGuides(); fPanel.hidden = true;
+  active = null; savedRange = null;
+  let html = '';
+  if (id) html = (await get('doc:' + id)) || ''; else id = makeDoc().id;
+  curId = id;
+  showDocHtml(html);
+  const h = histByDoc.get(id);
+  if (h) { hist.stack = h.stack; hist.i = h.i; updateUndoBtns(); } else resetHistory(main.querySelector('.welcome') ? '' : currentDoc());
+  scrollTo(0, scrollByDoc.get(id) || 0);
+  putAll({docs, cur: curId});
+  refreshPanels();
+}
+async function deleteDoc(id){
+  const d = docs.find(x => x.id === id); if (!d) return;
+  if (id === curId) { clearTimeout(timer); timer = null; curId = null; }      // nothing more is saved for it
+  docs = docs.filter(x => x !== d); histByDoc.delete(id); scrollByDoc.delete(id); delKey('doc:' + id);
+  if (!curId) await switchDoc(docs[0]?.id || null);
+  else { putAll({docs}); renderDocs(); }
+  toast(`Deleted “${d.name}”.`);
+}
+function renderDocs(){
+  if (renaming) return;                   // don't pull the name box away while you type in it
+  const list = $('#docList'), pages = $('#pageList');
+  $('#docCount').textContent = docs.length > 1 ? docs.length : '';
+  list.replaceChildren(...docs.map(d => {
+    const on = d.id === curId, open = on && docPagesOpen, li = document.createElement('li');
+    li.className = 'nb'; if (on) li.setAttribute('aria-current', 'true');
+    const row = document.createElement('div'); row.className = 'docrow';
+    const caret = Object.assign(document.createElement('button'), {type: 'button', className: 'caret', innerHTML: icon('right')});
+    caret.dataset.caret = d.id; caret.setAttribute('aria-expanded', open); caret.setAttribute('aria-label', (open ? 'Hide' : 'Show') + ' the pages of ' + d.name);
+    const btn = Object.assign(document.createElement('button'), {type: 'button', className: 'docbtn', innerHTML: icon('file') + '<span class="nm"></span>'});
+    btn.dataset.doc = d.id; btn.querySelector('.nm').textContent = d.name || 'Untitled';
+    btn.title = `${d.name} · ${d.pages} page${d.pages === 1 ? '' : 's'} · ${d.notes} note${d.notes === 1 ? '' : 's'}`;
+    const more = Object.assign(document.createElement('button'), {type: 'button', className: 'more', innerHTML: icon('dots')});
+    more.dataset.more = d.id; more.setAttribute('aria-label', 'More for ' + d.name); more.setAttribute('aria-haspopup', 'menu');
+    row.append(caret, btn, more); li.append(row);
+    if (open) li.append(pages);
+    return li;
+  }));
+  if (!docPagesOpen && pages.isConnected) pages.remove();
+}
+$('#docList').addEventListener('click', async e => {
+  const t = e.target.closest('[data-doc], [data-caret], [data-more]'); if (!t) return;
+  if (t.dataset.more) { openDocMenu(t.dataset.more, t); return; }
+  const id = t.dataset.doc || t.dataset.caret;
+  if (t.dataset.caret && id === curId) { docPagesOpen = !docPagesOpen; pref.set('doc-pages', docPagesOpen ? '1' : '0'); renderDocs(); renderPages(); return; }
+  if (t.dataset.caret) { docPagesOpen = true; pref.set('doc-pages', '1'); }
+  if (id !== curId) await switchDoc(id); else scrollTo({top: 0, behavior: smoothScroll()});
+  if (narrow.matches) setPanel('pages', false);
+});
+$('#newDocBtn').onclick = async () => {
+  if (main.querySelector('.slide')) await switchDoc(null);
+  addPageAfter(null);                      // a blank page, ready to write on
+  if (narrow.matches) setPanel('pages', false);
+};
+$('#sideOpen').onclick = () => pickFiles(false);
+$('#sideSearch').onclick = () => { setPanel('notes', true); $('#noteSearch').focus(); };
+
+// a notebook's ⋯ menu: rename or delete it
+const docMenu = document.createElement('div'); docMenu.className = 'pop docmenu'; docMenu.hidden = true; docMenu.setAttribute('role', 'menu');
+docMenu.innerHTML = `<button type="button" role="menuitem" data-act="rename">${icon('pen')}Rename</button><button type="button" role="menuitem" data-act="delete" class="danger">${icon('trash')}<span>Delete</span></button>`;
+document.body.append(docMenu);
+let menuDoc = null, menuFrom = null;
+function openDocMenu(id, from){
+  if (!docMenu.hidden && menuDoc === id) { closeDocMenu(); return; }
+  menuDoc = id; menuFrom = from; from.setAttribute('aria-expanded', 'true');
+  const del = docMenu.querySelector('[data-act=delete]'); del.classList.remove('sure'); del.querySelector('span').textContent = 'Delete';
+  docMenu.hidden = false;
+  const r = from.getBoundingClientRect();
+  docMenu.style.left = Math.min(innerWidth - docMenu.offsetWidth - 8, r.left) + 'px';
+  docMenu.style.top = Math.min(innerHeight - docMenu.offsetHeight - 8, r.bottom + 4) + 'px';
+  docMenu.querySelector('button').focus();
+}
+function closeDocMenu(){ docMenu.hidden = true; menuFrom?.setAttribute('aria-expanded', 'false'); menuDoc = menuFrom = null; }
+docMenu.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || !menuDoc) return;
+  const id = menuDoc;
+  if (b.dataset.act === 'rename') { closeDocMenu(); startRename(id); return; }
+  if (!b.classList.contains('sure')) { b.classList.add('sure'); b.querySelector('span').textContent = 'Delete for good? Click again'; return; }
+  closeDocMenu(); deleteDoc(id);
+});
+document.addEventListener('mousedown', e => { if (!docMenu.hidden && !docMenu.contains(e.target) && !e.target.closest('[data-more]')) closeDocMenu(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !docMenu.hidden) { const f = menuFrom; closeDocMenu(); f?.focus(); } });
+function startRename(id){
+  const d = docs.find(x => x.id === id); if (!d) return;
+  const btn = $(`#docList [data-doc="${id}"]`); if (!btn) return;
+  renaming = id;
+  const box = Object.assign(document.createElement('input'), {value: d.name, ariaLabel: 'Notebook name'});
+  btn.replaceWith(box); box.focus(); box.select();
+  const done = keep => {
+    if (renaming !== id) return;
+    renaming = null;
+    const v = box.value.trim();
+    if (keep && v && v !== d.name) { d.name = v.slice(0, 120); d.named = true; putAll({docs}); }
+    renderDocs(); refreshPanels();
+  };
+  box.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); done(true); } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); } });
+  box.addEventListener('blur', () => done(true));
+}
+// the file name in the title bar renames the notebook too
+$('#docTitle').addEventListener('dblclick', () => { if (!panelOpen.pages) setPanel('pages', true); startRename(curId); });
+
+// the sidebar hides with « (or Ctrl+\) and peeks in when you point at the left edge, like Notion
+function sideHideLabel(){
+  const peek = panelEl.pages.classList.contains('peeking'), b = $('#sideHide');
+  b.setAttribute('aria-label', peek ? 'Keep the sidebar open' : 'Hide the sidebar');
+  b.title = peek ? 'Keep the sidebar open' : 'Hide the sidebar (Ctrl+\\). Point at the left edge to peek at it.';
+  b.innerHTML = icon(peek ? 'panel-left' : 'hide-left');
+}
+$('#peekZone').addEventListener('mouseenter', () => {
+  if (panelOpen.pages || focusMode || narrow.matches) return;
+  panelEl.pages.classList.add('peeking'); panelEl.pages.hidden = false; sideHideLabel(); refreshPanels();
+});
+panelEl.pages.addEventListener('mouseleave', e => {
+  if (!panelEl.pages.classList.contains('peeking') || renaming || !docMenu.hidden || docMenu.contains(e.relatedTarget)) return;
+  panelEl.pages.classList.remove('peeking'); panelEl.pages.hidden = true;
+});
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key === '\\') { e.preventDefault(); setPanel('pages', !panelOpen.pages); }
+});
+
+// ================= install as an app (when it is served from the web) =================
+let installEvt = null;
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  navigator.serviceWorker.register('sw.js').then(() => {
+    if (!document.querySelector('link[rel=manifest]')) document.head.append(Object.assign(document.createElement('link'), {rel: 'manifest', href: 'manifest.webmanifest'}));
+  }).catch(() => {});               // e.g. a preview with no sw.js: it just isn't installable there
+}
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('#installBtn').hidden = false; });
+addEventListener('appinstalled', () => { installEvt = null; $('#installBtn').hidden = true; toast('Installed. Between the Slides now opens in its own window, even offline.'); });
+$('#installBtn').onclick = async () => {
+  if (!installEvt) return;
+  installEvt.prompt();
+  try { await installEvt.userChoice; } catch {}
+  installEvt = null; $('#installBtn').hidden = true;
+};
+// installed: PDFs, PowerPoints and Word files can be opened with it from your computer
+if ('launchQueue' in window) launchQueue.setConsumer(async p => { if (p.files?.length) openFiles(await Promise.all(p.files.map(h => h.getFile()))); });
+
+// ================= start =================
+let startUp; const ready = new Promise(r => { startUp = r; });
+showEmpty(); resetHistory(''); applyReadMode();
+restorePanels();
 (async () => {
   db = await openDb();
   if (!db) setSaveState('error');
-  const emb = document.getElementById('notebook-data');
-  if (emb) { try { loadNotebook(JSON.parse(emb.textContent), true); resetHistory(currentDoc()); saveSoon(); return; } catch {} }
-  if (!db) return;
-  const [d, s] = await Promise.all([get('doc'), get('style')]);
+  const [list, cur, s, legacy] = db ? await Promise.all([get('docs'), get('cur'), get('style'), get('doc')]) : [];
   if (s) { style = s; showStyle(style); }
-  if (d) { main.innerHTML = d; main.querySelectorAll('.slide-label').forEach(e => e.remove()); upgradeNotes(); applyReadMode(); }
-  requestAnimationFrame(() => { main.querySelectorAll('.strip').forEach(measureStrip); paginateView(); updateNotesBtn(); refreshPanels(); resetHistory(main.querySelector('.welcome') ? '' : currentDoc()); });
+  docs = Array.isArray(list) ? list.filter(d => d && d.id) : [];
+  if (!docs.length) {                     // first visit, or notes saved before there were notebooks
+    const d = makeDoc();
+    if (legacy) { d.name = 'My notes'; await putAll({['doc:' + d.id]: legacy}); }
+  }
+  if (legacy) delKey('doc');
+  curId = docs.some(d => d.id === cur) ? cur : docs[0].id;
+  // a notebook file opened on its own: show it (or the newer copy of it already saved in this browser)
+  let data = null;
+  try { const emb = document.getElementById('notebook-data'); if (emb) data = JSON.parse(emb.textContent); } catch {}
+  if (data) {
+    notebookPrefs(data);
+    if (data.id && docs.some(d => d.id === data.id)) curId = data.id;
+    else {
+      const d = makeDoc(data.id || undefined, data.name || 'My notes'); d.named = !!data.named; curId = d.id;
+      await putAll({['doc:' + d.id]: data.doc || ''});
+    }
+  }
+  showDocHtml(db ? await get('doc:' + curId) : data?.doc || '');
+  requestAnimationFrame(() => {
+    paginateView(); refreshPanels();
+    resetHistory(main.querySelector('.welcome') ? '' : currentDoc());
+    if (db) putAll({docs, cur: curId});
+    startUp();
+  });
 })();
+
 </script>
 </body>
 </html>
