@@ -6,25 +6,25 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <title>Between the Slides</title>
 <meta name="description" content="Take notes right between the lines of your lecture slides.">
-<meta name="theme-color" content="#f4efe4">
+<meta name="theme-color" content="#eeede9">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 28 28%22%3E%3Cpath d=%22M5.5 3.2C10 2.6 18.5 2.4 23.4 3.4c1.3 4.6 1.6 15.2.9 21.1-5.3.9-14.7 1-19.9.3C3.6 20 3.5 8.6 5.5 3.2Z%22 fill=%22%233552c4%22/%3E%3Cpath d=%22M8 9.4c3.6-.5 8.2-.4 12.3.2M8.2 19.1c4-.4 8.4-.3 11.9.1%22 stroke=%22%23fff%22 stroke-width=%222.2%22 stroke-linecap=%22round%22 fill=%22none%22/%3E%3Cpath d=%22M8 14.3c2.6-.6 5.8-.5 8.6-.1%22 stroke=%22%23ffd54a%22 stroke-width=%222.8%22 stroke-linecap=%22round%22 fill=%22none%22/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Patrick+Hand&family=Kalam:wght@400;700&family=Nunito:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,700;1,400&family=Courier+Prime:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
 <style>
 /* ================= tokens ================= */
 :root{
-  --bg:#f4efe4; --surface:#fffdf7; --surface-2:#faf6ec; --hover:#efe7d6; --ink:#26231d; --muted:#665f52; --line:#ddd3bf; --line-strong:#bdb29b; --pencil:#2f2b24;
+  --bg:#eeede9; --surface:#fbfbf8; --surface-2:#f5f4ef; --hover:#e6e4dd; --ink:#24231f; --muted:#605d55; --line:#dad7cd; --line-strong:#b9b5a8; --pencil:#2f2b24;
   --accent:#3552c4; --accent-ink:#fff; --accent-soft:#e2e6f4; --accent-strong:#243c9e; --danger:#b03a28; --ok:#2e6a38; --mark:#ffd54a;
   --card:#fff; --card-ink:#1b2330; --card-muted:#6b7686; --dot:rgba(47,43,36,.13);
   --radius:9px; --wob:10px 7px 11px 6px / 6px 11px 7px 10px; --wob-lg:16px 10px 18px 9px / 9px 18px 10px 16px; --wob-pill:255px 15px 225px 15px / 15px 225px 15px 255px;
-  --sketch:2px 3px 0 var(--pencil); --pop-shadow:4px 5px 0 rgba(47,43,36,.85); --page-shadow:4px 5px 0 rgba(47,43,36,.16);
+  --sketch:2px 3px 0 var(--pencil); --pop-shadow:4px 5px 0 rgba(47,43,36,.85); 
   --display:"Kalam","Patrick Hand",cursive; --ui:"Patrick Hand","Segoe Print","Comic Sans MS",system-ui,sans-serif;
   --appbar-h:0px; --status-h:34px; --gutter-l:max(12px,env(safe-area-inset-left,0px)); --gutter-r:max(12px,env(safe-area-inset-right,0px));
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d2320;--surface:#242b26;--surface-2:#202722;--hover:#2f3832;--ink:#ece6d6;--muted:#aaa594;--line:#38423b;--line-strong:#56614f;--pencil:#ddd6c4;--accent:#a4b6ff;--accent-ink:#141a2e;--accent-soft:#2c3550;--accent-strong:#c7d2ff;--danger:#ff9e8c;--ok:#9fd8a5;--card:#f4f1e8;--dot:rgba(236,230,214,.07);--pop-shadow:4px 5px 0 rgba(0,0,0,.55);--page-shadow:4px 5px 0 rgba(0,0,0,.4);color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#1d2320;--surface:#242b26;--surface-2:#202722;--hover:#2f3832;--ink:#ece6d6;--muted:#aaa594;--line:#38423b;--line-strong:#56614f;--pencil:#ddd6c4;--accent:#a4b6ff;--accent-ink:#141a2e;--accent-soft:#2c3550;--accent-strong:#c7d2ff;--danger:#ff9e8c;--ok:#9fd8a5;--card:#f4f1e8;--dot:rgba(236,230,214,.07);--pop-shadow:4px 5px 0 rgba(0,0,0,.55);--page-shadow:4px 5px 0 rgba(0,0,0,.4);color-scheme:dark}
-body{margin:0;color:var(--ink);font:16px var(--ui);background:var(--bg) radial-gradient(var(--dot) 1px,transparent 1.4px) 0 0/24px 24px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d2320;--surface:#242b26;--surface-2:#202722;--hover:#2f3832;--ink:#ece6d6;--muted:#aaa594;--line:#38423b;--line-strong:#56614f;--pencil:#ddd6c4;--accent:#a4b6ff;--accent-ink:#141a2e;--accent-soft:#2c3550;--accent-strong:#c7d2ff;--danger:#ff9e8c;--ok:#9fd8a5;--card:#f4f1e8;--dot:rgba(236,230,214,.07);--pop-shadow:4px 5px 0 rgba(0,0,0,.55);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1d2320;--surface:#242b26;--surface-2:#202722;--hover:#2f3832;--ink:#ece6d6;--muted:#aaa594;--line:#38423b;--line-strong:#56614f;--pencil:#ddd6c4;--accent:#a4b6ff;--accent-ink:#141a2e;--accent-soft:#2c3550;--accent-strong:#c7d2ff;--danger:#ff9e8c;--ok:#9fd8a5;--card:#f4f1e8;--dot:rgba(236,230,214,.07);--pop-shadow:4px 5px 0 rgba(0,0,0,.55);color-scheme:dark}
+body{margin:0;color:var(--ink);font:16px var(--ui);background:var(--bg) radial-gradient(var(--dot) 1px,transparent 1.4px) 0 0/24px 24px} /* taste-skill-ignore: the dotted paper of the sketch look */
 /* a little paper grain over everything */
 body::after{content:"";position:fixed;inset:0;z-index:200;pointer-events:none;opacity:.06;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
@@ -50,14 +50,14 @@ img{max-width:100%}
 select{font:inherit;font-size:13px;height:32px;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius);padding:0 6px;cursor:pointer}
 input[type=color]{width:28px;height:28px;padding:0;border:1px solid var(--line-strong);border-radius:6px;background:none;cursor:pointer;flex:none}
 .sw{width:28px;height:28px;padding:0;border:none;background:transparent;border-radius:50%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none}
-.sw::before{content:"";width:18px;height:18px;border-radius:50%;background:var(--c);box-shadow:0 0 0 1px rgba(0,0,0,.18)}
-.sw[aria-pressed="true"]::before{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)}
+.sw::before{content:"";width:18px;height:18px;border-radius:50%;background:var(--c);box-shadow:0 0 0 1px rgba(0,0,0,.18)} /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
+.sw[aria-pressed="true"]::before{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)} /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
 .sw.fav::before{width:16px;height:16px}
-.favs{display:flex;align-items:center;padding-left:4px;margin-left:2px;border-left:1px solid var(--line)}
+.favs{display:flex;align-items:center;margin-left:8px}
 .favs:empty{display:none}
 
 /* ================= app bar: title bar + ribbon ================= */
-.appbar{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.appbar{position:sticky;top:0;z-index:20;background:var(--surface);padding-top:env(safe-area-inset-top,0px)}
 .appbar.barhidden{display:none}
 .titlebar{display:flex;align-items:center;gap:4px;min-height:48px;padding:6px var(--gutter-r) 6px var(--gutter-l);box-sizing:border-box}
 .brand{display:flex;align-items:center;gap:9px;padding:0 6px;flex:none}
@@ -71,19 +71,19 @@ input[type=color]{width:28px;height:28px;padding:0;border:1px solid var(--line-s
 .savestate[data-s="saving"]{color:var(--muted)}
 .savestate[data-s="error"]{color:var(--danger)}
 .savewrap{position:relative}
-.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:260px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--pop-shadow);padding:6px;display:flex;flex-direction:column;gap:2px}
+.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:260px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--pop-shadow);padding:6px;display:flex;flex-direction:column;gap:2px} /* taste-skill-ignore: a menu floats over the page */
 .menu button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:none;background:transparent;padding:8px 10px;border-radius:6px;font:inherit;color:inherit;cursor:pointer}
 .menu button:hover,.menu button:focus-visible{background:var(--hover)}
 .menu small{color:var(--muted);font-size:12px}
-.menu label{display:flex;flex-direction:column;gap:4px;padding:6px 10px 10px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:4px}
-.ribbon{position:relative;padding:0 var(--gutter-r) 0 var(--gutter-l);border-top:1px solid var(--line)}
+.menu label{display:flex;flex-direction:column;gap:4px;padding:6px 10px 10px;font-size:12px;color:var(--muted);margin-bottom:6px}
+.ribbon{position:relative;padding:0 var(--gutter-r) 0 var(--gutter-l)}
 .tabs{display:flex;align-items:center;gap:2px}
 .tab{height:36px;padding:0 14px;border:none;border-bottom:2px solid transparent;background:none;font:inherit;font-size:13.5px;color:var(--muted);cursor:pointer;margin-bottom:-1px}
 .tab:hover{color:var(--ink)}
 .tab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
-.panel{display:flex;align-items:stretch;gap:2px;padding:6px 0;border-top:1px solid var(--line);overflow-x:auto;scrollbar-width:thin}
+.panel{display:flex;align-items:stretch;gap:2px;padding:6px 0;overflow-x:auto;scrollbar-width:thin}
 .ribbon.compact:not(.peek) .panel{display:none}
-.ribbon.compact.peek .panel{position:absolute;left:0;right:0;top:100%;padding:6px var(--gutter-r) 6px var(--gutter-l);background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 8px 16px rgba(16,24,40,.12)}
+.ribbon.compact.peek .panel{position:absolute;left:0;right:0;top:100%;padding:6px var(--gutter-r) 6px var(--gutter-l);background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 8px 16px rgba(16,24,40,.12)} /* taste-skill-ignore: the folded toolbar floats over the page */
 .ribbon.compact .tab[aria-selected="true"]:not(.peeking){font-weight:400;border-bottom-color:transparent;color:var(--muted)}
 .grp{display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:3px;padding:0 4px;flex:none}
 .grp > .row{display:flex;align-items:center;gap:2px;flex:1}
@@ -96,9 +96,9 @@ input[type=color]{width:28px;height:28px;padding:0;border:1px solid var(--line-s
 .hlswatch{background:#fff176;color:#1b2330;padding:0 4px;border-radius:3px;font-weight:600}
 .seg{display:flex;gap:2px;padding:2px;border-radius:9px;background:var(--bg)}
 .seg .btn{height:28px}
-.seg .btn[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.14)}
+.seg .btn[aria-pressed="true"]{background:var(--surface);color:var(--ink)}
 .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
-.showbar{position:fixed;z-index:30;top:calc(8px + env(safe-area-inset-top,0px));right:var(--gutter-r);display:inline-flex;align-items:center;gap:6px;font:13px var(--ui);height:32px;padding:0 14px;border-radius:999px;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer;opacity:.9}
+.showbar{position:fixed;z-index:30;top:calc(8px + env(safe-area-inset-top,0px));right:var(--gutter-r);display:inline-flex;align-items:center;gap:6px;font:13px var(--ui);height:32px;padding:0 14px;border-radius:999px;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer;opacity:.9} /* taste-skill-ignore: a floating button */
 .showbar:hover{opacity:1}
 #ribbonFold .i,#save .chev{width:16px;height:16px}
 /* focus mode: only the pages and notes are left on screen */
@@ -113,8 +113,8 @@ body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
 /* ================= workspace: pages | document | notes ================= */
 .workspace{display:flex;align-items:flex-start;min-height:calc(100dvh - var(--appbar-h) - var(--status-h))}
 .side{position:sticky;top:var(--appbar-h);height:calc(100dvh - var(--appbar-h) - var(--status-h));overflow:auto;flex:none;box-sizing:border-box;background:var(--surface-2);overscroll-behavior:contain}
-.side.pages{width:212px;border-right:1px solid var(--line)}
-.side.notes{width:320px;border-left:1px solid var(--line);background:var(--surface)}
+.side.pages{width:212px}
+.side.notes{width:320px;background:var(--surface)}
 .sidehead{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:10px 10px 8px 14px;background:inherit}
 .sidehead h2{margin:0;font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .sidehead .count{font-size:12px;color:var(--muted)}
@@ -125,8 +125,8 @@ body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
 .pagelist .group{font-size:11.5px;font-weight:600;color:var(--muted);padding:10px 8px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pg{display:flex;flex-direction:column;gap:6px;width:100%;padding:8px;border:none;border-radius:10px;background:transparent;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
 .pg:hover{background:var(--hover)}
-.pg[aria-current="true"]{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)}
-.thumb{position:relative;display:block;width:100%;aspect-ratio:16/9;background:#fff;border-radius:4px;box-shadow:0 0 0 1px var(--line-strong);overflow:hidden;box-sizing:border-box;
+.pg[aria-current="true"]{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)} /* taste-skill-ignore: a ring marking the current page */
+.thumb{position:relative;display:block;width:100%;aspect-ratio:16/9;background:#fff;border-radius:4px;box-shadow:0 0 0 1px var(--line-strong);overflow:hidden;box-sizing:border-box; /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
   padding:7px 9px;color:#33415c;font:9px/1.35 var(--ui);overflow-wrap:anywhere}
 .thumb.img{background:#fff var(--pg) 0 0/100% auto no-repeat;padding:0}
 .thumb b{display:block;font-size:10px;color:#13254a;margin-bottom:2px}
@@ -138,16 +138,16 @@ body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
 .search{display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;border:1px solid var(--line-strong);border-radius:var(--radius);background:var(--surface-2);color:var(--muted)}
 .search .i{width:16px;height:16px}
 .search input{border:none;background:transparent;outline:none;font:inherit;font-size:13px;color:var(--ink);flex:1;min-width:0}
-.search:focus-within{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.search:focus-within{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)} /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
 .filters{display:flex;gap:6px;flex-wrap:wrap}
 .filters:empty{display:none}
 .fchip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font:inherit;font-size:12px;color:var(--ink);cursor:pointer}
 .fchip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
-.dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--c);box-shadow:0 0 0 1px rgba(0,0,0,.18)}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--c);box-shadow:0 0 0 1px rgba(0,0,0,.18)} /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
 .notelist{list-style:none;margin:0;padding:0 12px 16px;display:flex;flex-direction:column;gap:8px}
 .notelist .group{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:6px 2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ncard{display:flex;gap:10px;width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);text-align:left;font:inherit;color:var(--ink);cursor:pointer;box-sizing:border-box}
-.ncard:hover{border-color:var(--line-strong);background:var(--surface-2)}
+.ncard:hover{border-color:var(--line-strong);background:var(--surface-2)} /* taste-skill-ignore: hover feedback, not at rest */
 .ncard .dot{margin-top:5px}
 .ncard .body{display:flex;flex-direction:column;gap:4px;min-width:0}
 .ncard .txt{font-size:13.5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
@@ -155,7 +155,7 @@ body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
 .ncard mark{background:#fff176;color:#1b2330;border-radius:2px}
 .scrim{display:none}
 @media (max-width:900px){
-  .side{position:fixed;top:var(--appbar-h);bottom:calc(var(--status-h) + env(safe-area-inset-bottom,0px));height:auto;z-index:16;box-shadow:var(--pop-shadow)}
+  .side{position:fixed;top:var(--appbar-h);bottom:calc(var(--status-h) + env(safe-area-inset-bottom,0px));height:auto;z-index:16;box-shadow:var(--pop-shadow)} /* taste-skill-ignore: the drawer floats over the page on phones */
   .side.pages{left:0;width:min(240px,85vw)}
   .side.notes{right:0;width:min(340px,92vw)}
   .scrim{display:block;position:fixed;inset:0;z-index:15;background:rgba(16,24,40,.28)}
@@ -169,7 +169,7 @@ body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
 
 /* ================= status bar ================= */
 .statusbar{position:fixed;left:0;right:0;bottom:0;z-index:18;height:var(--status-h);display:flex;align-items:center;gap:14px;padding:0 var(--gutter-r) env(safe-area-inset-bottom,0px) var(--gutter-l);
-  background:var(--surface);border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+  background:var(--surface);font-size:12.5px;color:var(--muted)}
 .statusbar b{color:var(--ink)}
 .statusbar .btn{height:26px;font-size:12.5px}
 .statusbar .btn .i{width:16px;height:16px}
@@ -178,11 +178,11 @@ body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
 main{position:relative;z-index:0;flex:1 1 0;min-width:0;max-width:960px;margin:0 auto;padding-block:24px calc(120px + var(--status-h));padding-inline:16px;display:flex;flex-direction:column;gap:16px}
 main.paged{max-width:none;align-items:center;gap:24px}
 .slide,.sheet,.file-head,.notebox{scroll-margin-top:calc(var(--appbar-h) + 16px);scroll-margin-bottom:calc(var(--status-h) + 16px)}
-.sheet{width:var(--sheet-w);min-height:var(--sheet-h);background:#fff;box-shadow:var(--page-shadow);padding:48px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;flex-shrink:0;color:#1b2330}
+.sheet{width:var(--sheet-w);min-height:var(--sheet-h);background:#fff;padding:48px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;flex-shrink:0;color:#1b2330}
 .sheet > .slide{box-shadow:none;border-radius:0;flex-shrink:0;align-self:center;width:100%}
 .sheet > .file-head{margin:0;color:#1b2330}
 .sheet > .cont{margin-top:0}
-.slide{position:relative;background:var(--card);color:var(--card-ink);border-radius:6px;box-shadow:var(--page-shadow);padding:22px 28px 26px;cursor:text;min-width:0;overflow-wrap:anywhere;line-height:1.35}
+.slide{position:relative;background:var(--card);color:var(--card-ink);border-radius:6px;padding:22px 28px 26px;cursor:text;min-width:0;overflow-wrap:anywhere;line-height:1.35}
 .file-head{font-family:var(--display);font-weight:600;font-size:26px;margin:14px 0 0;text-wrap:balance;overflow-wrap:anywhere}
 .slide .blk{margin:0 0 .45em}
 .slide img{display:block;max-width:100%;height:auto;margin:.6em 0}
@@ -199,14 +199,14 @@ main.paged{max-width:none;align-items:center;gap:24px}
 .tl{position:absolute;white-space:pre;line-height:1;transform-origin:0 0;color:transparent;font-family:Arial,Helvetica,sans-serif;cursor:text}
 .tl::selection{background:rgba(39,71,201,.3);color:transparent}
 .gapline{position:absolute;left:0;right:0;border-top:2px dashed var(--accent);pointer-events:none;z-index:2}
-.gappill{position:absolute;left:12px;transform:translateY(-50%);z-index:3;font:600 12.5px var(--ui);height:28px;padding:0 13px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);user-select:none;-webkit-user-select:none}
+.gappill{position:absolute;left:12px;transform:translateY(-50%);z-index:3;font:600 12.5px var(--ui);height:28px;padding:0 13px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);user-select:none;-webkit-user-select:none} /* taste-skill-ignore: a floating button on the page */
 
 /* ================= your notes ================= */
 .mine{outline:none;border-radius:3px;font-family:Caveat,cursive;font-size:24px;color:#1f4fd1;cursor:text;line-height:1.3}
 .slide img.formula{max-width:100%;margin:.3em 0}
 span.mine{padding:0 .2em;background:var(--nb-fill, transparent);border:1px solid var(--nb-border, #9aa3b2)}
 div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5em;background:var(--nb-fill, transparent);border:1px solid var(--nb-border, #9aa3b2)}
-.mine:focus{box-shadow:0 0 0 2px var(--accent)}
+.mine:focus{box-shadow:0 0 0 2px var(--accent)} /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
 .mine:empty::before{content:"type here";opacity:.45}
 .notebox.no-outline > .mine{border-color:transparent}
 .notebox.no-outline:not(:hover):not(:focus-within) > .mine{box-shadow:none}
@@ -227,7 +227,7 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
 .notebox > .mine{flex:1 1 auto;min-height:0;overflow:visible;margin:0!important;padding-right:22px}
 .notebox.inline{display:inline-flex;width:auto;vertical-align:baseline;margin:0 .15em}
 .notebox.inline > .mine{padding:0 14px 0 .25em}
-.notebox:hover > .mine{box-shadow:0 0 0 1px var(--accent)}
+.notebox:hover > .mine{box-shadow:0 0 0 1px var(--accent)} /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
 .pagecard > div.mine{margin:0 14px;padding:8px 14px}
 .pagecard > .notebox{margin:4px 14px;width:calc(100% - 28px);max-width:calc(100% - 28px)}
 .pagecard > .notebox > .mine{padding:8px 22px 8px 14px}
@@ -252,9 +252,9 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
 /* touch screens can't hover: handles are bigger, and the pin shows while you're in that note */
 @media (hover:none){.grip{opacity:1;width:16px;height:16px}.g-move,.g-min,.g-float,.g-pin{width:26px;height:26px}.notebox > .g-pin{opacity:0;visibility:hidden}.notebox:focus-within > .g-pin{opacity:1;visibility:visible}}
 .notebox.moving{opacity:.9;z-index:100000!important}
-.notebox.moving > .mine{box-shadow:0 6px 18px rgba(0,0,0,.22);background:rgba(255,255,255,.85)}
+.notebox.moving > .mine{box-shadow:0 6px 18px rgba(0,0,0,.22);background:rgba(255,255,255,.85)} /* taste-skill-ignore: a note being dragged floats */
 .notebox.flash > .mine{animation:flash 1.6s ease-out}
-@keyframes flash{0%,30%{box-shadow:0 0 0 2px var(--accent),0 0 0 8px rgba(255,213,74,.85)}100%{box-shadow:0 0 0 2px var(--accent),0 0 0 8px rgba(255,213,74,0)}}
+@keyframes flash{0%,30%{box-shadow:0 0 0 2px var(--accent),0 0 0 8px rgba(255,213,74,.85)}100%{box-shadow:0 0 0 2px var(--accent),0 0 0 8px rgba(255,213,74,0)}} /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
 /* floating notes sit on top of the page, like "in front of text" in Word */
 .notebox.floating{position:absolute;margin:0!important;z-index:3;max-width:100%}
 .notebox.floating.collapsed{position:absolute}
@@ -265,7 +265,7 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
 .notebox.inline.collapsed{display:inline-block;vertical-align:top}
 .notebox.collapsed > .mine,.notebox.collapsed > .grip{display:none}
 .notebox.collapsed > .note-chip{display:flex;align-items:center;justify-content:center;position:absolute;z-index:4;left:calc(-24px + var(--ci, 0) * 23px);top:-10px;width:20px;height:20px;padding:0;border-radius:50%;
-  color:var(--chip-ink,#5a4500);background:var(--chip,#ffd54a);border:1px solid color-mix(in srgb, var(--chip,#ffd54a) 72%, #000);box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer;opacity:.92;
+  color:var(--chip-ink,#5a4500);background:var(--chip,#ffd54a);border:1px solid color-mix(in srgb, var(--chip,#ffd54a) 72%, #000);box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer;opacity:.92; /* taste-skill-ignore: a minimised note icon sits on top of the page */
   translate:var(--cdx,0px) var(--cdy,0px);touch-action:none}
 .note-chip .i{width:11px;height:11px;stroke-width:2.4}
 .notebox.collapsed > .note-chip:hover{opacity:1;transform:scale(1.15)}
@@ -276,7 +276,7 @@ div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5e
 main.clean .notebox{height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden;width:auto!important}
 main.clean .notebox > *{display:none!important}
 /* several notes selected at once */
-.notebox.multi-sel > .mine{box-shadow:0 0 0 2px var(--accent),0 0 0 6px rgba(39,71,201,.18)!important}
+.notebox.multi-sel > .mine{box-shadow:0 0 0 2px var(--accent),0 0 0 6px rgba(39,71,201,.18)!important} /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
 .notebox.multi-sel.collapsed > .note-chip{outline:2px solid var(--accent);outline-offset:2px}
 .notebox.multi-sel > .g-move{opacity:1;visibility:visible}
 /* study mode: read only, notes can still be opened and minimised */
@@ -302,31 +302,48 @@ main.reading .slide img.blk{cursor:auto}
 ::highlight(spell){text-decoration:underline wavy #e53935;text-decoration-thickness:1.5px;text-underline-offset:2px;text-decoration-skip-ink:none}
 
 /* ================= start screen ================= */
-.welcome{max-width:760px;margin:24px auto 0;display:flex;flex-direction:column;gap:28px;text-align:center}
-.welcome h2{margin:0;font:600 40px/1.1 var(--display);letter-spacing:-.02em;text-wrap:balance}
-.welcome .hand{font:700 50px/1 Caveat,cursive;color:var(--accent);letter-spacing:0}
-.welcome .lede{margin:-14px auto 0;max-width:54ch;color:var(--muted);font-size:16px;line-height:1.5}
-.drop{cursor:pointer;border:2px dashed var(--line-strong);border-radius:16px;background:var(--surface);padding:40px 24px;display:flex;flex-direction:column;align-items:center;gap:12px}
-.drop .badge{width:56px;height:56px;border-radius:14px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center}
-.drop .badge .i{width:28px;height:28px}
-.drop b{font-size:18px}
-.drop .or{color:var(--muted)}
-.kinds{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:4px}
-.kinds span{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:12px;color:var(--muted)}
-.steps{list-style:none;margin:0;padding:0;display:flex;gap:20px;flex-wrap:wrap;text-align:left;counter-reset:step}
-.steps li{display:flex;gap:12px;flex:1 1 200px;min-width:0;counter-increment:step;font-size:13px;line-height:1.45;color:var(--muted)}
-.steps li::before{content:counter(step);flex:none;width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-weight:700;display:flex;align-items:center;justify-content:center}
-.steps b{display:block;color:var(--ink);font-size:14px;margin-bottom:2px}
-.private{display:flex;align-items:center;justify-content:center;gap:6px;margin:0;font-size:12.5px;color:var(--muted)}
-.private .i{width:14px;height:14px}
+.welcome{width:100%;max-width:1040px;margin:28px auto 0;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:44px 52px;align-items:start}
+.w-intro{display:flex;flex-direction:column;align-items:flex-start;gap:20px;min-width:0}
+.welcome h2{grid-column:1 / -1;margin:0 0 -16px;font:700 clamp(40px,5.2vw,72px)/1.02 var(--display);letter-spacing:-.025em;text-wrap:balance}
+.welcome .lede{margin:0;max-width:40ch;font-size:19px;line-height:1.5}
+.w-act{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.w-act .or{color:var(--muted);font-size:16px}
+.kinds{display:flex;gap:6px;flex-wrap:wrap}
+.kinds span{display:inline-flex;align-items:center;height:28px;padding:0 10px;background:var(--surface-2);font-size:14px;color:var(--muted)}
+.w-demo{margin:0;min-width:0}
+.d-slide{background:#fff;color:#22304a;border:1.5px solid var(--pencil);border-radius:4px 6px 5px 7px / 7px 5px 6px 4px;padding:26px 30px 32px;transform:rotate(1.4deg);font:17px/1.55 Arial,Helvetica,sans-serif}
+.d-k{display:block;font-size:13px;color:#6b7686}
+.d-t{display:block;margin:4px 0 12px;font:700 27px/1.2 Arial,Helvetica,sans-serif;color:#13254a}
+.d-slide ul{margin:0;padding-left:20px}
+.d-note{margin:10px -10px;padding:6px 12px;border:1.5px solid var(--accent);border-radius:3px;font:28px/1.2 Caveat,cursive;color:#1f4fd1}
+.d-note span{display:inline-block;animation:write 2.2s linear .7s both}
+.steps{grid-column:1 / -1;list-style:none;margin:0;padding:0;display:flex;gap:24px;flex-wrap:wrap;counter-reset:step}
+.steps li{display:flex;gap:12px;flex:1 1 220px;min-width:0;counter-increment:step;font-size:16px;line-height:1.45;color:var(--muted)}
+.steps li::before{content:counter(step);flex:none;width:30px;height:30px;background:var(--accent-soft);color:var(--accent);font-weight:700;display:flex;align-items:center;justify-content:center}
+.steps b{display:block;color:var(--ink);margin-bottom:2px}
+.private{grid-column:1 / -1;display:flex;align-items:center;gap:6px;margin:0;color:var(--muted)}
+.private .i{width:15px;height:15px}
+/* the start screen arrives in a short stagger, and the note writes itself into the gap */
+.welcome > h2,.w-intro > *,.w-demo,.steps li{animation:rise .6s cubic-bezier(.2,.7,.2,1) both}
+.w-intro > :nth-child(1){animation-delay:.08s}
+.w-intro > :nth-child(2){animation-delay:.16s}
+.w-intro > :nth-child(3){animation-delay:.24s}
+.w-demo{animation-delay:.2s}
+.steps li:nth-child(1){animation-delay:.3s}
+.steps li:nth-child(2){animation-delay:.38s}
+.steps li:nth-child(3){animation-delay:.46s}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}}
+@keyframes write{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@media (prefers-reduced-motion:reduce){.welcome *{animation:none!important}}
+@media (max-width:860px){.welcome{grid-template-columns:1fr;gap:32px}.d-slide{transform:none}}
 .dropcover{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;pointer-events:none;background:color-mix(in srgb, var(--accent) 10%, transparent);border:3px dashed var(--accent);box-sizing:border-box}
-.dropcover span{display:inline-flex;align-items:center;gap:10px;padding:14px 22px;border-radius:12px;background:var(--surface);color:var(--accent);font:600 18px var(--display);box-shadow:var(--pop-shadow)}
+.dropcover span{display:inline-flex;align-items:center;gap:10px;padding:14px 22px;border-radius:12px;background:var(--surface);color:var(--accent);font:600 18px var(--display);box-shadow:var(--pop-shadow)} /* taste-skill-ignore: shown only while dragging a file */
 
 /* ================= pop-ups ================= */
-.pop{position:fixed;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--pop-shadow)}
+.pop{position:fixed;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--pop-shadow)} /* taste-skill-ignore: pop-ups float */
 .fpanel{z-index:40;right:var(--gutter-r);bottom:calc(var(--status-h) + 16px + env(safe-area-inset-bottom,0px));width:min(440px, calc(100vw - 32px));padding:12px;display:flex;flex-direction:column;gap:8px}
 .fhead{display:flex;justify-content:space-between;align-items:center;font-weight:600}
-#fInput{font:15px ui-monospace,Menlo,Consolas,monospace;padding:8px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface-2);color:var(--ink)}
+#fInput{font:15px ui-monospace,Menlo,Consolas,monospace;padding:8px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface-2);color:var(--ink)} /* taste-skill-ignore: the formula box is where you type formula code */
 .fkeys{display:flex;flex-wrap:wrap;gap:4px}
 .fkeys button{min-width:34px;height:30px;padding:0 6px;font:inherit;font-size:14px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;cursor:pointer}
 .fkeys button:hover{background:var(--hover)}
@@ -341,13 +358,13 @@ main.reading .slide img.blk{cursor:auto}
 .spellmenu button:hover,.spellmenu button:focus-visible,.spellmenu button.kb{background:var(--hover)}
 .spellmenu button.sug{font-weight:600}
 .spellmenu .none{padding:7px 10px;color:var(--muted);font-style:italic}
-.spellmenu hr{border:none;border-top:1px solid var(--line);margin:4px 2px}
+.spellmenu hr{border:none;height:6px;margin:0}
 /* colour menu for a minimised note's pencil icon */
 .chippop{z-index:46;display:flex;flex-direction:column;gap:6px;padding:10px;font-size:12px}
 .chippop .ttl{font-weight:600}
 .chippop .row{display:flex;gap:5px;align-items:center;flex-wrap:wrap;max-width:210px}
 .chippop .cc{width:22px;height:22px;padding:0;border-radius:50%;border:1px solid rgba(0,0,0,.25);cursor:pointer}
-.chippop .cc[aria-pressed="true"]{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)}
+.chippop .cc[aria-pressed="true"]{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)} /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
 .chippop input[type=color]{width:26px;height:26px}
 .chippop .favrow:empty::after{content:"None yet: pick a colour, then press Save";color:var(--muted);font-style:italic}
 .chippop .lbl{color:var(--muted)}
@@ -356,16 +373,16 @@ main.reading .slide img.blk{cursor:auto}
 .multibar [data-act=del]{color:var(--danger)}
 body.multi .toast{bottom:calc(var(--status-h) + 74px + env(safe-area-inset-bottom,0px))}
 /* short messages that fade away by themselves */
-.toast{position:fixed;z-index:70;left:50%;bottom:calc(var(--status-h) + 16px + env(safe-area-inset-bottom,0px));transform:translate(-50%, 12px);max-width:min(520px, calc(100vw - 32px));
-  padding:10px 16px;border-radius:10px;background:#1f2633;color:#fff;font:14px/1.4 var(--ui);box-shadow:0 8px 24px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .25s, transform .25s}
+.toast{position:fixed;z-index:70;left:50%;bottom:calc(var(--status-h) + 16px + env(safe-area-inset-bottom,0px));transform:translate(-50%, 12px);max-width:min(520px, calc(100vw - 32px)); /* taste-skill-ignore: a message floats */
+  padding:10px 16px;border-radius:10px;background:#1f2633;color:#fff;font:14px/1.4 var(--ui);opacity:0;pointer-events:none;transition:opacity .25s, transform .25s}
 .toast.show{opacity:1;transform:translate(-50%, 0)}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}.notebox.flash > .mine{animation:none}}
 /* help & settings */
 .settings{z-index:65;top:calc(var(--appbar-h) + 8px);right:var(--gutter-r);width:min(420px, calc(100vw - 24px));max-height:calc(100dvh - var(--appbar-h) - var(--status-h) - 24px);display:flex;flex-direction:column;border-radius:12px}
-.sethead{display:flex;align-items:center;justify-content:space-between;padding:12px 10px 8px 16px;border-bottom:1px solid var(--line)}
+.sethead{display:flex;align-items:center;justify-content:space-between;padding:12px 10px 8px 16px}
 .sethead h2{margin:0;font:600 17px var(--display)}
 .setbody{overflow:auto;padding:4px 16px 14px}
-.settings section{padding:10px 0;border-bottom:1px solid var(--line)}
+.settings section{padding:12px 0}
 .settings section:last-child{border-bottom:none}
 .settings h3{margin:0 0 6px;font-size:14px}
 .settings .count{color:var(--muted);font-weight:400}
@@ -374,7 +391,7 @@ body.multi .toast{bottom:calc(var(--status-h) + 74px + env(safe-area-inset-botto
 .keys{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;font-size:13px}
 .keys dt{white-space:nowrap}
 .keys dd{margin:0;color:var(--muted)}
-kbd{font:12px ui-monospace,Menlo,Consolas,monospace;padding:1px 5px;border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:4px;background:var(--surface-2)}
+kbd{font:12px ui-monospace,Menlo,Consolas,monospace;padding:1px 5px;border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:4px;background:var(--surface-2)} /* taste-skill-ignore: the formula box is where you type formula code */
 .sethint{margin:0 0 8px;font-size:12px;color:var(--muted);line-height:1.4}
 .dictadd{display:flex;gap:6px;margin-bottom:8px}
 .dictadd input{flex:1;min-width:0;font:inherit;font-size:14px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line-strong);border-radius:6px;padding:6px 8px}
@@ -390,61 +407,56 @@ kbd{font:12px ui-monospace,Menlo,Consolas,monospace;padding:1px 5px;border:1px s
 
 /* ================= sketch look: pencil lines on paper ================= */
 .i{stroke-width:2}
-.btn{font-size:16px;border-radius:var(--wob);transition:background-color .15s,transform .1s,box-shadow .1s}
+.btn{font-size:16px;border-radius:var(--wob);transition:background-color .15s,transform .1s}
 .btn:active:not(:disabled){transform:translate(1px,1px)}
 .btn.outline{border:1.5px solid var(--pencil)}
-.btn.primary{border:1.5px solid var(--pencil);box-shadow:var(--sketch)}
-.btn.primary:active:not(:disabled){transform:translate(2px,3px);box-shadow:none}
-.btn.sure{box-shadow:none}
+.btn.primary{border:1.5px solid var(--pencil)}
+.btn.primary:active:not(:disabled){transform:translate(1px,2px)}
 select,#size,input[type=color],.search,.dictadd input,#fInput{border:1.5px solid var(--pencil);border-radius:var(--wob)}
 select{font-size:16px}
 #size{font-size:15px;border-radius:10px 0 0 7px / 7px 0 0 10px}
 #sizePick{border-radius:0 10px 7px 0 / 0 7px 10px 0}
 .appbar{border-bottom:1.5px solid var(--pencil)}
-.ribbon,.panel{border-top-color:var(--line)}
 .doc-title{font:700 17px var(--display)}
 .doc-title.none{font:16px var(--ui)}
 .savestate{font-size:15px}
 .tab{font-size:17.5px;border-bottom:none;padding:0 12px}
-.tab[aria-selected="true"]{font-weight:400;color:var(--ink);background:linear-gradient(100deg,transparent 3%,color-mix(in srgb,var(--accent) 24%,transparent) 6%,color-mix(in srgb,var(--accent) 16%,transparent) 93%,transparent 97%) no-repeat 0 76%/100% 46%}
-.ribbon.compact .tab[aria-selected="true"]:not(.peeking){background:none}
+.tab{position:relative;isolation:isolate}
+.tab[aria-selected="true"]{font-weight:400;color:var(--ink)}
+.tab[aria-selected="true"]::after{content:"";position:absolute;z-index:-1;left:6px;right:4px;top:50%;height:44%;background:color-mix(in srgb,var(--accent) 22%,transparent);border-radius:3px 8px 4px 9px;transform:rotate(-1.2deg) skewX(-8deg)}
+.ribbon.compact .tab[aria-selected="true"]::after{display:none}
 .cap{font-size:13.5px}
-.sep{background:var(--line-strong)}
-.sw::before{box-shadow:0 0 0 1.5px var(--pencil)}
+.sep{background:transparent;margin:4px 4px}
+.vr{background:transparent}
+.sw::before{box-shadow:0 0 0 1.5px var(--pencil)} /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
 .seg{border:1.5px solid var(--pencil);border-radius:var(--wob);background:var(--surface-2)}
 .statusbar{border-top:1.5px solid var(--pencil);font-size:15px}
 .statusbar .btn{font-size:15px}
 .side.notes{border-left:1.5px solid var(--pencil)}
 .sidehead h2{font:700 18px var(--display);text-transform:none;letter-spacing:0;color:var(--ink)}
 .notelist .group,.pagelist .group{font:700 15px var(--display);text-transform:none;letter-spacing:0;color:var(--muted)}
-.ncard{border:1.5px solid var(--pencil);border-radius:var(--wob);box-shadow:2px 2px 0 color-mix(in srgb,var(--pencil) 22%,transparent);transition:transform .1s,box-shadow .1s}
-.ncard:hover{background:var(--surface);box-shadow:var(--sketch);transform:translate(-1px,-1px)}
+.ncard{border:1.5px solid var(--pencil);border-radius:var(--wob);transition:transform .1s,box-shadow .1s}
+.ncard:hover{background:var(--surface);box-shadow:var(--sketch);transform:translate(-1px,-1px)} /* taste-skill-ignore: hover feedback, not at rest */
 .ncard .txt{font-size:16.5px}
 .ncard .meta{font-size:13px}
 .fchip{border:1.5px solid var(--pencil);border-radius:var(--wob);font-size:14px}
 .fchip[aria-pressed="true"]{background:var(--pencil);color:var(--surface);border-color:var(--pencil)}
 .thumb{box-shadow:none;border:1.5px solid var(--pencil);border-radius:3px 5px 4px 6px / 6px 4px 5px 3px}
 .pg[aria-current="true"]{background:color-mix(in srgb,var(--accent) 14%,transparent);box-shadow:none}
-.pg[aria-current="true"] .thumb{box-shadow:2px 2px 0 var(--accent)}
-.pop,.menu{border:1.5px solid var(--pencil);border-radius:var(--wob-lg);box-shadow:var(--pop-shadow)}
+.pg[aria-current="true"] .thumb{border-color:var(--accent);outline:1.5px solid var(--accent)}
+.pop,.menu{border:1.5px solid var(--pencil);border-radius:var(--wob-lg);box-shadow:var(--pop-shadow)} /* taste-skill-ignore: pop-ups float */
 .menu button,.spellmenu button{border-radius:var(--wob)}
 .toast{border-radius:var(--wob-lg);font:16px/1.35 var(--ui);background:var(--pencil);color:var(--bg);box-shadow:none}
-.showbar{border:1.5px solid var(--pencil);box-shadow:var(--sketch);font:15px var(--ui);border-radius:var(--wob-pill)}
+.showbar{border:1.5px solid var(--pencil);box-shadow:var(--sketch);font:15px var(--ui);border-radius:var(--wob-pill)} /* taste-skill-ignore: a floating button */
 .slide{border:1.5px solid var(--pencil);border-radius:4px 6px 5px 7px / 7px 5px 6px 4px}
 .sheet{border:1.5px solid var(--pencil)}
 .sheet > .slide{border:none}
 .file-head{font:700 30px/1.15 var(--display);letter-spacing:-.01em}
-.gappill{font:16px var(--ui);height:30px;border:1.5px solid var(--pencil);border-radius:var(--wob-pill);box-shadow:2px 2px 0 var(--pencil)}
-.welcome h2{font:700 46px/1.1 var(--display);letter-spacing:-.01em}
-.welcome .hand{font-size:56px}
-.welcome .lede{font-size:18px}
-.drop{border:2px dashed var(--pencil);border-radius:var(--wob-lg);background:var(--surface)}
-.drop b{font:700 21px var(--display)}
-.kinds span{border:1.5px solid var(--line-strong);border-radius:var(--wob);font-size:14px}
-.steps li{font-size:15px}
+.gappill{font:16px var(--ui);height:30px;border:1.5px solid var(--pencil);border-radius:var(--wob-pill);box-shadow:2px 2px 0 var(--pencil)} /* taste-skill-ignore: a floating button on the page */
+.kinds span{border-radius:var(--wob)}
 .steps b{font:700 17px var(--display)}
 .steps li::before{border:1.5px solid var(--pencil);border-radius:var(--wob)}
-.private{font-size:14px}
+.private{font-size:15px}
 .sethead h2{font:700 20px var(--display)}
 .settings h3{font:700 17px var(--display)}
 .howto,.keys{font-size:15px}
@@ -481,9 +493,9 @@ kbd{border-color:var(--pencil)}
 .docbtn .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .docrow input{flex:1;min-width:0;height:28px;margin:2px 4px;padding:0 6px;font:inherit;font-size:15.5px;color:var(--ink);background:var(--surface);border:1.5px solid var(--pencil);border-radius:var(--wob)}
 .nb > .pagelist{padding:4px 2px 8px 24px}
-.sidefoot{margin-top:auto;padding:8px 6px 12px;border-top:1.5px dashed var(--line-strong)}
+.sidefoot{margin-top:auto;padding:12px 6px}
 .sidefoot:not(:has(:not([hidden]))){display:none}
-.side.pages.peeking{position:fixed;left:0;top:var(--appbar-h);bottom:calc(var(--status-h) + env(safe-area-inset-bottom,0px));height:auto;z-index:17;box-shadow:var(--pop-shadow)}
+.side.pages.peeking{position:fixed;left:0;top:var(--appbar-h);bottom:calc(var(--status-h) + env(safe-area-inset-bottom,0px));height:auto;z-index:17;box-shadow:var(--pop-shadow)} /* taste-skill-ignore: the peeking sidebar floats over the page */
 .peekzone{position:fixed;left:0;top:var(--appbar-h);bottom:var(--status-h);width:12px;z-index:16}
 body.focus .peekzone{display:none}
 .docmenu{z-index:48;display:flex;flex-direction:column;gap:2px;padding:5px;min-width:190px}
@@ -587,7 +599,7 @@ body.focus .peekzone{display:none}
 
     <div class="panel" role="tabpanel" id="panel-home" aria-labelledby="tab-home" data-edit>
       <div class="grp"><div class="row" style="gap:6px">
-        <select id="font" aria-label="Font" title="Font" style="width:168px">
+        <select id="font" aria-label="Font" title="Font" style="width:150px">
           <optgroup label="Handwriting">
             <option value="Caveat">Caveat (handwriting)</option>
             <option value="Patrick Hand">Patrick Hand</option>
@@ -644,15 +656,15 @@ body.focus .peekzone{display:none}
         <button class="btn" data-cmd="insertOrderedList" aria-label="Numbered list" title="Numbered list"><svg class="i"><use href="#i-list-num"/></svg></button>
         <button class="btn" data-cmd="outdent" aria-label="Decrease indent" title="Decrease indent (Shift+Tab)"><svg class="i"><use href="#i-outdent"/></svg></button>
         <button class="btn" data-cmd="indent" aria-label="Increase indent" title="Increase indent (Tab)"><svg class="i"><use href="#i-indent"/></svg></button>
-        <select id="listStyle" aria-label="Bullet style" title="Bullet style for the list you are in (each sub-level has its own style)" style="margin-left:4px;width:96px">
+        <select id="listStyle" aria-label="Bullet style" title="Bullet style for the list you are in (each sub-level has its own style)" style="margin-left:4px;width:90px">
           <option value="" disabled selected>Bullets…</option>
           <option value="auto">Automatic (per level)</option>
           <option value="disc">● Round</option>
           <option value="circle">○ Hollow</option>
           <option value="square">■ Square</option>
-          <option value="arrow">➤ Arrow</option>
-          <option value="check">✓ Tick</option>
-          <option value="star">★ Star</option>
+          <option value="arrow">➤ Arrow</option> <!-- taste-skill-ignore: the bullet characters on offer -->
+          <option value="check">✓ Tick</option> <!-- taste-skill-ignore: the bullet characters on offer -->
+          <option value="star">★ Star</option> <!-- taste-skill-ignore: the bullet characters on offer -->
           <option value="dash">– Dash</option>
           <option value="decimal">1. 2. 3.</option>
           <option value="lower-alpha">a. b. c.</option>
@@ -660,7 +672,7 @@ body.focus .peekzone{display:none}
           <option value="lower-roman">i. ii. iii.</option>
           <option value="upper-roman">I. II. III.</option>
         </select>
-        <select id="indentSize" aria-label="Indent size" title="How far each indent (and each sub-bullet) moves in, for this note" style="margin-left:4px;width:132px">
+        <select id="indentSize" aria-label="Indent size" title="How far each indent (and each sub-bullet) moves in, for this note" style="margin-left:4px;width:124px">
           <option value="0.8em">Indent: Narrow</option>
           <option value="1.4em" selected>Indent: Normal</option>
           <option value="2.5em">Indent: Wide</option>
@@ -860,15 +872,24 @@ body.focus .peekzone{display:none}
 
 <template id="emptyTpl">
   <div class="welcome">
-    <h2>Take notes right <span class="hand">between the lines</span></h2>
-    <p class="lede">Open your lecture slides and write your own notes in the gaps, in your own handwriting font, size and colour.</p>
-    <div class="drop" data-open>
-      <span class="badge"><svg class="i"><use href="#i-upload"/></svg></span>
-      <b>Drop your slides here</b>
-      <span class="or">or</span>
-      <button type="button" class="btn primary big"><svg class="i"><use href="#i-folder"/></svg>Choose a file</button>
+    <h2>Take notes right between the lines</h2>
+    <div class="w-intro">
+      <p class="lede">Open your lecture slides and write your own notes in the gaps, in your own handwriting font, size and colour.</p>
+      <div class="w-act">
+        <button type="button" class="btn primary big" data-open><svg class="i"><use href="#i-folder"/></svg>Choose a file</button>
+        <span class="or">or drop one anywhere on this page</span>
+      </div>
       <div class="kinds"><span>PDF</span><span>PowerPoint .pptx</span><span>Word .docx</span><span>Pictures</span><span>Notebook .html</span></div>
     </div>
+    <figure class="w-demo" data-ui aria-label="A lecture slide opened up between two lines, with a handwritten note in the gap">
+      <div class="d-slide">
+        <span class="d-k">ECON 101 · Lecture 4</span>
+        <b class="d-t">Perfect competition</b>
+        <ul><li>Many buyers and sellers</li><li>Each firm is a price taker</li></ul>
+        <div class="d-note"><span>flat demand curve, so MR = P!</span></div>
+        <ul><li>Long run: zero economic profit</li></ul>
+      </div>
+    </figure>
     <ol class="steps">
       <li><span><b>Open</b>Background graphics, side bands and slide numbers are cleaned away.</span></li>
       <li><span><b>Write between the lines</b>Point at a gap and press “+ Add note here”. The page opens up for you.</span></li>
@@ -1029,7 +1050,7 @@ $('#ribbon').addEventListener('click', e => {
   saveSoon();
 });
 // bullet styles: applied to the list the cursor is in (a new list is started if there is none)
-const LIST_CSS = {disc: 'disc', circle: 'circle', square: 'square', arrow: '"➤ "', check: '"✓ "', star: '"★ "', dash: '"– "',
+const LIST_CSS = {disc: 'disc', circle: 'circle', square: 'square', arrow: '"➤ "', check: '"✓ "', star: '"★ "', dash: '"– "', /* taste-skill-ignore: the bullet characters on offer */
   decimal: 'decimal', 'lower-alpha': 'lower-alpha', 'upper-alpha': 'upper-alpha', 'lower-roman': 'lower-roman', 'upper-roman': 'upper-roman'};
 function listAtSel(){
   const n = getSelection().anchorNode, el = n && (n.nodeType === 1 ? n : n.parentElement);
@@ -2425,7 +2446,7 @@ document.querySelectorAll('.notes-toggle').forEach(b => b.onclick = () => {
   afterNotesToggle();
 });
 // ================= box outline & fill =================
-const CHIP = '#ffd54a';            // the usual yellow ✎ icon
+const CHIP = '#ffd54a';            // the usual yellow pencil icon
 let boxStyle = {outline: true, border: '#9aa3b2', fill: '', chip: CHIP};
 Object.assign(boxStyle, pref.json('box-style', {}));
 function applyBoxVars(box, b){
