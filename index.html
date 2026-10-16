@@ -698,6 +698,25 @@ mark.anno[data-cm]:not([data-done])::after{content:"";display:inline-block;width
 .tnone{margin:0;padding:4px 10px 6px 12px;font-size:15px;color:var(--muted)}
 @media (hover:none){.tbtn{height:32px}}
 
+/* ================= folders: a course > topic > notebooks tree in the sidebar ================= */
+.docrow{user-select:none;-webkit-user-select:none}
+.foldkids{list-style:none;margin:0 0 0 13px;padding:0 0 0 0;border-left:1px solid color-mix(in srgb,var(--line-strong) 60%,transparent)}
+.fld > .docrow .docbtn .i{color:var(--accent)}
+.fcount{margin-left:auto;padding-left:6px;font:13px var(--ui);color:var(--muted)}
+.fempty{padding:4px 8px 6px 14px;font-size:14px;color:var(--muted)}
+.dragsrc{opacity:.45}
+.docrow.droptarget{background:color-mix(in srgb,var(--accent) 22%,transparent);box-shadow:inset 0 0 0 1.5px var(--accent)} /* taste-skill-ignore: a ring marking the folder you are about to drop on */
+.dropline{position:fixed;z-index:60;height:2px;border-radius:2px;background:var(--accent);pointer-events:none}
+.dragghost{position:fixed;z-index:61;display:flex;align-items:center;gap:7px;max-width:220px;padding:5px 10px;border:1.5px solid var(--accent);border-radius:var(--wob);background:var(--surface);color:var(--ink);font:15px var(--ui);pointer-events:none;box-shadow:var(--pop-shadow)} /* taste-skill-ignore: the row you are carrying floats above the page */
+.dragghost .i{width:16px;height:16px;color:var(--accent)}
+.dragghost span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dragghost.nodrop{border-color:var(--danger);opacity:.8}
+body.dragging,body.dragging *{cursor:grabbing!important;user-select:none!important;-webkit-user-select:none!important}
+.docmenu .movelist{display:flex;flex-direction:column;gap:1px;max-height:190px;overflow:auto;margin:0 0 3px 14px;padding-left:4px;border-left:1.5px solid var(--line-strong)}
+.docmenu .movelist button{padding:5px 8px;font-size:14.5px}
+.docmenu .movelist button:disabled{color:var(--muted);cursor:default;background:none}
+.docmenu .movelist button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
 /* ================= tooltips: what a control does, after a brief pause ================= */
 .qtip{position:fixed;z-index:120;left:0;top:0;max-width:260px;padding:6px 10px 7px;border-radius:8px;background:var(--pencil);color:var(--bg);font:15px/1.3 var(--ui);pointer-events:none;opacity:0;transition:opacity .1s}
 .qtip.on{opacity:1}
@@ -715,6 +734,8 @@ mark.anno[data-cm]:not([data-done])::after{content:"";display:inline-block;width
 <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
 <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></symbol>
 <symbol id="i-folder" viewBox="0 0 24 24"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-folder-closed" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+<symbol id="i-folder-plus" viewBox="0 0 24 24"><path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
 <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></symbol>
 <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 13v8"/><path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="m8 17 4-4 4 4"/></symbol>
 <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
@@ -1001,6 +1022,7 @@ mark.anno[data-cm]:not([data-done])::after{content:"";display:inline-block;width
     <div class="sidehead ws"><span class="brand"><svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><g transform="rotate(-4 16 16)"><path d="M3.6 3.3C10.5 2.4 21.6 2.2 28.6 3.1c1.4 6.3 1.6 19.5.6 26.3-7 1.1-18.7 1.2-25.3.3C2.3 23.7 2.2 10.1 3.6 3.3Z" fill="#3552c4" stroke="#1d2752" stroke-width="1.4"/><path d="M8 9.2c5.2-.7 10.9-.6 16 .2M8.2 23.2c5.3-.6 10.8-.5 15.6.1" stroke="#fbfbf8" stroke-width="2.9" stroke-linecap="round" fill="none"/><path d="M8.2 16.6c2.3-3.4 4 2.9 6.4-.3s4 2.9 6.6.1" stroke="#ffd54a" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g></svg><b>Between the Slides</b></span><button class="btn" data-close="pages" id="sideHide" aria-label="Hide the sidebar" title="Hide the sidebar (Ctrl+\). Point at the left edge to peek at it."><svg class="i"><use href="#i-hide-left"/></svg></button></div>
     <div class="sideacts">
       <button type="button" class="srow" id="newDocBtn" title="A new notebook with a blank page to write on"><svg class="i"><use href="#i-plus"/></svg>New notebook</button>
+      <button type="button" class="srow" id="newFolderBtn" title="A folder to group notebooks in, like a course or a topic"><svg class="i"><use href="#i-folder-plus"/></svg>New folder</button>
       <button type="button" class="srow" id="sideOpen" title="Open a PDF, PowerPoint or Word file as a new notebook"><svg class="i"><use href="#i-folder"/></svg>Open a file</button>
       <button type="button" class="srow" id="sideAdd" title="Write a note for the page you're on, in the Notes panel"><svg class="i"><use href="#i-pen"/></svg>Add a note</button>
       <button type="button" class="srow" id="sideSearch" title="Search: find a notebook, page or note, or run an action (Ctrl+K)"><svg class="i"><use href="#i-search"/></svg>Search</button>
@@ -1055,7 +1077,7 @@ mark.anno[data-cm]:not([data-done])::after{content:"";display:inline-block;width
         <li>The <b>Home</b> tab styles your notes: the font, size and colour are used for new notes, or click in a note (or select words) to change just that.</li>
         <li>Drag a note’s edges to resize it, or its move handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
         <li>On each note: the arrows float it on top of the page, the minus minimises it to a pencil icon (drag the icon aside, right-click it to colour it), and the pin keeps it open.</li>
-        <li>The <b>sidebar</b> (left) lists your notebooks: click one to switch, and the one you're in shows its pages. Use its <b>⋯</b> to rename or delete it. Hide it with <b>«</b> (Ctrl+\) and point at the left edge to peek at it. A notebook’s <b>⋯</b> menu can also star it as a <b>Favourite</b>, <b>Duplicate</b> it, or move it to the <b>Trash</b>, where it waits 30 days (and can be restored) before it is gone for ever.</li>
+        <li>The <b>sidebar</b> (left) lists your notebooks: click one to switch, and the one you're in shows its pages. Use its <b>⋯</b> to rename or delete it. Hide it with <b>«</b> (Ctrl+\) and point at the left edge to peek at it. A notebook’s <b>⋯</b> menu can also star it as a <b>Favourite</b>, <b>Duplicate</b> it, or move it to the <b>Trash</b>, where it waits 30 days (and can be restored) before it is gone for ever. Group notebooks in <b>folders</b> (<b>New folder</b>): drag a notebook or a folder onto a folder to move it, or use <b>Move to…</b> in its <b>⋯</b> menu.</li>
         <li><b>Notes</b> (right) lists every note in the notebook to search, filter by icon colour and jump to.</li>
         <li>In Chrome or Edge, <b>Install as an app</b> (at the bottom of the sidebar) gives Between the Slides its own window that works offline.</li>
         <li><b>Focus</b> hides the toolbar, side panels and status bar so only your pages and notes are left (Esc brings them back). Each panel also closes with its ×, and View › Toolbar can shrink the toolbar to tabs only.</li>
@@ -4113,8 +4135,8 @@ document.addEventListener('keydown', e => {
 
 // ================= notebooks, Notion style: each file you open is its own notebook in the sidebar =================
 // each notebook is stored on its own ("doc:<id>"); "docs" lists them in sidebar order and "cur" is the open one
-// a notebook can also be a favourite (fav: true) or in the Trash (trashed: when it was put there; see the Trash further down)
-let docs = [], curId = null, renaming = null, docPagesOpen = pref.get('doc-pages', '1') === '1', trashOpen = false;
+// a notebook can sit in a folder (folder: the folder's id; see the folders further down), be a favourite (fav: true) or in the Trash (trashed: when it was put there; see the Trash further down)
+let docs = [], folders = [], drag = null, curId = null, renaming = null, docPagesOpen = pref.get('doc-pages', '1') === '1', trashOpen = false;
 const histByDoc = new Map(), scrollByDoc = new Map();
 const newId = () => 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const curDoc = () => docs.find(d => d.id === curId);
@@ -4142,7 +4164,7 @@ async function switchDoc(id){
   active = null; savedRange = null;
   let html = '';
   if (id) html = await fromStored(await get('doc:' + id)); else id = makeDoc().id;
-  curId = id;
+  curId = id; revealDoc(id);               // a notebook inside closed folders opens them
   showDocHtml(html);
   const h = histByDoc.get(id);
   if (h) { hist.stack = h.stack; hist.i = h.i; updateUndoBtns(); } else resetHistory(main.querySelector('.welcome') ? '' : currentDoc());
@@ -4153,7 +4175,8 @@ async function switchDoc(id){
 // one notebook's row in the sidebar (with its page list under it when it is the open one)
 function docItem(d){
   const on = d.id === curId, open = on && docPagesOpen, li = document.createElement('li');
-  li.className = 'nb'; if (on) li.setAttribute('aria-current', 'true');
+  li.className = 'nb'; li.dataset.did = d.id; if (on) li.setAttribute('aria-current', 'true');
+  if (drag?.on && drag.kind === 'doc' && drag.id === d.id) li.classList.add('dragsrc');
   const row = document.createElement('div'); row.className = 'docrow';
   const caret = Object.assign(document.createElement('button'), {type: 'button', className: 'caret', innerHTML: icon('right')});
   caret.dataset.caret = d.id; caret.setAttribute('aria-expanded', open); caret.setAttribute('aria-label', (open ? 'Hide' : 'Show') + ' the pages of ' + d.name);
@@ -4168,13 +4191,16 @@ function docItem(d){
 }
 function renderDocs(){
   if (renaming) return;                   // don't pull the name box away while you type in it
+  const side = $('#pagesPanel'), kept = side.scrollTop;      // rebuilding the rows must not make the sidebar jump
   const live = liveDocs(), starred = live.filter(d => d.fav), rest = live.filter(d => !d.fav);
   $('#docCount').textContent = rest.length > 1 ? rest.length : '';
-  $('#docList').replaceChildren(...rest.map(docItem));
+  $('#docList').replaceChildren(...treeRows(null, rest));
   const fl = $('#favList');               // the Favourites section only shows while there is a favourite
   if (fl) { fl.replaceChildren(...starred.map(docItem)); fl.hidden = $('#favSec').hidden = !starred.length; }
   if (!docPagesOpen && pageList.isConnected) pageList.remove();
   renderTrash();
+  side.scrollTop = kept;
+  if (drag?.on) aimDrag();                // the rows were rebuilt while you carry one: mark the target again
 }
 $('#pagesPanel').addEventListener('click', async e => {      // the Notebooks rows and the Favourites rows
   const t = e.target.closest('.doclist [data-doc], .doclist [data-caret], .doclist [data-more]'); if (!t) return;
@@ -4192,29 +4218,40 @@ $('#newDocBtn').onclick = async () => {
 };
 $('#sideOpen').onclick = () => pickFiles(false);
 
-// a notebook's ⋯ menu: rename, duplicate, favourite it, or move it to the Trash
+// a ⋯ menu: for a notebook it can rename, duplicate, move, favourite it or move it to the Trash (a folder's menu is in the folders section)
 const docMenu = document.createElement('div'); docMenu.className = 'pop docmenu'; docMenu.hidden = true; docMenu.setAttribute('role', 'menu');
-docMenu.innerHTML = `<button type="button" role="menuitem" data-act="rename">${icon('pen')}Rename</button><button type="button" role="menuitem" data-act="duplicate">${icon('copy')}Duplicate</button><button type="button" role="menuitem" data-act="fav"></button><hr><button type="button" role="menuitem" data-act="trash">${icon('trash')}Move to Trash</button>`;
 document.body.append(docMenu);
-let menuDoc = null, menuFrom = null;
-function openDocMenu(id, from){
-  if (!docMenu.hidden && menuDoc === id) { closeDocMenu(); return; }
-  menuDoc = id; menuFrom = from; from.setAttribute('aria-expanded', 'true');
-  const fav = docs.find(x => x.id === id)?.fav;
-  docMenu.querySelector('[data-act=fav]').innerHTML = icon(fav ? 'star-off' : 'star') + (fav ? 'Remove from Favourites' : 'Add to Favourites');
-  docMenu.hidden = false;
-  const r = from.getBoundingClientRect();
-  docMenu.style.left = Math.min(innerWidth - docMenu.offsetWidth - 8, r.left) + 'px';
-  docMenu.style.top = Math.min(innerHeight - docMenu.offsetHeight - 8, r.bottom + 4) + 'px';
+let menuDoc = null, menuFrom = null, menuKind = 'doc';
+function openDocMenu(id, from, kind = 'doc'){
+  if (!docMenu.hidden) { const same = menuDoc === id; closeDocMenu(); if (same) return; }
+  menuDoc = id; menuFrom = from; menuKind = kind; from.setAttribute('aria-expanded', 'true');
+  if (kind === 'folder') docMenu.innerHTML = folderMenuHtml(id);
+  else {
+    const fav = docs.find(x => x.id === id)?.fav;
+    docMenu.innerHTML = `<button type="button" role="menuitem" data-act="rename">${icon('pen')}Rename</button><button type="button" role="menuitem" data-act="duplicate">${icon('copy')}Duplicate</button>` +
+      (folders.length ? `<button type="button" role="menuitem" data-act="move" aria-expanded="false">${icon('folder')}Move to…</button>` : '') +
+      `<button type="button" role="menuitem" data-act="fav">${icon(fav ? 'star-off' : 'star')}${fav ? 'Remove from Favourites' : 'Add to Favourites'}</button><hr><button type="button" role="menuitem" data-act="trash">${icon('trash')}Move to Trash</button>`;
+  }
+  docMenu.hidden = false; placeMenu();
   docMenu.querySelector('button').focus();
+}
+function placeMenu(){
+  const r = menuFrom.getBoundingClientRect();
+  docMenu.style.left = Math.min(innerWidth - docMenu.offsetWidth - 8, r.left) + 'px';
+  docMenu.style.top = Math.max(8, Math.min(innerHeight - docMenu.offsetHeight - 8, r.bottom + 4)) + 'px';
 }
 function closeDocMenu(){ docMenu.hidden = true; menuFrom?.setAttribute('aria-expanded', 'false'); menuDoc = menuFrom = null; }
 docMenu.addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b || !menuDoc) return;
-  const id = menuDoc; closeDocMenu();
-  ({rename: startRename, duplicate: duplicateDoc, fav: toggleFav, trash: trashDoc})[b.dataset.act]?.(id);
+  const b = e.target.closest('button'); if (!b || !menuDoc || b.disabled) return;
+  const id = menuDoc, kind = menuKind;
+  if (b.dataset.act === 'move') { toggleMoveList(kind, id, b); return; }
+  if (b.dataset.act === 'rmfolder' && !armed(b)) return;      // deleting a folder takes a second click
+  closeDocMenu();
+  if (b.dataset.to !== undefined) { (kind === 'folder' ? moveFolder : moveDoc)(id, b.dataset.to || null); return; }
+  (kind === 'folder' ? {rename: startRenameFolder, sub: newFolder, here: newDocIn, rmfolder: deleteFolder}
+                     : {rename: startRename, duplicate: duplicateDoc, fav: toggleFav, trash: trashDoc})[b.dataset.act]?.(id);
 });
-document.addEventListener('mousedown', e => { if (!docMenu.hidden && !docMenu.contains(e.target) && !e.target.closest('[data-more]')) closeDocMenu(); });
+document.addEventListener('mousedown', e => { if (!docMenu.hidden && !docMenu.contains(e.target) && !e.target.closest('[data-more], [data-fmore]')) closeDocMenu(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !docMenu.hidden) { const f = menuFrom; closeDocMenu(); f?.focus(); } });
 function startRename(id){
   const d = docs.find(x => x.id === id); if (!d) return;
@@ -5552,7 +5589,8 @@ async function trashDoc(id){
 }
 function restoreDoc(id){
   const d = docs.find(x => x.id === id); if (!d || !d.trashed) return;
-  delete d.trashed; putAll({docs}); renderDocs();
+  delete d.trashed; if (docFolder(d)) openFolders(docFolder(d));     // it goes back to its folder (the top level if that folder is gone)
+  putAll({docs, folders}); renderDocs();
   toast(`Restored “${d.name}”.`);
 }
 function purgeDoc(id){
@@ -5646,6 +5684,256 @@ function armed(b){
   });
 }
 
+// ================= folders: a course > topic > notebooks tree in the sidebar =================
+// folders = [{id, name, parent: a folder's id or null, open}], kept under "folders"; a notebook says which one it is in (folder: id).
+// Folders nest as deep as you like. Deleting one moves what is inside up a level; nothing is deleted.
+const newFolderId = () => 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const folderById = id => id ? folders.find(f => f.id === id) : null;
+const byName = (a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'});
+const parentOf = f => folderById(f.parent) ? f.parent : null;                  // a lost parent counts as the top level
+const subfolders = pid => folders.filter(f => parentOf(f) === pid).sort(byName);
+const docFolder = d => folderById(d.folder) ? d.folder : null;                 // a notebook in a deleted folder sits at the top level
+// is folder a the same as b, or somewhere inside it?
+function folderWithin(a, b){ for (let f = folderById(a), n = 0; f && n < 99; f = folderById(f.parent), n++) if (f.id === b) return true; return false; }
+// open a folder and the ones around it, so what is inside shows
+function openFolders(fid){
+  let changed = false;
+  for (let f = folderById(fid), n = 0; f && n < 99; f = folderById(f.parent), n++) if (!f.open) { f.open = changed = true; }
+  return changed;
+}
+// the open notebook is always visible: open the folders it is in
+function revealDoc(id){
+  const d = docs.find(x => x.id === id);
+  if (d && openFolders(docFolder(d))) putAll({folders});
+}
+// at start-up: drop anything odd that was saved, and break any folder loop
+function tidyFolders(){
+  folders = folders.filter(f => f && typeof f.id === 'string').map(f => ({id: f.id, name: String(f.name || 'Untitled folder').slice(0, 120), parent: f.parent || null, open: !!f.open}));
+  for (const f of folders) {
+    const seen = new Set([f.id]);
+    for (let p = folderById(f.parent); ; p = folderById(p.parent)) {
+      if (!p) { if (f.parent && !folderById(f.parent)) f.parent = null; break; }
+      if (seen.has(p.id)) { f.parent = null; break; }
+      seen.add(p.id);
+    }
+  }
+}
+// the rows at one level: folders first (A to Z), then the notebooks that sit there
+function treeRows(pid, rest){
+  return [...subfolders(pid).map(f => folderItem(f, rest)), ...rest.filter(d => docFolder(d) === pid).map(docItem)];
+}
+function folderItem(f, rest){
+  const li = document.createElement('li'); li.className = 'fld'; li.dataset.fid = f.id;
+  if (drag?.on && drag.kind === 'folder' && drag.id === f.id) li.classList.add('dragsrc');
+  const n = rest.filter(d => docFolder(d) && folderWithin(docFolder(d), f.id)).length;
+  const row = document.createElement('div'); row.className = 'docrow';
+  const caret = Object.assign(document.createElement('button'), {type: 'button', className: 'caret', innerHTML: icon('right')});
+  caret.dataset.fcaret = f.id; caret.setAttribute('aria-expanded', f.open); caret.setAttribute('aria-label', (f.open ? 'Close ' : 'Open ') + f.name);
+  const btn = Object.assign(document.createElement('button'), {type: 'button', className: 'docbtn', innerHTML: icon(f.open ? 'folder' : 'folder-closed') + '<span class="nm"></span>' + (n && !f.open ? '<span class="fcount"></span>' : '')});
+  btn.dataset.fold = f.id; btn.querySelector('.nm').textContent = f.name;
+  if (n && !f.open) btn.querySelector('.fcount').textContent = n;
+  btn.title = `${f.name} · ${n} notebook${n === 1 ? '' : 's'}`;
+  const more = Object.assign(document.createElement('button'), {type: 'button', className: 'more', innerHTML: icon('dots')});
+  more.dataset.fmore = f.id; more.setAttribute('aria-label', 'More for the folder ' + f.name); more.setAttribute('aria-haspopup', 'menu');
+  row.append(caret, btn, more); li.append(row);
+  if (f.open) {
+    const kids = document.createElement('ul'); kids.className = 'foldkids';
+    const inside = treeRows(f.id, rest);
+    kids.append(...(inside.length ? inside : [Object.assign(document.createElement('li'), {className: 'fempty', textContent: 'Nothing in here yet'})]));
+    li.append(kids);
+  }
+  return li;
+}
+function toggleFolder(id, attr){
+  const f = folderById(id); if (!f) return;
+  f.open = !f.open; putAll({folders}); renderDocs();
+  $(`.doclist [${attr}="${id}"]`)?.focus();                                    // the row was rebuilt: keep the keyboard where it was
+}
+$('#pagesPanel').addEventListener('click', e => {
+  const t = e.target.closest('.doclist [data-fold], .doclist [data-fcaret], .doclist [data-fmore]'); if (!t) return;
+  if (t.dataset.fmore) { openDocMenu(t.dataset.fmore, t, 'folder'); return; }
+  if (t.dataset.fcaret) toggleFolder(t.dataset.fcaret, 'data-fcaret'); else toggleFolder(t.dataset.fold, 'data-fold');
+});
+
+// make a folder (at the top level, or inside another one) and start naming it straight away
+function newFolder(parent = null){
+  const f = {id: newFolderId(), name: 'Untitled folder', parent: parent || null, open: false};
+  folders.push(f); if (parent) openFolders(parent);
+  putAll({folders}); renderDocs(); startRenameFolder(f.id);
+}
+$('#newFolderBtn').onclick = () => newFolder(null);
+function startRenameFolder(id){
+  const f = folderById(id); if (!f) return;
+  const btn = $(`.doclist [data-fold="${id}"]`); if (!btn) return;
+  renaming = 'f:' + id;
+  const box = Object.assign(document.createElement('input'), {value: f.name, ariaLabel: 'Folder name'});
+  btn.replaceWith(box); box.focus(); box.select(); box.scrollIntoView({block: 'nearest'});
+  const done = keep => {
+    if (renaming !== 'f:' + id) return;
+    renaming = null;
+    const v = box.value.trim();
+    if (keep && v && v !== f.name) { f.name = v.slice(0, 120); putAll({folders}); }
+    renderDocs();
+  };
+  box.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); done(true); } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(false); } });
+  box.addEventListener('blur', () => done(true));
+}
+// a new, empty notebook inside a folder, opened ready to write on
+async function newDocIn(fid){
+  if (!folderById(fid)) return;
+  const here = curDoc();
+  if (main.querySelector('.slide') || !here || here.named || here.fav) await switchDoc(null);     // a blank, unnamed notebook is used as it is
+  const d = curDoc(); d.folder = fid; openFolders(fid);
+  putAll({docs, folders}); renderDocs();
+  addPageAfter(null);
+  if (narrow.matches) setPanel('pages', false);
+}
+// delete a folder: its notebooks and folders move up to the folder around it (or the top level)
+function deleteFolder(id){
+  const f = folderById(id); if (!f) return;
+  const up = parentOf(f);
+  docs.forEach(d => { if (d.folder === id) d.folder = up; });                  // the Trash too, so a restore lands in the right place
+  folders.forEach(x => { if (x.parent === id) x.parent = up; });
+  folders = folders.filter(x => x !== f);
+  putAll({docs, folders}); renderDocs();
+  toast(`Deleted the folder “${f.name}”. What was inside moved up.`);
+}
+function folderMenuHtml(id){
+  const f = folderById(id), canMove = folders.length > 1 || parentOf(f);
+  return `<button type="button" role="menuitem" data-act="rename">${icon('pen')}Rename</button>` +
+    `<button type="button" role="menuitem" data-act="sub">${icon('folder-plus')}New folder inside</button>` +
+    `<button type="button" role="menuitem" data-act="here">${icon('plus')}New notebook here</button>` +
+    (canMove ? `<button type="button" role="menuitem" data-act="move" aria-expanded="false">${icon('folder')}Move to…</button>` : '') +
+    `<hr><button type="button" role="menuitem" class="danger" data-act="rmfolder" title="Its notebooks and folders move up a level. Nothing else is deleted.">${icon('trash')}<span>Delete folder</span></button>`;
+}
+
+// "Move to…": a small list of folders for the menu, for anyone not dragging
+function moveList(kind, id){
+  const here = kind === 'doc' ? docFolder(docs.find(x => x.id === id)) : parentOf(folderById(id));
+  const box = document.createElement('div'); box.className = 'movelist'; box.setAttribute('role', 'group'); box.setAttribute('aria-label', 'Move to');
+  const add = (fid, name, depth) => {
+    const b = Object.assign(document.createElement('button'), {type: 'button', innerHTML: icon('folder-closed') + '<span></span>', disabled: fid === here});
+    b.setAttribute('role', 'menuitem'); b.dataset.to = fid || ''; b.style.paddingLeft = 8 + depth * 12 + 'px';
+    b.lastChild.textContent = name + (fid === here ? ' (here)' : '');
+    box.append(b);
+  };
+  add(null, 'Top level', 0);
+  const walk = (pid, depth) => subfolders(pid).forEach(f => { if (kind === 'folder' && f.id === id) return; add(f.id, f.name, depth); walk(f.id, depth + 1); });
+  walk(null, 1);
+  return box;
+}
+function toggleMoveList(kind, id, btn){
+  const old = docMenu.querySelector('.movelist');
+  if (old) { old.remove(); btn.setAttribute('aria-expanded', 'false'); placeMenu(); return; }
+  const list = moveList(kind, id); btn.after(list); btn.setAttribute('aria-expanded', 'true'); placeMenu();
+  list.querySelector('button:not(:disabled)')?.focus();
+}
+function moveDoc(id, to){
+  const d = docs.find(x => x.id === id); if (!d) return;
+  d.folder = to || null; if (to) openFolders(to);
+  putAll({docs, folders}); renderDocs();
+  toast(to ? `Moved “${d.name}” into “${folderById(to).name}”.` : `Moved “${d.name}” to the top level.`);
+}
+function moveFolder(id, to){
+  const f = folderById(id); if (!f) return;
+  if (to && folderWithin(to, id)) { toast('A folder can’t go inside itself.'); return; }
+  f.parent = to || null; if (to) openFolders(to);
+  putAll({folders}); renderDocs();
+  toast(to ? `Moved the folder “${f.name}” into “${folderById(to).name}”.` : `Moved the folder “${f.name}” to the top level.`);
+}
+
+// drag and drop with the pointer (mouse, pen or touch): press a notebook or folder row and move 6px to pick it up
+// (a finger has to hold for a moment first, so scrolling still works). Drop it on a folder, or on the heading or empty space for the top level.
+const dragGhost = document.createElement('div'), dragLine = document.createElement('div');
+dragGhost.className = 'dragghost'; dragLine.className = 'dropline';
+document.addEventListener('pointerdown', e => {
+  if (e.button !== 0 || drag) return;
+  const row = e.target.closest('#docList .docrow, #favList .docrow'); if (!row || e.target.closest('.more, input')) return;
+  const li = row.parentElement, kind = li.dataset.fid ? 'folder' : 'doc', id = li.dataset.fid || li.dataset.did; if (!id) return;
+  const touch = e.pointerType === 'touch';
+  drag = {kind, id, pid: e.pointerId, x0: e.clientX, y0: e.clientY, touch, on: false, ok: false, to: null, last: [e.clientX, e.clientY]};
+  if (touch) drag.hold = setTimeout(startDrag, 350);
+});
+document.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.pid) return;
+  drag.last = [e.clientX, e.clientY];
+  if (!drag.on) {
+    if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 6) return;
+    if (drag.touch) endDrag(false); else startDrag();                          // a finger that moves first is just scrolling
+  }
+  if (drag?.on) aimDrag();
+});
+document.addEventListener('pointerup', e => { if (drag && e.pointerId === drag.pid) endDrag(true); });
+document.addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.pid) endDrag(false); });
+window.addEventListener('blur', () => endDrag(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && drag?.on) { e.preventDefault(); e.stopPropagation(); endDrag(false); } }, true);
+document.addEventListener('touchmove', e => { if (drag?.on) e.preventDefault(); }, {passive: false});
+document.addEventListener('contextmenu', e => { if (drag) e.preventDefault(); });
+function startDrag(){
+  if (!drag || drag.on) return;
+  drag.on = true;
+  const name = drag.kind === 'folder' ? folderById(drag.id)?.name : docs.find(x => x.id === drag.id)?.name;
+  dragGhost.innerHTML = icon(drag.kind === 'folder' ? 'folder-closed' : 'file') + '<span></span>';
+  dragGhost.lastChild.textContent = name || '';
+  document.body.append(dragGhost, dragLine);
+  document.body.classList.add('dragging');
+  closeDocMenu();
+  drag.scroll = setInterval(() => {                                            // near the top or bottom of the sidebar it scrolls
+    const r = $('#pagesPanel').getBoundingClientRect(), y = drag.last[1];
+    if (y < r.top + 36) $('#pagesPanel').scrollTop -= 10; else if (y > r.bottom - 36) $('#pagesPanel').scrollTop += 10; else return;
+    aimDrag();
+  }, 40);
+  renderDocs();                                                                // dims the row you are carrying
+}
+// where would it land if you let go here?
+function dropTarget(x, y){
+  const el = document.elementFromPoint(x, y);
+  if (!el || !el.closest('#pagesPanel') || el.closest('#favSec, #favList, #trashBox, .sidefoot, .sideacts, .sidehead')) return null;
+  const li = el.closest('#docList li.fld, #docList li.nb');
+  if (!li) return {to: null};                                                  // the heading or empty space: the top level
+  if (li.classList.contains('fld')) return {to: li.dataset.fid};
+  const d = docs.find(v => v.id === li.dataset.did);                           // on a notebook: into the folder it is in
+  return {to: d ? docFolder(d) : null};
+}
+function aimDrag(){
+  const [x, y] = drag.last;
+  dragGhost.style.left = x + 14 + 'px'; dragGhost.style.top = y + 10 + 'px';
+  const t = dropTarget(x, y);
+  let ok = false, bad = false;
+  if (t) {
+    if (drag.kind === 'doc') ok = t.to !== docFolder(docs.find(v => v.id === drag.id));
+    else { bad = !!t.to && folderWithin(t.to, drag.id); ok = !bad && t.to !== parentOf(folderById(drag.id)); }
+  }
+  const to = t?.to ?? null;
+  drag.ok = ok; drag.to = ok ? to : null;
+  dragGhost.classList.toggle('nodrop', bad);
+  document.querySelectorAll('.droptarget').forEach(r => r.classList.remove('droptarget'));
+  dragLine.hidden = !ok;
+  if (!ok || drag.timerFor !== to) { clearTimeout(drag.timer); drag.timerFor = null; }
+  if (!ok) return;
+  const li = to ? $(`#docList li.fld[data-fid="${to}"]`) : null;
+  li?.firstElementChild.classList.add('droptarget');
+  // a thin line at the end of whatever the target holds
+  const box = (li || $('#docList')).getBoundingClientRect(), panel = $('#pagesPanel').getBoundingClientRect();
+  const left = li ? box.left + 14 : box.left + 6;
+  dragLine.style.left = left + 'px'; dragLine.style.width = Math.max(20, box.right - left - 6) + 'px';
+  dragLine.style.top = Math.max(panel.top + 2, Math.min(panel.bottom - 4, box.bottom - 1)) + 'px';
+  if (to && !folderById(to).open && drag.timerFor !== to) {                    // rest on a closed folder for a moment and it opens
+    drag.timerFor = to;
+    drag.timer = setTimeout(() => { const f = folderById(to); if (!drag || !f) return; f.open = true; putAll({folders}); renderDocs(); aimDrag(); }, 600);
+  }
+}
+function endDrag(commit){
+  if (!drag) return;
+  const d = drag; drag = null;
+  clearTimeout(d.hold); clearTimeout(d.timer); clearInterval(d.scroll);
+  if (!d.on) return;
+  dragGhost.remove(); dragLine.remove(); document.body.classList.remove('dragging');
+  const stop = ev => { ev.preventDefault(); ev.stopPropagation(); };            // the click that ends a drag is not a click on the row
+  document.addEventListener('click', stop, true); setTimeout(() => document.removeEventListener('click', stop, true), 100);
+  if (commit && d.ok) (d.kind === 'folder' ? moveFolder : moveDoc)(d.id, d.to); else renderDocs();
+}
+
 // ================= install as an app (when it is served from the web) =================
 let installEvt = null;
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
@@ -5684,9 +5972,10 @@ restorePanels();
   try {
     db = await openDb();
     if (!db) setSaveState('error');
-    const [list, cur, s, legacy] = db ? await Promise.all([get('docs'), get('cur'), get('style'), get('doc')]) : [];
+    const [list, cur, s, legacy, fl] = db ? await Promise.all([get('docs'), get('cur'), get('style'), get('doc'), get('folders')]) : [];
     if (s) { style = s; showStyle(style); }
     docs = Array.isArray(list) ? list.filter(d => d && d.id) : [];
+    folders = Array.isArray(fl) ? fl : []; tidyFolders();
     await purgeOldTrash();
     if (!liveDocs().length) {               // first visit, or notes saved before there were notebooks
       const d = makeDoc();
@@ -5706,6 +5995,7 @@ restorePanels();
         await putAll({['doc:' + d.id]: data.doc || ''});
       }
     }
+    revealDoc(curId);
     showDocHtml(db ? await fromStored(await get('doc:' + curId)) : data?.doc || '');
   } catch (err) { reportError(err, 'loading your saved notebooks'); }
   requestAnimationFrame(() => {
