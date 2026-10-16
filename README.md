@@ -1,4 +1,4 @@
-# Between the Slides
+# Between the Lines
 
 A simple web page for taking notes on lecture slides.
 
