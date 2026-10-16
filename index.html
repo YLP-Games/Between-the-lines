@@ -1755,7 +1755,8 @@ async function readPdf(buf, name){
     const card = document.createElement('section');
     card.className = 'slide pagecard';
     card.dataset.w = W.toFixed(1); card.dataset.h = H.toFixed(1); card.dataset.gaps = JSON.stringify(gaps);
-    card.style.setProperty('--pg', `url(${cv.toDataURL('image/jpeg', 0.88)})`);
+    const pic = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.88));
+    card.style.setProperty('--pg', `url(${pic ? await addAsset(pic) : cv.toDataURL('image/jpeg', 0.88)})`);
     card.dataset.text = JSON.stringify(tc.items.filter(i => i.str && i.str.trim() && !isSlideNo(i)).map(i => {
       const t = i.transform, [x, y] = v.convertToViewportPoint(t[4], t[5]);
       return [i.str, +(x / S).toFixed(1), +(y / S).toFixed(1), +(Math.hypot(t[2], t[3]) || i.height || 10).toFixed(1), +(i.width).toFixed(1), i.hasEOL ? 1 : 0];
@@ -2300,6 +2301,71 @@ function putAll(values){
     } catch { res(false); }
   });
 }
+// every key in the store (for tidying up pictures nothing uses any more)
+function allKeys(){ return new Promise(res => { try { const r = db.transaction('kv').objectStore('kv').getAllKeys(); r.onsuccess = () => res(r.result || []); r.onerror = () => res([]); } catch { res([]); } }); }
+
+/* ================= pictures are stored once, apart from your notes (as Notion keeps files apart from its page records) ================= */
+// a PDF page's picture, a slide's pictures and pictures, videos or sound in notes are each kept as their own record
+// ("asset:<id>") and shown from a blob: URL. A notebook then refers to them by name, so saving it writes only the page
+// structure and your notes (kilobytes), not every picture again on each change.
+const ASSET = 'bts-asset:';
+const assetUrl = new Map(), assetOf = new Map(), assetBlob = new Map();     // id → blob: URL, blob: URL → id, id → the picture
+function useAsset(id, blob){
+  let url = assetUrl.get(id); if (url) return url;
+  url = URL.createObjectURL(blob);
+  assetUrl.set(id, url); assetOf.set(url, id); assetBlob.set(id, blob);
+  return url;
+}
+async function addAsset(blob){
+  const id = 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  await putAll({['asset:' + id]: blob});
+  return useAsset(id, blob);
+}
+function dataToBlob(u){
+  const i = u.indexOf(','), head = u.slice(5, i), bin = atob(u.slice(i + 1)), a = new Uint8Array(bin.length);
+  for (let k = 0; k < bin.length; k++) a[k] = bin.charCodeAt(k);
+  return new Blob([a], {type: head.split(';')[0]});
+}
+const bigData = u => !!u && u.length > 1500 && /^data:[^,]*;base64,/.test(u);
+// pictures still held in the page itself (just read in, pasted, or saved by an earlier version) become stored pictures
+async function assetize(root = main){
+  let n = 0;
+  for (const el of root.querySelectorAll('.pagecard[style*="data:"]')) {
+    const m = el.style.getPropertyValue('--pg').match(/^url\(["']?(data:[^"')]+)["']?\)$/);
+    if (m && bigData(m[1])) { el.style.setProperty('--pg', `url(${await addAsset(dataToBlob(m[1]))})`); n++; }
+  }
+  for (const el of root.querySelectorAll('img[src^="data:"], video[src^="data:"], audio[src^="data:"], source[src^="data:"]')) {
+    const u = el.getAttribute('src');
+    if (bigData(u)) { el.setAttribute('src', await addAsset(dataToBlob(u))); n++; }
+  }
+  return n;
+}
+// what is stored refers to pictures by name …
+const toStored = html => html.replace(/blob:[^"')\s&]+/g, u => assetOf.has(u) ? ASSET + assetOf.get(u) : u);
+// … and is shown with them in place again (fetching any not yet loaded)
+async function fromStored(html){
+  if (!html || !html.includes(ASSET)) return html || '';
+  const re = new RegExp(ASSET.replace(/[-:]/g, '\\$&') + '(a[0-9a-z]+)', 'g');
+  const ids = [...new Set([...html.matchAll(re)].map(m => m[1]))].filter(id => !assetUrl.has(id));
+  await Promise.all(ids.map(async id => { const b = await get('asset:' + id); if (b) useAsset(id, b); }));
+  return html.replace(re, (m, id) => assetUrl.get(id) || m);
+}
+// a notebook file has to carry its pictures inside it
+async function inlineAssets(html){
+  const urls = [...new Set(html.match(/blob:[^"')\s&]+/g) || [])].filter(u => assetOf.has(u));
+  const data = new Map(await Promise.all(urls.map(async u => [u, await readAsUrl(assetBlob.get(assetOf.get(u)))])));
+  return html.replace(/blob:[^"')\s&]+/g, u => data.get(u) || u);
+}
+// pictures no notebook uses any more are removed now and then (at start-up, before anything is being edited or undone)
+async function tidyAssets(){
+  if (!db) return;
+  const keys = (await allKeys()).filter(k => typeof k === 'string');
+  const stored = keys.filter(k => k.startsWith('asset:')); if (!stored.length) return;
+  let used = '';
+  for (const k of keys.filter(k => k.startsWith('doc:'))) used += (await get(k)) || '';
+  const gone = stored.filter(k => !used.includes(ASSET + k.slice(6)));
+  if (gone.length) try { const tx = db.transaction('kv', 'readwrite'); gone.forEach(k => tx.objectStore('kv').delete(k)); } catch {}
+}
 // the note beside the file name: saving, saved, or (storage full or blocked) not saved
 function setSaveState(s){
   const el = $('#saveState'); if (el.dataset.s === s) return;
@@ -2330,16 +2396,21 @@ function saveSoon(){
   clearTimeout(timer);
   timer = setTimeout(saveNow, 500);
 }
+let lastStored = {id: null, html: null};     // what was last written for the open notebook, so an unchanged notebook isn't written again
 async function saveNow(){
   timer = null;
+  if (db) await assetize();
   const empty = !!main.querySelector('.welcome'), doc = empty ? '' : currentDoc();
   snapshot(doc);
   const d = curDoc(); if (!d) return;
-  if (!d.named) d.name = empty ? 'Untitled' : notebookName();
-  d.pages = main.querySelectorAll('.slide').length;
-  d.notes = [...main.querySelectorAll('.notebox')].filter(hasContent).length;
-  d.updated = Date.now();
-  const ok = await putAll({['doc:' + d.id]: doc, docs, cur: curId, style});
+  const stored = toStored(doc);
+  const name = d.named ? d.name : empty ? 'Untitled' : notebookName(), pages = main.querySelectorAll('.slide').length;
+  const notes = [...main.querySelectorAll('.notebox')].filter(hasContent).length;
+  const same = lastStored.id === d.id && lastStored.html === stored;
+  if (same && d.name === name && d.pages === pages && d.notes === notes) { if (!timer) setSaveState('saved'); return; }
+  Object.assign(d, {name, pages, notes}); if (!same) d.updated = Date.now();
+  const ok = await putAll({...(same ? {} : {['doc:' + d.id]: stored}), docs, cur: curId, style});
+  if (ok) lastStored = {id: d.id, html: stored};
   if (!timer) setSaveState(ok ? 'saved' : 'error');
   renderDocs();
 }
@@ -2372,7 +2443,7 @@ async function saveFile(filename, blob){
 
 // Notebook file: this whole app plus your pages and notes, in one .html file you can open anywhere
 async function downloadNotebook(){
-  const data = JSON.stringify({v: 2, id: curId, name: notebookName(), named: !!curDoc()?.named, doc: currentDoc(), style, favs}).replace(/</g, '\\u003c');
+  const data = JSON.stringify({v: 2, id: curId, name: notebookName(), named: !!curDoc()?.named, doc: await inlineAssets(currentDoc()), style, favs}).replace(/</g, '\\u003c');
   const html = APP_HTML.replace(/<body[^>]*>/, m => `${m}\n<script id="notebook-data" type="application/json">${data}<\/script>`);
   await saveFile(notebookName() + ' (notes).html', new Blob([html], {type: 'text/html'}));
 }
@@ -3637,9 +3708,14 @@ function pageTitle(card){
   const b = card.querySelector('.content > .blk');
   return (b?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120);
 }
+let pagesSig = null;            // what the page list was last built from: it is rebuilt only when that changes, not on every keystroke
 function renderPages(){
   const list = pageList, slides = main.querySelectorAll('.slide');
-  if (!slides.length) { list.innerHTML = '<li class="sideempty">Open a file and its pages show up here.</li>'; return; }
+  if (!slides.length) { pagesSig = null; list.innerHTML = '<li class="sideempty">Open a file and its pages show up here.</li>'; return; }
+  const sig = [...main.querySelectorAll('.file-head, .slide')].map(el => el.classList.contains('file-head') ? 'H' + el.textContent
+    : `${pageTitle(el)}\u0001${[...el.querySelectorAll('.notebox')].filter(hasContent).length}\u0001${el.style.getPropertyValue('--pg').slice(-48)}`).join('\u0002');
+  if (sig === pagesSig && list.children.length) { trackPage(); return; }
+  pagesSig = sig;
   const frag = document.createDocumentFragment();
   let n = 0;
   for (const el of main.querySelectorAll('.file-head, .slide')) {
@@ -3868,7 +3944,7 @@ async function switchDoc(id){
   hideGap(); closeInsMenu(); clearMediaSel(); clearMulti(); closeChipPop(); closeSpellMenu(); hideGuides(); fPanel.hidden = true;
   active = null; savedRange = null;
   let html = '';
-  if (id) html = (await get('doc:' + id)) || ''; else id = makeDoc().id;
+  if (id) html = await fromStored(await get('doc:' + id)); else id = makeDoc().id;
   curId = id;
   showDocHtml(html);
   const h = histByDoc.get(id);
@@ -4450,7 +4526,7 @@ restorePanels();
         await putAll({['doc:' + d.id]: data.doc || ''});
       }
     }
-    showDocHtml(db ? await get('doc:' + curId) : data?.doc || '');
+    showDocHtml(db ? await fromStored(await get('doc:' + curId)) : data?.doc || '');
   } catch (err) { reportError(err, 'loading your saved notebooks'); }
   requestAnimationFrame(() => {
     try {
@@ -4459,6 +4535,7 @@ restorePanels();
       if (db) putAll({docs, cur: curId});
     } catch (err) { reportError(err, 'showing your notebook'); }
     finally { startUp(); }
+    if (db) (window.requestIdleCallback || setTimeout)(() => tidyAssets());
   });
 })();
 
