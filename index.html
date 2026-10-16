@@ -5890,12 +5890,23 @@ function drivePick(){
       .enableFeature(p.Feature.MULTISELECT_ENABLED).enableFeature(p.Feature.SUPPORT_DRIVES).setOAuthToken(token).setTitle('Open from Google Drive')
       .setCallback(data => {
         const a = data[p.Response.ACTION];
+        if (a === p.Action.LOADED) { loaded = true; return; }
+        clearTimeout(watch);
         if (a === p.Action.PICKED) ok((data[p.Response.DOCUMENTS] || []).map(d => ({id: d[p.Document.ID], name: d[p.Document.NAME], mime: d[p.Document.MIME_TYPE]})));
         else if (a === p.Action.CANCEL) ok([]);
       });
     if (GDRIVE.apiKey) b.setDeveloperKey(GDRIVE.apiKey);
     const app = GDRIVE.clientId.split('-')[0]; if (app) b.setAppId(app);       // the project number
-    b.build().setVisible(true);
+    b.setOrigin(location.protocol + '//' + location.host);
+    let loaded = false;
+    const picker = b.build(); picker.setVisible(true);
+    // Google's picker can stay blank (the Picker API off, a key or project mix-up, blocked cookies): don't leave a white screen
+    const watch = setTimeout(() => {
+      if (loaded) return;
+      try { picker.setVisible(false); picker.dispose(); } catch {}
+      toast('Google Drive’s file picker didn’t load. If this keeps happening, the site’s Google set-up needs checking (Picker API, API key or test users); see Help & settings › Google Drive.');
+      ok([]);
+    }, 15000);
   }));
 }
 // a file as a File with the right ending; Google Slides come as a PDF and Google Docs as a Word file
