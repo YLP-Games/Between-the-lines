@@ -211,6 +211,7 @@ span.mine{padding:0 .2em;background:var(--nb-fill, transparent);border:1px solid
 div.mine,li.mine{display:block;list-style:none;padding:4px 8px;margin:.2em 0 .5em;background:var(--nb-fill, transparent);border:1px solid var(--nb-border, #9aa3b2)}
 .mine:focus{box-shadow:0 0 0 2px var(--accent)} /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
 .mine:empty::before{content:"type here";opacity:.45}
+div.mine:empty::before{content:"Type, or press / for options"}
 .notebox.no-outline > .mine{border-color:transparent}
 .notebox.no-outline:not(:hover):not(:focus-within) > .mine{box-shadow:none}
 .mine ul,.mine ol{margin:.15em 0;padding-left:var(--ind,1.4em)}
@@ -508,6 +509,69 @@ body.focus .peekzone{display:none}
 .docmenu .danger{color:var(--danger)}
 .docmenu .danger.sure{background:var(--danger);color:#fff}
 @media (max-width:900px){.peekzone{display:none}.side.pages{width:min(270px,86vw)}}
+
+/* ================= the add menu: a note, sticky note or equation, Notion style ================= */
+.imenu{z-index:50;width:304px;max-width:calc(100vw - 24px);display:flex;flex-direction:column;padding-top:8px;font:16px var(--ui);overflow:hidden}
+.isearch{display:flex;align-items:center;gap:8px;height:36px;margin:0 8px 4px;padding:0 10px;border:1.5px solid var(--pencil);border-radius:var(--wob);background:var(--surface-2)}
+.isearch .slash{font:700 18px var(--display);color:var(--muted)}
+.isearch input{flex:1;min-width:0;border:none;background:none;outline:none;font:inherit;color:var(--ink)}
+.isec{padding:6px 14px 2px;font:700 14.5px var(--display);color:var(--muted)}
+.ilist{display:flex;flex-direction:column;gap:1px;padding:0 6px 6px;max-height:min(330px,52vh);overflow:auto}
+.iitem{display:flex;align-items:center;gap:10px;padding:5px 8px;border-radius:var(--wob);cursor:pointer;user-select:none;-webkit-user-select:none}
+.iitem[aria-selected="true"]{background:var(--hover)}
+.iitem .ico{flex:none;display:flex;align-items:center;justify-content:center;width:38px;height:38px;border:1.5px solid var(--pencil);border-radius:var(--wob);background:var(--surface);color:var(--ink)}
+.iitem .ico .i{width:20px;height:20px}
+.iitem .ico.k-note{color:#1f4fd1;background:#fff}
+.iitem .ico.k-sticky{background:#fff59d;color:#5a4500}
+.iitem .ico.k-eq{color:var(--accent)}
+.iitem .nm{display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.2}
+.iitem .nm small{font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iitem .hint{flex:none;font-size:14px;color:var(--muted)}
+.iempty{padding:4px 14px 12px;color:var(--muted)}
+.ifoot{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:7px 14px 8px;border:none;border-top:1.5px dashed var(--line-strong);background:none;font:15px var(--ui);color:var(--muted);cursor:pointer;text-align:left}
+.ifoot:hover{background:var(--hover);color:var(--ink)}
+.ifoot kbd{font-size:12px}
+.itip{position:fixed;z-index:51;width:216px;padding:10px;display:flex;flex-direction:column;gap:8px;border-radius:var(--wob);background:var(--pencil);color:var(--bg);font:15px/1.35 var(--ui);pointer-events:none}
+.pv{position:relative;height:78px;overflow:hidden;background:#fff;border-radius:3px;padding:9px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:6px}
+.pv i{display:block;height:5px;border-radius:3px;background:#cfd5de;width:82%}
+.pv i:nth-of-type(2n){width:64%}
+.pv b{display:block;padding:1px 6px;border:1px solid #9aa3b2;font:400 17px/1.15 Caveat,cursive;color:#1f4fd1;white-space:nowrap} /* taste-skill-ignore: a little picture of a note box on a slide */
+.pv .sn{position:absolute;right:12px;top:12px;width:66px;height:52px;padding:6px 7px;box-sizing:border-box;background:#fff59d;border:1px solid rgba(120,100,20,.35);box-shadow:2px 3px 0 rgba(47,43,36,.25);font:15px/1.05 Caveat,cursive;color:#1f4fd1} /* taste-skill-ignore: a little picture of a sticky note */
+.pv .sn::before{content:"";position:absolute;left:50%;top:-5px;width:30px;height:9px;translate:-50% 0;rotate:-3deg;background:rgba(206,190,138,.8)}
+.pv .fx{font:italic 21px/1 "Times New Roman",serif;color:#1b2330;align-self:center;margin:auto 0}
+@media (max-width:640px){.itip{display:none!important}}
+
+/* ================= sticky notes: yellow paper on top of the page, moved by their tape ================= */
+.slide .notebox.sticky > .mine{min-height:92px;padding:16px 14px 12px;background:var(--nb-fill,#fff59d);border:1px solid rgba(120,100,20,.35);border-radius:2px 3px 2px 4px;box-shadow:2px 4px 0 rgba(47,43,36,.22)} /* taste-skill-ignore: a sticky note is paper lifted off the page */
+.slide .notebox.sticky:hover > .mine{box-shadow:0 0 0 1px var(--accent),2px 4px 0 rgba(47,43,36,.22)} /* taste-skill-ignore: a sticky note is paper lifted off the page */
+.slide .notebox.sticky > .mine:focus{box-shadow:0 0 0 2px var(--accent),2px 4px 0 rgba(47,43,36,.22)} /* taste-skill-ignore: a ring marking focus, and the sticky's own shadow */
+.notebox.sticky > .g-float{display:none}
+.notebox.sticky > .g-pin{right:17px}
+.notebox.sticky > .g-move{left:50%;top:-9px;width:76px;height:20px;transform:translateX(-50%) rotate(-2deg);border:none;border-radius:2px;background:rgba(206,190,138,.72);opacity:1;visibility:visible;cursor:grab;box-shadow:0 1px 1px rgba(0,0,0,.12)} /* taste-skill-ignore: the tape that holds a sticky note */
+.notebox.sticky > .g-move:hover{background:rgba(196,178,120,.85)}
+.notebox.sticky > .g-move .i{display:none}
+.notebox.sticky.moving{opacity:1}
+.notebox.sticky.moving > .g-move{cursor:grabbing}
+.notebox.sticky.moving > .mine{background:var(--nb-fill,#fff59d);box-shadow:4px 9px 0 rgba(47,43,36,.25)} /* taste-skill-ignore: a sticky note being dragged lifts up */
+main.reading .notebox.sticky > .g-move{display:none!important}
+.slide.drop-target{outline:3px dashed var(--accent);outline-offset:4px}
+.stickyghost{position:fixed;z-index:90;left:0;top:0;width:150px;min-height:92px;padding:16px 12px 10px;box-sizing:border-box;background:#fff59d;color:#1f4fd1;border:1px solid rgba(120,100,20,.35);box-shadow:4px 9px 0 rgba(47,43,36,.25);font:22px/1.15 Caveat,cursive;pointer-events:none;rotate:-3deg;overflow:hidden;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical} /* taste-skill-ignore: a sticky note being dragged lifts up */
+.stickyghost::before{content:"";position:absolute;left:50%;top:-1px;width:64px;height:16px;translate:-50% 0;background:rgba(206,190,138,.72)}
+.stickyghost.off{opacity:.55}
+body.dragging-sticky,body.dragging-sticky *{cursor:grabbing!important}
+@media (max-width:900px){body.dragging-sticky .side.notes,body.dragging-sticky .scrim{opacity:.12;pointer-events:none}}
+
+/* ================= add a note from the Notes panel ================= */
+.ncompose{display:flex;flex-direction:column;gap:8px;padding:2px 0 4px}
+.ncompose textarea{display:block;width:100%;box-sizing:border-box;min-height:62px;max-height:180px;resize:none;padding:6px 10px;border:1.5px solid var(--pencil);border-radius:var(--wob);background:#fff;color:#1f4fd1;font:22px/1.2 Caveat,cursive;outline:none}
+.ncompose textarea::placeholder{color:#7d8696;font:17px/1.3 var(--ui)}
+.ncompose textarea:focus{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)} /* taste-skill-ignore: a ring marking focus, not a shadow */
+.ncrow{display:flex;align-items:center;gap:6px}
+.ncrow .btn{height:32px}
+.padico{width:16px;height:16px;flex:none;background:#fff59d;border:1.5px solid #8a7a2c;border-radius:1px 2px 1px 3px;rotate:-6deg}
+#stickyPad{cursor:grab;touch-action:none}
+.ncwhere{margin-left:auto;font-size:14px;color:var(--muted);white-space:nowrap}
+body.reading .ncompose,body.reading #sideAdd{display:none}
 </style>
 </head>
 <body>
@@ -557,6 +621,7 @@ body.focus .peekzone{display:none}
 <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
 <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
 <symbol id="i-hide-left" viewBox="0 0 24 24"><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></symbol>
+<symbol id="i-sticky" viewBox="0 0 24 24"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/></symbol>
 <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol>
 </defs></svg>
 
@@ -692,6 +757,7 @@ body.focus .peekzone{display:none}
 
     <div class="panel" role="tabpanel" id="panel-insert" aria-labelledby="tab-insert" data-edit hidden>
       <div class="grp"><div class="row">
+        <button class="btn" id="stickyBtn" title="Stick a sticky note on the current page (drag its tape to move it, even to another page)"><svg class="i"><use href="#i-sticky"/></svg>Sticky note</button>
         <button class="btn" id="fBtn" title="Insert a formula into the note"><svg class="i"><use href="#i-sigma"/></svg>Formula</button>
         <button class="btn" id="mediaBtn" title="Insert a picture, video or sound into the note (you can also paste or drop them)"><svg class="i"><use href="#i-image"/></svg>Picture, video or sound</button>
         <input id="mediaFile" type="file" accept="image/*,video/*,audio/*" multiple hidden>
@@ -703,7 +769,7 @@ body.focus .peekzone{display:none}
         <button class="btn danger" id="delPageBtn" title="Remove the current page (the one you last clicked)"><svg class="i"><use href="#i-page-remove"/></svg><span>Remove page</span></button>
       </div><span class="cap">Pages</span></div>
       <span class="sep"></span>
-      <p class="tip">On a PDF page, point between two lines and press “+ Add note here”. On other pages, click where you want to write.</p>
+      <p class="tip">On a PDF page, point between two lines and press “+ Add here” for a note, sticky note or equation. In a note, type / for the same options.</p>
     </div>
 
     <div class="panel" role="tabpanel" id="panel-box" aria-labelledby="tab-box" data-edit hidden>
@@ -773,6 +839,7 @@ body.focus .peekzone{display:none}
     <div class="sideacts">
       <button type="button" class="srow" id="newDocBtn" title="A new notebook with a blank page to write on"><svg class="i"><use href="#i-plus"/></svg>New notebook</button>
       <button type="button" class="srow" id="sideOpen" title="Open a PDF, PowerPoint or Word file as a new notebook"><svg class="i"><use href="#i-folder"/></svg>Open a file</button>
+      <button type="button" class="srow" id="sideAdd" title="Write a note for the page you're on, in the Notes panel"><svg class="i"><use href="#i-pen"/></svg>Add a note</button>
       <button type="button" class="srow" id="sideSearch" title="Search the notes in this notebook"><svg class="i"><use href="#i-search"/></svg>Search your notes</button>
     </div>
     <div class="sidesec"><span>Notebooks</span><span class="count" id="docCount"></span></div>
@@ -784,6 +851,14 @@ body.focus .peekzone{display:none}
   <aside class="side notes" id="notesPanel" aria-label="Notes" hidden>
     <div class="sidehead"><h2>Notes</h2><span class="count" id="noteCount"></span><button class="btn" data-close="notes" aria-label="Close the notes list"><svg class="i"><use href="#i-x"/></svg></button></div>
     <div class="notetools">
+      <form class="ncompose" id="noteCompose" autocomplete="off">
+        <textarea id="newNote" rows="2" placeholder="Write a note for this page…" aria-label="New note" aria-describedby="ncWhere"></textarea>
+        <div class="ncrow">
+          <button type="submit" class="btn primary" id="addNoteBtn" title="Add it to the bottom of the page you're on (Enter; Shift+Enter for a new line)"><svg class="i"><use href="#i-plus"/></svg>Add note</button>
+          <button type="button" class="btn outline" id="stickyPad" title="Click to stick it on the page you're on, or drag it onto any page"><span class="padico" aria-hidden="true"></span>Sticky</button>
+          <span class="ncwhere" id="ncWhere"></span>
+        </div>
+      </form>
       <label class="search"><svg class="i"><use href="#i-search"/></svg><input id="noteSearch" type="search" placeholder="Search your notes" aria-label="Search your notes" autocomplete="off"></label>
       <div class="filters" id="noteFilters" role="group" aria-label="Show notes by icon colour"></div>
     </div>
@@ -811,7 +886,8 @@ body.focus .peekzone{display:none}
       <h3>How to use it</h3>
       <ul class="howto">
         <li><b>Open</b> a PDF, PowerPoint (.pptx) or Word (.docx) file, or drop one anywhere on the page. Each file becomes its own <b>notebook</b> in the sidebar; <b>Insert › Add a file here</b> adds one to the notebook you're in instead.</li>
-        <li>On a PDF page, point at a spot and press <b>+ Add note here</b>: the page opens up between the lines. On other pages, click where you want to write.</li>
+        <li>On a PDF page, point at a spot and press <b>+ Add here</b>, then pick <b>Note</b> (the page opens up between the lines), <b>Sticky note</b> or <b>Equation</b>. On other pages, click where you want to write. In a note, type <b>/</b> for the same choices.</li>
+        <li><b>Sticky notes</b> sit on top of the page: drag one by its tape to move it, even onto another page. In the <b>Notes</b> panel, type a note and press <b>Add note</b>, or drag <b>Sticky</b> onto any page.</li>
         <li>The <b>Home</b> tab styles your notes: the font, size and colour are used for new notes, or click in a note (or select words) to change just that.</li>
         <li>Drag a note’s edges to resize it, or its move handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
         <li>On each note: the arrows float it on top of the page, the minus minimises it to a pencil icon (drag the icon aside, right-click it to colour it), and the pin keeps it open.</li>
@@ -833,6 +909,7 @@ body.focus .peekzone{display:none}
         <dt><kbd>Delete</kbd></dt><dd>Delete the selected notes, picture or video</dd>
         <dt><kbd>Ctrl</kbd> <kbd>\</kbd></dt><dd>Show or hide the sidebar</dd>
         <dt><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>F</kbd></dt><dd>Focus mode on or off</dd>
+        <dt><kbd>/</kbd></dt><dd>In a note: add an equation, or turn it into a sticky note</dd>
         <dt><kbd>Esc</kbd></dt><dd>Close a menu or end a selection</dd>
       </dl>
     </section>
@@ -895,7 +972,7 @@ body.focus .peekzone{display:none}
     </figure>
     <ol class="steps">
       <li><span><b>Open</b>Background graphics, side bands and slide numbers are cleaned away.</span></li>
-      <li><span><b>Write between the lines</b>Point at a gap and press “+ Add note here”. The page opens up for you.</span></li>
+      <li><span><b>Write between the lines</b>Point at a gap and press “+ Add here” for a note, a sticky note or an equation.</span></li>
       <li><span><b>Revise and download</b>Study mode, a searchable notes list, and PDF or notebook downloads.</span></li>
     </ol>
     <p class="private"><svg class="i"><use href="#i-lock"/></svg>Everything stays on this device. Your notes are saved in this browser.</p>
@@ -1229,7 +1306,7 @@ function addGrips(box){
   const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'note-chip'; chip.title = 'Show this note'; chip.innerHTML = icon('pen');
   box.append(chip);
   if (box.classList.contains('collapsed')) setCollapsed(box, true);
-  if (!inline) grip('move', 'move', 'Drag to move this note');
+  if (!inline) grip('move', 'move', box.classList.contains('sticky') ? 'Drag the tape to move this sticky note, even onto another page' : 'Drag to move this note');
   grip('e', null, 'Drag to change the width');
   grip('s', null, 'Drag to change the height');
   grip('se', null, 'Drag to resize');
@@ -1352,7 +1429,7 @@ main.addEventListener('click', e => {
   if (media) { selectMedia(media); return; }
   if (e.target.closest('.mine, .notebox, .gappill, details, summary, .slide-label, a')) return;
   const strip = e.target.closest('.strip');
-  if (strip) { if (!getSelection().toString()) showGap(strip, e.clientY); return; }
+  if (strip) { if (!getSelection().toString()) showGap(strip, e.clientY, e.clientX); return; }
   const slide = e.target.closest('.slide'); if (!slide || slide.classList.contains('pagecard')) return;
   let blk = e.target.closest('.blk');
   if (!blk || e.target.tagName === 'IMG') {
@@ -1382,11 +1459,18 @@ main.addEventListener('keydown', e => {
 main.addEventListener('input', e => { const m = e.target.closest?.('.mine'); if (m) { wrapMedia(m); spellSoon(m); } saveSoon(); });
 main.addEventListener('pointerdown', e => { const b = e.target.closest('.notebox'); if (b && !b.classList.contains('collapsed')) raise(b); }, true);
 main.addEventListener('focusin', e => raise(e.target.closest?.('.notebox')));
+// a note left empty is removed (not while a formula or an option is being picked for it)
+function dropIfEmpty(el){
+  if (!el?.isConnected || document.activeElement === el) return;
+  if (el.textContent.trim() || el.querySelector('img, .media, .formula')) return;
+  const t = el.closest('.notebox') || el, p = t.parentNode; t.remove(); p && p.normalize(); mergeStrips(p); if (active === el) active = null; saveSoon();
+}
 document.addEventListener('focusout', e => {
   const el = e.target.closest?.('.mine'); if (!el) return;
   setTimeout(() => {
-    if (document.activeElement === el || $('header').contains(document.activeElement)) return;
-    if (!el.textContent.trim() && !el.querySelector('img, .media')) { const t = el.closest('.notebox') || el, p = t.parentNode; t.remove(); p && p.normalize(); mergeStrips(p); if (active === el) active = null; saveSoon(); }
+    const a = document.activeElement;
+    if (a === el || $('header').contains(a) || a?.closest?.('.fpanel, .imenu')) return;
+    dropIfEmpty(el);
   }, 0);
 });
 
@@ -1676,31 +1760,37 @@ function gapY(strip, clientY){
   if (best && best.d < 40) y = best.d === 0 ? best.y : best.mid;
   return y;
 }
-// a dashed line and an "Add note here" button follow the mouse (or appear where you tap)
+// a dashed line and an "+ Add here" button follow the mouse (or appear where you tap); the button opens the add menu
 const gapLine = document.createElement('div'); gapLine.className = 'gapline';
-const gapPill = document.createElement('button'); gapPill.className = 'gappill'; gapPill.type = 'button'; gapPill.textContent = '+ Add note here';
-let pending = null;
-function showGap(strip, clientY){
+const gapPill = document.createElement('button'); gapPill.className = 'gappill'; gapPill.type = 'button'; gapPill.textContent = '+ Add here';
+gapPill.title = 'Add a note, sticky note or equation between these lines';
+gapPill.setAttribute('aria-haspopup', 'listbox');
+let pending = null, ins = null;          // ins: the add menu, while it is open
+function showGap(strip, clientY, clientX){
   const y = gapY(strip, clientY), y0 = +strip.dataset.y0, y1 = +strip.dataset.y1;
   const pct = ((y - y0) / (y1 - y0) * 100).toFixed(3) + '%';
   gapLine.style.top = pct; gapPill.style.top = `clamp(14px, ${pct}, calc(100% - 14px))`;
   if (gapLine.parentElement !== strip) strip.append(gapLine, gapPill);
-  pending = {strip, y};
+  pending = {strip, y, x: clientX ?? pending?.x ?? null};
 }
-function hideGap(){ gapLine.remove(); gapPill.remove(); pending = null; }
+function hideGap(){ if (ins?.mode === 'gap') closeInsMenu(); gapLine.remove(); gapPill.remove(); pending = null; }
 gapPill.addEventListener('mousedown', e => e.preventDefault());
-gapPill.addEventListener('click', e => { e.stopPropagation(); const p = pending; hideGap(); if (p) insertAt(p.strip, p.y); });
+gapPill.addEventListener('click', e => {
+  e.stopPropagation();
+  if (ins?.mode === 'gap') { closeInsMenu(); return; }
+  if (pending) openInsMenu({mode: 'gap', ...pending});
+});
 let moveQueued = false;
 main.addEventListener('mousemove', e => {
-  if (moveQueued || e.buttons) return; moveQueued = true;
+  if (moveQueued || e.buttons || ins?.mode === 'gap') return; moveQueued = true;
   requestAnimationFrame(() => {
     moveQueued = false;
     if (e.target.closest('.gappill')) return;
     const strip = !reading && e.target.closest('.strip');
-    if (strip) showGap(strip, e.clientY); else hideGap();
+    if (strip) showGap(strip, e.clientY, e.clientX); else hideGap();
   });
 });
-main.addEventListener('mouseleave', hideGap);
+main.addEventListener('mouseleave', () => { if (ins?.mode !== 'gap') hideGap(); });
 // ---------- add a blank page (for longer notes) or remove a page, from the toolbar ----------
 function blankPage(){
   const s = document.createElement('section'); s.className = 'slide blankpage';
@@ -1888,36 +1978,49 @@ function setFlowLeft(box, m, left){
   return left;
 }
 function startFloatMove(box, g, e){
-  const card = box.parentElement, br0 = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, z = zoomOf(box) || 1;
+  const card = box.parentElement, br0 = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY;
   const cr0 = card.getBoundingClientRect(), whole = {left: cr0.left, right: cr0.right, top: cr0.top, bottom: cr0.bottom};
   const {xs, ys} = snapTargets(box, {xs: [{v: (cr0.left + cr0.right) / 2, r: whole}]});
   const w = br0.width, h = br0.height;
   let last = e, nl = br0.left, nt = br0.top;          // where the box is shown, which is exactly where it is dropped
-  g.setPointerCapture(e.pointerId); box.classList.add('moving');
+  // drag it over another page and it moves onto that page straight away (pages clip what hangs off them)
+  let dest = card, dr = cr0, base = br0, z = zoomOf(box) || 1;
+  const capture = () => { try { g.setPointerCapture(e.pointerId); } catch {} };
+  capture(); box.classList.add('moving');
   const move = ev => {
     last = {clientX: ev.clientX ?? last.clientX, clientY: ev.clientY ?? last.clientY, altKey: ev.altKey, shiftKey: ev.shiftKey};
+    if (ev.clientX != null) {
+      const over = document.elementsFromPoint(last.clientX, last.clientY).filter(el => !box.contains(el)).map(el => el.closest('.slide')).find(Boolean);
+      if (over && over !== dest) {
+        dest.classList.remove('drop-target'); dest = over; dr = over.getBoundingClientRect();
+        if (dest !== card) dest.classList.add('drop-target');
+        box.style.translate = ''; dest.append(box); capture();
+        base = box.getBoundingClientRect(); z = zoomOf(box) || 1;
+      }
+    }
     let l = br0.left + last.clientX - sx, t = br0.top + last.clientY - sy;
-    const free = noSnap(last);
+    const free = noSnap(last) || dest !== card;
     const sxr = free ? null : snapAxis([l, l + w / 2, l + w], xs), syr = free ? null : snapAxis([t, t + h / 2, t + h], ys);
     if (sxr) l += sxr.d; if (syr) t += syr.d;
-    l = Math.max(cr0.left, Math.min(cr0.right - w, l)); t = Math.max(cr0.top, t);      // stay on the page
+    l = Math.max(dr.left, Math.min(dr.right - w, l)); t = Math.max(dr.top, t);      // stay on the page
     nl = l; nt = t;
     const b = {left: l, right: l + w, top: t, bottom: t + h};
     showGuides([...(sxr ? vLines(sxr.hits.filter(x => Math.abs(x.v - l) < 0.75 || Math.abs(x.v - l - w / 2) < 0.75 || Math.abs(x.v - l - w) < 0.75), b) : []),
                 ...(syr ? hLines(syr.hits.filter(x => Math.abs(x.v - t) < 0.75 || Math.abs(x.v - t - h / 2) < 0.75 || Math.abs(x.v - t - h) < 0.75), b) : [])]);
-    box.style.translate = `${(l - br0.left) / z}px ${(t - br0.top) / z}px`;
+    box.style.translate = `${(l - base.left) / z}px ${(t - base.top) / z}px`;
   };
   const unkeys = snapKeys(k => move({altKey: k.altKey, shiftKey: k.shiftKey}));
   const up = ev => {
     if (ev.type === 'pointerup') move(ev);
-    g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); unkeys();
-    box.classList.remove('moving'); hideGuides();
-    if (ev.type === 'pointercancel') { box.style.translate = ''; return; }
-    setFloatPos(box, nl, nt);
+    removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); unkeys();
+    box.classList.remove('moving'); hideGuides(); dest.classList.remove('drop-target');
     box.style.translate = '';
+    if (ev.type === 'pointercancel') { if (box.parentElement !== card) card.append(box); placeFloats(); return; }
+    if (dest !== card) swallow();
+    setFloatPos(box, nl, nt);
     placeFloats(); spreadChips(); saveSoon();
   };
-  g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
+  addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);
 }
 function startMove(box, g, e){
   if (box.classList.contains('floating')) return startFloatMove(box, g, e);
@@ -1986,6 +2089,7 @@ function insertAt(strip, y){
   else if (y1 - y < 3) strip.after(box);
   else strip.replaceWith(makeStrip(card, y0, y), box, makeStrip(card, y, y1));
   focusNote(el);
+  return {box, el};
 }
 // close the gap again when a note between two pieces of the same page is removed
 function mergeStrips(parent){
@@ -2160,7 +2264,7 @@ function notebookName(){
 function currentDoc(){
   const c = main.cloneNode(true);
   c.querySelectorAll('.gapline, .gappill, .welcome, .empty, .cardbar').forEach(x => x.remove());
-  c.querySelectorAll('.media-sel, .target-page, .multi-sel, .flash').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel', 'flash'));
+  c.querySelectorAll('.media-sel, .target-page, .multi-sel, .flash, .drop-target').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel', 'flash', 'drop-target'));
   c.querySelectorAll('.mine').forEach(x => { x.contentEditable = 'true'; });
   flatten(c);
   return c.innerHTML;
@@ -2682,11 +2786,12 @@ function renderFormula(src, el){
   catch { el.textContent = src; }
 }
 const fPanel = $('#formulaPanel'), fInput = $('#fInput'), fPreview = $('#fPreview');
+let formulaNote = null;          // the note a new formula goes into (removed again if you close the panel and it is still empty)
 async function openFormula(existing){
   editingFormula = existing || null;
   if (!existing) {
     if (!noteActive() || !savedRange) { toast('Click inside a note first, then press Formula.'); return; }
-    formulaRange = savedRange.cloneRange();
+    formulaRange = savedRange.cloneRange(); formulaNote = active;
   }
   fInput.value = existing ? existing.dataset.src || '' : '';
   $('#fInsert').textContent = existing ? 'Update' : 'Insert';
@@ -2700,7 +2805,14 @@ function updatePreview(){
   renderFormula(fInput.value, fPreview);
 }
 fInput.addEventListener('input', updatePreview);
-fInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#fInsert').click(); } if (e.key === 'Escape') fPanel.hidden = true; });
+function closeFormula(){
+  fPanel.hidden = true; editingFormula = null; formulaRange = null;
+  const n = formulaNote; formulaNote = null;
+  if (!n?.isConnected) return;
+  if (n.textContent.trim() || n.querySelector('img, .media, .formula')) { if (!reading) focusNote(n, {preventScroll: true}); }
+  else dropIfEmpty(n);
+}
+fInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#fInsert').click(); } if (e.key === 'Escape') closeFormula(); });
 $('#fKeys').addEventListener('click', e => {
   const k = e.target.closest('button'); if (!k) return;
   const ins = k.dataset.ins, back = +(k.dataset.back || 0);
@@ -2709,7 +2821,7 @@ $('#fKeys').addEventListener('click', e => {
   fInput.selectionStart = fInput.selectionEnd = fInput.selectionEnd - back;
   fInput.focus(); updatePreview();
 });
-$('#fClose').onclick = () => { fPanel.hidden = true; };
+$('#fClose').onclick = closeFormula;
 $('#fInsert').onclick = () => {
   const src = fInput.value.trim(); if (!src || !window.katex) return;
   if (editingFormula) {
@@ -2723,7 +2835,7 @@ $('#fInsert').onclick = () => {
     const space = document.createTextNode(' '); f.after(space);
     if (note) { note.focus(); const r = document.createRange(); r.setStartAfter(space); r.collapse(true); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }
   }
-  fPanel.hidden = true; editingFormula = null; formulaRange = null; saveSoon();
+  formulaNote = null; closeFormula(); saveSoon();
 };
 $('#fBtn').onclick = () => openFormula(null);
 
@@ -2847,7 +2959,7 @@ function applyReadMode(){
 $('#readBtn').onclick = () => {
   reading = !reading;
   pref.set('study-mode', reading ? '1' : '0');
-  if (reading) { if (document.activeElement?.closest?.('.mine')) document.activeElement.blur(); active = null; savedRange = null; hideGap(); clearMediaSel(); fPanel.hidden = true; }
+  if (reading) { if (document.activeElement?.closest?.('.mine')) document.activeElement.blur(); active = null; savedRange = null; hideGap(); closeInsMenu(); clearMediaSel(); fPanel.hidden = true; }
   applyReadMode(); spellAll();
   toast(reading ? 'Study mode: nothing can be changed by accident. You can still open and minimise notes.' : '');
 };
@@ -3312,7 +3424,7 @@ function stepHistory(by){
   const j = hist.i + by; if (j < 0 || j >= hist.stack.length) return;
   hist.i = j;
   const scrollY = window.scrollY;
-  hideGap(); clearMediaSel(); hideGuides(); fPanel.hidden = true;
+  hideGap(); closeInsMenu(); clearMediaSel(); hideGuides(); fPanel.hidden = true;
   active = null; savedRange = null;
   main.innerHTML = unpackDoc(hist.stack[j]);
   if (!main.children.length) showEmpty();
@@ -3332,6 +3444,7 @@ document.addEventListener('keydown', e => {
 });
 // the browser's own Undo / Redo (Edit menu, right-click) uses the same history
 document.addEventListener('beforeinput', e => {
+  if (e.target.closest?.('input, textarea')) return;          // a text box keeps its own undo
   if (e.inputType === 'historyUndo' || e.inputType === 'historyRedo') { e.preventDefault(); stepHistory(e.inputType === 'historyUndo' ? -1 : 1); }
 });
 
@@ -3488,7 +3601,7 @@ function trackPage(){
 let noteQuery = '', noteColor = null, shownNotes = [];
 const colourName = c => (CHIP_COLORS.find(([h]) => h === c) || [, 'Custom'])[1];
 function noteKind(b){
-  return [b.classList.contains('floating') ? 'Floating' : b.classList.contains('inline') ? 'In the text' : 'Between the lines',
+  return [b.classList.contains('sticky') ? 'Sticky note' : b.classList.contains('floating') ? 'Floating' : b.classList.contains('inline') ? 'In the text' : 'Between the lines',
     b.classList.contains('pinned') && 'pinned open', b.classList.contains('collapsed') && 'minimised'].filter(Boolean).join(' · ');
 }
 function markText(el, text, q){
@@ -3534,7 +3647,7 @@ function renderNotes(){
     c.append(dot, body); li.append(c); frag.append(li);
   }
   if (!shownNotes.length) frag.append(Object.assign(document.createElement('li'), {className: 'sideempty',
-    textContent: all.length ? `No notes match${q ? ` “${noteQuery.trim()}”` : ' this colour'}.` : 'No notes yet. On a PDF page, point between two lines and press “+ Add note here”.'}));
+    textContent: all.length ? `No notes match${q ? ` “${noteQuery.trim()}”` : ' this colour'}.` : 'No notes yet. Write one above, or on a PDF page point between two lines and press “+ Add here”.'}));
   list.replaceChildren(frag);
 }
 $('#noteFilters').addEventListener('click', e => { const f = e.target.closest('.fchip'); if (f) { noteColor = f.dataset.c || null; renderNotes(); } });
@@ -3563,7 +3676,7 @@ function refreshPanels(){
   renderDocs();
   if (panelOpen.pages || panelEl.pages.classList.contains('peeking')) renderPages(); else pageMark = -1;
   if (panelOpen.notes) renderNotes();
-  trackPage();
+  trackPage(); updateWhere();
 }
 
 // ================= focus mode: only your pages and notes on screen =================
@@ -3607,7 +3720,7 @@ addEventListener('drop', e => {
 let viewQueued = false;
 function onView(){
   if (viewQueued) return; viewQueued = true;
-  requestAnimationFrame(() => { viewQueued = false; followChip(); placeMediaBar(); followSpellMenu(); trackPage(); });
+  requestAnimationFrame(() => { viewQueued = false; followChip(); placeMediaBar(); followSpellMenu(); placeInsMenu(); trackPage(); updateWhere(); });
 }
 addEventListener('scroll', onView, {passive: true});
 addEventListener('resize', onView);
@@ -3661,7 +3774,7 @@ async function switchDoc(id){
   await flushSave();
   if (curId) { histByDoc.set(curId, {stack: hist.stack, i: hist.i}); scrollByDoc.set(curId, scrollY); }
   if (document.activeElement?.closest?.('.mine')) document.activeElement.blur();
-  hideGap(); clearMediaSel(); clearMulti(); closeChipPop(); closeSpellMenu(); hideGuides(); fPanel.hidden = true;
+  hideGap(); closeInsMenu(); clearMediaSel(); clearMulti(); closeChipPop(); closeSpellMenu(); hideGuides(); fPanel.hidden = true;
   active = null; savedRange = null;
   let html = '';
   if (id) html = (await get('doc:' + id)) || ''; else id = makeDoc().id;
@@ -3780,6 +3893,332 @@ panelEl.pages.addEventListener('mouseleave', e => {
 });
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key === '\\') { e.preventDefault(); setPanel('pages', !panelOpen.pages); }
+});
+
+// ================= the add menu: a note, a sticky note or an equation, Notion style =================
+// "+ Add here" between two lines of a PDF page opens it with a search box; typing / in a note opens it at the cursor
+const INS_ITEMS = {
+  note:   {ico: 'pen',    label: 'Note',        hint: '/note',   words: 'note text write regular words between lines'},
+  sticky: {ico: 'sticky', label: 'Sticky note', hint: '/sticky', words: 'sticky post-it postit yellow paper on top float'},
+  eq:     {ico: 'sigma',  label: 'Equation',    hint: '/eq',     words: 'equation formula math maths latex fraction sum power'},
+};
+// a little picture of each, for the tip beside the menu
+const INS_PV = {
+  note: '<i></i><i></i><b>flat demand, so MR = P</b><i></i>',
+  sticky: '<i></i><i></i><i></i><i></i><span class="sn">on the exam!</span>',
+  eq: '<i></i><span class="fx">w<sub>i</sub> = P<sub>i</sub> / ΣP</span><i></i>',
+};
+const EQ_TIP = 'Type a formula plainly, like (a+b)/2 or x^2, and watch it drawn as you type.';
+function insChoices(c){
+  if (c.mode === 'gap') {
+    const sec = 'Add between these lines';
+    return [
+      {k: 'note', sec, sub: 'Write in the gap', tip: 'The page opens up between these two lines, and you write in the gap.'},
+      {k: 'sticky', sec, sub: 'On top of the page, here', tip: 'A sticky note on top of the page. Drag its tape to move it, even onto another page.'},
+      {k: 'eq', sec, sub: 'A formula in the gap', tip: EQ_TIP},
+    ];
+  }
+  const box = c.note.closest('.notebox'), out = [{k: 'eq', sec: 'Insert', sub: 'A formula where you’re typing', tip: EQ_TIP}];
+  if (box && !box.classList.contains('inline')) out.push(box.classList.contains('sticky')
+    ? {k: 'note', sec: 'Turn into', sub: 'Back between the lines', tip: 'This sticky note goes back into the page as a note between the lines.'}
+    : {k: 'sticky', sec: 'Turn into', sub: 'Lift it on top of the page', tip: 'This note becomes a sticky note on top of the page. Drag its tape to put it anywhere.'});
+  return out;
+}
+const insMenu = document.createElement('div'); insMenu.className = 'pop imenu'; insMenu.hidden = true;
+insMenu.innerHTML = '<label class="isearch"><span class="slash" aria-hidden="true">/</span><input type="text" role="combobox" aria-expanded="true" aria-controls="insList" aria-autocomplete="list" aria-describedby="insTip" aria-label="Search what to add" placeholder="Type to search" autocomplete="off" spellcheck="false"></label>' +
+  '<div class="ilist" id="insList" role="listbox" aria-label="Add"></div>' +
+  '<button type="button" class="ifoot"><span>Close menu</span><kbd>esc</kbd></button>';
+const insTip = document.createElement('div'); insTip.className = 'itip'; insTip.id = 'insTip'; insTip.setAttribute('role', 'tooltip'); insTip.hidden = true;
+document.body.append(insMenu, insTip);
+const insInput = insMenu.querySelector('input'), insList = $('#insList'), insSearch = insMenu.querySelector('.isearch');
+const insQuery = () => (ins.mode === 'gap' ? insInput.value : ins.range.toString().slice(1)).trim().toLowerCase();
+function renderIns(){
+  const q = insQuery();
+  if (q !== ins.q) { ins.q = q; ins.k = 0; }
+  const words = q.split(/\s+/).filter(Boolean);
+  ins.shown = insChoices(ins).filter(c => {
+    const it = INS_ITEMS[c.k], hay = `${it.label} ${it.words} ${it.hint.slice(1)}`.toLowerCase().split(/[\s-]+/);
+    return words.every(w => hay.some(h => h.startsWith(w)));
+  });
+  ins.k = Math.max(0, Math.min(ins.k, ins.shown.length - 1));
+  const frag = document.createDocumentFragment();
+  let group = null, sec = null;
+  ins.shown.forEach((c, i) => {
+    if (c.sec !== sec) {
+      sec = c.sec; group = document.createElement('div'); group.setAttribute('role', 'group');
+      const h = Object.assign(document.createElement('div'), {className: 'isec', id: 'insSec' + i, textContent: sec});
+      group.setAttribute('aria-labelledby', h.id); group.append(h); frag.append(group);
+    }
+    const it = INS_ITEMS[c.k], o = document.createElement('div');
+    o.className = 'iitem'; o.id = 'ins-' + c.k; o.dataset.i = i; o.setAttribute('role', 'option');
+    o.innerHTML = `<span class="ico k-${c.k}">${icon(it.ico)}</span><span class="nm"><span>${it.label}</span><small>${esc(c.sub)}</small></span><span class="hint">${it.hint}</span>`;
+    group.append(o);
+  });
+  if (!ins.shown.length) frag.append(Object.assign(document.createElement('div'), {className: 'iempty', textContent: 'No results'}));
+  insList.replaceChildren(frag);
+  markIns(false);
+}
+// the highlighted choice (pointing at one highlights it too, like Notion), and its tip
+function markIns(scroll){
+  let cur = null;
+  insList.querySelectorAll('.iitem').forEach(o => { const on = +o.dataset.i === ins.k; o.setAttribute('aria-selected', on); if (on) cur = o; });
+  insInput.setAttribute('aria-activedescendant', cur ? cur.id : '');
+  if (scroll && cur) cur.scrollIntoView({block: 'nearest'});
+  placeTip();
+}
+function placeTip(){
+  const cur = ins && !insMenu.hidden && insList.querySelector(`.iitem[data-i="${ins.k}"]`), c = cur && ins.shown[ins.k];
+  if (!c) { insTip.hidden = true; return; }
+  if (insTip.dataset.k !== c.k + c.sub) {
+    insTip.dataset.k = c.k + c.sub;
+    insTip.innerHTML = `<div class="pv" aria-hidden="true">${INS_PV[c.k]}</div><span></span>`;
+    insTip.lastChild.textContent = c.tip;
+  }
+  insTip.hidden = false;
+  const m = insMenu.getBoundingClientRect(), r = cur.getBoundingClientRect(), tw = insTip.offsetWidth, th = insTip.offsetHeight;
+  let left = m.right + 8;
+  if (left + tw > innerWidth - 8) left = m.left - 8 - tw;
+  if (left < 8) { insTip.hidden = true; return; }
+  insTip.style.left = left + 'px'; insTip.style.top = Math.max(8, Math.min(innerHeight - th - 8, r.top)) + 'px';
+}
+function insAnchor(){
+  if (ins.mode === 'gap') return gapPill.isConnected ? gapPill.getBoundingClientRect() : null;
+  if (!ins.note.isConnected) return null;
+  const rs = ins.range.getClientRects(), r = rs[rs.length - 1];
+  return r && (r.width || r.height) ? r : ins.note.getBoundingClientRect();
+}
+// under what it was opened from (or above, if there is no room), and it follows the page as it scrolls
+function placeInsMenu(){
+  if (!ins) return;
+  const a = insAnchor();
+  if (!a || a.bottom < 0 || a.top > innerHeight) { closeInsMenu(); return; }
+  const w = insMenu.offsetWidth, h = insMenu.offsetHeight, bottom = innerHeight - $('#statusbar').offsetHeight - 8;
+  let top = a.bottom + 6;
+  if (top + h > bottom && a.top - 6 - h >= 8) top = a.top - 6 - h;
+  insMenu.style.top = Math.max(8, Math.min(innerHeight - h - 8, top)) + 'px';
+  insMenu.style.left = Math.max(8, Math.min(innerWidth - w - 8, a.left)) + 'px';
+  placeTip();
+}
+function openInsMenu(c){
+  closeInsMenu();
+  ins = {...c, k: 0, q: null, shown: []};
+  insSearch.hidden = c.mode !== 'gap'; insInput.value = '';
+  insMenu.hidden = false; renderIns(); placeInsMenu();
+  if (c.mode === 'gap') { gapPill.setAttribute('aria-expanded', 'true'); insInput.focus({preventScroll: true}); }
+}
+function closeInsMenu(){
+  if (!ins) return null;
+  const c = ins; ins = null;
+  insMenu.hidden = true; insTip.hidden = true;
+  gapPill.setAttribute('aria-expanded', 'false');
+  return c;
+}
+function chooseIns(k){
+  const c = closeInsMenu(); if (!c) return;
+  if (c.mode === 'gap') {
+    const lineY = gapLine.isConnected ? gapLine.getBoundingClientRect().top : null;
+    hideGap();
+    if (!c.strip.isConnected) return;
+    if (k === 'sticky') {
+      const card = c.strip.closest('.slide'), cr = card.getBoundingClientRect(), bw = stickyWidth(card) * (zoomOf(card) || 1);
+      const {el} = addSticky(card, (c.x ?? cr.left + cr.width / 2) - bw / 2, (lineY ?? cr.top) - 12);
+      focusNote(el, {preventScroll: true});
+    } else {
+      insertAt(c.strip, c.y);
+      if (k === 'eq') openFormula(null);
+    }
+    return;
+  }
+  // typed "/": the "/…" comes back out of the note first
+  const note = c.note; if (!note.isConnected) return;
+  if (c.range.toString().startsWith('/')) c.range.deleteContents();
+  const box = note.closest('.notebox');
+  note.focus({preventScroll: true});
+  const r = c.range.cloneRange(); r.collapse(true);
+  const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+  active = note; savedRange = r.cloneRange();
+  if (k === 'eq') openFormula(null);
+  else if (k === 'sticky' && box) { toSticky(box); focusNote(note, {preventScroll: true}); }
+  else if (k === 'note' && box) { toNote(box); focusNote(note, {preventScroll: true}); }
+  saveSoon();
+}
+insInput.addEventListener('input', () => { if (ins) { renderIns(); placeInsMenu(); } });
+insMenu.addEventListener('mousedown', e => { if (e.target !== insInput) e.preventDefault(); });   // the cursor stays where it is
+insList.addEventListener('mousemove', e => { const o = e.target.closest('.iitem'); if (o && ins && +o.dataset.i !== ins.k) { ins.k = +o.dataset.i; markIns(false); } });
+insList.addEventListener('click', e => { const o = e.target.closest('.iitem'); if (o && ins) chooseIns(ins.shown[+o.dataset.i].k); });
+insMenu.querySelector('.ifoot').onclick = () => closeInsMenu();
+document.addEventListener('mousedown', e => { if (ins && !e.target.closest('.imenu, .gappill')) closeInsMenu(); });
+// ↑ ↓ pick, Enter adds, Esc closes (before anything else gets the key)
+addEventListener('keydown', e => {
+  if (!ins || e.isComposing) return;
+  const n = ins.shown.length;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault(); e.stopPropagation();
+    if (n) { ins.k = (ins.k + (e.key === 'ArrowUp' ? n - 1 : 1)) % n; markIns(true); }
+  } else if (e.key === 'Enter') {
+    if (!n && ins.mode === 'slash') { closeInsMenu(); return; }        // nothing matches: Enter is a new line again
+    e.preventDefault(); e.stopPropagation();
+    if (n) chooseIns(ins.shown[ins.k].k);
+  } else if (e.key === 'Escape') {
+    e.preventDefault(); e.stopPropagation(); closeInsMenu();
+  } else if (e.key === 'Tab' && ins.mode === 'gap') { e.preventDefault(); e.stopPropagation(); }
+}, true);
+// "/" at the start of a note, or after a space, opens the menu at the cursor; what you type after it searches
+main.addEventListener('input', e => {
+  const note = e.target.closest?.('.mine'); if (!note || reading) return;
+  if (ins?.mode === 'slash') { slashChanged(); return; }
+  if (e.inputType !== 'insertText' || e.data !== '/') return;
+  const sel = getSelection(); if (!sel.rangeCount || !sel.isCollapsed) return;
+  const n = sel.anchorNode, o = sel.anchorOffset;
+  if (!n || n.nodeType !== 3 || o < 1 || n.data[o - 1] !== '/' || n.parentElement.closest('.formula')) return;
+  let start;
+  if (o >= 2) start = /[\s ]/.test(n.data[o - 2]);
+  else { const p = n.previousSibling; start = !p || (p.nodeType === 3 ? !p.data || /[\s ]$/.test(p.data) : /^(BR|DIV|P|UL|OL|LI)$/.test(p.nodeName)); }
+  if (!start) return;
+  const range = document.createRange(); range.setStart(n, o - 1); range.setEnd(n, o);
+  openInsMenu({mode: 'slash', note, range});
+});
+// the cursor has to stay just after the slash, in the same words, or the menu closes
+function slashCaret(){
+  const sel = getSelection(); if (!sel.rangeCount || !ins.note.isConnected) return null;
+  const c = sel.getRangeAt(0);
+  return c.collapsed && c.startContainer === ins.range.startContainer && c.startOffset > ins.range.startOffset ? c : null;
+}
+function slashChanged(){
+  const c = slashCaret(); if (!c) { closeInsMenu(); return; }
+  ins.range.setEnd(c.startContainer, c.startOffset);
+  if (!ins.range.toString().startsWith('/')) { closeInsMenu(); return; }
+  renderIns();
+  if (!ins.shown.length && /\s$|.{13}/.test(insQuery() + (ins.range.toString().endsWith(' ') ? ' ' : ''))) { closeInsMenu(); return; }
+  placeInsMenu();
+}
+document.addEventListener('selectionchange', () => { if (ins?.mode === 'slash' && !slashCaret()) closeInsMenu(); });
+main.addEventListener('focusout', e => { if (ins?.mode === 'slash' && e.target === ins.note) closeInsMenu(); });
+
+// ================= sticky notes: yellow paper on top of the page, moved by their tape =================
+const STICKY_W = 220;
+const stickyWidth = card => Math.round(Math.min(STICKY_W, card.getBoundingClientRect().width / (zoomOf(card) || 1) * 0.8));
+// a new sticky note on a page, its top-left corner at (left, top) on screen
+function addSticky(card, left, top, text){
+  const {box, el} = makeBox();
+  box.classList.add('sticky', 'floating'); box.classList.remove('no-outline'); box.style.removeProperty('--nb-fill');
+  addGrips(box);
+  const z = zoomOf(card) || 1, w = stickyWidth(card), cr = card.getBoundingClientRect();
+  box.style.width = w + 'px';
+  card.append(box);
+  setFloatPos(box, Math.max(cr.left, Math.min(cr.right - w * z, left)), Math.max(cr.top, Math.min(cr.bottom - 100 * z, top)));
+  if (text) el.innerText = text;
+  placeFloats(card); raise(box); spreadChips(); updateNotesBtn();
+  if (text) saveSoon();
+  return {box, el};
+}
+// turn a note into a sticky note, or back
+function toSticky(box){
+  if (!box.classList.contains('floating')) toggleFloat(box);
+  box.classList.add('sticky'); box.classList.remove('no-outline'); box.style.removeProperty('--nb-fill');
+  box.style.width = stickyWidth(box.parentElement) + 'px'; box.style.minHeight = '';
+  addGrips(box); placeFloats(); saveSoon();
+}
+function toNote(box){
+  box.classList.remove('sticky'); box.style.width = ''; box.style.minHeight = '';
+  if (box.classList.contains('floating')) { box.dataset.px = 0; toggleFloat(box); }
+  addGrips(box); saveSoon();
+}
+// a sticky note on the page you're on: top right of the part you can see
+function stickyOnPage(text){
+  if (reading) return null;
+  const card = currentCard() || firstPage(), cr = card.getBoundingClientRect(), z = zoomOf(card) || 1, bw = stickyWidth(card) * z;
+  const top = Math.min(Math.max(cr.top + 14 * z, appbar.offsetHeight + 24), Math.max(cr.top, cr.bottom - 110 * z));
+  const made = addSticky(card, cr.right - bw - 18 * z, top, text);
+  if (text) showAdded(made.box); else { focusNote(made.el, {preventScroll: true}); made.box.scrollIntoView({block: 'nearest', behavior: smoothScroll()}); }
+  return made;
+}
+$('#stickyBtn').onclick = () => stickyOnPage('');
+// with nothing open, a note or sticky note starts a blank page for itself
+function firstPage(){
+  const {page, note} = blankPage(); note.closest('.notebox').remove();
+  main.querySelector('.welcome')?.remove(); main.append(page);
+  if (LAYOUTS[layout]) paginateView();
+  return page;
+}
+function showAdded(box){
+  box.scrollIntoView({block: 'nearest', behavior: smoothScroll()});
+  box.classList.remove('flash'); void box.offsetWidth; box.classList.add('flash');
+  setTimeout(() => box.classList.remove('flash'), 1700);
+  updateNotesBtn(); saveSoon();
+}
+
+// ================= add a note from the Notes panel =================
+const newNote = $('#newNote'), stickyPad = $('#stickyPad');
+function updateWhere(){
+  if (!panelOpen.notes) return;
+  const card = currentCard(), i = card ? [...main.querySelectorAll('.slide')].indexOf(card) : -1;
+  const where = i >= 0 ? `to page ${i + 1}` : 'to a new page';
+  if ($('#ncWhere').textContent === where) return;
+  $('#ncWhere').textContent = where;
+  $('#newNote').placeholder = i >= 0 ? `Write a note for page ${i + 1}…` : 'Write a note…';
+}
+function growNote(){ newNote.style.height = 'auto'; newNote.style.height = Math.min(180, newNote.scrollHeight + 3) + 'px'; }
+// a note at the bottom of the page you're on
+function addNoteToPage(text){
+  const card = currentCard() || firstPage();
+  const {box, el} = makeBox();
+  if (card.classList.contains('pagecard')) card.append(box); else (card.querySelector('.content') || card).append(box);
+  el.innerText = text;
+  if (LAYOUTS[layout]) paginateView();
+  showAdded(box);
+  toast(`Added to page ${[...main.querySelectorAll('.slide')].indexOf(card) + 1}.`);
+}
+$('#noteCompose').addEventListener('submit', e => {
+  e.preventDefault();
+  const t = newNote.value.trim(); if (!t || reading) { newNote.focus(); return; }
+  addNoteToPage(t); newNote.value = ''; growNote(); newNote.focus();
+});
+newNote.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('#noteCompose').requestSubmit(); } });
+newNote.addEventListener('input', growNote);
+newNote.addEventListener('focus', updateWhere);
+main.addEventListener('pointerup', () => requestAnimationFrame(updateWhere));
+$('#sideAdd').onclick = () => { setPanel('notes', true); updateWhere(); newNote.focus(); };
+// Sticky: click for a sticky note on the page you're on, or drag it onto any page (it takes what you've written)
+let padDragged = false;
+function dropSticky(card, x, y){
+  const t = newNote.value.trim(), bw = stickyWidth(card) * (zoomOf(card) || 1);
+  const {box, el} = addSticky(card, x - bw / 2, y - 10, t);       // held by its tape
+  if (t) { newNote.value = ''; growNote(); showAdded(box); }
+  else { if (narrow.matches) setPanel('notes', false); focusNote(el, {preventScroll: true}); }
+}
+stickyPad.addEventListener('pointerdown', e => {
+  if (e.button !== 0 || reading) return;
+  e.preventDefault();
+  const sx = e.clientX, sy = e.clientY;
+  let ghost = null, over = null;
+  const move = ev => {
+    if (!ghost) {
+      if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return;
+      ghost = Object.assign(document.createElement('div'), {className: 'stickyghost', textContent: newNote.value.trim()});
+      document.body.append(ghost); document.body.classList.add('dragging-sticky');
+    }
+    ghost.style.translate = `${ev.clientX - 75}px ${ev.clientY - 8}px`;
+    const card = document.elementsFromPoint(ev.clientX, ev.clientY).map(el => el.closest('.slide')).find(Boolean) || null;
+    if (card !== over) { over?.classList.remove('drop-target'); over = card; over?.classList.add('drop-target'); }
+    ghost.classList.toggle('off', !over);
+  };
+  const end = ev => {
+    removeEventListener('pointermove', move); removeEventListener('pointerup', end); removeEventListener('pointercancel', end); removeEventListener('keydown', cancel, true);
+    document.body.classList.remove('dragging-sticky'); over?.classList.remove('drop-target');
+    if (!ghost) return;                                   // just a click
+    ghost.remove(); padDragged = true; setTimeout(() => { padDragged = false; }, 0);
+    if (ev.type === 'pointerup' && over) dropSticky(over, ev.clientX, ev.clientY);
+  };
+  const cancel = ev => { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); end({type: 'cancel'}); } };
+  addEventListener('pointermove', move); addEventListener('pointerup', end); addEventListener('pointercancel', end); addEventListener('keydown', cancel, true);
+});
+stickyPad.addEventListener('click', () => {
+  if (padDragged || reading) return;
+  const t = newNote.value.trim();
+  if (!t && narrow.matches) setPanel('notes', false);
+  stickyOnPage(t);
+  if (t) { newNote.value = ''; growNote(); newNote.focus(); }
 });
 
 // ================= install as an app (when it is served from the web) =================

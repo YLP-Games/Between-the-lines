@@ -8,10 +8,10 @@ A simple web page for taking notes on lecture slides.
 - **Title bar**: the notebook's name and a *Saved in this browser* indicator, Back / Forward (undo and redo), **Focus**, **Study mode**, **Open**, **Download** and Help. The buttons at each end show or hide the sidebar and the **Notes** panel.
 - **Toolbar tabs**, like Word's ribbon:
   - **Home**: font, text size (type any size and press Enter, or pick one), colours and favourite colours, bold / italic / underline / strikethrough, superscript and subscript, highlighter, clear formatting, bullet and numbered lists (bullet style and indent size menus) and alignment.
-  - **Insert**: formulas, pictures / videos / sound, a blank page after the current page, or remove a page.
+  - **Insert**: a sticky note, formulas, pictures / videos / sound, a blank page after the current page, or remove a page.
   - **Box**: a note box's outline and fill, the colour of its minimised icon, and **Select all notes on this page**.
   - **View**: page layout (Default, A4 or A3, portrait or landscape), Hide / Show notes, the side panels, spell check language, toolbar size (**Full**, **Tabs only** or **Hidden**) and **Clear everything**.
-- **Notes panel** (right): every note in the notebook, listed by page. Search them, filter by icon colour, and click one to jump to it (a minimised note opens).
+- **Notes panel** (right): write a note at the top and press **Add note** (or Enter) to put it at the bottom of the page you're on, or **Sticky** to stick it on that page; drag **Sticky** onto any page to put it exactly there. Below that, every note in the notebook, listed by page: search them, filter by icon colour, and click one to jump to it (a minimised note opens). **Add a note** in the sidebar opens it ready to write.
 - **Status bar**: which page you're on, how many notes there are (pinned, minimised), and Hide / Show notes.
 - **Focus mode** (**Focus** in the title bar, or Ctrl+Shift+F) hides the toolbar, both side panels and the status bar so only your pages and notes are on screen. **Exit focus** (top right) or **Esc** brings everything back. You can also close each panel on its own with its ×, or shrink the toolbar to tabs only with the arrow at the end of the tabs.
 - The look is pencil on paper: hand-drawn borders, a handwritten interface font and a dotted paper background (a chalkboard in dark mode). Your slides stay exactly as they are.
@@ -20,7 +20,9 @@ A simple web page for taking notes on lecture slides.
 ## Taking notes
 
 - **Open** a **PDF**, or drop it anywhere on the page. Each page shows exactly as it is, with background graphics, side bands and slide numbers removed. You can select and copy text from the pages.
-- Point at a spot on a page and press **+ Add note here**. The page opens up at the nearest gap between lines, and you type in your own font, size and colour (handwriting styles and standard fonts).
+- Point at a spot on a page and press **+ Add here**. A menu like Notion's opens: **Note** opens the page up at the nearest gap between lines for you to type in your own font, size and colour (handwriting styles and standard fonts); **Sticky note** puts a sticky note on top of the page there; **Equation** adds a formula in the gap. Point at an option or use the arrow keys, type to search, Enter to add, Esc to close.
+- In a note, type **/** (at the start, or after a space) for the same menu at the cursor: add an equation, or turn the note into a sticky note and back. What you type after the slash searches it.
+- **Sticky notes** are yellow paper on top of the page. Drag one by its tape to move it anywhere, even onto another page; it shows in the Notes panel as a sticky note and in the PDF as you see it.
 - **PowerPoint (.pptx)** and **Word (.docx)** files open as text with their formatting, and you can type inside sentences too. Pictures open as pages.
 - Notes sit in boxes. Drag a box's edges to resize it, or its move handle to move it across the page or between other lines. Pink guide lines show when it lines up with other notes; it gently snaps only within a few pixels, and holding **Alt** or **Shift** turns snapping off.
 - Each note's handles: **float** it on top of the page (like "in front of text" in Word), **minimise** it to a small pencil icon (it shows the note when you point at it, opens when clicked, and can be dragged aside), and **pin** it so it stays open.
