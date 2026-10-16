@@ -9,8 +9,8 @@
 <meta name="theme-color" content="#eeede9">
 <link rel="icon" id="favicon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cg%20transform%3D%22rotate%28-4%2016%2016%29%22%3E%3Cpath%20d%3D%22M3.6%203.3C10.5%202.4%2021.6%202.2%2028.6%203.1c1.4%206.3%201.6%2019.5.6%2026.3-7%201.1-18.7%201.2-25.3.3C2.3%2023.7%202.2%2010.1%203.6%203.3Z%22%20fill%3D%22%233552c4%22%20stroke%3D%22%231d2752%22%20stroke-width%3D%221.4%22%2F%3E%3Cpath%20d%3D%22M8%209.2c5.2-.7%2010.9-.6%2016%20.2M8.2%2023.2c5.3-.6%2010.8-.5%2015.6.1%22%20stroke%3D%22%23fbfbf8%22%20stroke-width%3D%222.9%22%20stroke-linecap%3D%22round%22%20fill%3D%22none%22%2F%3E%3Cpath%20d%3D%22M8.2%2016.6c2.3-3.4%204%202.9%206.4-.3s4%202.9%206.6.1%22%20stroke%3D%22%23ffd54a%22%20stroke-width%3D%223.3%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20fill%3D%22none%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Patrick+Hand&family=Kalam:wght@400;700&family=Nunito:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,700;1,400&family=Courier+Prime:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600&display=swap">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Patrick+Hand&family=Kalam:wght@400;700&family=Nunito:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,700;1,400&family=Courier+Prime:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600&display=swap" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" crossorigin="anonymous">
 <style>
 /* ================= tokens ================= */
 :root{
@@ -982,9 +982,9 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
   </div>
 </template>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
 <script>
 
 // a copy of this app as it is before anything is opened, for the downloadable notebook file
@@ -2128,7 +2128,22 @@ function dropRepeats(cards){
   cards.forEach(c => c.querySelectorAll('img[data-k]').forEach(i => { if (count[i.dataset.k] >= limit) i.remove(); }));
 }
 // ---------- Word ----------
-function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.append(s); }); }
+// a library from the internet; if it fails, it is asked for once more, past any saved copy (which could be a broken download)
+function loadScript(src, again){
+  return new Promise((res, rej) => {
+    const s = document.createElement('script'); s.crossOrigin = 'anonymous'; s.src = again ? src + '?again=' + Date.now() : src;
+    s.onload = res;
+    s.onerror = () => { s.remove(); if (again) rej(new Error('couldn’t download ' + src.split('/').pop())); else loadScript(src, true).then(res, rej); };
+    document.head.append(s);
+  });
+}
+// the PDF and PowerPoint readers load with the page; if one didn't arrive, try once more before giving up
+const READERS = {pdf: [() => window.pdfjsLib && window.pdfjsWorker, ['pdf.js/3.11.174/pdf.min.js', 'pdf.js/3.11.174/pdf.worker.min.js']], pptx: [() => window.JSZip, ['jszip/3.10.1/jszip.min.js']]};
+async function ensureReader(ext){
+  const r = READERS[ext]; if (!r || r[0]()) return true;
+  try { for (const f of r[1]) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/' + f, true); } catch {}
+  return !!r[0]();
+}
 async function readDocx(buf, name){
   if (!window.mammoth) await loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js');
   const r = await mammoth.convertToHtml({arrayBuffer: buf});
@@ -2148,11 +2163,15 @@ async function readImage(file){
 // unless "Add a file here" was used (or the notebook you're in is still empty)
 async function openFiles(picked, here = false){
   if (!picked.length) return;
-  await ready;
+  toast(`Opening ${picked.length > 1 ? picked.length + ' files' : '“' + picked[0].name + '”'}…`);
+  await Promise.race([ready, new Promise(r => setTimeout(r, 4000))]);      // start-up should long be done; never wait on it for ever
   let hadPages = !!main.querySelector('.slide'), first = null;
   for (const f of picked) {
     const ext = f.name.split('.').pop().toLowerCase(), notebook = ext === 'html' || ext === 'htm';
     const read = notebook ? null : {pptx: readPptx, pdf: readPdf, docx: readDocx}[ext] || (f.type.startsWith('image/') ? readImage : null);
+    // the readers come from the internet the first time: if one didn't arrive, say so instead of failing quietly
+    const missing = !(await ensureReader(ext)) && (ext === 'pdf' ? 'PDF' : 'PowerPoint');
+    if (missing) { toast(`The ${missing} reader didn’t load, so “${f.name}” can’t be opened yet. Check your internet connection (or an ad or script blocker), then reload the page.`); continue; }
     if (!notebook && !read) { toast(`“${f.name}” can't be opened. Use a .pdf, .pptx or .docx file (an old .ppt or .doc file can be saved as one of these).`); continue; }
     const data = notebook ? readNotebookHtml(await f.text()) : null;
     if (notebook && !data) { toast(`“${f.name}” isn't a notebook file saved from this page.`); continue; }
@@ -2171,7 +2190,7 @@ async function openFiles(picked, here = false){
       first ??= head;
       toast(''); saveSoon();
     } catch (err) {
-      console.error(err); toast(`“${f.name}” couldn't be read. Try saving it as a PDF and opening that.`);
+      console.error(err); toast(`“${f.name}” couldn't be read${err?.message ? ` (${err.message})` : ''}. Try saving it as a PDF and opening that.`);
       if (!head.nextElementSibling) head.remove();
     }
   }
@@ -4248,39 +4267,55 @@ $('#installBtn').onclick = async () => {
 // installed: PDFs, PowerPoints and Word files can be opened with it from your computer
 if ('launchQueue' in window) launchQueue.setConsumer(async p => { if (p.files?.length) openFiles(await Promise.all(p.files.map(h => h.getFile()))); });
 
+// ================= when something goes wrong: say so (once in a while), instead of failing silently =================
+let lastErrorAt = 0;
+function reportError(err, doing){
+  console.error(err);
+  if (Date.now() - lastErrorAt < 8000) return;
+  lastErrorAt = Date.now();
+  const msg = String(err?.message || err || '').slice(0, 140);
+  toast(`Something went wrong${doing ? ' ' + doing : ''}${msg ? ': ' + msg : ''}. Your notes are kept; reloading the page usually fixes it.`);
+}
+addEventListener('error', e => { if (e.error) reportError(e.error); });
+addEventListener('unhandledrejection', e => reportError(e.reason));
+
 // ================= start =================
 let startUp; const ready = new Promise(r => { startUp = r; });
 showEmpty(); resetHistory(''); applyReadMode();
 restorePanels();
 (async () => {
-  db = await openDb();
-  if (!db) setSaveState('error');
-  const [list, cur, s, legacy] = db ? await Promise.all([get('docs'), get('cur'), get('style'), get('doc')]) : [];
-  if (s) { style = s; showStyle(style); }
-  docs = Array.isArray(list) ? list.filter(d => d && d.id) : [];
-  if (!docs.length) {                     // first visit, or notes saved before there were notebooks
-    const d = makeDoc();
-    if (legacy) { d.name = 'My notes'; await putAll({['doc:' + d.id]: legacy}); }
-  }
-  if (legacy) delKey('doc');
-  curId = docs.some(d => d.id === cur) ? cur : docs[0].id;
-  // a notebook file opened on its own: show it (or the newer copy of it already saved in this browser)
-  let data = null;
-  try { const emb = document.getElementById('notebook-data'); if (emb) data = JSON.parse(emb.textContent); } catch {}
-  if (data) {
-    notebookPrefs(data);
-    if (data.id && docs.some(d => d.id === data.id)) curId = data.id;
-    else {
-      const d = makeDoc(data.id || undefined, data.name || 'My notes'); d.named = !!data.named; curId = d.id;
-      await putAll({['doc:' + d.id]: data.doc || ''});
+  try {
+    db = await openDb();
+    if (!db) setSaveState('error');
+    const [list, cur, s, legacy] = db ? await Promise.all([get('docs'), get('cur'), get('style'), get('doc')]) : [];
+    if (s) { style = s; showStyle(style); }
+    docs = Array.isArray(list) ? list.filter(d => d && d.id) : [];
+    if (!docs.length) {                     // first visit, or notes saved before there were notebooks
+      const d = makeDoc();
+      if (legacy) { d.name = 'My notes'; await putAll({['doc:' + d.id]: legacy}); }
     }
-  }
-  showDocHtml(db ? await get('doc:' + curId) : data?.doc || '');
+    if (legacy) delKey('doc');
+    curId = docs.some(d => d.id === cur) ? cur : docs[0].id;
+    // a notebook file opened on its own: show it (or the newer copy of it already saved in this browser)
+    let data = null;
+    try { const emb = document.getElementById('notebook-data'); if (emb) data = JSON.parse(emb.textContent); } catch {}
+    if (data) {
+      notebookPrefs(data);
+      if (data.id && docs.some(d => d.id === data.id)) curId = data.id;
+      else {
+        const d = makeDoc(data.id || undefined, data.name || 'My notes'); d.named = !!data.named; curId = d.id;
+        await putAll({['doc:' + d.id]: data.doc || ''});
+      }
+    }
+    showDocHtml(db ? await get('doc:' + curId) : data?.doc || '');
+  } catch (err) { reportError(err, 'loading your saved notebooks'); }
   requestAnimationFrame(() => {
-    paginateView(); refreshPanels();
-    resetHistory(main.querySelector('.welcome') ? '' : currentDoc());
-    if (db) putAll({docs, cur: curId});
-    startUp();
+    try {
+      paginateView(); refreshPanels();
+      resetHistory(main.querySelector('.welcome') ? '' : currentDoc());
+      if (db) putAll({docs, cur: curId});
+    } catch (err) { reportError(err, 'showing your notebook'); }
+    finally { startUp(); }
   });
 })();
 

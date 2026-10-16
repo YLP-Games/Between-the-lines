@@ -1,6 +1,6 @@
 // Lets Between the Slides work offline once installed (or visited once).
 // The app itself is fetched fresh when online, so updates arrive straight away; the libraries it uses never change, so they come from the cache.
-const CACHE = 'bts-v1';
+const CACHE = 'bts-v2';          // a new name clears out the old copy (which could have kept a broken download)
 const APP = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png'];
 const LIBS = [
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
@@ -45,9 +45,9 @@ self.addEventListener('fetch', e => {
     e.respondWith((async () => {
       const c = await caches.open(CACHE);
       const hit = await c.match(req);
-      if (hit) return hit;
+      if (hit && hit.ok) return hit;
       const res = await fetch(req);
-      if (res.ok || res.type === 'opaque') c.put(req, res.clone());
+      if (res.ok) c.put(req, res.clone());            // only a download known to be good is kept (never an error page)
       return res;
     })());
   }
