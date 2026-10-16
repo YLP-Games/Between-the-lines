@@ -236,7 +236,8 @@ div.mine:empty::before{content:"Type, or press / for options"}
 .pagecard > .notebox{margin:4px 14px;width:calc(100% - 28px);max-width:calc(100% - 28px)}
 .pagecard > .notebox > .mine{padding:8px 22px 8px 14px}
 .grip{position:absolute;width:12px;height:12px;background:#fff;border:2px solid var(--accent);border-radius:2px;box-sizing:border-box;touch-action:none;z-index:3;opacity:0;transition:opacity .15s;color:var(--accent)}
-.notebox:hover > .grip,.notebox:focus-within > .grip{opacity:1}
+/* handles show only for the note you point at (or last tapped with a finger), so the page stays clear */
+.notebox:hover > .grip,.notebox.touched > .grip{opacity:1}
 .grip .i{width:12px;height:12px;stroke-width:2.2}
 .g-float,.g-min,.g-pin,.g-move{top:-11px;width:22px;height:22px;border-width:1.5px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none}
 .g-move{left:-11px;cursor:move}
@@ -247,14 +248,16 @@ div.mine:empty::before{content:"Type, or press / for options"}
 .notebox.floating > .g-float,.notebox.pinned > .g-pin{background:var(--accent);color:#fff}
 .notebox.pinned > .g-min{display:none}
 /* the pin shows only while you point at its note (pinned or not); hidden, it can't be clicked by accident */
-.notebox > .g-pin,.notebox:focus-within > .g-pin{opacity:0;visibility:hidden;transition:opacity .15s,visibility .15s}
-.notebox:hover > .g-pin{opacity:1;visibility:visible}
+.notebox > .g-pin{opacity:0;visibility:hidden;transition:opacity .15s,visibility .15s}
+.notebox:hover > .g-pin,.notebox.touched > .g-pin{opacity:1;visibility:visible}
 .g-se{right:0;bottom:0;cursor:nwse-resize}
 .g-e{right:0;top:50%;transform:translateY(-50%);cursor:ew-resize}
 .g-s{bottom:0;left:50%;transform:translateX(-50%);cursor:ns-resize}
 .notebox.inline > .g-s{display:none}
-/* touch screens can't hover: handles are bigger, and the pin shows while you're in that note */
-@media (hover:none){.grip{opacity:1;width:16px;height:16px}.g-move,.g-min,.g-float,.g-pin{width:26px;height:26px}.notebox > .g-pin{opacity:0;visibility:hidden}.notebox:focus-within > .g-pin{opacity:1;visibility:visible}}
+/* a finger can't point: tapping a note shows its handles, bigger, until you tap somewhere else
+   (decided by how you touch, not by what the browser says the screen is: touchscreen laptops often claim they can't hover) */
+.notebox.touched > .grip{width:16px;height:16px}
+.notebox.touched > :is(.g-move,.g-min,.g-float,.g-pin){width:26px;height:26px}
 .notebox.moving{opacity:.9;z-index:100000!important}
 .notebox.moving > .mine{box-shadow:0 6px 18px rgba(0,0,0,.22);background:rgba(255,255,255,.85)} /* taste-skill-ignore: a note being dragged floats */
 .notebox.flash > .mine{animation:flash 1.6s ease-out}
@@ -1458,6 +1461,12 @@ main.addEventListener('keydown', e => {
 });
 main.addEventListener('input', e => { const m = e.target.closest?.('.mine'); if (m) { wrapMedia(m); spellSoon(m); } saveSoon(); });
 main.addEventListener('pointerdown', e => { const b = e.target.closest('.notebox'); if (b && !b.classList.contains('collapsed')) raise(b); }, true);
+// a finger can't point at a note: tapping one shows its handles until you tap somewhere else
+document.addEventListener('pointerdown', e => {
+  const b = e.pointerType === 'mouse' ? null : e.target.closest?.('.notebox');
+  main.querySelectorAll('.notebox.touched').forEach(x => { if (x !== b) x.classList.remove('touched'); });
+  if (b) b.classList.add('touched');
+}, true);
 main.addEventListener('focusin', e => raise(e.target.closest?.('.notebox')));
 // a note left empty is removed (not while a formula or an option is being picked for it)
 function dropIfEmpty(el){
@@ -2264,7 +2273,7 @@ function notebookName(){
 function currentDoc(){
   const c = main.cloneNode(true);
   c.querySelectorAll('.gapline, .gappill, .welcome, .empty, .cardbar').forEach(x => x.remove());
-  c.querySelectorAll('.media-sel, .target-page, .multi-sel, .flash, .drop-target').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel', 'flash', 'drop-target'));
+  c.querySelectorAll('.media-sel, .target-page, .multi-sel, .flash, .drop-target, .touched').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel', 'flash', 'drop-target', 'touched'));
   c.querySelectorAll('.mine').forEach(x => { x.contentEditable = 'true'; });
   flatten(c);
   return c.innerHTML;
