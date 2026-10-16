@@ -235,29 +235,39 @@ div.mine:empty::before{content:"Type, or press / for options"}
 .pagecard > div.mine{margin:0 14px;padding:8px 14px}
 .pagecard > .notebox{margin:4px 14px;width:calc(100% - 28px);max-width:calc(100% - 28px)}
 .pagecard > .notebox > .mine{padding:8px 22px 8px 14px}
-.grip{position:absolute;width:12px;height:12px;background:#fff;border:2px solid var(--accent);border-radius:2px;box-sizing:border-box;touch-action:none;z-index:3;opacity:0;transition:opacity .15s;color:var(--accent)}
-/* handles show only for the note you point at (or last tapped with a finger), so the page stays clear */
+/* a note box's handles, Notion style: dots beside it to drag, slim bars on its edges and a corner mark to resize, and a small toolbar at its top right.
+   They show only for the note you point at (or last tapped with a finger), so the page stays clear. */
+.grip{position:absolute;z-index:3;box-sizing:border-box;touch-action:none;opacity:0;transition:opacity .15s;user-select:none;-webkit-user-select:none}
 .notebox:hover > .grip,.notebox.touched > .grip{opacity:1}
-.grip .i{width:12px;height:12px;stroke-width:2.2}
-.g-float,.g-min,.g-pin,.g-move{top:-11px;width:22px;height:22px;border-width:1.5px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none}
-.g-move{left:-11px;cursor:move}
-.g-min{right:-11px}
-.g-float{right:17px}
-.g-pin{right:45px}
-.notebox.inline > .g-pin{right:17px}
-.notebox.floating > .g-float,.notebox.pinned > .g-pin{background:var(--accent);color:#fff}
-.notebox.pinned > .g-min{display:none}
-/* the pin shows only while you point at its note (pinned or not); hidden, it can't be clicked by accident */
-.notebox > .g-pin{opacity:0;visibility:hidden;transition:opacity .15s,visibility .15s}
-.notebox:hover > .g-pin,.notebox.touched > .g-pin{opacity:1;visibility:visible}
-.g-se{right:0;bottom:0;cursor:nwse-resize}
-.g-e{right:0;top:50%;transform:translateY(-50%);cursor:ew-resize}
-.g-s{bottom:0;left:50%;transform:translateX(-50%);cursor:ns-resize}
-.notebox.inline > .g-s{display:none}
+.grip .i{width:15px;height:15px}
+.g-move{left:-14px;top:3px;width:15px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:#8f8d88;cursor:grab}
+.g-move:hover{background:rgba(55,53,47,.09);color:#55534e}
+.g-move:active{cursor:grabbing}
+.pagecard > .notebox:not(.floating) > .g-move{left:-13px;width:13px}
+.g-e,.g-s{background:#fff;border:1.5px solid #8f8d86;border-radius:9px}
+.g-e{right:-4px;top:50%;width:7px;height:min(36px,60%);min-height:12px;translate:0 -50%;cursor:ew-resize}
+.g-s{bottom:-4px;left:50%;width:min(36px,40%);height:7px;translate:-50% 0;cursor:ns-resize}
+.g-e:hover,.g-s:hover{background:var(--accent);border-color:var(--accent)}
+.g-se{right:1px;bottom:1px;width:14px;height:14px;display:flex;color:#8f8d86;cursor:nwse-resize}
+.g-se .i{width:14px;height:14px;stroke-width:2.4}
+.g-se:hover{color:var(--accent)}
+.notebox.inline > .g-s,.notebox.inline > .g-se{display:none}
+/* the toolbar: pin, float on top, minimise. Hidden, it can't be clicked by accident */
+.nbar{position:absolute;z-index:4;top:-16px;right:10px;display:flex;align-items:center;gap:1px;padding:2px;border:1.5px solid var(--pencil);border-radius:8px;background:var(--surface);box-shadow:2px 2px 0 rgba(47,43,36,.18);opacity:0;visibility:hidden;transition:opacity .15s,visibility .15s} /* taste-skill-ignore: a small toolbar floats over the note */
+.notebox:hover > .nbar,.notebox.touched > .nbar{opacity:1;visibility:visible}
+.nbar .grip{position:static;opacity:1;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:6px;color:var(--muted);cursor:pointer}
+.nbar .grip:hover{background:var(--hover);color:var(--ink)}
+.nbar .i{width:14px;height:14px}
+.notebox.floating .g-float,.notebox.pinned .g-pin{color:var(--accent);background:var(--accent-soft)}
+.notebox.pinned .g-min{display:none}
+.notebox.inline > .nbar{right:-6px;top:-30px}
 /* a finger can't point: tapping a note shows its handles, bigger, until you tap somewhere else
    (decided by how you touch, not by what the browser says the screen is: touchscreen laptops often claim they can't hover) */
-.notebox.touched > .grip{width:16px;height:16px}
-.notebox.touched > :is(.g-move,.g-min,.g-float,.g-pin){width:26px;height:26px}
+.notebox.touched .nbar .grip{width:34px;height:34px}
+.notebox.touched > .g-move{left:-22px;width:22px;height:32px}
+.notebox.touched > .g-e{width:12px;right:-6px}
+.notebox.touched > .g-s{height:12px;bottom:-6px}
+.notebox.touched > .g-se{width:20px;height:20px}
 .notebox.moving{opacity:.9;z-index:100000!important}
 .notebox.moving > .mine{box-shadow:0 6px 18px rgba(0,0,0,.22);background:rgba(255,255,255,.85)} /* taste-skill-ignore: a note being dragged floats */
 .notebox.flash > .mine{animation:flash 1.6s ease-out}
@@ -270,7 +280,7 @@ div.mine:empty::before{content:"Type, or press / for options"}
 .note-chip{display:none}
 .notebox.collapsed{display:block;position:relative;width:0!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:visible}
 .notebox.inline.collapsed{display:inline-block;vertical-align:top}
-.notebox.collapsed > .mine,.notebox.collapsed > .grip{display:none}
+.notebox.collapsed > .mine,.notebox.collapsed > .grip,.notebox.collapsed > .nbar{display:none}
 .notebox.collapsed > .note-chip{display:flex;align-items:center;justify-content:center;position:absolute;z-index:4;left:calc(-24px + var(--ci, 0) * 23px);top:-10px;width:20px;height:20px;padding:0;border-radius:50%;
   color:var(--chip-ink,#5a4500);background:var(--chip,#ffd54a);border:1px solid color-mix(in srgb, var(--chip,#ffd54a) 72%, #000);box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer;opacity:.92; /* taste-skill-ignore: a minimised note icon sits on top of the page */
   translate:var(--cdx,0px) var(--cdy,0px);touch-action:none}
@@ -548,8 +558,7 @@ body.focus .peekzone{display:none}
 .slide .notebox.sticky > .mine{min-height:92px;padding:16px 14px 12px;background:var(--nb-fill,#fff59d);border:1px solid rgba(120,100,20,.35);border-radius:2px 3px 2px 4px;box-shadow:2px 4px 0 rgba(47,43,36,.22)} /* taste-skill-ignore: a sticky note is paper lifted off the page */
 .slide .notebox.sticky:hover > .mine{box-shadow:0 0 0 1px var(--accent),2px 4px 0 rgba(47,43,36,.22)} /* taste-skill-ignore: a sticky note is paper lifted off the page */
 .slide .notebox.sticky > .mine:focus{box-shadow:0 0 0 2px var(--accent),2px 4px 0 rgba(47,43,36,.22)} /* taste-skill-ignore: a ring marking focus, and the sticky's own shadow */
-.notebox.sticky > .g-float{display:none}
-.notebox.sticky > .g-pin{right:17px}
+.notebox.sticky .g-float{display:none}
 .notebox.sticky > .g-move{left:50%;top:-9px;width:76px;height:20px;transform:translateX(-50%) rotate(-2deg);border:none;border-radius:2px;background:rgba(206,190,138,.72);opacity:1;visibility:visible;cursor:grab;box-shadow:0 1px 1px rgba(0,0,0,.12)} /* taste-skill-ignore: the tape that holds a sticky note */
 .notebox.sticky > .g-move:hover{background:rgba(196,178,120,.85)}
 .notebox.sticky > .g-move .i{display:none}
@@ -575,6 +584,16 @@ body.dragging-sticky,body.dragging-sticky *{cursor:grabbing!important}
 #stickyPad{cursor:grab;touch-action:none}
 .ncwhere{margin-left:auto;font-size:14px;color:var(--muted);white-space:nowrap}
 body.reading .ncompose,body.reading #sideAdd{display:none}
+
+/* ================= tooltips: what a control does, after a brief pause ================= */
+.qtip{position:fixed;z-index:120;left:0;top:0;max-width:260px;padding:6px 10px 7px;border-radius:8px;background:var(--pencil);color:var(--bg);font:15px/1.3 var(--ui);pointer-events:none;opacity:0;transition:opacity .1s}
+.qtip.on{opacity:1}
+.qtip .t{display:flex;align-items:baseline;gap:10px;justify-content:space-between}
+.qtip .t span{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.qtip .k{display:inline-flex;gap:3px;flex:none}
+.qtip kbd{font:11.5px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:0 5px;border:1px solid color-mix(in srgb,var(--bg) 40%,transparent);border-radius:4px;background:transparent;color:inherit}
+.qtip .d{margin-top:2px;font-size:13.5px;opacity:.75;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+@media (prefers-reduced-motion:reduce){.qtip{transition:none}}
 </style>
 </head>
 <body>
@@ -625,6 +644,10 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
 <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
 <symbol id="i-hide-left" viewBox="0 0 24 24"><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></symbol>
 <symbol id="i-sticky" viewBox="0 0 24 24"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/></symbol>
+<symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="5" r="2.1" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="2.1" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="2.1" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="2.1" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="2.1" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="2.1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m2 12 9.17 4.17a2 2 0 0 0 1.66 0L22 12"/><path d="m2 17 9.17 4.17a2 2 0 0 0 1.66 0L22 17"/></symbol>
+<symbol id="i-minimize" viewBox="0 0 24 24"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="m14 10 7-7"/><path d="m3 21 7-7"/></symbol>
+<symbol id="i-corner" viewBox="0 0 24 24"><path d="M21 9 9 21"/><path d="m21 16-5 5"/></symbol>
 <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol>
 </defs></svg>
 
@@ -1216,7 +1239,7 @@ function setCollapsed(box, on){
   if (on && chip) {
     const m = box.querySelector(':scope > .mine'), t = (m && noteSummary(m)) || 'Note';
     const short = t.length > 300 ? t.slice(0, 300) + '…' : t;
-    chip.title = short + '\n\nClick to open · drag to move this icon aside · right-click (or press and hold) to change its colour';
+    chip.title = short + '\n\nClick to open · drag it anywhere and the note opens there · right-click (or press and hold) to change its colour';
     chip.setAttribute('aria-label', 'Show note: ' + short);
   }
 }
@@ -1256,13 +1279,41 @@ function spreadChips(){
     placed.push({card, i, top: r.top, left: r.left});
   }
 }
-// drag a minimised note's icon out of the way; it stays where it is dropped, and the note still opens at its own spot
+// drag a minimised note's icon anywhere; it stays where it is dropped, and the note opens there (openNote)
 function setChipOffset(box, x, y){
   const moved = Math.hypot(x, y) >= 6;
   box.classList.toggle('chip-moved', moved);
   if (moved) { box.style.setProperty('--cdx', x.toFixed(1) + 'px'); box.style.setProperty('--cdy', y.toFixed(1) + 'px'); }
   else ['--cdx', '--cdy'].forEach(v => box.style.removeProperty(v));
   ['--cl', '--ca'].forEach(v => box.style.removeProperty(v));     // no line back to the spot (older notes had one)
+}
+// open a minimised note where its pencil icon is: a floating note moves with it, a note between the lines
+// goes to the gap between lines nearest the pencil (a note inside a sentence stays in its sentence)
+function openNote(box){
+  const chip = box.querySelector(':scope > .note-chip'), moved = box.classList.contains('chip-moved') && chip && !box.classList.contains('inline');
+  const c = moved ? chip.getBoundingClientRect() : null, z = zoomOf(box) || 1;
+  const dx = (parseFloat(box.style.getPropertyValue('--cdx')) || 0) * z, dy = (parseFloat(box.style.getPropertyValue('--cdy')) || 0) * z;
+  // what is under the pencil, while the note still takes no room
+  const under = c ? document.elementsFromPoint(c.left + c.width / 2, c.top + c.height / 2).filter(el => !box.contains(el)) : [];
+  const strip = under.map(el => el.closest('.strip')).find(Boolean), pageY = strip ? gapY(strip, c.top + c.height / 2) : null, card = strip?.closest('.pagecard');
+  const slide = under.map(el => el.closest('.slide')).find(Boolean);
+  setCollapsed(box, false);
+  if (!moved) return;
+  setChipOffset(box, 0, 0);
+  if (box.classList.contains('floating')) {
+    const r = box.getBoundingClientRect(), cr = box.parentElement.getBoundingClientRect();
+    setFloatPos(box, Math.max(cr.left, Math.min(cr.right - r.width, r.left + dx)), Math.max(cr.top, r.top + dy));
+    placeFloats(); return;
+  }
+  let place = null;
+  if (card) place = () => insertBoxAt(card, pageY, box);       // (the strip itself may be joined up again when the note leaves)
+  else if (slide && !slide.classList.contains('pagecard')) {
+    let blk = [...slide.querySelectorAll('.blk')].filter(b => !box.contains(b) && b.getBoundingClientRect().top < c.top).pop() || null;
+    while (blk && blk.nextElementSibling?.classList.contains('notebox') && blk.nextElementSibling !== box) blk = blk.nextElementSibling;
+    place = () => blk ? blk.after(box) : (slide.querySelector('.content') || slide).prepend(box);
+  }
+  if (place) { const from = box.parentNode; box.remove(); mergeStrips(from); place(); }
+  const m = flowMetrics(box); setFlowLeft(box, m, c.left - m.cL);
 }
 function startChipDrag(chip, e){
   const box = chip.parentElement, z = zoomOf(box) || 1, sx = e.clientX, sy = e.clientY;
@@ -1292,29 +1343,38 @@ function startChipDrag(chip, e){
 function togglePin(box){
   const on = !box.classList.contains('pinned');
   box.classList.toggle('pinned', on);
-  const g = box.querySelector(':scope > .g-pin'); if (g) g.title = on ? 'Unpin: let this note be minimised again' : 'Pin to page: keep this note open';
+  gripTitles(box);
   toast(on ? 'Pinned: this note stays open until you unpin it.' : 'Unpinned.');
   updateNotesBtn(); saveSoon();
 }
-// a note box's handles: float, minimise, pin and move buttons, and resize handles on its right edge, bottom edge and corner
+// what each handle does, for the tooltips (they change when a note is pinned or floated)
+function gripTitles(box){
+  const t = (dir, text) => { const g = box.querySelector('.g-' + dir); if (g) g.title = text; };
+  t('move', box.classList.contains('sticky') ? 'Drag the tape to move this sticky note, even onto another page' : 'Drag to move this note (to another line, or across the page)');
+  t('pin', box.classList.contains('pinned') ? 'Unpin: let this note be minimised again' : 'Pin: keep this note open');
+  t('float', box.classList.contains('floating') ? 'Put this note back between the lines' : 'Float this note on top of the page, so it can sit beside the text');
+  t('min', 'Minimise this note to a small pencil icon');
+  t('e', 'Drag to change the width'); t('s', 'Drag to change the height'); t('se', 'Drag to resize');
+}
+// a note box's handles: dots to drag it, a toolbar (pin, float on top, minimise), and resize handles on its right edge, bottom edge and corner
 function addGrips(box){
-  box.querySelectorAll(':scope > .grip, :scope > .note-chip').forEach(g => g.remove());
+  box.querySelectorAll(':scope > .grip, :scope > .nbar, :scope > .note-chip').forEach(g => g.remove());
   const inline = box.classList.contains('inline');
-  const grip = (dir, ico, title) => {
-    const g = document.createElement('span'); g.className = 'grip g-' + dir; g.dataset.dir = dir; g.title = title; g.setAttribute('aria-hidden', 'true');
+  const grip = (dir, ico, into = box) => {
+    const g = document.createElement('span'); g.className = 'grip g-' + dir; g.dataset.dir = dir; g.setAttribute('aria-hidden', 'true');
     if (ico) g.innerHTML = icon(ico);
-    box.append(g);
+    into.append(g);
   };
-  if (!inline) grip('float', 'float', 'Put this note beside the text (on top of the page) or back between the lines');
-  grip('min', 'minus', 'Minimise this note');
-  grip('pin', 'pin', box.classList.contains('pinned') ? 'Unpin: let this note be minimised again' : 'Pin to page: keep this note open');
+  if (!inline) grip('move', 'grip');
+  const bar = document.createElement('span'); bar.className = 'nbar'; bar.setAttribute('aria-hidden', 'true'); box.append(bar);
+  grip('pin', 'pin', bar);
+  if (!inline) grip('float', 'layers', bar);
+  grip('min', 'minimize', bar);
   const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'note-chip'; chip.title = 'Show this note'; chip.innerHTML = icon('pen');
   box.append(chip);
   if (box.classList.contains('collapsed')) setCollapsed(box, true);
-  if (!inline) grip('move', 'move', box.classList.contains('sticky') ? 'Drag the tape to move this sticky note, even onto another page' : 'Drag to move this note');
-  grip('e', null, 'Drag to change the width');
-  grip('s', null, 'Drag to change the height');
-  grip('se', null, 'Drag to resize');
+  grip('e'); grip('s'); grip('se', 'corner');
+  gripTitles(box);
 }
 function makeBox(inline){
   const box = document.createElement(inline ? 'span' : 'div'); box.className = inline ? 'notebox inline' : 'notebox';
@@ -1392,7 +1452,7 @@ main.addEventListener('pointerdown', e => {
   if (reading && !['min', 'pin'].includes(kind)) return;
   if (['pin', 'float', 'min'].includes(kind)) {           // buttons: act on the press, and ignore the click that follows
     e.preventDefault(); e.stopPropagation(); swallow();
-    const box = g.parentElement;
+    const box = g.closest('.notebox');
     if (kind === 'pin') togglePin(box);
     else if (kind === 'float') toggleFloat(box);
     else { if (box.contains(document.activeElement)) document.activeElement.blur(); setCollapsed(box, true); afterNotesToggle(); }
@@ -1427,7 +1487,7 @@ function swallow(ms = 600){ swallowClick = true; setTimeout(() => { swallowClick
 main.addEventListener('click', e => {
   if (swallowClick) { swallowClick = false; return; }
   const chip = e.target.closest('.note-chip');
-  if (chip) { const box = chip.parentElement; setCollapsed(box, false); raise(box); afterNotesToggle(); const m = box.querySelector('.mine'); if (m && !reading) focusNote(m); return; }
+  if (chip) { const box = chip.parentElement; openNote(box); raise(box); afterNotesToggle(); const m = box.querySelector('.mine'); if (m && !reading) focusNote(m); return; }
   if (reading) return;
   const fx = e.target.closest('.formula'); if (fx && fx.closest('.mine')) { openFormula(fx); return; }
   const media = mediaAt(e.target);
@@ -1913,6 +1973,7 @@ function toggleFloat(box){
     box.style.marginLeft = ((+box.dataset.px || 0) * 100).toFixed(2) + '%';
   }
   if (LAYOUTS[layout]) paginateView();
+  gripTitles(box);
   placeFloats(); spreadChips(); saveSoon();
 }
 // ---------- alignment guides: lines show (and snap to) edges and centres of the other note boxes on the page ----------
@@ -2594,7 +2655,7 @@ document.querySelectorAll('.notes-toggle').forEach(b => b.onclick = () => {
   if (hide && document.activeElement?.closest?.('.notebox')) document.activeElement.blur();
   for (const b of main.querySelectorAll('.notebox')) {
     if (hide) setCollapsed(b, true);                  // pinned notes stay open
-    else b.classList.remove('collapsed');             // every note opens, pinned or not
+    else if (b.classList.contains('collapsed')) openNote(b);     // every note opens (where its pencil is), pinned or not
   }
   afterNotesToggle();
 });
@@ -3686,7 +3747,7 @@ $('#noteList').addEventListener('click', e => { const c = e.target.closest('.nca
 function jumpToNote(box){
   if (!box?.isConnected) return;
   if (narrow.matches) setPanel('notes', false);
-  if (box.classList.contains('collapsed')) { setCollapsed(box, false); afterNotesToggle(); }
+  if (box.classList.contains('collapsed')) { openNote(box); afterNotesToggle(); }
   raise(box);
   box.scrollIntoView({block: 'center', behavior: smoothScroll()});
   box.classList.remove('flash'); void box.offsetWidth; box.classList.add('flash');
@@ -4250,6 +4311,86 @@ stickyPad.addEventListener('click', () => {
   stickyOnPage(t);
   if (t) { newNote.value = ''; growNote(); newNote.focus(); }
 });
+
+// ================= tooltips: a short note on what each control does, after a brief pause =================
+// they take the place of the browser's own (slow, plain) tooltips: a tooltip shows about half a second after you point
+// at something, straight away as you move along to the next one, for keyboard focus too, and goes as soon as you click,
+// scroll, type or move off. Touch screens don't get them.
+const qtip = Object.assign(document.createElement('div'), {className: 'qtip', id: 'qtip', hidden: true});
+qtip.setAttribute('role', 'tooltip');
+document.body.append(qtip);
+let tipFor = null, tipTimer = null, tipHiddenAt = 0;
+// an element's tooltip text; its title moves here (so the browser's own tooltip doesn't show too) and stays readable by screen readers
+function tipText(el){
+  const t = el.getAttribute('title');
+  if (t !== null) {
+    el.removeAttribute('title'); el.dataset.tip = t;
+    const name = el.getAttribute('aria-label');
+    if (!name && !el.textContent.trim()) el.setAttribute('aria-label', t.split(/[:(\n]/)[0].trim() || t);
+    if (t && name !== t) el.setAttribute('aria-description', t.replace(/\s+/g, ' '));
+  }
+  return (el.dataset.tip || '').trim();
+}
+// "Name: what it does (Ctrl+K)" becomes a name, a line about what it does, and the keys
+function fillTip(text){
+  const keys = [];
+  text = text.replace(/\s*\(((?:Ctrl|Cmd|Shift|Alt|Esc|Enter|Tab)[^()]{0,16})\)/g, (m, k) => { keys.push(k); return ''; }).trim();
+  let label = text, desc = '';
+  const brk = text.indexOf('\n\n'), colon = text.match(/^([^:.\n]{2,34}):\s+([\s\S]+)$/), dot = text.match(/^([^.\n]{2,48}\.)\s+([\s\S]+)$/);
+  if (brk > 0) { label = text.slice(0, brk); desc = text.slice(brk + 2); }
+  else if (colon) { label = colon[1]; desc = colon[2][0].toUpperCase() + colon[2].slice(1); }
+  else if (dot && text.length > 70) { label = dot[1].replace(/\.$/, ''); desc = dot[2]; }
+  const t = document.createElement('div'); t.className = 't';
+  t.append(Object.assign(document.createElement('span'), {textContent: label}));
+  if (keys.length) {
+    const k = document.createElement('span'); k.className = 'k';
+    keys[0].split(/\+(?=.)/).forEach(x => k.append(Object.assign(document.createElement('kbd'), {textContent: x.replace(/^Ctrl$/, navigator.platform?.startsWith('Mac') ? '⌘' : 'Ctrl')})));
+    t.append(k);
+  }
+  qtip.replaceChildren(t);
+  if (desc) qtip.append(Object.assign(document.createElement('div'), {className: 'd', textContent: desc}));
+}
+function placeQtip(el){
+  const r = el.getBoundingClientRect(), w = qtip.offsetWidth, h = qtip.offsetHeight;
+  let top = r.bottom + 8;
+  if (top + h > innerHeight - 8) top = r.top - 8 - h;
+  const left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+  qtip.style.translate = `${Math.round(left)}px ${Math.round(Math.max(8, top))}px`;
+}
+function showTip(el, now){
+  clearTimeout(tipTimer);
+  const text = tipText(el);
+  if (!text || text === el.textContent.trim()) { hideTip(); return; }     // nothing to add to what it already says
+  if (!qtip.hidden) { qtip.hidden = true; qtip.classList.remove('on'); tipHiddenAt = Date.now(); }
+  tipFor = el;
+  const wait = now || Date.now() - tipHiddenAt < 600 ? 0 : 450;
+  tipTimer = setTimeout(() => {
+    if (tipFor !== el || !el.isConnected || !el.getClientRects().length) return;
+    fillTip(el.dataset.tip); qtip.hidden = false; placeQtip(el);
+    requestAnimationFrame(() => qtip.classList.add('on'));
+  }, wait);
+}
+function hideTip(){
+  clearTimeout(tipTimer);
+  if (!qtip.hidden) tipHiddenAt = Date.now();
+  qtip.hidden = true; qtip.classList.remove('on'); tipFor = null;
+}
+document.addEventListener('pointerover', e => {
+  if (e.pointerType === 'touch' || e.buttons) return;              // not for fingers, nor while dragging
+  const el = e.target.closest?.('[title], [data-tip]');
+  if (el === tipFor) return;
+  if (el) showTip(el); else if (tipFor) hideTip();
+});
+document.addEventListener('pointerout', e => { if (tipFor && !(e.relatedTarget && tipFor.contains(e.relatedTarget))) hideTip(); });
+document.addEventListener('focusin', e => { const el = e.target.closest?.('[title], [data-tip]'); if (el && el.matches(':focus-visible')) showTip(el, true); });
+document.addEventListener('focusout', () => { if (tipFor) hideTip(); });
+for (const t of ['pointerdown', 'keydown', 'wheel']) addEventListener(t, () => { if (tipFor) hideTip(); }, {capture: true, passive: true});
+// something scrolled (a panel can scroll by itself): the tooltip stays only while its control is still under the pointer
+addEventListener('scroll', () => {
+  if (!tipFor) return;
+  if (tipFor.matches(':hover') || (tipFor === document.activeElement && tipFor.matches(':focus-visible'))) { if (!qtip.hidden) placeQtip(tipFor); }
+  else hideTip();
+}, {capture: true, passive: true});
 
 // ================= install as an app (when it is served from the web) =================
 let installEvt = null;
