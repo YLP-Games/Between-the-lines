@@ -635,6 +635,42 @@ body.pgdragging,body.pgdragging *{cursor:grabbing!important}
 .linkbtn{border:none;background:none;padding:0;font:inherit;font-size:16px;color:var(--accent);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .linkbtn:hover{color:var(--ink)}
 #driveSec .btn{margin-top:2px}
+/* the share dialog */
+.shscrim{position:fixed;inset:0;z-index:72;background:rgba(16,24,40,.28)}
+.sharebox{z-index:73;left:50%;top:max(16px,7vh);translate:-50% 0;width:min(540px,calc(100vw - 24px));max-height:calc(100dvh - max(16px,7vh) - 12px);overflow:auto;box-sizing:border-box;padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px;font:16px/1.35 var(--ui)}
+.sharebox.busy{cursor:progress}
+.sharebox.busy .shbody{opacity:.6;pointer-events:none}
+.shhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.shhead h2{margin:0;font:700 20px var(--display)}
+.shbody{display:flex;flex-direction:column;gap:12px}
+.sharebox h3{margin:0 0 6px;font:700 17px var(--display)}
+.sharebox p{margin:0}
+.shnote{font-size:14px;color:var(--muted);line-height:1.4}
+.shwhat{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.shwhat select,.shadd select,.shgen select{font:inherit;font-size:15px;height:34px}
+.shadd{display:flex;gap:6px}
+.shadd input,.shlinkrow input{flex:1;min-width:0;height:34px;box-sizing:border-box;font:inherit;font-size:15px;color:var(--ink);background:var(--surface-2);border:1.5px solid var(--pencil);border-radius:var(--wob);padding:0 9px}
+.sharebox textarea{display:block;width:100%;box-sizing:border-box;min-height:54px;max-height:140px;resize:vertical;margin-top:6px;padding:6px 9px;border:1.5px solid var(--pencil);border-radius:var(--wob);background:var(--surface-2);color:var(--ink);font:15px/1.35 var(--ui)}
+.sharebox input:focus,.sharebox textarea:focus,.sharebox select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.shchk{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:15px;cursor:pointer}
+.shchk input{width:16px;height:16px;margin:0;accent-color:var(--accent)}
+.shgo{display:flex;justify-content:flex-end;margin-top:8px}
+.shpeople{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.shpeople li{display:flex;align-items:center;gap:8px;padding:4px 2px;border-bottom:1.5px dashed var(--line)}
+.shpeople li:last-child{border-bottom:none}
+.shwho{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}
+.shwho b{font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shwho small{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shrole{flex:none;font-size:14px;color:var(--muted)}
+.shpeople .x{flex:none;border:none;background:transparent;padding:2px 8px;border-radius:999px;font-size:17px;line-height:1.2;color:var(--muted);cursor:pointer}
+.shpeople .x:hover{background:var(--danger);color:#fff}
+.shpeople .none{color:var(--muted);font-style:italic;font-size:14px;border-bottom:none}
+.shlinkrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.shlinkrow input{flex:1 1 180px}
+.shlinkrow .btn{height:34px;font-size:15px}
+#shCopy[data-done] {color:var(--ok);border-color:var(--ok)}
+.shsay{min-height:1.4em;font-size:15px;color:var(--ok)}
+.shsay[data-bad]{color:var(--danger)}
 
 /* ================= add a note from the Notes panel ================= */
 .ncompose{display:flex;flex-direction:column;gap:8px;padding:2px 0 4px}
@@ -948,6 +984,7 @@ try {
         <div class="mhead">Google Drive</div>
         <button type="button" data-drive="notebook"><strong>Notebook to Drive</strong><small>Saves the notebook file in Google Drive; next time it updates the same file</small></button>
         <button type="button" data-drive="pdf"><strong>PDF to Drive</strong><small>The PDF, with notes as chosen above, saved in Google Drive</small></button>
+        <button type="button" data-drive="share"><strong>Share…</strong><small>Saves it to Google Drive, then lets you add people or copy a link</small></button>
       </div>
     </span>
     <button class="btn" id="helpBtn" aria-haspopup="dialog" aria-expanded="false" aria-label="Help and settings" title="Help and settings: how to use it, shortcuts, your dictionary and favourite colours"><svg class="i"><use href="#i-help"/></svg></button>
@@ -4417,7 +4454,7 @@ function openDocMenu(id, from, kind = 'doc'){
     docMenu.innerHTML = `<button type="button" role="menuitem" data-act="rename">${icon('pen')}Rename</button><button type="button" role="menuitem" data-act="duplicate">${icon('copy')}Duplicate</button>` +
       (id !== curId ? `<button type="button" role="menuitem" data-act="beside">${icon('panel-right')}${id === bs.id ? 'Close beside' : 'Open beside'}</button>` : '') +
       (folders.length ? `<button type="button" role="menuitem" data-act="move" aria-expanded="false">${icon('folder')}Move to…</button>` : '') +
-      `<button type="button" role="menuitem" data-act="fav">${icon(fav ? 'star-off' : 'star')}${fav ? 'Remove from Favourites' : 'Add to Favourites'}</button><hr><button type="button" role="menuitem" data-act="trash">${icon('trash')}Move to Trash</button>`;
+      `<button type="button" role="menuitem" data-act="fav">${icon(fav ? 'star-off' : 'star')}${fav ? 'Remove from Favourites' : 'Add to Favourites'}</button><button type="button" role="menuitem" data-act="share" title="Save this notebook to Google Drive and share it with people or by link">${icon('drive')}Share via Google Drive…</button><hr><button type="button" role="menuitem" data-act="trash">${icon('trash')}Move to Trash</button>`;
   }
   docMenu.hidden = false; placeMenu();
   docMenu.querySelector('button').focus();
@@ -4436,7 +4473,7 @@ docMenu.addEventListener('click', e => {
   closeDocMenu();
   if (b.dataset.to !== undefined) { (kind === 'folder' ? moveFolder : moveDoc)(id, b.dataset.to || null); return; }
   (kind === 'folder' ? {rename: startRenameFolder, sub: newFolder, here: newDocIn, rmfolder: deleteFolder}
-                     : {rename: startRename, duplicate: duplicateDoc, beside: toggleBeside, fav: toggleFav, trash: trashDoc})[b.dataset.act]?.(id);
+                     : {rename: startRename, duplicate: duplicateDoc, beside: toggleBeside, fav: toggleFav, share: shareDoc, trash: trashDoc})[b.dataset.act]?.(id);
 });
 document.addEventListener('mousedown', e => { if (!docMenu.hidden && !docMenu.contains(e.target) && !e.target.closest('[data-more], [data-fmore]')) closeDocMenu(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !docMenu.hidden) { const f = menuFrom; closeDocMenu(); f?.focus(); } });
@@ -6090,10 +6127,20 @@ const DRIVE_TYPES = ['application/pdf', 'application/vnd.openxmlformats-officedo
 const DRIVE_EXT = {'application/pdf': 'pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
   'text/markdown': 'md', 'text/x-markdown': 'md', 'text/plain': 'txt', 'text/html': 'html', 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp', 'image/bmp': 'bmp'};
 const DRIVE_HAS_EXT = /\.(pdf|pptx|docx|md|markdown|txt|html?|png|jpe?g|gif|webp|bmp)$/i;
+// The picker has tabs: My Drive (folders and Shared drives), Shared with me, Recent and Starred. All use the same file-type filter.
 function drivePick(){
   return driveToken().then(token => new Promise(ok => {
-    const p = google.picker, view = new p.DocsView(p.ViewId.DOCS).setMimeTypes(DRIVE_TYPES.join(',')).setIncludeFolders(true).setSelectFolderEnabled(false);
-    const b = new p.PickerBuilder().addView(view).enableFeature(p.Feature.MULTISELECT_ENABLED).setOAuthToken(token).setTitle('Open from Google Drive')
+    const p = google.picker;
+    const tab = (id, label, set) => {
+      const v = new p.DocsView(id).setMimeTypes(DRIVE_TYPES.join(',')).setIncludeFolders(true).setSelectFolderEnabled(false);
+      set?.(v); v.setLabel?.(label); return v;
+    };
+    const b = new p.PickerBuilder()
+      .addView(tab(p.ViewId.DOCS, 'My Drive', v => v.setEnableDrives(true)))
+      .addView(tab(p.ViewId.DOCS, 'Shared with me', v => v.setOwnedByMe(false)))
+      .addView(tab(p.ViewId.RECENTLY_PICKED, 'Recent'))
+      .addView(tab(p.ViewId.DOCS, 'Starred', v => v.setStarred(true)))
+      .enableFeature(p.Feature.MULTISELECT_ENABLED).enableFeature(p.Feature.SUPPORT_DRIVES).setOAuthToken(token).setTitle('Open from Google Drive')
       .setCallback(data => {
         const a = data[p.Response.ACTION];
         if (a === p.Action.LOADED) { loaded = true; return; }
@@ -6118,7 +6165,7 @@ function drivePick(){
 // a file as a File with the right ending; Google Slides come as a PDF and Google Docs as a Word file
 async function driveDownload(d){
   const id = encodeURIComponent(d.id);
-  let url = `${DRIVE_API}/files/${id}?alt=media`, mime = d.mime, name = d.name || 'Untitled';
+  let url = `${DRIVE_API}/files/${id}?alt=media&supportsAllDrives=true`, mime = d.mime, name = d.name || 'Untitled';
   if (mime === 'application/vnd.google-apps.presentation') { mime = 'application/pdf'; url = `${DRIVE_API}/files/${id}/export?mimeType=${encodeURIComponent(mime)}`; }
   else if (mime === 'application/vnd.google-apps.document') { mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'; url = `${DRIVE_API}/files/${id}/export?mimeType=${encodeURIComponent(mime)}`; }
   if (DRIVE_EXT[mime] && !DRIVE_HAS_EXT.test(name)) name += '.' + DRIVE_EXT[mime];
@@ -6129,7 +6176,11 @@ async function driveDownload(d){
   return new File([await res.blob()], name, {type: mime});
 }
 async function driveParent(id){
-  try { return (await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?fields=parents`)).json()).parents?.[0] || ''; } catch { return ''; }
+  try { return (await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?fields=parents&supportsAllDrives=true`)).json()).parents?.[0] || ''; } catch { return ''; }
+}
+// can this person change the file? (a notebook shared with them to view only can't be saved back over)
+async function driveCanEdit(id){
+  try { return (await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?fields=capabilities(canEdit)&supportsAllDrives=true`)).json()).capabilities?.canEdit !== false; } catch { return true; }
 }
 async function driveOpen(){
   if (!driveSetUp()) return;
@@ -6140,12 +6191,13 @@ async function driveOpen(){
       let file;
       try { file = await driveDownload(d); }
       catch (err) { driveSay(err, `download “${d.name}”`); continue; }
-      const folder = await driveParent(d.id), before = curId, had = !!main.querySelector('.slide');
+      const isNb = /\.html?$/i.test(file.name);
+      const [folder, canEdit] = await Promise.all([driveParent(d.id), isNb ? driveCanEdit(d.id) : true]), before = curId, had = !!main.querySelector('.slide');
       await openFiles([file]);
       const doc = curDoc();
       if (doc && main.querySelector('.slide') && (curId !== before || !had)) {         // the file did become a notebook: remember where it came from
-        if (folder) doc.driveFolder = folder;
-        if (/\.html?$/i.test(file.name)) doc.driveNb = d.id;
+        if (isNb && !canEdit) { doc.driveNbRO = d.id; toast(`“${d.name}” is shared with you to view only. Notebook to Drive will save a copy in your own Drive.`); }
+        else { if (folder) doc.driveFolder = folder; if (isNb) doc.driveNb = d.id; }
         putAll({docs});
       }
     }
@@ -6175,27 +6227,250 @@ function driveSend(method, url, meta, blob, progress, again){
   });
 }
 // kind: 'notebook' or 'pdf'. The first save makes a file (next to the source, if it came from Drive); after that the same file is updated.
+// A notebook you can't edit (shared with you to view only) is saved as a copy in your own Drive instead. Gives back {id, name, copy}.
+async function driveStore(kind, quiet){
+  const key = kind === 'pdf' ? 'drivePdf' : 'driveNb';
+  await flushSave();
+  const doc = curDoc(), file = kind === 'pdf' ? await pdfFile() : await notebookFile();
+  let last = -1;
+  const progress = quiet || file.blob.size < 1.5e6 ? null : f => { const n = Math.round(f * 100); if (n !== last) { last = n; toast(`Uploading “${file.name}” to Google Drive: ${n}%`); } };
+  if (!quiet) toast(progress ? `Uploading “${file.name}” to Google Drive…` : 'Saving to Google Drive…');
+  const fields = '&fields=id,name,parents&supportsAllDrives=true';
+  const create = (meta, blob = file.blob) => driveSend('POST', `${DRIVE_UPLOAD}/files?uploadType=multipart${fields}`, {mimeType: blob.type, ...meta}, blob, progress);
+  const copy = () => create({name: notebookName() + ' (my copy).html'});          // into your own Drive, not the shared folder
+  let out, mine = false;
+  if (kind === 'notebook' && !doc?.[key] && doc?.driveNbRO) { out = await copy(); mine = true; }
+  else if (doc?.[key]) {
+    try { out = await driveSend('PATCH', `${DRIVE_UPLOAD}/files/${encodeURIComponent(doc[key])}?uploadType=multipart${fields}`, {}, file.blob, progress); }
+    catch (err) {
+      if (err.status === 404) out = await create({name: file.name, ...(doc.driveFolder ? {parents: [doc.driveFolder]} : {})});          // the file is gone from Drive: make a new one
+      else if (err.status === 403 && kind === 'notebook' && !/rate|quota/i.test(err.message)) { out = await copy(); mine = true; }          // no longer allowed to change it
+      else throw err;
+    }
+  } else out = await create({name: file.name, ...(doc?.driveFolder ? {parents: [doc.driveFolder]} : {})});
+  if (doc && docs.includes(doc)) {
+    doc[key] = out.id;
+    if (mine) { delete doc.driveNbRO; doc.driveFolder = out.parents?.[0] || ''; }
+    else if (!doc.driveFolder && out.parents?.[0]) doc.driveFolder = out.parents[0];
+    putAll({docs});
+  }
+  return {id: out.id, name: out.name || file.name, copy: mine};
+}
 async function driveSave(kind){
   if (!driveSetUp()) return;
   if (!main.querySelector('.slide')) { toast('Open your slides first, then save to Google Drive.'); return; }
-  const key = kind === 'pdf' ? 'drivePdf' : 'driveNb';
   try {
     await driveToken();                         // sign in first, while the click still counts, then build the file
-    await flushSave();
-    const doc = curDoc(), file = kind === 'pdf' ? await pdfFile() : await notebookFile();
-    let last = -1;
-    const progress = file.blob.size < 1.5e6 ? null : f => { const n = Math.round(f * 100); if (n !== last) { last = n; toast(`Uploading “${file.name}” to Google Drive: ${n}%`); } };
-    toast(progress ? `Uploading “${file.name}” to Google Drive…` : 'Saving to Google Drive…');
-    const fields = '&fields=id,name,parents';
-    const create = () => driveSend('POST', `${DRIVE_UPLOAD}/files?uploadType=multipart${fields}`, {name: file.name, mimeType: file.blob.type, ...(doc?.driveFolder ? {parents: [doc.driveFolder]} : {})}, file.blob, progress);
-    let out;
-    if (doc?.[key]) {
-      try { out = await driveSend('PATCH', `${DRIVE_UPLOAD}/files/${encodeURIComponent(doc[key])}?uploadType=multipart${fields}`, {}, file.blob, progress); }
-      catch (err) { if (err.status !== 404) throw err; out = await create(); }          // the file is gone from Drive: make a new one
-    } else out = await create();
-    if (doc && docs.includes(doc)) { doc[key] = out.id; if (!doc.driveFolder && out.parents?.[0]) doc.driveFolder = out.parents[0]; putAll({docs}); }
-    toast(`Saved to Google Drive: ${out.name || file.name} (${new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})})`);
+    const out = await driveStore(kind), at = new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'});
+    toast(out.copy ? `You can only view the original, so a copy was saved in your own Drive: ${out.name} (${at})` : `Saved to Google Drive: ${out.name} (${at})`);
   } catch (err) { driveSay(err, 'save to Google Drive'); }
+}
+
+// ---------- share from the app ----------
+// The notebook (or PDF) is saved to Drive first, then a small dialog adds people, sets who can open the link, and copies it.
+const SH_ROLE = {owner: 'Owner', organizer: 'Manager', fileOrganizer: 'Manager', writer: 'Editor', commenter: 'Commenter', reader: 'Viewer'};
+const SH_MAIL = /^[^\s@,;<>()]+@[^\s@,;<>()]+\.[^\s@,;<>()]+$/;
+const share = {open: false, kind: 'notebook', id: '', name: '', link: '', perms: [], busy: false, prev: null, copied: 0};
+let shBox = null, shScrim = null;
+const shEl = s => shBox.querySelector(s);
+function shBuild(){
+  shScrim = Object.assign(document.createElement('div'), {className: 'shscrim', hidden: true});
+  shBox = document.createElement('div'); shBox.className = 'pop sharebox'; shBox.hidden = true;
+  shBox.setAttribute('role', 'dialog'); shBox.setAttribute('aria-modal', 'true'); shBox.setAttribute('aria-labelledby', 'shTitle');
+  shBox.innerHTML = `<div class="shhead"><h2 id="shTitle">Share via Google Drive</h2><button type="button" class="btn" id="shClose" aria-label="Close" title="Close (Esc)">${icon('x')}</button></div>
+<div class="shbody">
+  <div>
+    <label class="shwhat">Share <select id="shWhat" title="Share the notebook file, or a PDF of it. Either one is saved to your Google Drive first."><option value="notebook">The notebook file</option><option value="pdf">A PDF</option></select></label>
+    <p class="shnote" id="shFile"></p>
+    <p class="shnote" id="shHow"></p>
+  </div>
+  <section>
+    <h3>Add people</h3>
+    <div class="shadd">
+      <input type="text" id="shEmails" aria-label="Email addresses" placeholder="Email addresses, separated by commas" autocomplete="off" spellcheck="false" inputmode="email">
+      <select id="shRole" aria-label="What they can do" title="What the people you add can do"><option value="reader">Viewer</option><option value="commenter">Commenter</option><option value="writer">Editor</option></select>
+    </div>
+    <label class="shchk"><input type="checkbox" id="shNotify" checked> Notify people</label>
+    <textarea id="shMsg" aria-label="Message" placeholder="Add a message (optional)"></textarea>
+    <div class="shgo"><button type="button" class="btn primary" id="shAdd">Share</button></div>
+  </section>
+  <section>
+    <h3>People with access</h3>
+    <ul class="shpeople" id="shPeople"></ul>
+  </section>
+  <section class="shgen">
+    <h3>General access</h3>
+    <select id="shGeneral" aria-label="General access"><option value="none">Restricted</option><option value="reader">Anyone with the link: Viewer</option><option value="commenter">Anyone with the link: Commenter</option></select>
+    <p class="shnote" id="shGenNote"></p>
+  </section>
+  <div class="shlinkrow">
+    <input type="text" id="shLink" readonly aria-label="Link to the file">
+    <button type="button" class="btn outline" id="shCopy" title="Copy the link to this file">${icon('link')}<span>Copy link</span></button>
+    <a class="btn outline" id="shOpen" target="_blank" rel="noopener" title="Open this file in Google Drive">${icon('drive')}Open in Drive</a>
+  </div>
+</div>
+<p class="shsay" id="shSay" role="status" aria-live="polite"></p>`;
+  document.body.append(shScrim, shBox);
+  shScrim.addEventListener('click', closeShare);
+  shEl('#shClose').onclick = closeShare;
+  shEl('#shAdd').onclick = shAdd;
+  shEl('#shEmails').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); shAdd(); } });
+  shEl('#shNotify').onchange = shNotifyShow;
+  shEl('#shGeneral').onchange = e => shGeneral(e.target.value);
+  shEl('#shWhat').onchange = e => shSwitch(e.target.value);
+  shEl('#shCopy').onclick = shCopy;
+  shEl('#shPeople').addEventListener('click', e => { const b = e.target.closest('[data-pid]'); if (b) shRemove(b.dataset.pid); });
+  shBox.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeShare(); return; }
+    if (e.key !== 'Tab') return;
+    const f = [...shBox.querySelectorAll('button, input, select, textarea, a[href]')].filter(x => !x.disabled && x.getClientRects().length);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && (document.activeElement === first || !shBox.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (document.activeElement === last || !shBox.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
+  });
+  document.addEventListener('focusin', e => { if (share.open && !shBox.contains(e.target)) shEl('#shEmails').focus(); });
+  document.addEventListener('keydown', e => { if (share.open && e.key === 'Escape' && !shBox.contains(e.target)) { e.preventDefault(); closeShare(); } });       // focus got lost outside the dialog
+}
+const shNotifyShow = () => { shEl('#shMsg').hidden = !shEl('#shNotify').checked; };
+const shSay = (t, bad) => { const e = shEl('#shSay'); e.textContent = t || ''; if (bad) e.dataset.bad = '1'; else delete e.dataset.bad; };
+// what Drive said, in one calm sentence
+function shWhy(err){
+  const k = err?.kind;
+  return k === 'network' ? `Couldn’t reach Google Drive (${err.message}). Nothing was changed.`
+    : k === 'closed' || k === 'denied' || k === 'blocked' ? 'Google sign-in didn’t go through, so nothing was changed.'
+    : `Google Drive said: ${err?.message || 'something went wrong'}`;
+}
+// one request at a time; whatever goes wrong is said in the dialog and nothing else changes
+async function shRun(fn){
+  if (share.busy) return;
+  const was = document.activeElement;
+  share.busy = true; shBox.classList.add('busy'); shBox.setAttribute('aria-busy', 'true');
+  try { await fn(); }
+  catch (err) { console.warn(err); shSay(shWhy(err), true); }
+  finally { share.busy = false; shBox.classList.remove('busy'); shBox.removeAttribute('aria-busy'); if (share.open) { shRender(); if (!shBox.contains(document.activeElement)) (shBox.contains(was) ? was : shEl('#shEmails')).focus(); } }
+}
+const shUrl = tail => `${DRIVE_API}/files/${encodeURIComponent(share.id)}${tail}`;
+const shJson = (method, url, body) => driveFetch(url, {method, ...(body ? {headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)} : {})});
+// the file's link and who has access
+async function shLoad(){
+  const [file, list] = await Promise.all([
+    driveFetch(shUrl('?fields=webViewLink&supportsAllDrives=true')).then(r => r.json()),
+    driveFetch(shUrl('/permissions?fields=permissions(id,emailAddress,displayName,role,type,domain)&pageSize=100&supportsAllDrives=true')).then(r => r.json()),
+  ]);
+  share.link = file.webViewLink || ''; share.perms = list.permissions || [];
+}
+function shRender(){
+  const nb = share.kind === 'notebook';
+  shEl('#shWhat').value = share.kind;
+  shEl('#shFile').textContent = `“${share.name}” is saved in your Google Drive.`;
+  shEl('#shHow').textContent = nb ? 'People you share with can open the notebook file in Between the Lines (Open › From Google Drive) to see your notes, or download it.' : 'People you share with can open the PDF in Google Drive to read your notes, or download it.';
+  const people = share.perms.filter(p => p.type !== 'anyone');
+  shEl('#shPeople').innerHTML = people.length ? people.map(p => {
+    const who = p.type === 'domain' ? `Anyone at ${p.domain || 'your organisation'}` : p.displayName || p.emailAddress || 'Someone', sub = p.emailAddress && p.emailAddress !== who ? p.emailAddress : '';
+    return `<li><span class="shwho"><b>${esc(who)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span><span class="shrole">${SH_ROLE[p.role] || esc(p.role)}</span>` +
+      (p.role === 'owner' ? '' : `<button type="button" class="x" data-pid="${esc(p.id)}" aria-label="Remove ${esc(p.emailAddress || who)}" title="Remove access for ${esc(p.emailAddress || who)}">×</button>`) + '</li>';
+  }).join('') : '<li class="none">Just you, so far.</li>';
+  const any = share.perms.find(p => p.type === 'anyone');
+  shEl('#shGeneral').value = any ? (any.role === 'commenter' ? 'commenter' : 'reader') : 'none';
+  shEl('#shGenNote').textContent = any ? 'Anyone who has the link can open it, without signing in.' : 'Only the people above can open it.';
+  shEl('#shLink').value = share.link;
+  const open = shEl('#shOpen'); if (share.link) open.href = share.link; else open.removeAttribute('href');
+  shEl('#shCopy').disabled = !share.link; open.hidden = !share.link;
+  shNotifyShow();
+}
+function closeShare(){
+  if (!share.open) return;
+  share.open = false; shBox.hidden = shScrim.hidden = true;
+  if (share.prev?.isConnected && share.prev !== document.body) share.prev.focus({preventScroll: true});
+  share.prev = null;
+}
+function shOpenDialog(out, kind, note, back){
+  if (!shBox) shBuild();
+  Object.assign(share, {kind, id: out.id, name: out.name, link: '', perms: []});
+  const at = document.activeElement; share.prev = at && at !== document.body && at.getClientRects().length ? at : back?.() || null; share.open = true;
+  shScrim.hidden = shBox.hidden = false;
+  shEl('#shEmails').value = ''; shEl('#shMsg').value = ''; shEl('#shNotify').checked = true;
+  shSay(note || '');
+  shRender();
+  shEl('#shEmails').focus();
+  shRun(shLoad);
+}
+// the entry point: save to Drive, then show the dialog. prep runs first (it may switch notebook); it's after sign-in so the pop-up can still open.
+async function driveShare(kind, prep, back){
+  if (!driveSetUp() || share.open) return;
+  try {
+    await driveToken();
+    if (prep) await prep();
+    if (!main.querySelector('.slide')) { toast('Open your slides first, then share.'); return; }
+    const out = await driveStore(kind);
+    toast('');
+    shOpenDialog(out, kind, out.copy ? 'You can only view the original, so this is a copy saved in your own Drive. That is the file being shared.' : '', back);
+  } catch (err) { driveSay(err, 'share through Google Drive'); }
+}
+// the notebook's ⋯ menu: make it the open notebook, then share it
+function shareDoc(id){ driveShare('notebook', async () => { if (id !== curId) await switchDoc(id); }, () => $(`#docList [data-more="${id}"]`)); }
+// switch between sharing the notebook file and its PDF
+function shSwitch(kind){
+  shRun(async () => {
+    const was = share.kind;
+    shSay(kind === 'pdf' ? 'Saving the PDF to Google Drive…' : 'Saving the notebook to Google Drive…');
+    try { const out = await driveStore(kind, true); Object.assign(share, {kind, id: out.id, name: out.name}); }
+    catch (err) { share.kind = was; throw err; }
+    await shLoad(); shSay('');
+  });
+}
+function shAdd(){
+  if (share.busy) return;
+  const seen = new Set(), list = [];
+  for (const m of shEl('#shEmails').value.split(/[\s,;]+/).map(x => x.trim()).filter(Boolean)) if (!seen.has(m.toLowerCase())) { seen.add(m.toLowerCase()); list.push(m); }
+  if (!list.length) { shSay('Type an email address first. Use commas between several.', true); shEl('#shEmails').focus(); return; }
+  const bad = list.filter(m => !SH_MAIL.test(m));
+  if (bad.length) { shSay(`“${bad[0]}” doesn’t look like an email address${bad.length > 1 ? ` (nor ${bad.length - 1} other${bad.length > 2 ? 's' : ''})` : ''}. Nothing was shared.`, true); shEl('#shEmails').focus(); return; }
+  const role = shEl('#shRole').value, notify = shEl('#shNotify').checked, msg = shEl('#shMsg').value.trim();
+  shRun(async () => {
+    const done = [], failed = []; let why = '';
+    shSay('');
+    for (const m of list) {
+      try {
+        await shJson('POST', shUrl(`/permissions?supportsAllDrives=true&sendNotificationEmail=${notify}${notify && msg ? '&emailMessage=' + encodeURIComponent(msg) : ''}`), {type: 'user', role, emailAddress: m});
+        done.push(m);
+      } catch (err) { if (err.kind !== 'http') throw err; failed.push(m); why = err.message; }
+    }
+    shEl('#shEmails').value = failed.join(', ');
+    try { await shLoad(); } catch {}
+    if (failed.length) shSay(`${done.length ? `Shared with ${done.join(', ')}. ` : ''}Couldn’t share with ${failed.join(', ')}. Google Drive said: ${why}`, true);
+    else { shSay(`Shared with ${done.join(', ')}.${notify ? ' They’ll get an email.' : ''}`); shEl('#shMsg').value = ''; }
+  });
+}
+function shRemove(pid){
+  const p = share.perms.find(x => x.id === pid); if (!p) return;
+  shRun(async () => {
+    shSay('');
+    await shJson('DELETE', shUrl(`/permissions/${encodeURIComponent(pid)}?supportsAllDrives=true`));
+    await shLoad();
+    shSay(`Removed ${p.emailAddress || p.displayName || 'them'}.`);
+  });
+}
+// Restricted, or anyone with the link as a viewer or commenter
+function shGeneral(val){
+  shRun(async () => {
+    shSay('');
+    const any = share.perms.find(p => p.type === 'anyone');
+    if (val === 'none') { if (any) await shJson('DELETE', shUrl(`/permissions/${encodeURIComponent(any.id)}?supportsAllDrives=true`)); }
+    else if (any) { if (any.role !== val) await shJson('PATCH', shUrl(`/permissions/${encodeURIComponent(any.id)}?supportsAllDrives=true`), {role: val}); }
+    else await shJson('POST', shUrl('/permissions?supportsAllDrives=true'), {type: 'anyone', role: val});
+    await shLoad();
+    shSay(val === 'none' ? 'Now only the people listed can open it.' : `Anyone with the link can now ${val === 'commenter' ? 'comment on it' : 'view it'}.`);
+  });
+}
+async function shCopy(){
+  if (!share.link) return;
+  try { await navigator.clipboard.writeText(share.link); }
+  catch { const f = shEl('#shLink'); f.focus(); f.select(); try { document.execCommand('copy'); } catch {} }
+  const b = shEl('#shCopy'); b.dataset.done = '1'; b.querySelector('span').textContent = 'Copied';
+  clearTimeout(share.copied);
+  share.copied = setTimeout(() => { delete b.dataset.done; b.querySelector('span').textContent = 'Copy link'; }, 2500);
 }
 
 // ---------- buttons, and the Help & settings section ----------
@@ -6203,7 +6478,7 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-drive-open]')) { if (narrow.matches) setPanel('pages', false); driveOpen(); return; }
   const b = e.target.closest('#saveMenu [data-drive]'); if (!b) return;
   saveMenu.hidden = true; $('#save').setAttribute('aria-expanded', 'false');
-  driveSave(b.dataset.drive);
+  if (b.dataset.drive === 'share') driveShare('notebook', null, () => $('#save')); else driveSave(b.dataset.drive);
 });
 function renderDrive(){
   const on = driveTokenOk();
@@ -6729,7 +7004,7 @@ async function duplicateDoc(id){
   if (id === curId) await flushSave();                    // so the copy has what is on the page now
   const html = (await get('doc:' + id)) || '';
   const copy = {...d, id: newId(), name: d.name.slice(0, 112) + ' (copy)', named: true, copiedFrom: id, updated: Date.now()};
-  delete copy.fav; delete copy.trashed; delete copy.driveNb; delete copy.drivePdf;       // a copy gets its own files in Google Drive
+  delete copy.fav; delete copy.trashed; delete copy.driveNb; delete copy.driveNbRO; delete copy.drivePdf;       // a copy gets its own files in Google Drive
   docs.splice(docs.indexOf(d) + 1, 0, copy);
   await putAll({['doc:' + copy.id]: html, docs});
   renderDocs();
