@@ -235,29 +235,39 @@ div.mine:empty::before{content:"Type, or press / for options"}
 .pagecard > div.mine{margin:0 14px;padding:8px 14px}
 .pagecard > .notebox{margin:4px 14px;width:calc(100% - 28px);max-width:calc(100% - 28px)}
 .pagecard > .notebox > .mine{padding:8px 22px 8px 14px}
-.grip{position:absolute;width:12px;height:12px;background:#fff;border:2px solid var(--accent);border-radius:2px;box-sizing:border-box;touch-action:none;z-index:3;opacity:0;transition:opacity .15s;color:var(--accent)}
-/* handles show only for the note you point at (or last tapped with a finger), so the page stays clear */
+/* a note box's handles, Notion style: dots beside it to drag, slim bars on its edges and a corner mark to resize, and a small toolbar at its top right.
+   They show only for the note you point at (or last tapped with a finger), so the page stays clear. */
+.grip{position:absolute;z-index:3;box-sizing:border-box;touch-action:none;opacity:0;transition:opacity .15s;user-select:none;-webkit-user-select:none}
 .notebox:hover > .grip,.notebox.touched > .grip{opacity:1}
-.grip .i{width:12px;height:12px;stroke-width:2.2}
-.g-float,.g-min,.g-pin,.g-move{top:-11px;width:22px;height:22px;border-width:1.5px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none}
-.g-move{left:-11px;cursor:move}
-.g-min{right:-11px}
-.g-float{right:17px}
-.g-pin{right:45px}
-.notebox.inline > .g-pin{right:17px}
-.notebox.floating > .g-float,.notebox.pinned > .g-pin{background:var(--accent);color:#fff}
-.notebox.pinned > .g-min{display:none}
-/* the pin shows only while you point at its note (pinned or not); hidden, it can't be clicked by accident */
-.notebox > .g-pin{opacity:0;visibility:hidden;transition:opacity .15s,visibility .15s}
-.notebox:hover > .g-pin,.notebox.touched > .g-pin{opacity:1;visibility:visible}
-.g-se{right:0;bottom:0;cursor:nwse-resize}
-.g-e{right:0;top:50%;transform:translateY(-50%);cursor:ew-resize}
-.g-s{bottom:0;left:50%;transform:translateX(-50%);cursor:ns-resize}
-.notebox.inline > .g-s{display:none}
+.grip .i{width:15px;height:15px}
+.g-move{left:-14px;top:3px;width:15px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:#8f8d88;cursor:grab}
+.g-move:hover{background:rgba(55,53,47,.09);color:#55534e}
+.g-move:active{cursor:grabbing}
+.pagecard > .notebox:not(.floating) > .g-move{left:-13px;width:13px}
+.g-e,.g-s{background:#fff;border:1.5px solid #8f8d86;border-radius:9px}
+.g-e{right:-4px;top:50%;width:7px;height:min(36px,60%);min-height:12px;translate:0 -50%;cursor:ew-resize}
+.g-s{bottom:-4px;left:50%;width:min(36px,40%);height:7px;translate:-50% 0;cursor:ns-resize}
+.g-e:hover,.g-s:hover{background:var(--accent);border-color:var(--accent)}
+.g-se{right:1px;bottom:1px;width:14px;height:14px;display:flex;color:#8f8d86;cursor:nwse-resize}
+.g-se .i{width:14px;height:14px;stroke-width:2.4}
+.g-se:hover{color:var(--accent)}
+.notebox.inline > .g-s,.notebox.inline > .g-se{display:none}
+/* the toolbar: pin, float on top, minimise. Hidden, it can't be clicked by accident */
+.nbar{position:absolute;z-index:4;top:-16px;right:10px;display:flex;align-items:center;gap:1px;padding:2px;border:1.5px solid var(--pencil);border-radius:8px;background:var(--surface);box-shadow:2px 2px 0 rgba(47,43,36,.18);opacity:0;visibility:hidden;transition:opacity .15s,visibility .15s} /* taste-skill-ignore: a small toolbar floats over the note */
+.notebox:hover > .nbar,.notebox.touched > .nbar{opacity:1;visibility:visible}
+.nbar .grip{position:static;opacity:1;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:6px;color:var(--muted);cursor:pointer}
+.nbar .grip:hover{background:var(--hover);color:var(--ink)}
+.nbar .i{width:14px;height:14px}
+.notebox.floating .g-float,.notebox.pinned .g-pin{color:var(--accent);background:var(--accent-soft)}
+.notebox.pinned .g-min{display:none}
+.notebox.inline > .nbar{right:-6px;top:-30px}
 /* a finger can't point: tapping a note shows its handles, bigger, until you tap somewhere else
    (decided by how you touch, not by what the browser says the screen is: touchscreen laptops often claim they can't hover) */
-.notebox.touched > .grip{width:16px;height:16px}
-.notebox.touched > :is(.g-move,.g-min,.g-float,.g-pin){width:26px;height:26px}
+.notebox.touched .nbar .grip{width:34px;height:34px}
+.notebox.touched > .g-move{left:-22px;width:22px;height:32px}
+.notebox.touched > .g-e{width:12px;right:-6px}
+.notebox.touched > .g-s{height:12px;bottom:-6px}
+.notebox.touched > .g-se{width:20px;height:20px}
 .notebox.moving{opacity:.9;z-index:100000!important}
 .notebox.moving > .mine{box-shadow:0 6px 18px rgba(0,0,0,.22);background:rgba(255,255,255,.85)} /* taste-skill-ignore: a note being dragged floats */
 .notebox.flash > .mine{animation:flash 1.6s ease-out}
@@ -270,7 +280,7 @@ div.mine:empty::before{content:"Type, or press / for options"}
 .note-chip{display:none}
 .notebox.collapsed{display:block;position:relative;width:0!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;overflow:visible}
 .notebox.inline.collapsed{display:inline-block;vertical-align:top}
-.notebox.collapsed > .mine,.notebox.collapsed > .grip{display:none}
+.notebox.collapsed > .mine,.notebox.collapsed > .grip,.notebox.collapsed > .nbar{display:none}
 .notebox.collapsed > .note-chip{display:flex;align-items:center;justify-content:center;position:absolute;z-index:4;left:calc(-24px + var(--ci, 0) * 23px);top:-10px;width:20px;height:20px;padding:0;border-radius:50%;
   color:var(--chip-ink,#5a4500);background:var(--chip,#ffd54a);border:1px solid color-mix(in srgb, var(--chip,#ffd54a) 72%, #000);box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer;opacity:.92; /* taste-skill-ignore: a minimised note icon sits on top of the page */
   translate:var(--cdx,0px) var(--cdy,0px);touch-action:none}
@@ -576,8 +586,7 @@ body.focus .peekzone{display:none}
 .slide .notebox.sticky > .mine{min-height:92px;padding:16px 14px 12px;background:var(--nb-fill,#fff59d);border:1px solid rgba(120,100,20,.35);border-radius:2px 3px 2px 4px;box-shadow:2px 4px 0 rgba(47,43,36,.22)} /* taste-skill-ignore: a sticky note is paper lifted off the page */
 .slide .notebox.sticky:hover > .mine{box-shadow:0 0 0 1px var(--accent),2px 4px 0 rgba(47,43,36,.22)} /* taste-skill-ignore: a sticky note is paper lifted off the page */
 .slide .notebox.sticky > .mine:focus{box-shadow:0 0 0 2px var(--accent),2px 4px 0 rgba(47,43,36,.22)} /* taste-skill-ignore: a ring marking focus, and the sticky's own shadow */
-.notebox.sticky > .g-float{display:none}
-.notebox.sticky > .g-pin{right:17px}
+.notebox.sticky .g-float{display:none}
 .notebox.sticky > .g-move{left:50%;top:-9px;width:76px;height:20px;transform:translateX(-50%) rotate(-2deg);border:none;border-radius:2px;background:rgba(206,190,138,.72);opacity:1;visibility:visible;cursor:grab;box-shadow:0 1px 1px rgba(0,0,0,.12)} /* taste-skill-ignore: the tape that holds a sticky note */
 .notebox.sticky > .g-move:hover{background:rgba(196,178,120,.85)}
 .notebox.sticky > .g-move .i{display:none}
@@ -603,6 +612,40 @@ body.dragging-sticky,body.dragging-sticky *{cursor:grabbing!important}
 #stickyPad{cursor:grab;touch-action:none}
 .ncwhere{margin-left:auto;font-size:14px;color:var(--muted);white-space:nowrap}
 body.reading .ncompose,body.reading #sideAdd{display:none}
+
+/* ================= the sidebar's Favourites and Trash, and the ⋯ menu's divider ================= */
+.docmenu hr{margin:3px 6px;border:none;border-top:1.5px solid var(--line)}
+.trashbox{margin-top:auto;padding:6px 6px 4px}
+.trashbox ~ .sidefoot{margin-top:0}
+.trashhead .count{font:13px var(--ui);color:var(--muted)}
+.trashhead > .i:last-child{margin-left:auto;width:15px;height:15px;transition:transform .15s}
+.trashhead[aria-expanded="true"] > .i:last-child{transform:rotate(90deg)}
+.trashlist{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:2px 0 6px}
+.trashrow{align-self:stretch;padding:5px 8px 6px;border-radius:var(--wob)}
+.trashrow:hover{background:var(--hover)}
+.tname{display:flex;align-items:center;gap:8px;font-size:16.5px;color:var(--muted)}
+.tname .i{width:16px;height:16px}
+.tname .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tname .when{flex:none;font-size:13px}
+.tacts{display:flex;flex-wrap:wrap;gap:4px;padding:4px 0 0 24px}
+.tbtn{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border:1.5px solid var(--line-strong);border-radius:var(--wob);background:var(--surface);font:inherit;font-size:14px;color:var(--ink);cursor:pointer}
+.tbtn:hover{background:var(--hover)}
+.tbtn .i{width:14px;height:14px}
+.tbtn.danger{color:var(--danger)}
+.tbtn.sure{background:var(--danger);border-color:var(--danger);color:var(--bg)}
+.tempty{margin:4px 0 2px 8px}
+.tnone{margin:0;padding:4px 10px 6px 12px;font-size:15px;color:var(--muted)}
+@media (hover:none){.tbtn{height:32px}}
+
+/* ================= tooltips: what a control does, after a brief pause ================= */
+.qtip{position:fixed;z-index:120;left:0;top:0;max-width:260px;padding:6px 10px 7px;border-radius:8px;background:var(--pencil);color:var(--bg);font:15px/1.3 var(--ui);pointer-events:none;opacity:0;transition:opacity .1s}
+.qtip.on{opacity:1}
+.qtip .t{display:flex;align-items:baseline;gap:10px;justify-content:space-between}
+.qtip .t span{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.qtip .k{display:inline-flex;gap:3px;flex:none}
+.qtip kbd{font:11.5px/1.5 ui-monospace,Menlo,Consolas,monospace;padding:0 5px;border:1px solid color-mix(in srgb,var(--bg) 40%,transparent);border-radius:4px;background:transparent;color:inherit}
+.qtip .d{margin-top:2px;font-size:13.5px;opacity:.75;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+@media (prefers-reduced-motion:reduce){.qtip{transition:none}}
 </style>
 </head>
 <body>
@@ -642,6 +685,9 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
 <symbol id="i-align-right" viewBox="0 0 24 24"><path d="M21 6H3"/><path d="M21 12H9"/><path d="M21 18H7"/></symbol>
 <symbol id="i-eraser" viewBox="0 0 24 24"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></symbol>
 <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></symbol>
+<symbol id="i-star-off" viewBox="0 0 24 24"><path d="M8.34 8.34 2 9.27l5 4.87L5.82 21 12 17.77 18.18 21l-.59-3.43"/><path d="M18.42 12.76 22 9.27l-6.91-1L12 2l-1.44 2.91"/><path d="m2 2 20 20"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+<symbol id="i-restore" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
 <symbol id="i-select" viewBox="0 0 24 24"><path d="M5 3a2 2 0 0 0-2 2"/><path d="M19 3a2 2 0 0 1 2 2"/><path d="M21 19a2 2 0 0 1-2 2"/><path d="M5 21a2 2 0 0 1-2-2"/><path d="M9 3h1"/><path d="M9 21h1"/><path d="M14 3h1"/><path d="M14 21h1"/><path d="M3 9v1"/><path d="M21 9v1"/><path d="M3 14v1"/><path d="M21 14v1"/></symbol>
 <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
 <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="m2 2 20 20"/></symbol>
@@ -653,6 +699,10 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
 <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
 <symbol id="i-hide-left" viewBox="0 0 24 24"><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></symbol>
 <symbol id="i-sticky" viewBox="0 0 24 24"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/></symbol>
+<symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="5" r="2.1" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="2.1" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="2.1" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="2.1" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="2.1" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="2.1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m2 12 9.17 4.17a2 2 0 0 0 1.66 0L22 12"/><path d="m2 17 9.17 4.17a2 2 0 0 0 1.66 0L22 17"/></symbol>
+<symbol id="i-minimize" viewBox="0 0 24 24"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="m14 10 7-7"/><path d="m3 21 7-7"/></symbol>
+<symbol id="i-corner" viewBox="0 0 24 24"><path d="M21 9 9 21"/><path d="m21 16-5 5"/></symbol>
 <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol>
 <symbol id="i-monitor" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></symbol>
 <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
@@ -931,7 +981,7 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
         <li>The <b>Home</b> tab styles your notes: the font, size and colour are used for new notes, or click in a note (or select words) to change just that.</li>
         <li>Drag a note’s edges to resize it, or its move handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
         <li>On each note: the arrows float it on top of the page, the minus minimises it to a pencil icon (drag the icon aside, right-click it to colour it), and the pin keeps it open.</li>
-        <li>The <b>sidebar</b> (left) lists your notebooks: click one to switch, and the one you're in shows its pages. Use its <b>⋯</b> to rename or delete it. Hide it with <b>«</b> (Ctrl+\) and point at the left edge to peek at it.</li>
+        <li>The <b>sidebar</b> (left) lists your notebooks: click one to switch, and the one you're in shows its pages. Use its <b>⋯</b> to rename or delete it. Hide it with <b>«</b> (Ctrl+\) and point at the left edge to peek at it. A notebook’s <b>⋯</b> menu can also star it as a <b>Favourite</b>, <b>Duplicate</b> it, or move it to the <b>Trash</b>, where it waits 30 days (and can be restored) before it is gone for ever.</li>
         <li><b>Notes</b> (right) lists every note in the notebook to search, filter by icon colour and jump to.</li>
         <li>In Chrome or Edge, <b>Install as an app</b> (at the bottom of the sidebar) gives Between the Slides its own window that works offline.</li>
         <li><b>Focus</b> hides the toolbar, side panels and status bar so only your pages and notes are left (Esc brings them back). Each panel also closes with its ×, and View › Toolbar can shrink the toolbar to tabs only.</li>
@@ -1286,7 +1336,7 @@ function setCollapsed(box, on){
   if (on && chip) {
     const m = box.querySelector(':scope > .mine'), t = (m && noteSummary(m)) || 'Note';
     const short = t.length > 300 ? t.slice(0, 300) + '…' : t;
-    chip.title = short + '\n\nClick to open · drag to move this icon aside · right-click (or press and hold) to change its colour';
+    chip.title = short + '\n\nClick to open · drag it anywhere and the note opens there · right-click (or press and hold) to change its colour';
     chip.setAttribute('aria-label', 'Show note: ' + short);
   }
 }
@@ -1326,13 +1376,41 @@ function spreadChips(){
     placed.push({card, i, top: r.top, left: r.left});
   }
 }
-// drag a minimised note's icon out of the way; it stays where it is dropped, and the note still opens at its own spot
+// drag a minimised note's icon anywhere; it stays where it is dropped, and the note opens there (openNote)
 function setChipOffset(box, x, y){
   const moved = Math.hypot(x, y) >= 6;
   box.classList.toggle('chip-moved', moved);
   if (moved) { box.style.setProperty('--cdx', x.toFixed(1) + 'px'); box.style.setProperty('--cdy', y.toFixed(1) + 'px'); }
   else ['--cdx', '--cdy'].forEach(v => box.style.removeProperty(v));
   ['--cl', '--ca'].forEach(v => box.style.removeProperty(v));     // no line back to the spot (older notes had one)
+}
+// open a minimised note where its pencil icon is: a floating note moves with it, a note between the lines
+// goes to the gap between lines nearest the pencil (a note inside a sentence stays in its sentence)
+function openNote(box){
+  const chip = box.querySelector(':scope > .note-chip'), moved = box.classList.contains('chip-moved') && chip && !box.classList.contains('inline');
+  const c = moved ? chip.getBoundingClientRect() : null, z = zoomOf(box) || 1;
+  const dx = (parseFloat(box.style.getPropertyValue('--cdx')) || 0) * z, dy = (parseFloat(box.style.getPropertyValue('--cdy')) || 0) * z;
+  // what is under the pencil, while the note still takes no room
+  const under = c ? document.elementsFromPoint(c.left + c.width / 2, c.top + c.height / 2).filter(el => !box.contains(el)) : [];
+  const strip = under.map(el => el.closest('.strip')).find(Boolean), pageY = strip ? gapY(strip, c.top + c.height / 2) : null, card = strip?.closest('.pagecard');
+  const slide = under.map(el => el.closest('.slide')).find(Boolean);
+  setCollapsed(box, false);
+  if (!moved) return;
+  setChipOffset(box, 0, 0);
+  if (box.classList.contains('floating')) {
+    const r = box.getBoundingClientRect(), cr = box.parentElement.getBoundingClientRect();
+    setFloatPos(box, Math.max(cr.left, Math.min(cr.right - r.width, r.left + dx)), Math.max(cr.top, r.top + dy));
+    placeFloats(); return;
+  }
+  let place = null;
+  if (card) place = () => insertBoxAt(card, pageY, box);       // (the strip itself may be joined up again when the note leaves)
+  else if (slide && !slide.classList.contains('pagecard')) {
+    let blk = [...slide.querySelectorAll('.blk')].filter(b => !box.contains(b) && b.getBoundingClientRect().top < c.top).pop() || null;
+    while (blk && blk.nextElementSibling?.classList.contains('notebox') && blk.nextElementSibling !== box) blk = blk.nextElementSibling;
+    place = () => blk ? blk.after(box) : (slide.querySelector('.content') || slide).prepend(box);
+  }
+  if (place) { const from = box.parentNode; box.remove(); mergeStrips(from); place(); }
+  const m = flowMetrics(box); setFlowLeft(box, m, c.left - m.cL);
 }
 function startChipDrag(chip, e){
   const box = chip.parentElement, z = zoomOf(box) || 1, sx = e.clientX, sy = e.clientY;
@@ -1362,29 +1440,38 @@ function startChipDrag(chip, e){
 function togglePin(box){
   const on = !box.classList.contains('pinned');
   box.classList.toggle('pinned', on);
-  const g = box.querySelector(':scope > .g-pin'); if (g) g.title = on ? 'Unpin: let this note be minimised again' : 'Pin to page: keep this note open';
+  gripTitles(box);
   toast(on ? 'Pinned: this note stays open until you unpin it.' : 'Unpinned.');
   updateNotesBtn(); saveSoon();
 }
-// a note box's handles: float, minimise, pin and move buttons, and resize handles on its right edge, bottom edge and corner
+// what each handle does, for the tooltips (they change when a note is pinned or floated)
+function gripTitles(box){
+  const t = (dir, text) => { const g = box.querySelector('.g-' + dir); if (g) g.title = text; };
+  t('move', box.classList.contains('sticky') ? 'Drag the tape to move this sticky note, even onto another page' : 'Drag to move this note (to another line, or across the page)');
+  t('pin', box.classList.contains('pinned') ? 'Unpin: let this note be minimised again' : 'Pin: keep this note open');
+  t('float', box.classList.contains('floating') ? 'Put this note back between the lines' : 'Float this note on top of the page, so it can sit beside the text');
+  t('min', 'Minimise this note to a small pencil icon');
+  t('e', 'Drag to change the width'); t('s', 'Drag to change the height'); t('se', 'Drag to resize');
+}
+// a note box's handles: dots to drag it, a toolbar (pin, float on top, minimise), and resize handles on its right edge, bottom edge and corner
 function addGrips(box){
-  box.querySelectorAll(':scope > .grip, :scope > .note-chip').forEach(g => g.remove());
+  box.querySelectorAll(':scope > .grip, :scope > .nbar, :scope > .note-chip').forEach(g => g.remove());
   const inline = box.classList.contains('inline');
-  const grip = (dir, ico, title) => {
-    const g = document.createElement('span'); g.className = 'grip g-' + dir; g.dataset.dir = dir; g.title = title; g.setAttribute('aria-hidden', 'true');
+  const grip = (dir, ico, into = box) => {
+    const g = document.createElement('span'); g.className = 'grip g-' + dir; g.dataset.dir = dir; g.setAttribute('aria-hidden', 'true');
     if (ico) g.innerHTML = icon(ico);
-    box.append(g);
+    into.append(g);
   };
-  if (!inline) grip('float', 'float', 'Put this note beside the text (on top of the page) or back between the lines');
-  grip('min', 'minus', 'Minimise this note');
-  grip('pin', 'pin', box.classList.contains('pinned') ? 'Unpin: let this note be minimised again' : 'Pin to page: keep this note open');
+  if (!inline) grip('move', 'grip');
+  const bar = document.createElement('span'); bar.className = 'nbar'; bar.setAttribute('aria-hidden', 'true'); box.append(bar);
+  grip('pin', 'pin', bar);
+  if (!inline) grip('float', 'layers', bar);
+  grip('min', 'minimize', bar);
   const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'note-chip'; chip.title = 'Show this note'; chip.innerHTML = icon('pen');
   box.append(chip);
   if (box.classList.contains('collapsed')) setCollapsed(box, true);
-  if (!inline) grip('move', 'move', box.classList.contains('sticky') ? 'Drag the tape to move this sticky note, even onto another page' : 'Drag to move this note');
-  grip('e', null, 'Drag to change the width');
-  grip('s', null, 'Drag to change the height');
-  grip('se', null, 'Drag to resize');
+  grip('e'); grip('s'); grip('se', 'corner');
+  gripTitles(box);
 }
 function makeBox(inline){
   const box = document.createElement(inline ? 'span' : 'div'); box.className = inline ? 'notebox inline' : 'notebox';
@@ -1462,7 +1549,7 @@ main.addEventListener('pointerdown', e => {
   if (reading && !['min', 'pin'].includes(kind)) return;
   if (['pin', 'float', 'min'].includes(kind)) {           // buttons: act on the press, and ignore the click that follows
     e.preventDefault(); e.stopPropagation(); swallow();
-    const box = g.parentElement;
+    const box = g.closest('.notebox');
     if (kind === 'pin') togglePin(box);
     else if (kind === 'float') toggleFloat(box);
     else { if (box.contains(document.activeElement)) document.activeElement.blur(); setCollapsed(box, true); afterNotesToggle(); }
@@ -1497,7 +1584,7 @@ function swallow(ms = 600){ swallowClick = true; setTimeout(() => { swallowClick
 main.addEventListener('click', e => {
   if (swallowClick) { swallowClick = false; return; }
   const chip = e.target.closest('.note-chip');
-  if (chip) { const box = chip.parentElement; setCollapsed(box, false); raise(box); afterNotesToggle(); const m = box.querySelector('.mine'); if (m && !reading) focusNote(m); return; }
+  if (chip) { const box = chip.parentElement; openNote(box); raise(box); afterNotesToggle(); const m = box.querySelector('.mine'); if (m && !reading) focusNote(m); return; }
   if (reading) return;
   const fx = e.target.closest('.formula'); if (fx && fx.closest('.mine')) { openFormula(fx); return; }
   const media = mediaAt(e.target);
@@ -1765,7 +1852,8 @@ async function readPdf(buf, name){
     const card = document.createElement('section');
     card.className = 'slide pagecard';
     card.dataset.w = W.toFixed(1); card.dataset.h = H.toFixed(1); card.dataset.gaps = JSON.stringify(gaps);
-    card.style.setProperty('--pg', `url(${cv.toDataURL('image/jpeg', 0.88)})`);
+    const pic = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.88));
+    card.style.setProperty('--pg', `url(${pic ? await addAsset(pic) : cv.toDataURL('image/jpeg', 0.88)})`);
     card.dataset.text = JSON.stringify(tc.items.filter(i => i.str && i.str.trim() && !isSlideNo(i)).map(i => {
       const t = i.transform, [x, y] = v.convertToViewportPoint(t[4], t[5]);
       return [i.str, +(x / S).toFixed(1), +(y / S).toFixed(1), +(Math.hypot(t[2], t[3]) || i.height || 10).toFixed(1), +(i.width).toFixed(1), i.hasEOL ? 1 : 0];
@@ -1983,6 +2071,7 @@ function toggleFloat(box){
     box.style.marginLeft = ((+box.dataset.px || 0) * 100).toFixed(2) + '%';
   }
   if (LAYOUTS[layout]) paginateView();
+  gripTitles(box);
   placeFloats(); spreadChips(); saveSoon();
 }
 // ---------- alignment guides: lines show (and snap to) edges and centres of the other note boxes on the page ----------
@@ -2309,6 +2398,71 @@ function putAll(values){
     } catch { res(false); }
   });
 }
+// every key in the store (for tidying up pictures nothing uses any more)
+function allKeys(){ return new Promise(res => { try { const r = db.transaction('kv').objectStore('kv').getAllKeys(); r.onsuccess = () => res(r.result || []); r.onerror = () => res([]); } catch { res([]); } }); }
+
+/* ================= pictures are stored once, apart from your notes (as Notion keeps files apart from its page records) ================= */
+// a PDF page's picture, a slide's pictures and pictures, videos or sound in notes are each kept as their own record
+// ("asset:<id>") and shown from a blob: URL. A notebook then refers to them by name, so saving it writes only the page
+// structure and your notes (kilobytes), not every picture again on each change.
+const ASSET = 'bts-asset:';
+const assetUrl = new Map(), assetOf = new Map(), assetBlob = new Map();     // id → blob: URL, blob: URL → id, id → the picture
+function useAsset(id, blob){
+  let url = assetUrl.get(id); if (url) return url;
+  url = URL.createObjectURL(blob);
+  assetUrl.set(id, url); assetOf.set(url, id); assetBlob.set(id, blob);
+  return url;
+}
+async function addAsset(blob){
+  const id = 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  await putAll({['asset:' + id]: blob});
+  return useAsset(id, blob);
+}
+function dataToBlob(u){
+  const i = u.indexOf(','), head = u.slice(5, i), bin = atob(u.slice(i + 1)), a = new Uint8Array(bin.length);
+  for (let k = 0; k < bin.length; k++) a[k] = bin.charCodeAt(k);
+  return new Blob([a], {type: head.split(';')[0]});
+}
+const bigData = u => !!u && u.length > 1500 && /^data:[^,]*;base64,/.test(u);
+// pictures still held in the page itself (just read in, pasted, or saved by an earlier version) become stored pictures
+async function assetize(root = main){
+  let n = 0;
+  for (const el of root.querySelectorAll('.pagecard[style*="data:"]')) {
+    const m = el.style.getPropertyValue('--pg').match(/^url\(["']?(data:[^"')]+)["']?\)$/);
+    if (m && bigData(m[1])) { el.style.setProperty('--pg', `url(${await addAsset(dataToBlob(m[1]))})`); n++; }
+  }
+  for (const el of root.querySelectorAll('img[src^="data:"], video[src^="data:"], audio[src^="data:"], source[src^="data:"]')) {
+    const u = el.getAttribute('src');
+    if (bigData(u)) { el.setAttribute('src', await addAsset(dataToBlob(u))); n++; }
+  }
+  return n;
+}
+// what is stored refers to pictures by name …
+const toStored = html => html.replace(/blob:[^"')\s&]+/g, u => assetOf.has(u) ? ASSET + assetOf.get(u) : u);
+// … and is shown with them in place again (fetching any not yet loaded)
+async function fromStored(html){
+  if (!html || !html.includes(ASSET)) return html || '';
+  const re = new RegExp(ASSET.replace(/[-:]/g, '\\$&') + '(a[0-9a-z]+)', 'g');
+  const ids = [...new Set([...html.matchAll(re)].map(m => m[1]))].filter(id => !assetUrl.has(id));
+  await Promise.all(ids.map(async id => { const b = await get('asset:' + id); if (b) useAsset(id, b); }));
+  return html.replace(re, (m, id) => assetUrl.get(id) || m);
+}
+// a notebook file has to carry its pictures inside it
+async function inlineAssets(html){
+  const urls = [...new Set(html.match(/blob:[^"')\s&]+/g) || [])].filter(u => assetOf.has(u));
+  const data = new Map(await Promise.all(urls.map(async u => [u, await readAsUrl(assetBlob.get(assetOf.get(u)))])));
+  return html.replace(/blob:[^"')\s&]+/g, u => data.get(u) || u);
+}
+// pictures no notebook uses any more are removed now and then (at start-up, before anything is being edited or undone)
+async function tidyAssets(){
+  if (!db) return;
+  const keys = (await allKeys()).filter(k => typeof k === 'string');
+  const stored = keys.filter(k => k.startsWith('asset:')); if (!stored.length) return;
+  let used = '';
+  for (const k of keys.filter(k => k.startsWith('doc:'))) used += (await get(k)) || '';
+  const gone = stored.filter(k => !used.includes(ASSET + k.slice(6)));
+  if (gone.length) try { const tx = db.transaction('kv', 'readwrite'); gone.forEach(k => tx.objectStore('kv').delete(k)); } catch {}
+}
 // the note beside the file name: saving, saved, or (storage full or blocked) not saved
 function setSaveState(s){
   const el = $('#saveState'); if (el.dataset.s === s) return;
@@ -2339,16 +2493,21 @@ function saveSoon(){
   clearTimeout(timer);
   timer = setTimeout(saveNow, 500);
 }
+let lastStored = {id: null, html: null};     // what was last written for the open notebook, so an unchanged notebook isn't written again
 async function saveNow(){
   timer = null;
+  if (db) await assetize();
   const empty = !!main.querySelector('.welcome'), doc = empty ? '' : currentDoc();
   snapshot(doc);
   const d = curDoc(); if (!d) return;
-  if (!d.named) d.name = empty ? 'Untitled' : notebookName();
-  d.pages = main.querySelectorAll('.slide').length;
-  d.notes = [...main.querySelectorAll('.notebox')].filter(hasContent).length;
-  d.updated = Date.now();
-  const ok = await putAll({['doc:' + d.id]: doc, docs, cur: curId, style});
+  const stored = toStored(doc);
+  const name = d.named ? d.name : empty ? 'Untitled' : notebookName(), pages = main.querySelectorAll('.slide').length;
+  const notes = [...main.querySelectorAll('.notebox')].filter(hasContent).length;
+  const same = lastStored.id === d.id && lastStored.html === stored;
+  if (same && d.name === name && d.pages === pages && d.notes === notes) { if (!timer) setSaveState('saved'); return; }
+  Object.assign(d, {name, pages, notes}); if (!same) d.updated = Date.now();
+  const ok = await putAll({...(same ? {} : {['doc:' + d.id]: stored}), docs, cur: curId, style});
+  if (ok) lastStored = {id: d.id, html: stored};
   if (!timer) setSaveState(ok ? 'saved' : 'error');
   renderDocs();
 }
@@ -2381,7 +2540,7 @@ async function saveFile(filename, blob){
 
 // Notebook file: this whole app plus your pages and notes, in one .html file you can open anywhere
 async function downloadNotebook(){
-  const data = JSON.stringify({v: 2, id: curId, name: notebookName(), named: !!curDoc()?.named, doc: currentDoc(), style, favs}).replace(/</g, '\\u003c');
+  const data = JSON.stringify({v: 2, id: curId, name: notebookName(), named: !!curDoc()?.named, doc: await inlineAssets(currentDoc()), style, favs}).replace(/</g, '\\u003c');
   const html = APP_HTML.replace(/<body[^>]*>/, m => `${m}\n<script id="notebook-data" type="application/json">${data}<\/script>`);
   await saveFile(notebookName() + ' (notes).html', new Blob([html], {type: 'text/html'}));
 }
@@ -2664,7 +2823,7 @@ document.querySelectorAll('.notes-toggle').forEach(b => b.onclick = () => {
   if (hide && document.activeElement?.closest?.('.notebox')) document.activeElement.blur();
   for (const b of main.querySelectorAll('.notebox')) {
     if (hide) setCollapsed(b, true);                  // pinned notes stay open
-    else b.classList.remove('collapsed');             // every note opens, pinned or not
+    else if (b.classList.contains('collapsed')) openNote(b);     // every note opens (where its pencil is), pinned or not
   }
   afterNotesToggle();
 });
@@ -3649,9 +3808,14 @@ function pageTitle(card){
   const b = card.querySelector('.content > .blk');
   return (b?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120);
 }
+let pagesSig = null;            // what the page list was last built from: it is rebuilt only when that changes, not on every keystroke
 function renderPages(){
   const list = pageList, slides = main.querySelectorAll('.slide');
-  if (!slides.length) { list.innerHTML = '<li class="sideempty">Open a file and its pages show up here.</li>'; return; }
+  if (!slides.length) { pagesSig = null; list.innerHTML = '<li class="sideempty">Open a file and its pages show up here.</li>'; return; }
+  const sig = [...main.querySelectorAll('.file-head, .slide')].map(el => el.classList.contains('file-head') ? 'H' + el.textContent
+    : `${pageTitle(el)}\u0001${[...el.querySelectorAll('.notebox')].filter(hasContent).length}\u0001${el.style.getPropertyValue('--pg').slice(-48)}`).join('\u0002');
+  if (sig === pagesSig && list.children.length) { trackPage(); return; }
+  pagesSig = sig;
   const frag = document.createDocumentFragment();
   let n = 0;
   for (const el of main.querySelectorAll('.file-head, .slide')) {
@@ -3759,7 +3923,7 @@ $('#noteList').addEventListener('click', e => { const c = e.target.closest('.nca
 function jumpToNote(box){
   if (!box?.isConnected) return;
   if (narrow.matches) setPanel('notes', false);
-  if (box.classList.contains('collapsed')) { setCollapsed(box, false); afterNotesToggle(); }
+  if (box.classList.contains('collapsed')) { openNote(box); afterNotesToggle(); }
   raise(box);
   box.scrollIntoView({block: 'center', behavior: smoothScroll()});
   box.classList.remove('flash'); void box.offsetWidth; box.classList.add('flash');
@@ -3854,10 +4018,12 @@ document.addEventListener('keydown', e => {
 
 // ================= notebooks, Notion style: each file you open is its own notebook in the sidebar =================
 // each notebook is stored on its own ("doc:<id>"); "docs" lists them in sidebar order and "cur" is the open one
-let docs = [], curId = null, renaming = null, docPagesOpen = pref.get('doc-pages', '1') === '1';
+// a notebook can also be a favourite (fav: true) or in the Trash (trashed: when it was put there; see the Trash further down)
+let docs = [], curId = null, renaming = null, docPagesOpen = pref.get('doc-pages', '1') === '1', trashOpen = false;
 const histByDoc = new Map(), scrollByDoc = new Map();
 const newId = () => 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const curDoc = () => docs.find(d => d.id === curId);
+const liveDocs = () => docs.filter(d => !d.trashed);       // everything but what is in the Trash
 function makeDoc(id = newId(), name = 'Untitled'){
   const d = {id, name, named: false, pages: 0, notes: 0, updated: Date.now()};
   docs.unshift(d); return d;
@@ -3880,7 +4046,7 @@ async function switchDoc(id){
   hideGap(); closeInsMenu(); clearMediaSel(); clearMulti(); closeChipPop(); closeSpellMenu(); hideGuides(); fPanel.hidden = true;
   active = null; savedRange = null;
   let html = '';
-  if (id) html = (await get('doc:' + id)) || ''; else id = makeDoc().id;
+  if (id) html = await fromStored(await get('doc:' + id)); else id = makeDoc().id;
   curId = id;
   showDocHtml(html);
   const h = histByDoc.get(id);
@@ -3889,37 +4055,34 @@ async function switchDoc(id){
   putAll({docs, cur: curId});
   refreshPanels();
 }
-async function deleteDoc(id){
-  const d = docs.find(x => x.id === id); if (!d) return;
-  if (id === curId) { clearTimeout(timer); timer = null; curId = null; }      // nothing more is saved for it
-  docs = docs.filter(x => x !== d); histByDoc.delete(id); scrollByDoc.delete(id); delKey('doc:' + id);
-  if (!curId) await switchDoc(docs[0]?.id || null);
-  else { putAll({docs}); renderDocs(); }
-  toast(`Deleted “${d.name}”.`);
+// one notebook's row in the sidebar (with its page list under it when it is the open one)
+function docItem(d){
+  const on = d.id === curId, open = on && docPagesOpen, li = document.createElement('li');
+  li.className = 'nb'; if (on) li.setAttribute('aria-current', 'true');
+  const row = document.createElement('div'); row.className = 'docrow';
+  const caret = Object.assign(document.createElement('button'), {type: 'button', className: 'caret', innerHTML: icon('right')});
+  caret.dataset.caret = d.id; caret.setAttribute('aria-expanded', open); caret.setAttribute('aria-label', (open ? 'Hide' : 'Show') + ' the pages of ' + d.name);
+  const btn = Object.assign(document.createElement('button'), {type: 'button', className: 'docbtn', innerHTML: icon('file') + '<span class="nm"></span>'});
+  btn.dataset.doc = d.id; btn.querySelector('.nm').textContent = d.name || 'Untitled';
+  btn.title = `${d.name} · ${d.pages} page${d.pages === 1 ? '' : 's'} · ${d.notes} note${d.notes === 1 ? '' : 's'}`;
+  const more = Object.assign(document.createElement('button'), {type: 'button', className: 'more', innerHTML: icon('dots')});
+  more.dataset.more = d.id; more.setAttribute('aria-label', 'More for ' + d.name); more.setAttribute('aria-haspopup', 'menu');
+  row.append(caret, btn, more); li.append(row);
+  if (open) li.append(pageList);
+  return li;
 }
 function renderDocs(){
   if (renaming) return;                   // don't pull the name box away while you type in it
-  const list = $('#docList'), pages = pageList;
-  $('#docCount').textContent = docs.length > 1 ? docs.length : '';
-  list.replaceChildren(...docs.map(d => {
-    const on = d.id === curId, open = on && docPagesOpen, li = document.createElement('li');
-    li.className = 'nb'; if (on) li.setAttribute('aria-current', 'true');
-    const row = document.createElement('div'); row.className = 'docrow';
-    const caret = Object.assign(document.createElement('button'), {type: 'button', className: 'caret', innerHTML: icon('right')});
-    caret.dataset.caret = d.id; caret.setAttribute('aria-expanded', open); caret.setAttribute('aria-label', (open ? 'Hide' : 'Show') + ' the pages of ' + d.name);
-    const btn = Object.assign(document.createElement('button'), {type: 'button', className: 'docbtn', innerHTML: icon('file') + '<span class="nm"></span>'});
-    btn.dataset.doc = d.id; btn.querySelector('.nm').textContent = d.name || 'Untitled';
-    btn.title = `${d.name} · ${d.pages} page${d.pages === 1 ? '' : 's'} · ${d.notes} note${d.notes === 1 ? '' : 's'}`;
-    const more = Object.assign(document.createElement('button'), {type: 'button', className: 'more', innerHTML: icon('dots')});
-    more.dataset.more = d.id; more.setAttribute('aria-label', 'More for ' + d.name); more.setAttribute('aria-haspopup', 'menu');
-    row.append(caret, btn, more); li.append(row);
-    if (open) li.append(pages);
-    return li;
-  }));
-  if (!docPagesOpen && pages.isConnected) pages.remove();
+  const live = liveDocs(), starred = live.filter(d => d.fav), rest = live.filter(d => !d.fav);
+  $('#docCount').textContent = rest.length > 1 ? rest.length : '';
+  $('#docList').replaceChildren(...rest.map(docItem));
+  const fl = $('#favList');               // the Favourites section only shows while there is a favourite
+  if (fl) { fl.replaceChildren(...starred.map(docItem)); fl.hidden = $('#favSec').hidden = !starred.length; }
+  if (!docPagesOpen && pageList.isConnected) pageList.remove();
+  renderTrash();
 }
-$('#docList').addEventListener('click', async e => {
-  const t = e.target.closest('[data-doc], [data-caret], [data-more]'); if (!t) return;
+$('#pagesPanel').addEventListener('click', async e => {      // the Notebooks rows and the Favourites rows
+  const t = e.target.closest('.doclist [data-doc], .doclist [data-caret], .doclist [data-more]'); if (!t) return;
   if (t.dataset.more) { openDocMenu(t.dataset.more, t); return; }
   const id = t.dataset.doc || t.dataset.caret;
   if (t.dataset.caret && id === curId) { docPagesOpen = !docPagesOpen; pref.set('doc-pages', docPagesOpen ? '1' : '0'); renderDocs(); renderPages(); return; }
@@ -3935,15 +4098,16 @@ $('#newDocBtn').onclick = async () => {
 $('#sideOpen').onclick = () => pickFiles(false);
 $('#sideSearch').onclick = () => { setPanel('notes', true); $('#noteSearch').focus(); };
 
-// a notebook's ⋯ menu: rename or delete it
+// a notebook's ⋯ menu: rename, duplicate, favourite it, or move it to the Trash
 const docMenu = document.createElement('div'); docMenu.className = 'pop docmenu'; docMenu.hidden = true; docMenu.setAttribute('role', 'menu');
-docMenu.innerHTML = `<button type="button" role="menuitem" data-act="rename">${icon('pen')}Rename</button><button type="button" role="menuitem" data-act="delete" class="danger">${icon('trash')}<span>Delete</span></button>`;
+docMenu.innerHTML = `<button type="button" role="menuitem" data-act="rename">${icon('pen')}Rename</button><button type="button" role="menuitem" data-act="duplicate">${icon('copy')}Duplicate</button><button type="button" role="menuitem" data-act="fav"></button><hr><button type="button" role="menuitem" data-act="trash">${icon('trash')}Move to Trash</button>`;
 document.body.append(docMenu);
 let menuDoc = null, menuFrom = null;
 function openDocMenu(id, from){
   if (!docMenu.hidden && menuDoc === id) { closeDocMenu(); return; }
   menuDoc = id; menuFrom = from; from.setAttribute('aria-expanded', 'true');
-  const del = docMenu.querySelector('[data-act=delete]'); del.classList.remove('sure'); del.querySelector('span').textContent = 'Delete';
+  const fav = docs.find(x => x.id === id)?.fav;
+  docMenu.querySelector('[data-act=fav]').innerHTML = icon(fav ? 'star-off' : 'star') + (fav ? 'Remove from Favourites' : 'Add to Favourites');
   docMenu.hidden = false;
   const r = from.getBoundingClientRect();
   docMenu.style.left = Math.min(innerWidth - docMenu.offsetWidth - 8, r.left) + 'px';
@@ -3953,16 +4117,14 @@ function openDocMenu(id, from){
 function closeDocMenu(){ docMenu.hidden = true; menuFrom?.setAttribute('aria-expanded', 'false'); menuDoc = menuFrom = null; }
 docMenu.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || !menuDoc) return;
-  const id = menuDoc;
-  if (b.dataset.act === 'rename') { closeDocMenu(); startRename(id); return; }
-  if (!b.classList.contains('sure')) { b.classList.add('sure'); b.querySelector('span').textContent = 'Delete for good? Click again'; return; }
-  closeDocMenu(); deleteDoc(id);
+  const id = menuDoc; closeDocMenu();
+  ({rename: startRename, duplicate: duplicateDoc, fav: toggleFav, trash: trashDoc})[b.dataset.act]?.(id);
 });
 document.addEventListener('mousedown', e => { if (!docMenu.hidden && !docMenu.contains(e.target) && !e.target.closest('[data-more]')) closeDocMenu(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !docMenu.hidden) { const f = menuFrom; closeDocMenu(); f?.focus(); } });
 function startRename(id){
   const d = docs.find(x => x.id === id); if (!d) return;
-  const btn = $(`#docList [data-doc="${id}"]`); if (!btn) return;
+  const btn = $(`.doclist [data-doc="${id}"]`); if (!btn) return;
   renaming = id;
   const box = Object.assign(document.createElement('input'), {value: d.name, ariaLabel: 'Notebook name'});
   btn.replaceWith(box); box.focus(); box.select();
@@ -4395,6 +4557,197 @@ stickyPad.addEventListener('click', () => {
   if (t) { newNote.value = ''; growNote(); newNote.focus(); }
 });
 
+// ================= tooltips: a short note on what each control does, after a brief pause =================
+// they take the place of the browser's own (slow, plain) tooltips: a tooltip shows about half a second after you point
+// at something, straight away as you move along to the next one, for keyboard focus too, and goes as soon as you click,
+// scroll, type or move off. Touch screens don't get them.
+const qtip = Object.assign(document.createElement('div'), {className: 'qtip', id: 'qtip', hidden: true});
+qtip.setAttribute('role', 'tooltip');
+document.body.append(qtip);
+let tipFor = null, tipTimer = null, tipHiddenAt = 0;
+// an element's tooltip text; its title moves here (so the browser's own tooltip doesn't show too) and stays readable by screen readers
+function tipText(el){
+  const t = el.getAttribute('title');
+  if (t !== null) {
+    el.removeAttribute('title'); el.dataset.tip = t;
+    const name = el.getAttribute('aria-label');
+    if (!name && !el.textContent.trim()) el.setAttribute('aria-label', t.split(/[:(\n]/)[0].trim() || t);
+    if (t && name !== t) el.setAttribute('aria-description', t.replace(/\s+/g, ' '));
+  }
+  return (el.dataset.tip || '').trim();
+}
+// "Name: what it does (Ctrl+K)" becomes a name, a line about what it does, and the keys
+function fillTip(text){
+  const keys = [];
+  text = text.replace(/\s*\(((?:Ctrl|Cmd|Shift|Alt|Esc|Enter|Tab)[^()]{0,16})\)/g, (m, k) => { keys.push(k); return ''; }).trim();
+  let label = text, desc = '';
+  const brk = text.indexOf('\n\n'), colon = text.match(/^([^:.\n]{2,34}):\s+([\s\S]+)$/), dot = text.match(/^([^.\n]{2,48}\.)\s+([\s\S]+)$/);
+  if (brk > 0) { label = text.slice(0, brk); desc = text.slice(brk + 2); }
+  else if (colon) { label = colon[1]; desc = colon[2][0].toUpperCase() + colon[2].slice(1); }
+  else if (dot && text.length > 70) { label = dot[1].replace(/\.$/, ''); desc = dot[2]; }
+  const t = document.createElement('div'); t.className = 't';
+  t.append(Object.assign(document.createElement('span'), {textContent: label}));
+  if (keys.length) {
+    const k = document.createElement('span'); k.className = 'k';
+    keys[0].split(/\+(?=.)/).forEach(x => k.append(Object.assign(document.createElement('kbd'), {textContent: x.replace(/^Ctrl$/, navigator.platform?.startsWith('Mac') ? '⌘' : 'Ctrl')})));
+    t.append(k);
+  }
+  qtip.replaceChildren(t);
+  if (desc) qtip.append(Object.assign(document.createElement('div'), {className: 'd', textContent: desc}));
+}
+function placeQtip(el){
+  const r = el.getBoundingClientRect(), w = qtip.offsetWidth, h = qtip.offsetHeight;
+  let top = r.bottom + 8;
+  if (top + h > innerHeight - 8) top = r.top - 8 - h;
+  const left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+  qtip.style.translate = `${Math.round(left)}px ${Math.round(Math.max(8, top))}px`;
+}
+function showTip(el, now){
+  clearTimeout(tipTimer);
+  const text = tipText(el);
+  if (!text || text === el.textContent.trim()) { hideTip(); return; }     // nothing to add to what it already says
+  if (!qtip.hidden) { qtip.hidden = true; qtip.classList.remove('on'); tipHiddenAt = Date.now(); }
+  tipFor = el;
+  const wait = now || Date.now() - tipHiddenAt < 600 ? 0 : 450;
+  tipTimer = setTimeout(() => {
+    if (tipFor !== el || !el.isConnected || !el.getClientRects().length) return;
+    fillTip(el.dataset.tip); qtip.hidden = false; placeQtip(el);
+    requestAnimationFrame(() => qtip.classList.add('on'));
+  }, wait);
+}
+function hideTip(){
+  clearTimeout(tipTimer);
+  if (!qtip.hidden) tipHiddenAt = Date.now();
+  qtip.hidden = true; qtip.classList.remove('on'); tipFor = null;
+}
+document.addEventListener('pointerover', e => {
+  if (e.pointerType === 'touch' || e.buttons) return;              // not for fingers, nor while dragging
+  const el = e.target.closest?.('[title], [data-tip]');
+  if (el === tipFor) return;
+  if (el) showTip(el); else if (tipFor) hideTip();
+});
+document.addEventListener('pointerout', e => { if (tipFor && !(e.relatedTarget && tipFor.contains(e.relatedTarget))) hideTip(); });
+document.addEventListener('focusin', e => { const el = e.target.closest?.('[title], [data-tip]'); if (el && el.matches(':focus-visible')) showTip(el, true); });
+document.addEventListener('focusout', () => { if (tipFor) hideTip(); });
+for (const t of ['pointerdown', 'keydown', 'wheel']) addEventListener(t, () => { if (tipFor) hideTip(); }, {capture: true, passive: true});
+// something scrolled (a panel can scroll by itself): the tooltip stays only while its control is still under the pointer
+addEventListener('scroll', () => {
+  if (!tipFor) return;
+  if (tipFor.matches(':hover') || (tipFor === document.activeElement && tipFor.matches(':focus-visible'))) { if (!qtip.hidden) placeQtip(tipFor); }
+  else hideTip();
+}, {capture: true, passive: true});
+
+// ================= favourites, copies and the Trash: starred notebooks, Duplicate, and a delete you can take back =================
+// "Move to Trash" only marks a notebook (trashed: when). Its pages stay stored, so Restore brings everything back and its
+// pictures are kept too. It is gone for ever only when you delete it from the Trash, empty the Trash, or after 30 days.
+const TRASH_DAYS = 30;
+// forget a notebook's stored pages and its place (pictures only it used are tidied away at the next start-up)
+function forgetDoc(d){ histByDoc.delete(d.id); scrollByDoc.delete(d.id); delKey('doc:' + d.id); }
+async function trashDoc(id){
+  const d = docs.find(x => x.id === id); if (!d || d.trashed) return;
+  if (id === curId) await flushSave();                    // what you just wrote goes into the Trash with it
+  const live = liveDocs(), order = [...live.filter(x => x.fav), ...live.filter(x => !x.fav)], at = order.indexOf(d);
+  d.trashed = Date.now();
+  if (id === curId) await switchDoc((order[at + 1] || order[at - 1])?.id || null);    // the next one down the list, or a new empty notebook
+  else { putAll({docs}); renderDocs(); }
+  toast(`Moved “${d.name}” to the Trash.`);
+}
+function restoreDoc(id){
+  const d = docs.find(x => x.id === id); if (!d || !d.trashed) return;
+  delete d.trashed; putAll({docs}); renderDocs();
+  toast(`Restored “${d.name}”.`);
+}
+function purgeDoc(id){
+  const d = docs.find(x => x.id === id); if (!d || !d.trashed) return;
+  docs = docs.filter(x => x !== d); forgetDoc(d); putAll({docs}); renderDocs();
+  toast(`Deleted “${d.name}” for ever.`);
+}
+function emptyTrash(){
+  const gone = docs.filter(d => d.trashed); if (!gone.length) return;
+  docs = liveDocs(); gone.forEach(forgetDoc); putAll({docs}); renderDocs();
+  toast('Emptied the Trash.');
+}
+// at start-up: what has been in the Trash for more than 30 days goes for ever
+async function purgeOldTrash(){
+  const old = docs.filter(d => d.trashed && Date.now() - d.trashed > TRASH_DAYS * 864e5);
+  if (!old.length) return;
+  docs = docs.filter(d => !old.includes(d)); old.forEach(forgetDoc);
+  await putAll({docs});
+}
+function toggleFav(id){
+  const d = docs.find(x => x.id === id); if (!d) return;
+  if (d.fav) delete d.fav; else d.fav = true;
+  putAll({docs}); renderDocs();
+}
+// a copy of a notebook, right after it in the list (the copy is not opened)
+async function duplicateDoc(id){
+  const d = docs.find(x => x.id === id); if (!d) return;
+  if (id === curId) await flushSave();                    // so the copy has what is on the page now
+  const html = (await get('doc:' + id)) || '';
+  const copy = {...d, id: newId(), name: d.name.slice(0, 112) + ' (copy)', named: true, copiedFrom: id, updated: Date.now()};
+  delete copy.fav; delete copy.trashed;
+  docs.splice(docs.indexOf(d) + 1, 0, copy);
+  await putAll({['doc:' + copy.id]: html, docs});
+  renderDocs();
+  toast(`Made a copy: “${copy.name}”.`);
+}
+
+// the Trash in the sidebar: collapsed, with a count; unfolded it lists what is in it with Restore and Delete for ever
+const trashDate = t => new Date(t).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', ...(new Date(t).getFullYear() === new Date().getFullYear() ? {} : {year: 'numeric'})});
+function renderTrash(){
+  const box = document.getElementById('trashBox'); if (!box) return;
+  const gone = docs.filter(d => d.trashed).sort((a, b) => b.trashed - a.trashed);
+  box.querySelector('.count').textContent = gone.length || '';
+  box.querySelector('.trashhead').setAttribute('aria-expanded', trashOpen);
+  const list = box.querySelector('.trashlist'); list.hidden = !trashOpen;
+  const sig = trashOpen + '|' + gone.map(d => d.id + d.name).join('|');
+  if (box.dataset.sig === sig) return;                    // nothing changed: leave a "click again" button as it is
+  box.dataset.sig = sig;
+  if (!trashOpen) { list.replaceChildren(); return; }
+  const rows = gone.map(d => {
+    const row = document.createElement('div'); row.className = 'trashrow'; row.dataset.trash = d.id;
+    row.innerHTML = `<div class="tname">${icon('file')}<span class="nm"></span><span class="when"></span></div>` +
+      `<div class="tacts"><button type="button" class="tbtn" data-t="restore" title="Put it back in your list">${icon('restore')}<span>Restore</span></button>` +
+      `<button type="button" class="tbtn danger" data-t="purge" title="Delete it, with its notes, for ever. This can’t be undone.">${icon('trash')}<span>Delete for ever</span></button></div>`;
+    row.querySelector('.nm').textContent = d.name || 'Untitled';
+    row.querySelector('.when').textContent = trashDate(d.trashed);
+    row.querySelector('.tname').title = `In the Trash since ${trashDate(d.trashed)}. It goes for ever on ${trashDate(d.trashed + TRASH_DAYS * 864e5)}.`;
+    return row;
+  });
+  if (!rows.length) rows.push(Object.assign(document.createElement('p'), {className: 'tnone', textContent: 'Nothing in the Trash.'}));
+  else {
+    const all = Object.assign(document.createElement('button'), {type: 'button', className: 'tbtn danger tempty', innerHTML: `${icon('trash')}<span>Empty the Trash</span>`, title: 'Delete everything in the Trash for ever'});
+    all.dataset.t = 'empty'; rows.push(all);
+  }
+  list.replaceChildren(...rows);
+}
+// a button that needs a second click: the first click arms it, and it relaxes again after a few seconds
+function armed(b){
+  if (b.classList.contains('sure')) return true;
+  const s = b.querySelector('span'), was = s.textContent;
+  b.classList.add('sure'); s.textContent = 'Sure? Click again';
+  clearTimeout(b._t); b._t = setTimeout(() => { b.classList.remove('sure'); s.textContent = was; }, 4000);
+  return false;
+}
+// the Favourites list (above Notebooks) and the Trash (above the install button) are added to the sidebar here
+{
+  const fav = Object.assign(document.createElement('div'), {className: 'sidesec', id: 'favSec', hidden: true, innerHTML: '<span>Favourites</span>'});
+  const favList = Object.assign(document.createElement('ul'), {className: 'doclist', id: 'favList', hidden: true});
+  $('#docCount').closest('.sidesec').before(fav, favList);
+  const box = Object.assign(document.createElement('div'), {className: 'trashbox', id: 'trashBox'});
+  box.innerHTML = `<button type="button" class="srow trashhead" aria-expanded="false" aria-controls="trashList" title="Trash: notebooks you delete wait here for ${TRASH_DAYS} days, then they go for ever">${icon('trash')}<span class="nm">Trash</span> <span class="count"></span>${icon('right')}</button><div class="trashlist" id="trashList" hidden></div>`;
+  $('.sidefoot').before(box);
+  box.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.classList.contains('trashhead')) { trashOpen = !trashOpen; renderTrash(); return; }
+    const id = b.closest('[data-trash]')?.dataset.trash, act = b.dataset.t;
+    if (act === 'restore') restoreDoc(id);
+    else if (armed(b)) { if (act === 'empty') emptyTrash(); else purgeDoc(id); }
+    else return;
+    if (!box.contains(document.activeElement)) box.querySelector('.trashhead').focus();    // the button you used has gone
+  });
+}
+
 // ================= install as an app (when it is served from the web) =================
 let installEvt = null;
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
@@ -4436,24 +4789,26 @@ restorePanels();
     const [list, cur, s, legacy] = db ? await Promise.all([get('docs'), get('cur'), get('style'), get('doc')]) : [];
     if (s) { style = s; showStyle(style); }
     docs = Array.isArray(list) ? list.filter(d => d && d.id) : [];
-    if (!docs.length) {                     // first visit, or notes saved before there were notebooks
+    await purgeOldTrash();
+    if (!liveDocs().length) {               // first visit, or notes saved before there were notebooks
       const d = makeDoc();
       if (legacy) { d.name = 'My notes'; await putAll({['doc:' + d.id]: legacy}); }
     }
     if (legacy) delKey('doc');
-    curId = docs.some(d => d.id === cur) ? cur : docs[0].id;
+    curId = liveDocs().some(d => d.id === cur) ? cur : liveDocs()[0].id;
     // a notebook file opened on its own: show it (or the newer copy of it already saved in this browser)
     let data = null;
     try { const emb = document.getElementById('notebook-data'); if (emb) data = JSON.parse(emb.textContent); } catch {}
     if (data) {
       notebookPrefs(data);
-      if (data.id && docs.some(d => d.id === data.id)) curId = data.id;
+      const known = data.id && docs.find(d => d.id === data.id);
+      if (known) { delete known.trashed; curId = known.id; }          // opening a file brings it back from the Trash
       else {
         const d = makeDoc(data.id || undefined, data.name || 'My notes'); d.named = !!data.named; curId = d.id;
         await putAll({['doc:' + d.id]: data.doc || ''});
       }
     }
-    showDocHtml(db ? await get('doc:' + curId) : data?.doc || '');
+    showDocHtml(db ? await fromStored(await get('doc:' + curId)) : data?.doc || '');
   } catch (err) { reportError(err, 'loading your saved notebooks'); }
   requestAnimationFrame(() => {
     try {
@@ -4462,6 +4817,7 @@ restorePanels();
       if (db) putAll({docs, cur: curId});
     } catch (err) { reportError(err, 'showing your notebook'); }
     finally { startUp(); }
+    if (db) (window.requestIdleCallback || setTimeout)(() => tidyAssets());
   });
 })();
 
