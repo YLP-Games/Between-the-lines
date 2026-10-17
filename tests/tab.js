@@ -1,0 +1,21 @@
+const {open} = require('./harness'); const path = require('path');
+const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok  ' + m); };
+(async () => {
+  const {browser, page, errors} = await open(process.env.APP || require('path').resolve(__dirname, '..', 'index.html'));
+  await page.waitForTimeout(800);
+  ok(await page.title() === 'Between the Lines', 'start: "' + await page.title() + '"');
+  ok(await page.evaluate(() => getComputedStyle(document.querySelector('#favicon')).display !== undefined && document.querySelector('#favicon').href.includes('ffd54a')), 'favicon is the new mark');
+  await page.setInputFiles('#file', path.join(__dirname, 'lecture.pdf'));
+  await page.waitForFunction(() => document.querySelectorAll('.pagecard').length >= 6, null, {timeout: 60000}); await page.waitForTimeout(900);
+  ok(await page.title() === 'lecture — Between the Lines', 'notebook open: "' + await page.title() + '"');
+  await page.click('#readBtn'); await page.waitForTimeout(200);
+  ok(await page.title() === 'lecture (Study mode) — Between the Lines', 'study mode: "' + await page.title() + '"');
+  await page.click('#readBtn');
+  await page.evaluate(() => setSaveState('error'));
+  ok((await page.title()).startsWith('Not saved · lecture') && await page.evaluate(() => decodeURIComponent(document.querySelector('#favicon').href).includes('#d93025')), 'save problem: "' + await page.title() + '" and a red dot');
+  await page.evaluate(() => setSaveState('saved'));
+  ok(await page.evaluate(() => !decodeURIComponent(document.querySelector('#favicon').href).includes('#d93025')), 'red dot goes away once saved');
+  await page.screenshot({path: '../fav/app.png', clip: {x: 0, y: 140, width: 260, height: 60}});
+  await browser.close();
+  console.log(errors.length ? errors.join('\n') : 'no page errors');
+})().catch(e => { console.error(e.message); process.exit(1); });
