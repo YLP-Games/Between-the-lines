@@ -214,7 +214,7 @@ main.fit > .sidepage{width:var(--sidew)}
 .sheet > .slide{box-shadow:none;border-radius:0;flex-shrink:0;align-self:center;width:100%}
 .sheet > .file-head{margin:0;color:#1b2330}
 .sheet > .cont{margin-top:0}
-.slide{position:relative;background:var(--card);color:var(--card-ink);border-radius:6px;padding:22px 28px 26px;cursor:text;min-width:0;overflow-wrap:anywhere;line-height:1.35}
+.slide{box-sizing:border-box;position:relative;background:var(--card);color:var(--card-ink);border-radius:6px;padding:22px 28px 26px;cursor:text;min-width:0;overflow-wrap:anywhere;line-height:1.35}
 .file-head{font-family:var(--display);font-weight:600;font-size:26px;margin:14px 0 0;text-wrap:balance;overflow-wrap:anywhere}
 .slide .blk{margin:0 0 .45em}
 .slide img{display:block;max-width:100%;height:auto;margin:.6em 0}
@@ -3478,14 +3478,24 @@ main.addEventListener('mousemove', gapHover);
 main.addEventListener('pointermove', e => { if (e.pointerType === 'pen' && !e.buttons) gapHover(e); });
 main.addEventListener('mouseleave', () => { if (ins?.mode !== 'gap') hideGap(); });
 // ---------- add a blank page (for longer notes) or remove a page, from the toolbar ----------
-function blankPage(){
+// a new page takes the exact shape of the page it follows (else the notebook's first page), so every page matches
+function pageShape(ref){
+  ref = ref?.matches?.('.slide') ? ref : main.querySelector('.slide.pagecard') || main.querySelector('.slide');
+  if (!ref) return '';
+  if (ref.classList.contains('pagecard') && +ref.dataset.w && +ref.dataset.h) return `${ref.dataset.w} / ${ref.dataset.h}`;
+  if (ref.classList.contains('blankpage')) return ref.style.aspectRatio || '';
+  const r = ref.getBoundingClientRect();         // a text page (Word, PowerPoint as text): its shape as it is shown
+  return r.width > 0 && r.height > 0 ? `${Math.round(r.width)} / ${Math.round(Math.min(Math.max(r.height, r.width * 0.4), r.width * 2.5))}` : '';
+}
+function blankPage(like){
   const s = document.createElement('section'); s.className = 'slide blankpage';
+  const shape = pageShape(like); if (shape) s.style.aspectRatio = shape;
   const content = document.createElement('div'); content.className = 'content'; s.append(content);
   const {box, el} = makeBox(); content.append(box);
   return {page: s, note: el};
 }
 function addPageAfter(card){
-  const {page, note} = blankPage();
+  const {page, note} = blankPage(card);
   if (card) (sideOf(card) || card).after(page);
   else { main.querySelector('.welcome')?.remove(); main.append(page); }
   if (LAYOUTS[layout]) paginateView();
@@ -5641,6 +5651,7 @@ function renderPages(){
     const th = document.createElement('span'); th.className = 'thumb';
     if (el.classList.contains('pagecard')) { th.classList.add('img'); th.style.setProperty('--pg', el.style.getPropertyValue('--pg')); th.style.aspectRatio = `${el.dataset.w} / ${el.dataset.h}`; }
     else {
+      if (el.classList.contains('blankpage') && el.style.aspectRatio) th.style.aspectRatio = el.style.aspectRatio;
       const t = document.createElement('b'); t.textContent = title.slice(0, 80);
       th.append(t, (el.querySelector('.content')?.textContent || '').replace(/\s+/g, ' ').trim().slice(title.length, title.length + 160));
     }
