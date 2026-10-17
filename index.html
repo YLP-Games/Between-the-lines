@@ -2951,7 +2951,7 @@ function ppDrawText(X, ctx, L, ox, oy, boxH, map, items){
       if (r.hl) { ctx.fillStyle = css4(r.hl); ctx.fillRect(cx, y - r.size * .95, width, r.size * 1.2); }
       ctx.fillStyle = css4(r.col);
       const txt = last ? s.text.trimEnd() : s.text;
-      if (extra) { let x = cx; for (const w of txt.split(/(?<= )/)) { ctx.fillText(w, x, y); x += ctx.measureText(w).width + (w.endsWith(' ') ? extra : 0); } }
+      if (extra) { let x = cx; for (const w of txt.replace(/ /g, ' \u0000').split('\u0000')) { ctx.fillText(w, x, y); x += ctx.measureText(w).width + (w.endsWith(' ') ? extra : 0); } }
       else ctx.fillText(txt, cx, y);
       const lw = Math.max(.5, r.size / 18);
       if (r.u) ctx.fillRect(cx, y + r.size * .12, width, lw);
