@@ -29,6 +29,11 @@ body{margin:0;color:var(--ink);font:16px var(--ui);background:var(--bg) radial-g
 /* a little paper grain over everything */
 body::after{content:"";position:fixed;inset:0;z-index:200;pointer-events:none;opacity:.06;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* Google's file picker: no grain over it, the page behind stays still, and it sits fixed in the window */
+body.gpicker{overflow:hidden}
+body.gpicker::after{display:none}
+body.gpicker .picker-dialog-bg{position:fixed!important;inset:0!important;width:auto!important;height:auto!important;z-index:1000!important}
+body.gpicker .picker-dialog{position:fixed!important;z-index:1001!important}
 img{max-width:100%}
 [hidden]{display:none!important}
 .spacer{flex:1}
@@ -71,6 +76,11 @@ input[type=color]{width:28px;height:28px;padding:0;border:1px solid var(--line-s
 .savestate .i{width:14px;height:14px;stroke-width:2}
 .savestate[data-s="saving"]{color:var(--muted)}
 .savestate[data-s="error"]{color:var(--danger)}
+#driveSync{border:0;background:none;padding:2px 4px;margin:-2px 0;border-radius:6px;font:inherit;font-size:12px;cursor:pointer}
+#driveSync:hover{background:var(--hover)}
+#driveSync[data-s="waiting"],#driveSync[data-s="syncing"],#driveSync[data-s="offline"]{color:var(--muted)}
+#driveSync[data-s="signin"]{color:var(--accent)}
+#driveSync[data-s="changed"],#driveSync[data-s="gone"],#driveSync[data-s="locked"]{color:var(--danger)}
 .savewrap{position:relative}
 .menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:260px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:var(--pop-shadow);padding:6px;display:flex;flex-direction:column;gap:2px} /* taste-skill-ignore: a menu floats over the page */
 .menu button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:none;background:transparent;padding:8px 10px;border-radius:6px;font:inherit;color:inherit;cursor:pointer}
@@ -519,6 +529,19 @@ body.focus .peekzone{display:none}
 .docmenu button{display:flex;align-items:center;gap:9px;padding:7px 10px;border:none;background:none;border-radius:var(--wob);font:inherit;font-size:15px;color:var(--ink);cursor:pointer;text-align:left}
 .docmenu button:hover{background:var(--hover)}
 .docmenu .i{width:16px;height:16px}
+.syncpop{z-index:74;display:flex;flex-direction:column;gap:2px;padding:8px;width:min(320px,calc(100vw - 16px));box-sizing:border-box}
+.syncpop p{margin:2px 6px 6px;font-size:14px;color:var(--muted)}
+.syncpop button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:8px 10px;border:none;background:none;border-radius:var(--wob);font:inherit;font-size:15px;color:var(--ink);cursor:pointer;text-align:left}
+.syncpop button:hover,.syncpop button:focus-visible{background:var(--hover)}
+.syncpop small,.nbsrow small{font-size:12.5px;color:var(--muted)}
+.nbshint{font-size:14px;color:var(--muted)}
+.nbslist{display:flex;flex-direction:column;gap:2px;min-height:60px}
+.nbsrow{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;padding:9px 10px;border:none;background:none;border-radius:var(--wob);font:inherit;font-size:15.5px;color:var(--ink);cursor:pointer;text-align:left}
+.nbsrow .i{grid-row:span 2;width:18px;height:18px}
+.nbsrow small{grid-column:2}
+.nbsrow:hover,.nbsrow:focus-visible{background:var(--hover)}
+.nbsname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.nbsempty{font-size:14.5px;color:var(--muted);margin:8px 2px}
 .docmenu .danger{color:var(--danger)}
 .docmenu .danger.sure{background:var(--danger);color:#fff}
 @media (max-width:900px){.peekzone{display:none}.side.pages{width:min(270px,86vw)}}
@@ -999,7 +1022,7 @@ try {
   <div class="titlebar">
     <button class="btn" id="pagesBtn" aria-pressed="false" aria-controls="pagesPanel" aria-label="Sidebar" title="Sidebar: your notebooks and their pages (Ctrl+\)"><svg class="i"><use href="#i-panel-left"/></svg></button>
     <span class="vr"></span>
-    <div class="doc"><span class="doc-title none" id="docTitle">No file open</span><span class="savestate" id="saveState" data-s="saved" title="Your work is saved automatically in this browser"><svg class="i"><use href="#i-saved"/></svg><span>Saved in this browser</span></span><span class="savestate" id="offline" role="status" hidden title="Offline: your notes still save in this browser. Opening a file for the first time and spell check need the internet."><svg class="i"><use href="#i-cloud-off"/></svg><span>Offline</span></span></div>
+    <div class="doc"><span class="doc-title none" id="docTitle">No file open</span><span class="savestate" id="saveState" data-s="saved" title="Your work is saved automatically in this browser"><svg class="i"><use href="#i-saved"/></svg><span>Saved in this browser</span></span><span class="savestate" id="offline" role="status" hidden title="Offline: your notes still save in this browser. Opening a file for the first time and spell check need the internet."><svg class="i"><use href="#i-cloud-off"/></svg><span>Offline</span></span><button type="button" class="savestate" id="driveSync" data-s="synced" hidden></button></div>
     <button class="btn" id="undoBtn" aria-label="Back" title="Back: undo the last change (Ctrl+Z)" disabled><svg class="i"><use href="#i-undo"/></svg></button>
     <button class="btn" id="redoBtn" aria-label="Forward" title="Forward: redo the change you undid (Ctrl+Y)" disabled><svg class="i"><use href="#i-redo"/></svg></button>
     <span class="vr"></span>
@@ -1236,6 +1259,7 @@ try {
       <button type="button" class="srow" id="newFolderBtn" title="A folder to group notebooks in, like a course or a topic"><svg class="i"><use href="#i-folder-plus"/></svg>New folder</button>
       <button type="button" class="srow" id="sideOpen" title="Open a PDF, PowerPoint or Word file as a new notebook"><svg class="i"><use href="#i-folder"/></svg>Open a file</button>
       <button type="button" class="srow" id="sideDrive" data-drive-open title="Open a file from Google Drive: PDF, PowerPoint, Word, Google Slides or Docs, pictures or a notebook file"><svg class="i"><use href="#i-drive"/></svg>Open from Google Drive</button>
+      <button type="button" class="srow" id="sideDriveNbs" data-drive data-drive-nbs title="Your notebooks saved in Google Drive, from any of your devices: pick one up where you left off"><svg class="i"><use href="#i-drive"/></svg>Your notebooks in Drive</button>
       <button type="button" class="srow" id="sideOd" data-od-open title="Open a file from OneDrive or SharePoint with your Microsoft account: PDF, PowerPoint, Word, pictures or a notebook file"><svg class="i"><use href="#i-onedrive"/></svg>Open from OneDrive</button>
       <button type="button" class="srow" id="sideAdd" title="Write a note for the page you're on, in the Notes panel"><svg class="i"><use href="#i-pen"/></svg>Add a note</button>
       <button type="button" class="srow" id="sideSearch" title="Search: find a notebook, page or note, or run an action (Ctrl+K)"><svg class="i"><use href="#i-search"/></svg>Search</button>
@@ -1404,6 +1428,7 @@ try {
         <button type="button" class="btn primary big" data-open><svg class="i"><use href="#i-folder"/></svg>Choose a file</button>
         <span class="or">or drop one anywhere on this page</span>
         <button type="button" class="linkbtn" data-drive-open title="Open a file from Google Drive">or open from Google Drive</button>
+        <button type="button" class="linkbtn" data-drive data-drive-nbs title="Carry on with a notebook you saved to Google Drive on another device">or carry on from another device</button>
         <button type="button" class="linkbtn" data-od-open title="Open a file from OneDrive or SharePoint with your Microsoft account">or from OneDrive</button>
       </div>
       <div class="kinds"><span>PDF</span><span>PowerPoint .pptx</span><span>Word .docx</span><span>Pictures</span><span>Notebook .html</span></div>
@@ -2476,6 +2501,14 @@ function showGuides(lines){
   }
 }
 function hideGuides(){ guideEls.splice(0).forEach(g => g.remove()); }
+// guides only belong to a note being moved or resized: if a drag ever ends unseen (let go outside the window, a lost pointer), none are left on screen
+const strayGuides = e => { if (guideEls.length && !(e.buttons & 1)) setTimeout(() => { if (!(e.type === 'pointermove' ? 0 : guideHeld)) hideGuides(); }); };
+let guideHeld = 0;
+addEventListener('pointerdown', e => { guideHeld = e.buttons & 1; }, {capture: true, passive: true});
+for (const t of ['pointerup', 'pointercancel']) addEventListener(t, e => { guideHeld = 0; strayGuides(e); }, {capture: true, passive: true});
+addEventListener('pointermove', strayGuides, {capture: true, passive: true});
+addEventListener('blur', () => { guideHeld = 0; hideGuides(); });
+addEventListener('scroll', () => { if (guideEls.length && !guideHeld) hideGuides(); }, {passive: true});
 // the guide lines for a box at rect b that met these targets
 const vLines = (hits, b) => hits.map(t => ({x: t.v, a: Math.min(b.top, t.r.top), b: Math.max(b.bottom, t.r.bottom)}));
 const hLines = (hits, b) => hits.map(t => ({y: t.v, a: Math.min(b.left, t.r.left), b: Math.max(b.right, t.r.right)}));
@@ -2520,6 +2553,7 @@ function startFloatMove(box, g, e){
   const capture = () => { try { g.setPointerCapture(e.pointerId); } catch {} };
   capture(); box.classList.add('moving');
   const move = ev => {
+    if (ev.type === 'pointermove' && !ev.buttons && ev.pointerType === 'mouse') return up({type: 'lost'});      // let go outside the window: drop it where it's shown
     last = {clientX: ev.clientX ?? last.clientX, clientY: ev.clientY ?? last.clientY, altKey: ev.altKey, shiftKey: ev.shiftKey};
     if (ev.clientX != null && !card.classList.contains('sidepage')) {      // (a side note stays on its own side page)
       const over = document.elementsFromPoint(last.clientX, last.clientY).filter(el => !box.contains(el) && !el.closest('#beside')).map(el => el.closest('.slide')).find(Boolean);
@@ -2597,9 +2631,11 @@ function startMove(box, g, e){
     box.style.translate = `${dx / z}px ${vy / z}px`;
   };
   const unkeys = snapKeys(k => move({altKey: k.altKey, shiftKey: k.shiftKey}));
+  let ended = false;
   const up = ev => {
+    if (ended) return; ended = true;                 // (letting go also releases the capture)
     if (ev.type === 'pointerup') move(ev);
-    g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); unkeys();
+    g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); g.removeEventListener('lostpointercapture', up); unkeys();
     box.style.translate = ''; box.classList.remove('moving'); hideGap(); hideGuides();
     if (ev.type === 'pointercancel') return;
     const frac = contentW > 0 ? left / contentW : 0;
@@ -2612,7 +2648,7 @@ function startMove(box, g, e){
     box.style.marginLeft = (frac * 100).toFixed(4) + '%';
     saveSoon();
   };
-  g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
+  g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up); g.addEventListener('lostpointercapture', up);
 }
 function insertAt(strip, y){
   const card = strip.closest('.pagecard'); const y0 = +strip.dataset.y0, y1 = +strip.dataset.y1;
@@ -2857,6 +2893,7 @@ function saveSoon(){
   timer = setTimeout(saveNow, 500);
 }
 let lastStored = {id: null, html: null};     // what was last written for the open notebook, so an unchanged notebook isn't written again
+const sync = {timer: 0, first: 0, busy: false, again: false, gen: 0, err: null, quiet: false, checked: 0};     // keeping a notebook that's in Google Drive up to date there
 async function saveNow(){
   timer = null;
   if (db) await assetize();
@@ -2869,10 +2906,12 @@ async function saveNow(){
   const same = lastStored.id === d.id && lastStored.html === stored;
   if (same && d.name === name && d.pages === pages && d.notes === notes) { if (!timer) setSaveState('saved'); return; }
   Object.assign(d, {name, pages, notes}); if (!same) d.updated = Date.now();
+  if (!same && d.driveNb && lastStored.id === d.id && !sync.quiet) { d.driveDirty = 1; sync.gen++; }       // (not for the first write after opening it, nor for changes fetched from Drive)
   const ok = await putAll({...(same ? {} : {['doc:' + d.id]: stored}), docs, cur: curId, style});
   if (ok) lastStored = {id: d.id, html: stored};
   if (!timer) setSaveState(ok ? 'saved' : 'error');
   renderDocs();
+  if (ok && d.driveDirty) syncSoon();
 }
 // save straight away if a save is waiting (e.g. before going Back, or to another notebook)
 function flushSave(){ if (!timer) return Promise.resolve(); clearTimeout(timer); return saveNow(); }
@@ -4444,7 +4483,7 @@ async function switchDoc(id){
   if (h) { hist.stack = h.stack; hist.i = h.i; updateUndoBtns(); } else resetHistory(main.querySelector('.welcome') ? '' : currentDoc());
   scrollTo(0, scrollByDoc.get(id) || 0);
   putAll({docs, cur: curId});
-  refreshPanels();
+  refreshPanels(); syncSoon(); syncCheck();
   await besideAfterSwitch(prevId);
 }
 // one notebook's row in the sidebar (with its page list under it when it is the open one)
@@ -6123,7 +6162,7 @@ function driveToken(){
         const all = google.accounts.oauth2.hasGrantedAllScopes;
         if (all && !all(r, DRIVE_SCOPE)) return w.no(new DriveError('not allowed', 'denied'));
         drive.token = r.access_token; drive.expires = Date.now() + (+r.expires_in || 3600) * 1000;
-        w.ok(drive.token); if (!drive.user) driveWho(); else renderDrive();
+        w.ok(drive.token); if (!drive.user) driveWho(); else renderDrive(); setTimeout(() => { syncSoon(); syncCheck(); });
       },
       error_callback: er => {
         const w = drive.wait; drive.wait = null; if (!w) return;
@@ -6196,19 +6235,31 @@ function drivePick(){
       .enableFeature(p.Feature.MULTISELECT_ENABLED).enableFeature(p.Feature.SUPPORT_DRIVES).setOAuthToken(token).setTitle('Open from Google Drive')
       .setCallback(data => {
         const a = data[p.Response.ACTION];
-        if (a === p.Action.LOADED) { loaded = true; return; }
+        if (a === p.Action.LOADED) { loaded = true; fit(); return; }
         clearTimeout(watch);
+        if (a === p.Action.PICKED || a === p.Action.CANCEL) done();
         if (a === p.Action.PICKED) ok((data[p.Response.DOCUMENTS] || []).map(d => ({id: d[p.Document.ID], name: d[p.Document.NAME], mime: d[p.Document.MIME_TYPE]})));
         else if (a === p.Action.CANCEL) ok([]);
       });
     if (GDRIVE.apiKey) b.setDeveloperKey(GDRIVE.apiKey);
     const app = GDRIVE.clientId.split('-')[0]; if (app) b.setAppId(app);       // the project number
     b.setOrigin(location.protocol + '//' + location.host);
+    // as big as Google's usual picker, but never bigger than the window
+    b.setSize?.(Math.max(320, Math.min(1051, innerWidth - 24)), Math.max(320, Math.min(650, innerHeight - 24)));
     let loaded = false;
-    const picker = b.build(); picker.setVisible(true);
+    // Google places the picker against the page and only once: keep it centred in the window, on whole pixels so it stays sharp
+    const fit = () => {
+      const d = document.querySelector('.picker-dialog'); if (!d) return;
+      d.style.setProperty('left', Math.max(0, Math.round((innerWidth - d.offsetWidth) / 2)) + 'px', 'important');
+      d.style.setProperty('top', Math.max(0, Math.round((innerHeight - d.offsetHeight) / 2)) + 'px', 'important');
+    };
+    const done = () => { document.body.classList.remove('gpicker'); removeEventListener('resize', fit); };
+    document.body.classList.add('gpicker'); addEventListener('resize', fit);
+    const picker = b.build(); picker.setVisible(true); fit(); requestAnimationFrame(fit);
     // Google's picker can stay blank (the Picker API off, a key or project mix-up, blocked cookies): don't leave a white screen
     const watch = setTimeout(() => {
       if (loaded) return;
+      done();
       try { picker.setVisible(false); picker.dispose(); } catch {}
       toast('Google Drive’s file picker didn’t load. If this keeps happening, the site’s Google set-up needs checking (Picker API, API key or test users); see Help & settings › Google Drive.');
       ok([]);
@@ -6233,28 +6284,33 @@ async function driveParent(id){
 }
 // can this person change the file? (a notebook shared with them to view only can't be saved back over)
 async function driveCanEdit(id){
-  try { return (await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?fields=capabilities(canEdit)&supportsAllDrives=true`)).json()).capabilities?.canEdit !== false; } catch { return true; }
+  drive.ver = '';
+  try { const j = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?fields=capabilities(canEdit),version&supportsAllDrives=true`)).json(); drive.ver = j.version || ''; return j.capabilities?.canEdit !== false; } catch { return true; }
 }
 async function driveOpen(){
   if (!driveSetUp()) return;
   try {
     const picked = await drivePick();
     for (const [i, d] of picked.entries()) {
-      toast(`Downloading “${d.name}” from Google Drive…${picked.length > 1 ? ` (${i + 1} of ${picked.length})` : ''}`);
-      let file;
-      try { file = await driveDownload(d); }
-      catch (err) { driveSay(err, `download “${d.name}”`); continue; }
-      const isNb = /\.html?$/i.test(file.name);
-      const [folder, canEdit] = await Promise.all([driveParent(d.id), isNb ? driveCanEdit(d.id) : true]), before = curId, had = !!main.querySelector('.slide');
-      await openFiles([file]);
-      const doc = curDoc();
-      if (doc && main.querySelector('.slide') && (curId !== before || !had)) {         // the file did become a notebook: remember where it came from
-        if (isNb && !canEdit) { doc.driveNbRO = d.id; toast(`“${d.name}” is shared with you to view only. Notebook to Drive will save a copy in your own Drive.`); }
-        else { if (folder) doc.driveFolder = folder; if (isNb) doc.driveNb = d.id; }
-        putAll({docs});
-      }
+      if (docs.some(x => x.driveNb === d.id && !x.trashed)) { await driveOpenNotebook(d); continue; }         // already here: bring it up to date instead of a second copy
+      await driveOpenOne(d, picked.length > 1 ? ` (${i + 1} of ${picked.length})` : '');
     }
   } catch (err) { driveSay(err, 'open from Google Drive'); }
+}
+async function driveOpenOne(d, of = ''){
+  toast(`Downloading “${d.name}” from Google Drive…${of}`);
+  let file;
+  try { file = await driveDownload(d); }
+  catch (err) { driveSay(err, `download “${d.name}”`); return; }
+  const isNb = /\.html?$/i.test(file.name);
+  const [folder, canEdit] = await Promise.all([driveParent(d.id), isNb ? driveCanEdit(d.id) : true]), before = curId, had = !!main.querySelector('.slide');
+  await openFiles([file]);
+  const doc = curDoc();
+  if (doc && main.querySelector('.slide') && (curId !== before || !had)) {         // the file did become a notebook: remember where it came from
+    if (isNb && !canEdit) { doc.driveNbRO = d.id; toast(`“${d.name}” is shared with you to view only. Notebook to Drive will save a copy in your own Drive.`); }
+    else { if (folder) doc.driveFolder = folder; if (isNb) { doc.driveNb = d.id; doc.driveVer = drive.ver; delete doc.driveDirty; delete doc.driveStop; } }
+    putAll({docs}); syncShow();
+  }
 }
 
 // ---------- save to Google Drive ----------
@@ -6281,14 +6337,15 @@ function driveSend(method, url, meta, blob, progress, again){
 }
 // kind: 'notebook' or 'pdf'. The first save makes a file (next to the source, if it came from Drive); after that the same file is updated.
 // A notebook you can't edit (shared with you to view only) is saved as a copy in your own Drive instead. Gives back {id, name, copy}.
-async function driveStore(kind, quiet){
+async function driveStore(kind, quiet, auto){
   const key = kind === 'pdf' ? 'drivePdf' : 'driveNb';
   await flushSave();
+  const gen = sync.gen;
   const doc = curDoc(), file = kind === 'pdf' ? await pdfFile() : await notebookFile();
   let last = -1;
   const progress = quiet || file.blob.size < 1.5e6 ? null : f => { const n = Math.round(f * 100); if (n !== last) { last = n; toast(`Uploading “${file.name}” to Google Drive: ${n}%`); } };
   if (!quiet) toast(progress ? `Uploading “${file.name}” to Google Drive…` : 'Saving to Google Drive…');
-  const fields = '&fields=id,name,parents&supportsAllDrives=true';
+  const fields = '&fields=id,name,parents,version&supportsAllDrives=true';
   const create = (meta, blob = file.blob) => driveSend('POST', `${DRIVE_UPLOAD}/files?uploadType=multipart${fields}`, {mimeType: blob.type, ...meta}, blob, progress);
   const copy = () => create({name: notebookName() + ' (my copy).html'});          // into your own Drive, not the shared folder
   let out, mine = false;
@@ -6296,6 +6353,7 @@ async function driveStore(kind, quiet){
   else if (doc?.[key]) {
     try { out = await driveSend('PATCH', `${DRIVE_UPLOAD}/files/${encodeURIComponent(doc[key])}?uploadType=multipart${fields}`, {}, file.blob, progress); }
     catch (err) {
+      if (auto) throw err;                       // syncing by itself: never make new files or copies, just stop and say so
       if (err.status === 404) out = await create({name: file.name, ...(doc.driveFolder ? {parents: [doc.driveFolder]} : {})});          // the file is gone from Drive: make a new one
       else if (err.status === 403 && kind === 'notebook' && !/rate|quota/i.test(err.message)) { out = await copy(); mine = true; }          // no longer allowed to change it
       else throw err;
@@ -6305,6 +6363,7 @@ async function driveStore(kind, quiet){
     doc[key] = out.id;
     if (mine) { delete doc.driveNbRO; doc.driveFolder = out.parents?.[0] || ''; }
     else if (!doc.driveFolder && out.parents?.[0]) doc.driveFolder = out.parents[0];
+    if (kind === 'notebook') { doc.driveVer = out.version || ''; delete doc.driveStop; if (sync.gen === gen) delete doc.driveDirty; if (doc === curDoc()) syncShow(); }
     putAll({docs});
   }
   return {id: out.id, name: out.name || file.name, copy: mine};
@@ -6315,8 +6374,203 @@ async function driveSave(kind){
   try {
     await driveToken();                         // sign in first, while the click still counts, then build the file
     const out = await driveStore(kind), at = new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'});
-    toast(out.copy ? `You can only view the original, so a copy was saved in your own Drive: ${out.name} (${at})` : `Saved to Google Drive: ${out.name} (${at})`);
+    toast(out.copy ? `You can only view the original, so a copy was saved in your own Drive: ${out.name} (${at}). It keeps in sync from now on.` : kind === 'notebook' ? `Saved to Google Drive: ${out.name} (${at}). From now on it keeps in sync by itself, so you can carry on from another device.` : `Saved to Google Drive: ${out.name} (${at})`);
   } catch (err) { driveSay(err, 'save to Google Drive'); }
+}
+
+// ---------- keeping it in sync ----------
+// Once a notebook is in your Google Drive, each change goes up by itself a few seconds after you stop:
+// one upload, only when something changed, and never a sign-in pop-up (that waits for a click on the cloud).
+function syncSoon(now){
+  const d = curDoc(); syncShow();
+  if (!d?.driveNb || !d.driveDirty || d.driveStop || !navigator.onLine || !driveTokenOk()) return;
+  const t = Date.now(); sync.first ||= t;
+  clearTimeout(sync.timer);
+  sync.timer = setTimeout(syncNow, now ? 0 : Math.max(0, Math.min(5000, sync.first + 60000 - t)));       // 5 s after the last change, at least once a minute
+}
+async function syncNow(){
+  sync.timer = 0;
+  const d = curDoc();
+  if (!d?.driveNb || !d.driveDirty || d.driveStop || !navigator.onLine || !driveTokenOk()) return syncShow();
+  if (sync.busy) { sync.again = true; return; }
+  sync.busy = true; sync.first = 0; sync.err = null; syncShow();
+  try {
+    // someone else changed it in Drive since: don't write over their work
+    const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=version,trashed&supportsAllDrives=true`)).json();
+    if (r.trashed) d.driveStop = 'gone';
+    else if (d.driveVer && r.version && String(r.version) !== String(d.driveVer)) d.driveStop = 'changed';
+    else if (curDoc() === d) await driveStore('notebook', true, true);
+  } catch (err) {
+    if (err.status === 404) d.driveStop = 'gone';
+    else if (err.status === 403 && !/rate|quota/i.test(err.message)) d.driveStop = 'locked';
+    else sync.err = err;
+  }
+  if (d.driveStop) putAll({docs});
+  sync.busy = false; syncShow();
+  if (sync.again) { sync.again = false; syncSoon(); }
+  else if (sync.err && navigator.onLine) { clearTimeout(sync.timer); sync.timer = setTimeout(syncNow, 30000); }       // try again in a while
+}
+const SYNC_SAY = {
+  synced: ['saved', 'Synced to Drive', 'This notebook is in your Google Drive and every change goes there by itself.'],
+  waiting: ['drive', 'Syncing soon', 'Your latest changes go to Google Drive in a few seconds.'],
+  syncing: ['drive', 'Syncing…', 'Sending your latest changes to Google Drive.'],
+  signin: ['drive', 'Sign in to sync', 'Google sign-in has run out. Click to sign in again, and your changes go to Drive.'],
+  offline: ['cloud-off', 'Syncs when online', 'You’re offline. Your notes are saved in this browser and go to Google Drive when you’re back online.'],
+  error: ['alert', 'Sync paused', 'Google Drive didn’t take the last changes. Click to try again.'],
+  changed: ['alert', 'Changed in two places', 'This notebook changed in Google Drive (on another device, or by someone you shared it with) while it also changed here. Click to choose which to keep.'],
+  gone: ['alert', 'Not in Drive', 'This notebook’s file was deleted or moved to the bin in Google Drive. Click to save it to Drive again.'],
+  locked: ['alert', 'Can’t sync', 'You can no longer change this file in Google Drive. Click to save a copy in your own Drive.'],
+};
+function syncShow(){
+  const el = $('#driveSync'), d = curDoc();
+  const s = !d?.driveNb && !d?.driveStop ? '' : d.driveStop || (!d.driveDirty ? 'synced' : !navigator.onLine ? 'offline' : sync.busy ? 'syncing' : sync.err ? 'error' : !driveTokenOk() ? 'signin' : 'waiting');
+  el.hidden = !s; if (!s || (el.dataset.s === s && el.innerHTML)) return;
+  const [ico, say, tip] = SYNC_SAY[s];
+  el.dataset.s = s; el.innerHTML = icon(ico) + `<span>${say}</span>`; el.dataset.tip = tip; el.setAttribute('aria-label', say);
+}
+$('#driveSync').addEventListener('click', async () => {
+  const d = curDoc(), s = $('#driveSync').dataset.s; if (!d) return;
+  if (s === 'synced' || s === 'syncing' || s === 'waiting' || s === 'offline') { if (s === 'waiting') syncSoon(true); return; }
+  if (d.driveStop === 'changed') { syncChoose(); return; }
+  if (d.driveStop === 'gone') delete d.driveNb;           // a new file, in the same folder
+  if (d.driveStop === 'locked') { d.driveNbRO = d.driveNb; delete d.driveNb; }
+  delete d.driveStop; sync.err = null;
+  await driveSave('notebook');                            // a click: signing in again is allowed here
+  syncShow();
+});
+addEventListener('online', () => { syncSoon(true); syncCheck(); }); addEventListener('offline', () => syncShow());
+document.addEventListener('visibilitychange', () => { if (!document.hidden) syncCheck(); });
+setInterval(() => { if (!document.hidden && Date.now() - sync.checked > 40000) syncCheck(); }, 45000);
+setInterval(() => { if (!$('#driveSync').hidden) syncShow(); }, 30000);      // sign-in runs out after an hour
+
+// changes made on another device (or by someone it's shared with): fetched when the notebook is opened, when you come back to it, and every minute or so
+async function syncCheck(){
+  const d = curDoc();
+  if (!d?.driveNb || d.driveStop || sync.busy || !navigator.onLine || !driveTokenOk() || main.querySelector('.welcome')) return;
+  sync.checked = Date.now();
+  try {
+    const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=version,trashed&supportsAllDrives=true`)).json();
+    if (curDoc() !== d || sync.busy) return;
+    if (r.trashed) { d.driveStop = 'gone'; putAll({docs}); return syncShow(); }
+    if (!r.version || String(r.version) === String(d.driveVer || '')) return;
+    if (!d.driveVer) { d.driveVer = String(r.version); putAll({docs}); return; }       // nothing to compare with yet
+    if (d.driveDirty) { d.driveStop = 'changed'; putAll({docs}); return syncShow(); }
+    await syncPull(d, r.version);
+    toast('Updated with the latest changes from Google Drive.');
+  } catch (err) { if (err.status === 404) { d.driveStop = 'gone'; putAll({docs}); syncShow(); } }
+}
+// put Drive's copy in place of this browser's (Back still brings the old one back)
+async function syncPull(d, ver){
+  sync.busy = true; syncShow();
+  try {
+    const f = await driveDownload({id: d.driveNb, name: d.name + '.html', mime: 'text/html'});
+    const data = readNotebookHtml(await f.text());
+    if (!data) throw new DriveError('that file isn’t a notebook', 'other');
+    if (curDoc() !== d) return;
+    const y = scrollY;
+    await flushSave();
+    loadNotebook(data, true); refreshPanels();
+    sync.quiet = true;
+    try { await saveNow(); } finally { sync.quiet = false; }
+    scrollTo(0, y);
+    d.driveVer = String(ver || ''); delete d.driveDirty; delete d.driveStop; putAll({docs});
+  } finally { sync.busy = false; syncShow(); }
+}
+// both changed: keep this one, take Drive's, or keep both
+let syncPop = null;
+function syncChoose(){
+  const d = curDoc(), btn = $('#driveSync'); if (!d) return;
+  if (!syncPop) {
+    syncPop = Object.assign(document.createElement('div'), {className: 'pop syncpop', hidden: true});
+    syncPop.setAttribute('role', 'menu'); syncPop.setAttribute('aria-label', 'Which version to keep');
+    syncPop.innerHTML = `<p>This notebook changed here and in Google Drive. Which should it keep?</p>
+<button type="button" role="menuitem" data-k="mine"><strong>This version</strong><small>Saves what you see here over the copy in Drive</small></button>
+<button type="button" role="menuitem" data-k="theirs"><strong>Drive’s version</strong><small>Replaces this with the copy in Drive (Back brings this one back)</small></button>
+<button type="button" role="menuitem" data-k="both"><strong>Keep both</strong><small>This version becomes a separate notebook, then this one takes Drive’s</small></button>`;
+    document.body.append(syncPop);
+    syncPop.addEventListener('click', async e => {
+      const k = e.target.closest('[data-k]')?.dataset.k; if (!k) return;
+      const d = curDoc(); syncPop.hidden = true; $('#driveSync').focus();
+      if (!d) return;
+      delete d.driveStop; sync.err = null;
+      try {
+        if (k === 'mine') { await driveSave('notebook'); return; }
+        await driveToken();
+        const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=version&supportsAllDrives=true`)).json();
+        if (k === 'both') { await flushSave(); await duplicateDoc(d.id); if (curDoc() !== d) await switchDoc(d.id); }
+        await syncPull(d, r.version);
+        toast(k === 'both' ? 'Kept both: your version is now a separate notebook, and this one has Drive’s changes.' : 'This notebook now has Drive’s version. Back brings yours back.');
+      } catch (err) { driveSay(err, 'sync with Google Drive'); }
+      syncShow();
+    });
+    syncPop.addEventListener('keydown', e => {
+      const items = [...syncPop.querySelectorAll('[data-k]')], i = items.indexOf(document.activeElement);
+      if (e.key === 'Escape') { e.preventDefault(); syncPop.hidden = true; $('#driveSync').focus(); }
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus(); }
+    });
+    document.addEventListener('mousedown', e => { if (!syncPop.hidden && !syncPop.contains(e.target) && !e.target.closest('#driveSync')) syncPop.hidden = true; });
+  }
+  const r = btn.getBoundingClientRect();
+  syncPop.hidden = false;
+  syncPop.style.left = Math.max(8, Math.min(r.left, innerWidth - syncPop.offsetWidth - 8)) + 'px';
+  syncPop.style.top = (r.bottom + 6) + 'px';
+  syncPop.querySelector('[data-k]').focus();
+}
+
+// ---------- your notebooks in Drive, from any device ----------
+// Only files this app made or opened are visible to it (the drive.file permission), so this is exactly your notebooks.
+let nbsBox = null, nbsScrim = null, nbsPrev = null;
+function nbsClose(){ if (!nbsBox || nbsBox.hidden) return; nbsBox.hidden = nbsScrim.hidden = true; nbsPrev?.focus?.(); }
+async function driveNotebooks(){
+  if (!driveSetUp()) return;
+  if (!nbsBox) {
+    nbsScrim = Object.assign(document.createElement('div'), {className: 'shscrim', hidden: true});
+    nbsBox = Object.assign(document.createElement('div'), {className: 'pop sharebox nbsbox', hidden: true});
+    nbsBox.setAttribute('role', 'dialog'); nbsBox.setAttribute('aria-modal', 'true'); nbsBox.setAttribute('aria-labelledby', 'nbsTitle');
+    nbsBox.innerHTML = `<div class="shhead"><h2 id="nbsTitle">Your notebooks in Drive</h2><button type="button" class="btn" id="nbsClose" aria-label="Close" title="Close (Esc)">${icon('x')}</button></div>
+<p class="nbshint">Notebooks you’ve saved to Google Drive from any device. Pick one to carry on where you left off; it keeps in sync from then on.</p>
+<div class="nbslist" role="list"></div>`;
+    document.body.append(nbsScrim, nbsBox);
+    nbsScrim.addEventListener('click', nbsClose);
+    nbsBox.querySelector('#nbsClose').addEventListener('click', nbsClose);
+    nbsBox.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); nbsClose(); return; }
+      if (e.key === 'Tab') { const f = [...nbsBox.querySelectorAll('button')], a = f.indexOf(document.activeElement); if (e.shiftKey ? a <= 0 : a === f.length - 1) { e.preventDefault(); f[e.shiftKey ? f.length - 1 : 0].focus(); } }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { const f = [...nbsBox.querySelectorAll('.nbsrow')], a = f.indexOf(document.activeElement); if (f.length) { e.preventDefault(); f[(a + (e.key === 'ArrowDown' ? 1 : f.length - 1)) % f.length].focus(); } }
+    });
+    nbsBox.querySelector('.nbslist').addEventListener('click', e => {
+      const b = e.target.closest('.nbsrow'); if (!b) return;
+      nbsClose(); driveOpenNotebook({id: b.dataset.id, name: b.dataset.name, mime: 'text/html'});
+    });
+  }
+  const list = nbsBox.querySelector('.nbslist');
+  try {
+    await driveToken();                          // sign in while the click still counts
+    nbsPrev = document.activeElement;
+    nbsBox.hidden = nbsScrim.hidden = false;
+    list.innerHTML = '<p class="nbsempty">Looking in your Google Drive…</p>';
+    nbsBox.querySelector('#nbsClose').focus();
+    const q = encodeURIComponent("trashed=false and (mimeType='text/html' or name contains '.html')");
+    const r = await (await driveFetch(`${DRIVE_API}/files?q=${q}&orderBy=modifiedTime desc&pageSize=100&fields=files(id,name,modifiedTime)&supportsAllDrives=true&includeItemsFromAllDrives=true`)).json();
+    const files = (r.files || []).filter(f => /\.html?$/i.test(f.name));
+    const when = t => { const d = new Date(t); return isNaN(d) ? '' : d.toLocaleString('en-GB', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'}); };
+    list.innerHTML = files.length ? files.map(f => {
+      const here = docs.some(x => x.driveNb === f.id && !x.trashed);
+      return `<button type="button" class="nbsrow" role="listitem" data-id="${esc(f.id)}" data-name="${esc(f.name)}">${icon('file')}<span class="nbsname">${esc(f.name.replace(/\.html?$/i, ''))}</span><small>${here ? 'On this device · ' : ''}Changed ${esc(when(f.modifiedTime))}</small></button>`;
+    }).join('') : '<p class="nbsempty">No notebooks in your Drive yet. On the device you started on, use Download › Notebook to Drive once; after that it keeps itself in sync.</p>';
+    if (files.length) list.querySelector('.nbsrow').focus();
+  } catch (err) { driveSay(err, 'list your notebooks in Google Drive'); if (!nbsBox.hidden) list.innerHTML = '<p class="nbsempty">Google Drive couldn’t be reached just now. Close this and try again.</p>'; }
+}
+// a notebook from Drive: the one already on this device (brought up to date), or a new one
+async function driveOpenNotebook(f){
+  const have = docs.find(x => x.driveNb === f.id && !x.trashed);
+  if (have) {
+    if (have.id !== curId) await switchDoc(have.id);
+    if (narrow.matches) setPanel('pages', false);
+    await syncCheck(); syncSoon();
+    return;
+  }
+  await driveOpenOne(f);
 }
 
 // ---------- share from the app ----------
@@ -6550,6 +6804,7 @@ async function shCopy(){
 // ---------- buttons, and the Help & settings section ----------
 document.addEventListener('click', e => {
   if (e.target.closest('[data-drive-open]')) { if (narrow.matches) setPanel('pages', false); driveOpen(); return; }
+  if (e.target.closest('[data-drive-nbs]')) { if (narrow.matches) setPanel('pages', false); driveNotebooks(); return; }
   const b = e.target.closest('#saveMenu [data-drive]'); if (!b) return;
   saveMenu.hidden = true; $('#save').setAttribute('aria-expanded', 'false');
   if (b.dataset.drive === 'share') driveShare('notebook', null, () => $('#save')); else driveSave(b.dataset.drive);
@@ -6564,7 +6819,7 @@ $('#driveOff').onclick = () => {
   const t = drive.token;
   drive.token = ''; drive.expires = 0; drive.user = null;
   try { google.accounts.oauth2.revoke(t, () => {}); } catch {}
-  renderDrive();
+  renderDrive(); syncShow();
   toast('Disconnected from Google Drive. Your files in Drive have not been touched.');
 };
 
@@ -7157,6 +7412,7 @@ const ckPages = () => !!main.querySelector('.slide');
 const CK_ACTIONS = [
   {id: 'new', label: 'New notebook', ico: 'plus', words: 'create blank page', run: ckClick('#newDocBtn')},
   {id: 'open', label: 'Open a file', ico: 'folder', words: 'pdf powerpoint word markdown picture upload', run: ckClick('#openBtn')},
+  {id: 'drivenbs', label: 'Your notebooks in Drive', ico: 'drive', words: 'google drive sync carry on continue another device ipad phone laptop cloud', ok: () => !!GDRIVE.clientId, run: () => driveNotebooks()},
   {id: 'focus', label: 'Focus mode', ico: 'focus', hint: 'Ctrl+Shift+F', words: 'hide toolbar panels distraction', run: ckClick('#focusBtn')},
   {id: 'study', label: 'Study mode', ico: 'book', words: 'read only revise', run: ckClick('#readBtn')},
   {id: 'pdf', label: 'Download PDF', ico: 'download', words: 'save export print', ok: ckPages, run: ckDownload('pdf')},
@@ -7568,7 +7824,7 @@ async function duplicateDoc(id){
   if (id === curId) await flushSave();                    // so the copy has what is on the page now
   const html = (await get('doc:' + id)) || '';
   const copy = {...d, id: newId(), name: d.name.slice(0, 112) + ' (copy)', named: true, copiedFrom: id, updated: Date.now()};
-  delete copy.fav; delete copy.trashed; delete copy.driveNb; delete copy.driveNbRO; delete copy.drivePdf; delete copy.odNb; delete copy.odDrive;       // a copy gets its own files in Google Drive and OneDrive
+  delete copy.fav; delete copy.trashed; delete copy.driveNb; delete copy.driveNbRO; delete copy.drivePdf; delete copy.driveVer; delete copy.driveDirty; delete copy.driveStop; delete copy.odNb; delete copy.odDrive;       // a copy gets its own files in Google Drive and OneDrive
   docs.splice(docs.indexOf(d) + 1, 0, copy);
   await putAll({['doc:' + copy.id]: html, docs});
   renderDocs();

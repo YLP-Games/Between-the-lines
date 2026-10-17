@@ -38,7 +38,7 @@ A simple web page for taking notes on lecture slides.
 ## Saving
 
 - Everything is saved automatically in your browser; the title bar says if the browser's storage is full or blocked.
-- **Download** a **PDF** (in the layout you picked, with notes on the page, as clickable PDF comments, or left out) or a **notebook file** (one .html file you can open later on any device, or with Open, to keep editing). Ctrl+S opens the Download menu. The same menu can also save them to Google Drive (see below).
+- **Download** a **PDF** (in the layout you picked, with notes on the page, as clickable PDF comments, or left out) or a **notebook file** (one .html file you can open later on any device, or with Open, to keep editing). Ctrl+S opens the Download menu. The same menu can also save them to Google Drive or OneDrive (see below).
 
 ## Google Drive
 
@@ -64,6 +64,33 @@ Notebooks can be opened from, saved to, and shared through Google Drive. The sit
    ```
 
 Both values are public by design (they are in every page that uses Google sign-in); the origin and referrer restrictions are what protect them. The Picker's app id is worked out from the client ID (the number before the first dash).
+
+## OneDrive and Microsoft 365
+
+Notebooks can also be opened from, saved to, and shared through OneDrive and SharePoint, with a personal Microsoft account or a work or school (Microsoft 365) account. As with Google Drive, the site owner registers the site with Microsoft once (see the set-up below); after that, every visitor signs in with their own account, and their files stay in their own OneDrive. It only works on the hosted site (https://ylp-games.github.io/Between-the-lines/, or `http://localhost:8123` while testing), not on a file opened from disk. Sign-in is a pop-up from Microsoft (Microsoft's MSAL.js library, loaded only when you press a OneDrive button), so allow pop-ups for the site. Until the site owner does the set-up below, the OneDrive buttons show a message saying OneDrive isn't set up yet.
+
+- **Open from OneDrive** (the sidebar, or the link on the welcome screen): opens a small file browser with tabs for **My files** (open folders; a path above the list takes you back up), **Shared with me** and **Recent**, and a search box. It shows folders and the files this page can open: PDF, PowerPoint, Word, Markdown or text files, pictures and notebook `.html` files. Click a file to tick it (several can be ticked) and press **Open**, or press Enter. The arrow keys move through the list, Space ticks, Enter opens a file or goes into a folder, Backspace goes up a folder, and Esc closes it. Each file becomes its own notebook.
+- **Open PowerPoint/Word as it looks (PDF)**: a box in the file browser, on by default and remembered. OneDrive turns `.pptx` and `.docx` files into a PDF, so every page looks just as it does in Office; the notebook is named after the file. If OneDrive can't make the PDF, the original file is opened instead and a short message says so. Untick it to open the original file and its text.
+- **Download › Save to OneDrive**: the first time this makes `<name> (notes).html` in a `Between the Lines` folder in your OneDrive (never over a file that is already there); after that it updates that same file. A notebook opened from a OneDrive `.html` file updates that file. If the file has been deleted, a new one is made. Large notebooks (over 4 MB) are uploaded in pieces, with the progress shown.
+- **Download › Share via OneDrive…** (or **Share via OneDrive…** in a notebook's ⋯ menu in the sidebar): saves the notebook to OneDrive first, then opens the same sharing dialog as Google Drive. **Add people** by email (several, separated by commas) as Viewer or Editor, with an optional email and message; see **People with access** and remove anyone but the owner (access that comes from the folder can only be changed there); set **General access** to Restricted or Anyone with the link (Viewer or Editor); **Copy link** or **Open in OneDrive**. If your organisation doesn't allow links for anyone, a link for people in your organisation is made instead and the dialog says why.
+- **A notebook shared with you to view only**: opening its `.html` file from **Shared with me** works as normal. Since you can't change the original, **Save to OneDrive** saves a copy called `<name> (my copy).html` in your own OneDrive instead, and says so.
+- **Help & settings › OneDrive and Microsoft 365** shows who is signed in and has a **Sign out** button. The sign-in is kept for the tab only.
+
+### Set-up (for the site owner, once)
+
+1. Sign in to the [Microsoft Entra admin center](https://entra.microsoft.com/) with any Microsoft account (a free Azure account is enough) and go to **Entra ID › App registrations › New registration**.
+2. Give it a name (for example "Between the Lines"). Under **Supported account types** choose **Accounts in any organizational directory and personal Microsoft accounts**, so that school, work and personal accounts can all sign in.
+3. Under **Redirect URI**, choose the platform **Single-page application (SPA)** and enter `https://ylp-games.github.io/Between-the-lines/msal-redirect.html` (this is the blank page in the repository that the sign-in pop-up returns to). Press **Register**. Then, under **Authentication**, add a second redirect URI of the same kind, `http://localhost:8123/msal-redirect.html`, if you want to test on your own computer. It must be a *Single-page application* redirect, not *Web*.
+4. Under **API permissions › Add a permission › Microsoft Graph › Delegated permissions**, add **User.Read** and **Files.ReadWrite.All** (the second is what lets people open files that others have shared with them). Neither is an admin-only permission by default, so people can agree to it themselves when they sign in (unless their organisation says otherwise, see below).
+5. Copy the **Application (client) ID** from the app's **Overview** page and paste it into `ONEDRIVE` at the top of the script in `index.html`, then push:
+
+   ```js
+   const ONEDRIVE = {clientId: '00000000-0000-0000-0000-000000000000'};
+   ```
+
+The client ID is public by design (it is in every page that uses Microsoft sign-in). **No client secret is needed. Never create one for this app and never put one in the code or the repository**: a single-page app can't keep a secret, and anything in the page is public. Security comes from the redirect URI, which Microsoft checks exactly.
+
+Some school and work organisations don't let their members use apps they haven't approved. If someone gets "Need admin approval" when signing in, an administrator of their organisation has to approve the app once (in Entra: **Enterprise applications › Consent and permissions**, or by following the link Microsoft shows to request approval); the page then says "Your organisation needs an administrator to approve this app". Personal Microsoft accounts are not affected.
 
 ## Use it
 
