@@ -1,0 +1,7 @@
+
+# test tooling
+tests/node_modules
+tests/shots/
+tests/nbfile.html
+tests/index.*.html
+tests/package-lock.json

@@ -96,7 +96,16 @@ input[type=color]{width:28px;height:28px;padding:0;border:1px solid var(--line-s
 .tab{height:36px;padding:0 14px;border:none;border-bottom:2px solid transparent;background:none;font:inherit;font-size:13.5px;color:var(--muted);cursor:pointer;margin-bottom:-1px}
 .tab:hover{color:var(--ink)}
 .tab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
-.panel{display:flex;align-items:stretch;gap:2px;padding:6px 0;height:64px;box-sizing:border-box;overflow-x:auto;scrollbar-width:thin}
+.panel{--sbh:9px;display:flex;align-items:stretch;gap:2px;padding:6px 0;height:calc(64px + var(--sbh));margin-bottom:calc(0px - var(--sbh));box-sizing:border-box;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scroll-padding-inline:20px;scrollbar-width:thin;scrollbar-color:transparent transparent;transition:scrollbar-color .25s}
+.panel > .grp, .panel > .tip{scroll-snap-align:start}      /* a sideways scroll comes to rest at the start of a group, with room before it: never half a button at the edge */
+/* the scroll bar sits in a strip (--sbh) below the tools that the next row overlaps, so it never squeezes them; it is clear, and shows while you point at the ribbon or scroll it; a soft fade at an edge says there is more that way */
+.ribbon:hover .panel,.panel.scrolling{scrollbar-color:var(--line-strong) transparent}
+@supports not (scrollbar-color:auto){.panel::-webkit-scrollbar{height:7px}.panel::-webkit-scrollbar-thumb{border-radius:4px;background:transparent}.ribbon:hover .panel::-webkit-scrollbar-thumb,.panel.scrolling::-webkit-scrollbar-thumb{background:var(--line-strong)}}
+.panel::before,.panel::after{content:"";position:sticky;flex:none;width:22px;align-self:stretch;z-index:3;pointer-events:none;opacity:0;transition:opacity .2s}
+.panel::before{left:0;margin-right:-24px;background:linear-gradient(to right,var(--surface) 72%,transparent)}
+.panel::after{right:0;margin-left:-24px;background:linear-gradient(to left,var(--surface) 72%,transparent)}
+.panel.more-l::before,.panel.more-r::after{opacity:1}
+@media (prefers-reduced-motion:reduce){.panel,.panel::before,.panel::after{transition:none}}
 .ribbon.compact:not(.peek) .panel{display:none}
 .ribbon.compact.peek .panel{position:absolute;left:0;right:0;top:100%;padding:6px var(--gutter-r) 6px var(--gutter-l);background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 8px 16px rgba(16,24,40,.12)} /* taste-skill-ignore: the folded toolbar floats over the page */
 .ribbon.compact .tab[aria-selected="true"]:not(.peeking){font-weight:400;border-bottom-color:transparent;color:var(--muted)}
@@ -119,6 +128,9 @@ html[data-tips="off"] .ribbon .tip{display:none}
 .showbar{position:fixed;z-index:30;top:calc(8px + env(safe-area-inset-top,0px));right:var(--gutter-r);display:inline-flex;align-items:center;gap:6px;font:13px var(--ui);height:32px;padding:0 14px;border-radius:999px;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer;opacity:.9} /* taste-skill-ignore: a floating button */
 .showbar:hover{opacity:1}
 #ribbonFold .i,#save .chev{width:16px;height:16px}
+#notesMenuBtn .chev{width:13px;height:13px;margin-left:-2px;opacity:.7}
+.notesmenu{width:290px}
+.notesmenu button:disabled{opacity:.45;cursor:default;background:transparent}
 /* focus mode: only the pages and notes are left on screen */
 body.focus{--status-h:0px}
 body.focus .appbar,body.focus .side,body.focus .statusbar,body.focus .scrim,body.focus #showBar{display:none!important}
@@ -182,7 +194,7 @@ body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
 @media (max-width:640px){
   .titlebar .brand,.vr,.btn .lbl,.cap,.savestate span,#save .chev{display:none}
   .titlebar{gap:0;padding-inline:6px}
-  .panel{height:auto}
+  .panel{height:auto;margin-bottom:0}
   .titlebar .btn{min-width:32px;padding:0 6px}
   .doc-title{font-size:13px}
 }
@@ -195,14 +207,18 @@ body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
 .statusbar .btn .i{width:16px;height:16px}
 
 /* ================= the document ================= */
-main{position:relative;z-index:0;flex:1 1 0;min-width:0;max-width:960px;margin:0 auto;padding-block:24px calc(120px + var(--status-h));padding-inline:16px;display:flex;flex-direction:column;gap:16px}
+main{--cw:960px;--sidew:560px;--z:1;position:relative;z-index:0;flex:1 1 0;min-width:0;max-width:960px;margin:0 auto;padding-block:24px calc(120px + var(--status-h));padding-inline:16px;display:flex;flex-direction:column;gap:16px}
 main.paged{max-width:none;align-items:center;gap:24px}
-.slide,.sheet,.file-head,.notebox{scroll-margin-top:calc(var(--appbar-h) + 16px);scroll-margin-bottom:calc(var(--status-h) + 16px)}
+/* a slide, its side page and its notes are laid out at one fixed width and scaled to the room there is (main's zoom, --z), so nothing moves or rewraps when the window or a panel changes */
+main.fit{max-width:none;align-items:center}
+main.fit > :not(.sidewrap){width:var(--cw);flex:none}
+main.fit > .sidepage{width:var(--sidew)}
+.slide,.sheet,.file-head,.notebox{scroll-margin-top:calc((var(--appbar-h) + 16px) / var(--z,1));scroll-margin-bottom:calc((var(--status-h) + 16px) / var(--z,1))}
 .sheet{width:var(--sheet-w);min-height:var(--sheet-h);background:#fff;padding:48px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;flex-shrink:0;color:#1b2330}
 .sheet > .slide{box-shadow:none;border-radius:0;flex-shrink:0;align-self:center;width:100%}
 .sheet > .file-head{margin:0;color:#1b2330}
 .sheet > .cont{margin-top:0}
-.slide{position:relative;background:var(--card);color:var(--card-ink);border-radius:6px;padding:22px 28px 26px;cursor:text;min-width:0;overflow-wrap:anywhere;line-height:1.35}
+.slide{box-sizing:border-box;position:relative;background:var(--card);color:var(--card-ink);border-radius:6px;padding:22px 28px 26px;cursor:text;min-width:0;overflow-wrap:anywhere;line-height:1.35}
 .file-head{font-family:var(--display);font-weight:600;font-size:26px;margin:14px 0 0;text-wrap:balance;overflow-wrap:anywhere}
 .slide .blk{margin:0 0 .45em}
 .slide img{display:block;max-width:100%;height:auto;margin:.6em 0}
@@ -219,7 +235,7 @@ main.paged{max-width:none;align-items:center;gap:24px}
 .tl{position:absolute;white-space:pre;line-height:1;transform-origin:0 0;color:transparent;font-family:Arial,Helvetica,sans-serif;cursor:text}
 .tl::selection{background:rgba(39,71,201,.3);color:transparent}
 .gapline{position:absolute;left:0;right:0;border-top:2px dashed var(--accent);pointer-events:none;z-index:2}
-.gappill{position:absolute;left:12px;transform:translateY(-50%);z-index:3;font:600 12.5px var(--ui);height:28px;padding:0 13px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);user-select:none;-webkit-user-select:none} /* taste-skill-ignore: a floating button on the page */
+.gappill{position:absolute;left:12px;transform:translateY(-50%);z-index:3;font:600 12px var(--ui);height:22px;padding:0 11px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);user-select:none;-webkit-user-select:none} /* taste-skill-ignore: a floating button on the page */
 
 /* ================= your notes ================= */
 .mine{outline:none;border-radius:3px;font-family:Caveat,cursive;font-size:24px;color:#1f4fd1;cursor:text;line-height:1.3}
@@ -506,7 +522,7 @@ select{font-size:16px}
 .sheet{border:1.5px solid var(--pencil)}
 .sheet > .slide{border:none}
 .file-head{font:700 30px/1.15 var(--display);letter-spacing:-.01em}
-.gappill{font:16px var(--ui);height:30px;border:1.5px solid var(--pencil);border-radius:var(--wob-pill);box-shadow:2px 2px 0 var(--pencil)} /* taste-skill-ignore: a floating button on the page */
+.gappill{font:15px/1 var(--ui);height:24px;border:1.5px solid var(--pencil);border-radius:var(--wob-pill);box-shadow:2px 2px 0 var(--pencil)} /* taste-skill-ignore: a floating button on the page */
 .kinds span{border-radius:var(--wob)}
 .steps b{font:700 17px var(--display)}
 .steps li::before{border:1.5px solid var(--pencil);border-radius:var(--wob)}
@@ -532,7 +548,7 @@ kbd{border-color:var(--pencil)}
 #sideDrive{margin-top:26px;position:relative}
 #sideDrive::before{content:"Open from the cloud";position:absolute;left:8px;top:-22px;font-size:12px;letter-spacing:.04em;color:var(--muted)}
 .srow.cloud{padding-left:14px}
-#sideOd{margin-bottom:6px}
+#sideOdNbs{margin-bottom:6px}
 .srow .i{width:17px;height:17px;color:var(--muted)}
 .sidesec{display:flex;align-items:baseline;gap:8px;padding:10px 14px 4px;font:700 15px var(--display);color:var(--muted)}
 .sidesec .count{font:13px var(--ui)}
@@ -888,18 +904,22 @@ main.side-on .sidepage{display:block}
 .sidepage .g-float{display:none}
 .sidepage > .notebox.floating.collapsed > .note-chip{left:calc(4px + var(--ci, 0) * 23px)}
 /* beside the slides: two columns, each side page in the row of its slide (the row is as tall as the taller of the two) */
-main.side-on{max-width:1500px}
-main.side-on:not(.side-split){display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);column-gap:18px;row-gap:16px;align-items:start}
-main.side-on:not(.side-split) > .file-head{grid-column:1 / -1}
-main.side-on:not(.side-split) > .slide{grid-column:1}
-main.side-on:not(.side-split) > .sidepage{grid-column:2;align-self:stretch}
-/* sync scrolling off: the side pages stand in a column of their own on the right, which scrolls by itself */
-main.side-split{--sw:min(400px,34vw);padding-right:calc(var(--sw) + 32px)}
+main.fit.side-on:not(.side-split):not(.side-stack){display:grid;grid-template-columns:var(--cw) var(--sidew);justify-content:center;column-gap:18px;row-gap:16px;align-items:start}
+main.fit.side-on:not(.side-split):not(.side-stack) > *{width:auto}
+main.fit.side-on:not(.side-split):not(.side-stack) > :not(.slide):not(.sidepage):not(.sidewrap){grid-column:1 / -1;justify-self:start;width:var(--cw)}
+main.fit.side-on:not(.side-split):not(.side-stack) > .slide{grid-column:1}
+main.fit.side-on:not(.side-split):not(.side-stack) > .sidepage{grid-column:2;align-self:stretch}
+/* the printed pages: a sheet and its side page share a row, as tall as the taller of the two */
+.srow{display:flex;align-items:stretch;gap:18px;flex:none}
+.srow > .sheet{flex:none}
+.srow > .sidepage{width:var(--sidew);flex:none}
+main.paged > .sidepage{width:var(--sidew);flex:none}
+/* sync scrolling off: the side pages stand in a column of their own on the right, which scrolls by itself (the column's sizes are divided by --z, as main is zoomed) */
+main.side-split{--sw:calc(var(--sidew) + 32px);padding-right:calc(var(--sw) + 32px)}
 .sidewrap{position:absolute;top:0;bottom:0;right:16px;width:var(--sw);pointer-events:none}
-.sidecol{position:sticky;top:var(--appbar-h);height:calc(100dvh - var(--appbar-h) - var(--status-h));overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;pointer-events:auto;display:flex;flex-direction:column;gap:18px;padding:14px 8px 80px 24px;box-sizing:border-box}
+.sidecol{position:sticky;top:calc(var(--appbar-h) / var(--z,1));height:calc((100dvh - var(--appbar-h) - var(--status-h)) / var(--z,1));overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;pointer-events:auto;display:flex;flex-direction:column;gap:18px;padding:14px 8px 80px 24px;box-sizing:border-box}
 main.side-split .sidepage{flex:none}
 main.side-split .sidepage::before{display:block}
-@media (max-width:760px){main.side-on:not(.side-split){grid-template-columns:minmax(0,1fr)}main.side-on:not(.side-split) > .sidepage{grid-column:1;align-self:start}}
 /* joining a highlight to a note: click the note */
 body.side-picking .sidepage,body.side-picking .sidepage .mine{cursor:crosshair}
 body.side-picking .sidepage .notebox:not(.collapsed) > .mine{box-shadow:0 0 0 2px var(--accent)} /* taste-skill-ignore: a ring marking what can be picked */
@@ -933,9 +953,11 @@ body:not(.side-visible) #annoBar [data-side]{display:none}
 .tipwrap{display:inline-flex}
 .tipwrap > .btn:disabled{pointer-events:none}
 .cap .i{width:13px;height:13px;vertical-align:-2px;margin-right:4px;stroke-width:2}
-/* pointing at (or tapping) a side page shows a small palette button in its corner */
-.sidecorner{position:fixed;z-index:54;width:30px;min-width:30px;height:30px;padding:0;border-radius:8px;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);box-shadow:0 1px 4px rgba(0,0,0,.2);opacity:.92} /* taste-skill-ignore: a small button floats over the side page */
-.sidecorner:hover,.sidecorner[aria-expanded="true"]{opacity:1;background:var(--hover)}
+/* a small palette button waits (clear, but a Tab stop) in the top right corner of the side page in view; it shows when you point near that corner, tap the page, or Tab to it */
+.sidecorner{position:fixed;z-index:54;width:30px;min-width:30px;height:30px;padding:0;border-radius:8px;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);box-shadow:0 1px 4px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .2s ease} /* taste-skill-ignore: a small button floats over the side page */
+.sidecorner.near,.sidecorner:focus-visible,.sidecorner[aria-expanded="true"]{opacity:.92;pointer-events:auto}
+.sidecorner:hover{opacity:1;background:var(--hover)}
+@media (prefers-reduced-motion:reduce){.sidecorner{transition:none}}
 .sidecorner .i{width:16px;height:16px}
 @media (pointer:coarse){.sidecorner{width:40px;min-width:40px;height:40px}}
 main.reading .sidepage{cursor:auto}
@@ -991,12 +1013,11 @@ body.bresizing .beside{pointer-events:none}
 :root{
   --wg-ink:#6d84b4;
   --wt-ink:#2f5fd6;
-  --j-dim-l:#5d6877; --j-acct-l:#2b62b5; --j-amt-l:#8a5a14;
-  --j-dim-d:#dcdbd5; --j-acct-d:#8fc4ff; --j-amt-d:#f3e8b4;
-  --j-dim:var(--j-dim-l); --j-acct:var(--j-acct-l); --j-amt:var(--j-amt-l); --j-bg:transparent; --j-pad:0px;
+  --j-dim:#5d6877; --j-acct:#2b62b5; --j-amt:#8a5a14;       /* the paper is white or cream, even in the dark theme */
+  --j-dim-d:#dcdbd5; --j-acct-d:#8fc4ff; --j-amt-d:#f3e8b4;  /* for paper that really is dark: a dark side page, a dark fill */
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--wg-ink:#8da3d1;--j-dim:var(--j-dim-d);--j-acct:var(--j-acct-d);--j-amt:var(--j-amt-d);--j-bg:#1f2623;--j-pad:.6em}}
-:root[data-theme="dark"]{--wg-ink:#8da3d1;--j-dim:var(--j-dim-d);--j-acct:var(--j-acct-d);--j-amt:var(--j-amt-d);--j-bg:#1f2623;--j-pad:.6em}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--wg-ink:#8da3d1}}
+:root[data-theme="dark"]{--wg-ink:#8da3d1}
 
 /* the writing guide: a grid, ruled lines or dots over the pages, to write straight with a pen. It sits in the page (not in the notebook) and lets everything through except its bar and handles. */
 .wguide{position:absolute;z-index:17;box-sizing:border-box;pointer-events:none;outline:1px dashed color-mix(in srgb,var(--wg-ink) 65%,transparent);outline-offset:-1px;--wg-gap:28px;--wg-op:.55;--wg-hs:18px}
@@ -1004,16 +1025,28 @@ body.bresizing .beside{pointer-events:none}
 .wguide[data-pat="grid"] .wg-pat{background-image:linear-gradient(var(--wg-ink) 1px,transparent 1px),linear-gradient(90deg,var(--wg-ink) 1px,transparent 1px);background-size:var(--wg-gap) var(--wg-gap)}
 .wguide[data-pat="lines"] .wg-pat{background-image:linear-gradient(transparent calc(var(--wg-gap) - 1px),var(--wg-ink) calc(var(--wg-gap) - 1px));background-size:100% var(--wg-gap)}
 .wguide[data-pat="dots"] .wg-pat{background-image:radial-gradient(circle,var(--wg-ink) 1.4px,transparent 1.9px);background-size:var(--wg-gap) var(--wg-gap);background-position:calc(var(--wg-gap) / 2) calc(var(--wg-gap) / 2)}
-.wg-bar{position:sticky;top:calc(var(--appbar-h,0px) + 8px);display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;width:max-content;max-width:calc(100% - 16px);box-sizing:border-box;margin:8px;padding:4px 6px;
+.wg-bar{position:sticky;top:calc(var(--appbar-h,0px) + 8px);display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;width:max-content;max-width:calc(100% - 56px);box-sizing:border-box;margin:8px 8px 8px 48px;padding:4px 6px;
   background:var(--surface);color:var(--ink);border:1.5px solid var(--pencil);border-radius:10px;box-shadow:2px 3px 0 rgba(47,43,36,.22);pointer-events:auto;font:13px var(--ui)} /* taste-skill-ignore: a small bar floats over the page */
-.wg-bar .btn{height:30px;min-width:30px;padding:0 8px}
-.wg-bar .seg .btn{height:26px}
+.wguide.bar-off .wg-bar{visibility:hidden;pointer-events:none}
+:is(.wg-bar,.wgpop) .btn{height:30px;min-width:30px;padding:0 8px}
+:is(.wg-bar,.wgpop) .seg .btn{height:26px}
+.wg-ind{position:sticky;top:var(--appbar-h,0px);display:flex;align-items:center;justify-content:center;width:48px;height:48px;margin:1px 0 -49px 1px;padding:0;border:0;background:none;color:var(--wg-ink);opacity:.35;cursor:pointer;pointer-events:auto;z-index:1}      /* over the corner handle's inner quarter, 1px in so the corner itself still grabs the handle */
+.wg-ind:hover,.wg-ind:focus-visible{opacity:.9}
+.wg-ind:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:8px}
+.wg-ind .i{width:22px;height:22px}
+/* the settings that pop out under Insert › Writing guide */
+.wgpop{z-index:48;display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:10px 12px;width:max-content;max-width:calc(100vw - 16px);box-sizing:border-box;font:13px var(--ui)}
+.wgpop .wgp-h{margin:0;font-weight:600;font-size:14px}
+.wgpop .wgp-d{margin:-4px 0 0;max-width:260px;color:var(--muted);line-height:1.3}
+.wgpop .wgp-row{display:flex;align-items:center;gap:8px}
+.wgpop .wgp-row > label{min-width:4.6em;color:var(--muted)}
+.wgpop .wgp-go{align-self:stretch;justify-content:center}
 .wg-bar .wg-move{cursor:grab;touch-action:none;padding:0 4px;color:var(--muted)}
 .wg-bar .wg-move:active{cursor:grabbing}
-.wg-bar .wg-grp{display:inline-flex;align-items:center;gap:3px}
-.wg-bar output{min-width:2.6em;text-align:center;font-size:12px;color:var(--muted)}
-.wg-bar input[type=range]{width:84px;accent-color:var(--accent);margin:0}
-.wg-bar .wg-ico{color:var(--muted);display:inline-flex}
+:is(.wg-bar,.wgpop) .wg-grp{display:inline-flex;align-items:center;gap:3px}
+:is(.wg-bar,.wgpop) output{min-width:2.6em;text-align:center;font-size:12px;color:var(--muted)}
+:is(.wg-bar,.wgpop) input[type=range]{width:84px;accent-color:var(--accent);margin:0}
+:is(.wg-bar,.wgpop) .wg-ico{color:var(--muted);display:inline-flex}
 .wg-h{position:absolute;pointer-events:auto;touch-action:none;width:var(--wg-hs);height:var(--wg-hs)}
 .wg-h::after{content:"";position:absolute;left:50%;top:50%;translate:-50% -50%;width:10px;height:10px;box-sizing:border-box;background:var(--surface);border:1.5px solid var(--wg-ink);border-radius:3px}
 .wg-h:hover::after,.wg-h.on::after{background:var(--wg-ink)}
@@ -1023,7 +1056,7 @@ body.bresizing .beside{pointer-events:none}
 .wg-n::after,.wg-s::after{width:26px;height:7px;border-radius:5px} .wg-e::after,.wg-w::after{width:7px;height:26px;border-radius:5px}
 .wg-nw{left:calc(var(--wg-hs) / -2);top:calc(var(--wg-hs) / -2);cursor:nwse-resize} .wg-se{right:calc(var(--wg-hs) / -2);bottom:calc(var(--wg-hs) / -2);cursor:nwse-resize}
 .wg-ne{right:calc(var(--wg-hs) / -2);top:calc(var(--wg-hs) / -2);cursor:nesw-resize} .wg-sw{left:calc(var(--wg-hs) / -2);bottom:calc(var(--wg-hs) / -2);cursor:nesw-resize}
-@media (pointer:coarse){.wguide{--wg-hs:40px}.wg-bar .btn{height:40px;min-width:40px}.wg-bar .seg .btn{height:36px}.wg-bar input[type=range]{width:96px;height:40px}}
+@media (pointer:coarse){.wguide{--wg-hs:40px}:is(.wg-bar,.wgpop) .btn{height:40px;min-width:40px}:is(.wg-bar,.wgpop) .seg .btn{height:36px}:is(.wg-bar,.wgpop) input[type=range]{width:96px;height:40px}}
 .wguide.wg-touch{--wg-hs:40px}
 .wguide.wg-touch .wg-bar .btn{height:40px;min-width:40px}
 .wguide.wg-touch .wg-bar .seg .btn{height:36px}
@@ -1065,13 +1098,16 @@ body.wt-select{user-select:none;-webkit-user-select:none;cursor:cell}
 @media (pointer:coarse){.tblpick .tp-g{grid-template-columns:repeat(10,32px)}.tblpick .tp-g > i{width:32px;height:32px}}
 
 /* journal entries: an invisible four-column layout (indicator, account, debit, credit) with no borders */
-.mine .jrnl{display:grid;grid-template-columns:max-content minmax(7em,1fr) minmax(5.5em,max-content) minmax(5.5em,max-content);column-gap:.9em;row-gap:.08em;width:min(100%,26em);margin:.25em 0;box-sizing:border-box;padding:.15em var(--j-pad);background:var(--j-bg);border-radius:10px;line-height:1.25;font-variant-numeric:tabular-nums;cursor:text;-webkit-user-select:text;user-select:text}
-.sidepage.dark .jrnl{--j-dim:var(--j-dim-d);--j-acct:var(--j-acct-d);--j-amt:var(--j-amt-d);--j-bg:transparent;--j-pad:0px}
-main.pdfpaper .jrnl{--j-dim:var(--j-dim-l);--j-acct:var(--j-acct-l);--j-amt:var(--j-amt-l);--j-bg:transparent;--j-pad:0px}
+.mine .jrnl{display:grid;grid-template-columns:max-content minmax(7em,1fr) minmax(5.5em,max-content) minmax(5.5em,max-content);column-gap:.9em;row-gap:.08em;width:min(100%,26em);margin:.25em 0;box-sizing:border-box;padding:.2em 0;border-radius:6px;line-height:1.25;font-variant-numeric:tabular-nums;cursor:text;-webkit-user-select:text;user-select:text}
+/* no panel: it takes the note's fill. The colours suit paper; on a dark side page or a note with a dark fill (data-tone, set from the fill) they switch to the light set */
+.sidepage.dark .jrnl,.notebox[data-tone="dark"] .jrnl{--j-dim:var(--j-dim-d);--j-acct:var(--j-acct-d);--j-amt:var(--j-amt-d)}
+.sidepage.dark .notebox[data-tone="light"] .jrnl,.sidepage.dark .notebox.sticky:not([data-tone="dark"]) .jrnl{--j-dim:#5d6877;--j-acct:#2b62b5;--j-amt:#8a5a14}
 .jrnl .j-row{display:contents}
 .jrnl [contenteditable]{min-width:0;outline:none;white-space:pre-wrap;overflow-wrap:anywhere;border-radius:3px;caret-color:currentColor}
 .jrnl [contenteditable="true"]:focus{background:color-mix(in srgb,currentColor 11%,transparent)}
-.jrnl [data-ph]:empty::before{content:attr(data-ph);opacity:.38}
+.jrnl .j-acct[data-ph]:empty::before{content:attr(data-ph);opacity:.38}
+.jrnl .j-date,.jrnl .j-desc{min-height:1.25em}                       /* empty, they show nothing but stay there to be clicked */
+.jrnl .j-date:focus,.jrnl .j-desc:focus{outline:1px solid color-mix(in srgb,currentColor 30%,transparent);outline-offset:1px}
 .jrnl .j-date,.jrnl .j-foot{grid-column:1 / -1}
 .jrnl .j-date,.jrnl .j-desc{color:var(--j-dim)}
 .jrnl .j-ind,.jrnl .j-acct{color:var(--j-acct)}
@@ -1081,9 +1117,15 @@ main.pdfpaper .jrnl{--j-dim:var(--j-dim-l);--j-acct:var(--j-acct-l);--j-amt:var(
 .jrnl .j-row[data-s="cr"] .j-acct{padding-left:1.15em}
 .jrnl .j-amt.off{pointer-events:none}
 .jrnl .j-foot{display:flex;align-items:baseline;gap:.7em;margin-top:.22em}
-.jrnl .j-desc{flex:0 1 auto;min-width:6em}
-.jrnl .j-foot[data-diff]::after{content:attr(data-diff);flex:none;font-size:.62em;letter-spacing:.02em;color:var(--j-amt);opacity:.75;border:1px solid color-mix(in srgb,currentColor 45%,transparent);border-radius:99px;padding:0 .55em;white-space:nowrap}
+.jrnl .j-desc{flex:0 1 auto;min-width:8em}
+.jrnl .j-foot[data-diff]::after{content:attr(data-diff);flex:none;font-size:.62em;letter-spacing:.02em;color:var(--j-amt);border:1px solid color-mix(in srgb,currentColor 45%,transparent);border-radius:99px;padding:0 .55em;white-space:nowrap;opacity:0}
+.jrnl:hover .j-foot[data-diff]::after,.jrnl:focus-within .j-foot[data-diff]::after{opacity:.75}
 main.reading .jrnl .j-ind{cursor:default}
+#jx{position:absolute;z-index:16;width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0;border:1px solid var(--line-strong);border-radius:50%;background:var(--surface);color:var(--ink);cursor:pointer}
+#jx[hidden]{display:none}
+#jx:hover,#jx:focus-visible{background:var(--danger);border-color:var(--danger);color:var(--surface)}
+#jx .i{width:12px;height:12px;stroke-width:2.2}
+@media (pointer:coarse){#jx{width:32px;height:32px}}
 /* ================= templates: smart blocks for every subject (laid out like the journal entry), and the gallery that holds them ================= */
 :root{--t-fg:currentColor;--t-str:#2a7a47;--t-bad:#b3402f}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--t-fg:#ece6d6;--t-str:#9fd8a5;--t-bad:#ffa08c}}
@@ -1603,8 +1645,8 @@ try {
       </div><span class="cap">Text</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row">
-        <button class="btn" data-cmd="insertUnorderedList" aria-label="Bullet list" title="Bullet list"><svg class="i"><use href="#i-list"/></svg></button>
-        <button class="btn" data-cmd="insertOrderedList" aria-label="Numbered list" title="Numbered list"><svg class="i"><use href="#i-list-num"/></svg></button>
+        <button class="btn" data-cmd="insertUnorderedList" aria-label="Bullet list" title="Bullet list (or type - and a space at the start of a line)"><svg class="i"><use href="#i-list"/></svg></button>
+        <button class="btn" data-cmd="insertOrderedList" aria-label="Numbered list" title="Numbered list (or type 1. and a space at the start of a line)"><svg class="i"><use href="#i-list-num"/></svg></button>
         <button class="btn" data-cmd="outdent" aria-label="Decrease indent" title="Decrease indent (Shift+Tab)"><svg class="i"><use href="#i-outdent"/></svg></button>
         <button class="btn" data-cmd="indent" aria-label="Increase indent" title="Increase indent (Tab)"><svg class="i"><use href="#i-indent"/></svg></button>
         <select id="listStyle" aria-label="Bullet style" title="Bullet style for the list you are in (each sub-level has its own style)" style="margin-left:4px;width:90px">
@@ -1647,7 +1689,7 @@ try {
       </div><span class="cap">Into the note</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row">
-        <button class="btn" id="wgBtn" aria-pressed="false" data-tip="Writing guide: a grid, ruled lines or dots over the pages, to help you write in straight lines with a pen. It is only for now: it isn't saved with your notes (Esc)"><svg class="i"><use href="#i-wguide"/></svg>Writing guide</button>
+        <button class="btn" id="wgBtn" aria-pressed="false" aria-haspopup="dialog" aria-expanded="false" data-tip="Writing guide: a grid, ruled lines or dots over the pages, to help you write in straight lines with a pen. It is only for now: it isn't saved with your notes. Point at the button for its settings (Esc)"><svg class="i"><use href="#i-wguide"/></svg>Writing guide</button>
         <button class="btn" id="tblBtn" aria-haspopup="dialog" aria-expanded="false" data-tip="Table: choose how many columns and rows. It goes into the note you're in, or a new note between the lines"><svg class="i"><use href="#i-table"/></svg>Table</button>
         <button class="btn" id="jeBtn" data-tip="Journal entry: an accounting entry with date, DR and CR lines, debit and credit amounts and a description, all lined up. It goes into the note you're in, or a new note between the lines"><svg class="i"><use href="#i-journal"/></svg>Journal entry</button>
         <button class="btn" id="tplBtn" aria-haspopup="dialog" data-tip="Templates: ready-made layouts and formulas for every subject, such as Cornell notes, T-accounts, Punnett squares and truth tables. They go into the note you're in, or a new note between the lines"><svg class="i"><use href="#i-library"/></svg>Templates</button>
@@ -1715,7 +1757,7 @@ try {
       </div><span class="cap">Page layout</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row">
-        <button class="btn notes-toggle" disabled><svg class="i"><use href="#i-eye-off"/></svg><span>Hide notes</span></button>
+        <button class="btn" id="notesMenuBtn" aria-haspopup="menu" aria-expanded="false" title="Hide or show notes: only those on your pages, or every note" disabled><svg class="i"><use href="#i-eye-off"/></svg><span>Hide notes</span><svg class="i chev"><use href="#i-down"/></svg></button>
         <button class="btn" data-panel="pages" aria-pressed="false" aria-label="Sidebar" title="Sidebar: your notebooks and their pages (Ctrl+\)"><svg class="i"><use href="#i-panel-left"/></svg><span class="vl">Sidebar</span></button>
         <button class="btn" data-panel="notes" aria-pressed="false" aria-label="Notes list" title="Notes list: every note in one list, to search and jump to"><svg class="i"><use href="#i-panel-right"/></svg><span class="vl">Notes list</span></button>
       </div><span class="cap">Show</span></div>
@@ -1770,6 +1812,7 @@ try {
       <button type="button" class="srow cloud" id="sideDrive" data-drive-open title="Open a file from Google Drive: PDF, PowerPoint, Word, Google Slides or Docs, pictures or a notebook file"><svg class="i"><use href="#i-drive"/></svg>Google Drive</button>
       <button type="button" class="srow cloud" id="sideDriveNbs" data-drive data-drive-nbs title="Your notebooks saved in Google Drive, from any of your devices: pick one up where you left off"><svg class="i"><use href="#i-drive"/></svg>Your Drive notebooks</button>
       <button type="button" class="srow cloud" id="sideOd" data-od-open title="Open a file from OneDrive or SharePoint with your Microsoft account: PDF, PowerPoint, Word, pictures or a notebook file"><svg class="i"><use href="#i-onedrive"/></svg>OneDrive</button>
+      <button type="button" class="srow cloud" id="sideOdNbs" data-od data-od-nbs title="Your notebooks saved in OneDrive, from any of your devices: pick one up where you left off"><svg class="i"><use href="#i-onedrive"/></svg>Your OneDrive notebooks</button>
       <button type="button" class="srow" id="sideAdd" title="Write a note for the page you're on, in the Notes panel"><svg class="i"><use href="#i-pen"/></svg>Add a note</button>
       <button type="button" class="srow" id="sideSearch" title="Search: find a notebook, page or note, or run an action (Ctrl+K)"><svg class="i"><use href="#i-search"/></svg>Search</button>
     </div>
@@ -1833,13 +1876,13 @@ try {
         <li>PowerPoint files open as the slides look: each slide is a page with its text you can select, and you write between the lines as on a PDF. Complex animations and SmartArt may still differ; for an exact copy, save the slides as a PDF (File › Save as › PDF) and open that. Choose <b>Editable text</b> under <b>Open PowerPoint as</b> (View tab, or below) to rebuild the slides as text you can type inside instead.</li>
         <li>Word files keep their fonts, colours, tables, headers and pictures as editable text. A few pictures (old EMF or WMF drawings, for example) may not come through: save the file as a PDF and open that, or add the picture with Insert › Picture, video or sound.</li>
         <li>On a PDF page, point at a spot and press <b>+ Add here</b> to add a note there (the page opens up between the lines). <b>Right-click</b> the button (press and hold on a touch screen) to pick <b>Note</b>, <b>Sticky note</b> or <b>Equation</b>. On other pages, click where you want to write. In a note, type <b>/</b> for the same choices.</li>
-        <li><b>Writing tools</b> (Insert tab): <b>Writing guide</b> puts a grid, ruled lines or dots over the pages so you can write straight with a pen or Apple Pencil. Drag it by its handle, pull its edges to resize it, and press Esc or × to take it away; it is never saved in your notebook. <b>Table</b> opens a grid to choose the size, then drop it in a note: Tab moves between cells, drag the borders to size it, and right-click (or ⋯) for rows, columns and merging. <b>Journal entry</b> is an accounting entry, lined up in columns (also under + Add here and by typing /journal): click DR or CR to switch a row, Enter adds a row, Tab moves along.</li>
+        <li><b>Writing tools</b> (Insert tab): <b>Writing guide</b> puts a grid, ruled lines or dots over the pages so you can write straight with a pen or Apple Pencil. Drag it by its handle, pull its edges to resize it, and press Esc or × to take it away; it is never saved in your notebook. Its bar goes when you click elsewhere: point at the faint icon in its top left corner to bring it back, or point at the Insert button for its settings. <b>Table</b> opens a grid to choose the size, then drop it in a note: Tab moves between cells, drag the borders to size it, and right-click (or ⋯) for rows, columns and merging. <b>Journal entry</b> is an accounting entry, lined up in columns (also under + Add here and by typing /journal): click DR or CR to switch a row, Enter adds a row, Tab and the arrow keys move around like a table, and right-click (or the × when you point at it) deletes the entry.</li>
         <li><b>Sticky notes</b> sit on top of the page: drag one by its tape to move it, even onto another page. In the <b>Notes</b> panel, type a note and press <b>Add note</b>, or drag <b>Sticky</b> onto any page.</li>
         <li><b>Draw</b> (Insert tab) writes or highlights on PDF pages with a pen, and the eraser rubs strokes out. Select words on any page to highlight them, or press <b>Comment</b>; open comments are listed in the <b>Notes</b> panel until you resolve them.</li>
         <li>The <b>Home</b> tab styles your notes: the font, size and colour are used for new notes, or click in a note (or select words) to change just that.</li>
         <li>Point at a note (or tap it) and drag any edge or corner to resize it: the opposite side stays where it is. Drag its move handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
         <li>New notes line up with the note above or below them when they are close (<b>Box › Auto-align notes</b>). To tidy up, <b>Select all</b> on the Box tab, then use <b>Align</b>: left, centre or right, <b>Same width</b>, <b>Distribute</b> (floating and sticky notes, evenly spaced) or <b>Tidy page</b>. Each is one step you can take Back.</li>
-        <li><b>View › Side pages</b> gives each slide a page for your own notes beside it. Point at a side page (or tap it) and press the palette button in its corner to change its paper, or use <b>Side page background</b> in the View tab.</li>
+        <li><b>View › Side pages</b> gives each slide a page for your own notes beside it. They work in the Default, A4 and A3 layouts (each printed page gets one beside it, and both shrink together when the window is narrow). Point near the top right corner of a side page (or tap it, or press Tab) to show a palette button that changes its paper, or use <b>Side page background</b> in the View tab. Slides, side pages and notes are scaled to fit the window as one, so nothing moves when you open the sidebar.</li>
         <li>On each note: the arrows float it on top of the page, the minus minimises it to a pencil icon (drag the icon aside, right-click it to colour it), and the pin keeps it open.</li>
         <li>The <b>sidebar</b> (left) lists your notebooks: click one to switch, and the one you're in shows its pages. Use its <b>⋯</b> to rename or delete it. Hide it with <b>«</b> (Ctrl+\) and point at the left edge to peek at it. A notebook’s <b>⋯</b> menu can also star it as a <b>Favourite</b>, <b>Duplicate</b> it, or move it to the <b>Trash</b>, where it waits 30 days (and can be restored) before it is gone for ever. Group notebooks in <b>folders</b> (<b>New folder</b>): drag a notebook or a folder onto a folder to move it, or use <b>Move to…</b> in its <b>⋯</b> menu.</li>
         <li><b>Notes</b> (right) lists every note in the notebook to search, filter by icon colour and jump to.</li>
@@ -1932,6 +1975,7 @@ try {
     <section id="odSec">
       <h3>OneDrive and Microsoft 365</h3>
       <p class="sethint" id="odStatus">Not connected</p>
+      <p class="sethint">A notebook saved to OneDrive keeps itself in sync: changes go up a few seconds after you stop writing, and changes made on another device are fetched when you come back. If Microsoft’s sign-in runs out, press the cloud button at the top to sign in again.</p>
       <p class="sethint" id="odHint" hidden>OneDrive isn't set up for this site yet. The site owner needs to register the app with Microsoft and paste its client ID at the top of the page's script (see “OneDrive and Microsoft 365” in the README).</p>
       <button type="button" class="btn outline" id="odOff" disabled title="Sign out of OneDrive on this device. Your files in OneDrive stay where they are.">Sign out</button>
     </section>
@@ -1960,7 +2004,7 @@ try {
   </div>
   <div class="fpreview" id="fPreview"></div>
   <div class="fhelp">Type <b>/</b> for a fraction (use brackets for longer parts: <b>(a+b)/(c+d)</b>), <b>^</b> for a power, <b>_</b> for a small low letter, <b>sqrt()</b>, <b>sum</b>. Press Enter to insert.</div>
-  <div class="factions"><button class="btn primary" id="fInsert">Insert</button></div>
+  <div class="factions"><button class="btn danger" id="fDelete" hidden title="Remove this formula from the note (Back brings it back)"><svg class="i"><use href="#i-trash"/></svg><span>Delete</span></button><span class="spacer"></span><button class="btn primary" id="fInsert">Insert</button></div>
 </div>
 
 <template id="emptyTpl">
@@ -2281,6 +2325,9 @@ function updateNotesBtn(){
     b.dataset.mode = mode;
     b.innerHTML = icon(mode === 'show' ? 'eye' : 'eye-off') + `<span>${mode === 'show' ? 'Show notes' : 'Hide notes'}</span>`;
   }
+  const nb = $('#notesMenuBtn'); nb.disabled = !mode;
+  if (nb.dataset.mode !== mode) { nb.dataset.mode = mode; nb.innerHTML = icon(mode === 'show' ? 'eye' : 'eye-off') + `<span>${mode === 'show' ? 'Show notes' : 'Hide notes'}</span>` + icon('down').replace('class="i"', 'class="i chev"'); }
+  if ($('#notesMenu')?.hidden === false) fillNotesMenu();
   // the status bar's count
   const boxes = [...main.querySelectorAll('.notebox')].filter(hasContent), n = boxes.length;
   const pinned = boxes.filter(b => b.classList.contains('pinned')).length, mini = boxes.filter(b => b.classList.contains('collapsed')).length;
@@ -2582,6 +2629,30 @@ main.addEventListener('keydown', e => {
   const sel = getSelection(), n = sel.anchorNode, inLi = n && (n.nodeType === 1 ? n : n.parentElement).closest('li') && note.contains(n);
   if (e.key === 'Tab' && (inLi || note.tagName === 'DIV')) { e.preventDefault(); document.execCommand('styleWithCSS', false, false); document.execCommand(e.shiftKey ? 'outdent' : 'indent'); saveSoon(); return; }
   if (e.key === 'Enter' && !inLi) { e.preventDefault(); document.execCommand('insertLineBreak'); }
+});
+// "1. ", "- " or "* " at the start of a line makes it a numbered or bulleted list; Back gives the typed characters back
+const INLINE_TAGS = /^(B|I|U|S|EM|STRONG|SPAN|FONT|MARK|SUB|SUP|CODE)$/;
+main.addEventListener('input', e => {
+  if (e.inputType !== 'insertText' || !/^[  ]$/.test(e.data || '') || e.isComposing || reading) return;
+  const note = e.target.closest?.('.mine'), sel = getSelection(); if (!note || note.tagName === 'SPAN' || !sel.isCollapsed) return;
+  const n = sel.anchorNode, o = sel.anchorOffset;
+  if (n?.nodeType !== 3 || !note.contains(n) || n.parentElement.closest('li, .jrnl, .wtable, .formula, a, .media')) return;
+  const m = /^(?:(\d{1,3})\.|[-*])[  ]$/.exec(n.data.slice(0, o)); if (!m) return;
+  const before = x => { let p = x.previousSibling; while (p?.nodeType === 3 && !p.data) p = p.previousSibling; return p; };
+  let at = n; while (at.parentNode !== note && !before(at) && INLINE_TAGS.test(at.parentNode.nodeName)) at = at.parentNode;
+  const p = before(at); if (p && !/^(BR|DIV|P|UL|OL|BLOCKQUOTE|H\d)$/.test(p.nodeName)) return;      // only at the start of a line
+  snapshot(currentDoc());
+  n.deleteData(0, o); sel.collapse(n, 0);
+  if (!n.data) {                  // an empty line needs its line break to hold the cursor, or the list would take the line above
+    let nx = n.nextSibling; while (nx?.nodeType === 3 && !nx.data) nx = nx.nextSibling;
+    if (nx?.nodeName !== 'BR') { nx = document.createElement('br'); n.after(nx); }
+    const par = n.parentNode; n.remove(); sel.collapse(par, [...par.childNodes].indexOf(nx));
+  }
+  document.execCommand('styleWithCSS', false, false);
+  document.execCommand(m[1] ? 'insertOrderedList' : 'insertUnorderedList');
+  const a = sel.anchorNode, list = a && (a.nodeType === 1 ? a : a.parentElement).closest('ol');
+  if (m[1] && list && note.contains(list) && +m[1] > 1) list.start = +m[1];
+  saveSoon();
 });
 main.addEventListener('input', e => { const m = e.target.closest?.('.mine'); if (m) { wrapMedia(m); spellSoon(m); } saveSoon(); });
 main.addEventListener('pointerdown', e => { const b = e.target.closest('.notebox'); if (b && !b.classList.contains('collapsed')) raise(b); }, true);
@@ -3164,7 +3235,7 @@ function ppDrawText(X, ctx, L, ox, oy, boxH, map, items){
       if (r.hl) { ctx.fillStyle = css4(r.hl); ctx.fillRect(cx, y - r.size * .95, width, r.size * 1.2); }
       ctx.fillStyle = css4(r.col);
       const txt = last ? s.text.trimEnd() : s.text;
-      if (extra) { let x = cx; for (const w of txt.split(/(?<= )/)) { ctx.fillText(w, x, y); x += ctx.measureText(w).width + (w.endsWith(' ') ? extra : 0); } }
+      if (extra) { let x = cx; for (const w of txt.replace(/ /g, ' \u0000').split('\u0000')) { ctx.fillText(w, x, y); x += ctx.measureText(w).width + (w.endsWith(' ') ? extra : 0); } }
       else ctx.fillText(txt, cx, y);
       const lw = Math.max(.5, r.size / 18);
       if (r.u) ctx.fillRect(cx, y + r.size * .12, width, lw);
@@ -3589,12 +3660,17 @@ async function readPdf(buf, name){
     if (R < cv.width - 1 && R > cv.width * 0.88) ctx.fillRect(R - 2, 0, cv.width - R + 2, cv.height);
     if (T > 0 && T < cv.height * 0.06) ctx.fillRect(0, 0, cv.width, T + 2);
     if (B < cv.height - 1 && B > cv.height * 0.94) ctx.fillRect(0, B - 2, cv.width, cv.height - B + 2);
-    // slide numbers: a lone number near the bottom (or top) corner area is painted out
+    // slide numbers are painted out: a number alone on its line, in the top or bottom margin, in a corner or the middle,
+    // that counts along with the pages (slide 7 is numbered 4 to 10). Any other number is part of the slide and stays.
     const tc = await page.getTextContent();
+    const yOf = i => v.convertToViewportPoint(i.transform[4], i.transform[5])[1];
     const isSlideNo = i => {
-      if (!/^\s*\d{1,3}\s*$/.test(i.str || '')) return false;
-      const t = i.transform, y = v.convertToViewportPoint(t[4], t[5])[1];
-      return y / S > H * 0.85 || y / S < H * 0.08;
+      const m = /^\s*(\d{1,4})\s*$/.exec(i.str || ''); if (!m || Math.abs(+m[1] - p) > 3) return false;
+      const [x, y] = v.convertToViewportPoint(i.transform[4], i.transform[5]), l = x / S, w = i.width || 0;
+      if (!(y / S > H * 0.88 || y / S < H * 0.07)) return false;
+      if (!(l < W * 0.2 || l + w > W * 0.8 || Math.abs(l + w / 2 - W / 2) < W * 0.08)) return false;
+      const band = (Math.hypot(i.transform[2], i.transform[3]) || i.height || 10) * S * 0.8;
+      return !tc.items.some(o => o !== i && (o.str || '').trim() && Math.abs(yOf(o) - y) < band);
     };
     for (const i of tc.items.filter(isSlideNo)) {
       const t = i.transform, size = Math.hypot(t[2], t[3]) || i.height || 10;
@@ -3705,12 +3781,23 @@ let pending = null, ins = null;          // ins: the add menu, while it is open
 function showGap(strip, clientY, clientX){
   const y = gapY(strip, clientY), y0 = +strip.dataset.y0, y1 = +strip.dataset.y1;
   const pct = ((y - y0) / (y1 - y0) * 100).toFixed(3) + '%';
-  gapLine.style.top = pct; gapPill.style.top = `clamp(14px, ${pct}, calc(100% - 14px))`;
+  gapLine.style.top = pct; gapPill.style.top = `clamp(12px, ${pct}, calc(100% - 12px))`;
   if (gapLine.parentElement !== strip) strip.append(gapLine, gapPill);
   pending = {strip, y, x: clientX ?? pending?.x ?? null};
 }
 function hideGap(){ if (ins?.mode === 'gap') closeInsMenu(); gapLine.remove(); gapPill.remove(); pending = null; }
-gapPill.addEventListener('mousedown', e => e.preventDefault());
+// pressing on the button and dragging selects the words under it, as if it weren't there
+let pillPress = false;
+gapPill.addEventListener('mousedown', e => {
+  e.preventDefault(); if (e.button) return;
+  const x0 = e.clientX, y0 = e.clientY; let from = null; pillPress = true;
+  const move = m => {
+    if (!from) { if (Math.hypot(m.clientX - x0, m.clientY - y0) < 4) return; hideGap(); from = caretAt(x0, y0); if (!from) return done(); }
+    const to = caretAt(m.clientX, m.clientY); if (to) try { getSelection().setBaseAndExtent(from.node, from.offset, to.node, to.offset); } catch {}
+  };
+  const done = () => { pillPress = false; removeEventListener('mousemove', move, true); removeEventListener('mouseup', done, true); };
+  addEventListener('mousemove', move, true); addEventListener('mouseup', done, true);
+});
 // a click adds a note at once; right-click (or press and hold on a touch screen) opens the menu for a sticky note or an equation
 let pillHeld = false;
 gapPill.addEventListener('click', e => {
@@ -3723,7 +3810,9 @@ gapPill.addEventListener('click', e => {
 });
 let moveQueued = false;
 const gapHover = e => {
-  if (moveQueued || e.buttons || ins?.mode === 'gap') return; moveQueued = true;
+  if (ins?.mode === 'gap') return;
+  if (e.buttons) { if (pending && !pillPress) hideGap(); return; }       // selecting words (or moving something): out of the way at once
+  if (moveQueued) return; moveQueued = true;
   requestAnimationFrame(() => {
     moveQueued = false;
     if (e.target.closest('.gappill')) return;
@@ -3736,14 +3825,24 @@ main.addEventListener('mousemove', gapHover);
 main.addEventListener('pointermove', e => { if (e.pointerType === 'pen' && !e.buttons) gapHover(e); });
 main.addEventListener('mouseleave', () => { if (ins?.mode !== 'gap') hideGap(); });
 // ---------- add a blank page (for longer notes) or remove a page, from the toolbar ----------
-function blankPage(){
+// a new page takes the exact shape of the page it follows (else the notebook's first page), so every page matches
+function pageShape(ref){
+  ref = ref?.matches?.('.slide') ? ref : main.querySelector('.slide.pagecard') || main.querySelector('.slide');
+  if (!ref) return '';
+  if (ref.classList.contains('pagecard') && +ref.dataset.w && +ref.dataset.h) return `${ref.dataset.w} / ${ref.dataset.h}`;
+  if (ref.classList.contains('blankpage')) return ref.style.aspectRatio || '';
+  const r = ref.getBoundingClientRect();         // a text page (Word, PowerPoint as text): its shape as it is shown
+  return r.width > 0 && r.height > 0 ? `${Math.round(r.width)} / ${Math.round(Math.min(Math.max(r.height, r.width * 0.4), r.width * 2.5))}` : '';
+}
+function blankPage(like){
   const s = document.createElement('section'); s.className = 'slide blankpage';
+  const shape = pageShape(like); if (shape) s.style.aspectRatio = shape;
   const content = document.createElement('div'); content.className = 'content'; s.append(content);
   const {box, el} = makeBox(); content.append(box);
   return {page: s, note: el};
 }
 function addPageAfter(card){
-  const {page, note} = blankPage();
+  const {page, note} = blankPage(card);
   if (card) (sideOf(card) || card).after(page);
   else { main.querySelector('.welcome')?.remove(); main.append(page); }
   if (LAYOUTS[layout]) paginateView();
@@ -4360,7 +4459,7 @@ function saveSoon(){
   timer = setTimeout(saveNow, 500);
 }
 let lastStored = {id: null, html: null};     // what was last written for the open notebook, so an unchanged notebook isn't written again
-const sync = {timer: 0, first: 0, busy: false, again: false, gen: 0, err: null, quiet: false, checked: 0};     // keeping a notebook that's in Google Drive up to date there
+const sync = {timer: 0, first: 0, busy: false, again: false, gen: 0, err: null, quiet: false, checked: 0};     // keeping a notebook that's in Google Drive or OneDrive up to date there
 async function saveNow(){
   timer = null;
   if (db) await assetize();
@@ -4373,7 +4472,7 @@ async function saveNow(){
   const same = lastStored.id === d.id && lastStored.html === stored;
   if (same && d.name === name && d.pages === pages && d.notes === notes) { if (!timer) setSaveState('saved'); return; }
   Object.assign(d, {name, pages, notes}); if (!same) d.updated = Date.now();
-  if (!same && d.driveNb && lastStored.id === d.id && !sync.quiet) { d.driveDirty = 1; sync.gen++; }       // (not for the first write after opening it, nor for changes fetched from Drive)
+  if (!same && cloudOf(d) && lastStored.id === d.id && !sync.quiet) { d.driveDirty = 1; sync.gen++; }       // (not for the first write after opening it, nor for changes fetched from the cloud)
   const ok = await putAll({...(same ? {} : {['doc:' + d.id]: stored}), docs, cur: curId, style});
   if (ok) lastStored = {id: d.id, html: stored};
   if (!timer) setSaveState(ok ? 'saved' : 'error');
@@ -4535,7 +4634,7 @@ async function paintCard(card, scale, side){
     const xml = new XMLSerializer().serializeToString(sv).replace(/currentColor/g, col).replace('<svg', sv.getAttribute('xmlns') ? '<svg' : '<svg xmlns="http://www.w3.org/2000/svg"').replace('<svg', `<svg fill="${col}"`);
     try { const im = await loadImg('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml)); ctx.drawImage(im, r.left - ox, r.top - oy, r.width, r.height); } catch {}
   }
-  if (side) sidePaintLines(ctx, card, side, ox, oy);
+  if (side) sidePaintLines(ctx, sideSlide(side) || card, side, ox, oy);
   return c;
 }
 const alphaNo = n => { let s = ''; while (n > 0) { n--; s = String.fromCharCode(97 + n % 26) + s; n = Math.floor(n / 26); } return s; };
@@ -4588,7 +4687,6 @@ async function pdfFile(){
   const wasCollapsed = boxes.map(b => b.classList.contains('collapsed'));
   if (mode === 'page') boxes.forEach(b => b.classList.remove('collapsed'));
   else main.classList.add('clean');            // notes take no room, so the pages look like the originals
-  main.classList.add('pdfpaper');              // (writing tools) journal entries in their colours for paper
   try {
     const size = LAYOUTS[layout];
     sideForce = true;              // side pages sit beside their slides while the PDF is made
@@ -4598,7 +4696,7 @@ async function pdfFile(){
     for (let i = 0; i < cards.length; i++) {
       toast(`Making your PDF: page ${i + 1} of ${cards.length}`);
       const card = cards[i], cr = card.getBoundingClientRect();
-      const annots = [], sp = !size && sideShown() ? sideOf(card) : null;
+      const annots = [], sp = sideShown() ? sideOf(size ? card.querySelector('.slide') : card) : null;
       if (mode === 'comments') for (const b of [...card.querySelectorAll('.notebox'), ...(sp ? sp.querySelectorAll('.notebox') : [])]) {
         const text = (b.querySelector('.mine')?.innerText || '').trim(); if (!text) continue;
         const br = b.getBoundingClientRect();
@@ -4608,15 +4706,16 @@ async function pdfFile(){
         const mr = markRect(pg, c.id); if (!mr) continue;
         annots.push({fx: (mr.left - cr.left) / cr.width, fy: (mr.top - cr.top) / cr.height, text: `${c.text}\n\nOn: “${c.quote}”`, color: c.color});
       }
-      const canvas = await paintCard(card, 2 / viewZoom, mode === 'page' ? sp : null);
+      const withSide = mode === 'page' ? sp : null, canvas = await paintCard(card, 2 / viewZoom, withSide);
       const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
-      pages.push({w: canvas.width, h: canvas.height, pw: size?.[0], ph: size?.[1], annots, jpeg: new Uint8Array(await blob.arrayBuffer())});
+      // a printed page with its side page beside it is wider than A4: the sheet keeps its true size, and the page grows to hold both
+      pages.push({w: canvas.width, h: canvas.height, pw: size && (withSide ? canvas.width * .375 : size[0]), ph: size && (withSide ? canvas.height * .375 : size[1]), annots, jpeg: new Uint8Array(await blob.arrayBuffer())});
     }
     const extra = [size ? layout.replace('-', ' ') : '', mode === 'comments' ? 'comments' : mode === 'none' ? 'no notes' : ''].filter(Boolean).join(', ');
     return {name: notebookName() + ` (notes${extra ? ', ' + extra : ''}).pdf`, blob: makePdf(pages)};
   } finally {
     sideForce = false;
-    main.classList.remove('clean', 'pdfpaper');
+    main.classList.remove('clean');
     boxes.forEach((b, i) => b.classList.toggle('collapsed', wasCollapsed[i]));
     paginateView();
   }
@@ -4627,7 +4726,7 @@ const LAYOUTS = {'default': null, 'a4-portrait': [595.28, 841.89], 'a4-landscape
 let layout = pref.get('pdf-layout', 'default');
 if (!(layout in LAYOUTS)) layout = 'default';
 $('#layout').value = layout;
-$('#layout').onchange = e => { layout = e.target.value; pref.set('pdf-layout', layout); paginateView(); if (LAYOUTS[layout] && side.on) hint('Side notes are hidden in A4 and A3 layouts. They are still saved, and come back in the Default layout.'); };
+$('#layout').onchange = e => { layout = e.target.value; pref.set('pdf-layout', layout); paginateView(); };
 // ================= page layout on screen: A4 / A3 sheets, portrait or landscape =================
 let viewZoom = 1, pageTimer = null;
 const pxSize = ([pw, ph]) => [Math.round(pw * 96 / 72), Math.round(ph * 96 / 72)];   // points to screen pixels
@@ -4636,11 +4735,9 @@ const SHEET_MARGIN = 48;
 // how much an element is shrunk on screen by the page view and slide fitting
 function zoomOf(el){ let z = 1; for (let n = el; n && n.style; n = n.parentElement) { const v = parseFloat(n.style.zoom); if (v) z *= v; } return z; }
 function flatten(root){
-  const sheets = [...root.querySelectorAll(':scope > .sheet')];
-  if (sheets.length) {
-    const items = []; sheets.forEach(s => items.push(...s.children));
-    sheets.forEach(s => s.remove());
-    items.forEach(i => root.append(i));
+  for (const w of [...root.querySelectorAll(':scope > .sheet, :scope > .srow')]) {         // (a row: a sheet and its side page)
+    if (w.classList.contains('sheet')) w.replaceWith(...w.children);
+    else { const sh = w.querySelector(':scope > .sheet'); w.replaceWith(...(sh?.children || []), ...[...w.children].filter(c => c !== sh)); }
   }
   for (const c of [...root.querySelectorAll(':scope > .cont')]) {
     const prev = c.previousElementSibling;
@@ -4656,28 +4753,74 @@ function measureStrip(s){
     if (actual > 0 && target > 0) sp.style.transform = `scaleX(${(target / actual).toFixed(4)})`;
   });
 }
+// ---------- one fixed layout, scaled to fit ----------
+// A slide (or printed sheet), its side page and every note are laid out at one fixed width, and main is zoomed to the room there is, so
+// the notes keep their place on the slide and their text wraps the same at any window width, with or without the sidebar or side pages.
+// Only a phone-sized column (FLUID_W) stays fluid, and side pages go below their slide when beside it would shrink everything under STACK_Z.
+const CARD_W = 960, SIDE_W = 560, SIDE_GAP = 18, FLUID_W = 440, STACK_Z = 0.6;
+let fitW = 0;
+function fitPlan(W, size){
+  const room = main.getBoundingClientRect().width, vis = side.on && !!main.querySelector('.slide');
+  fitW = room;
+  let split = false, stack = false, total = W + 32;
+  if (vis && !sideForce) {                      // (while the PDF is made the side pages sit beside their slides, at full size)
+    split = !side.sync;
+    const beside = W + SIDE_GAP + SIDE_W + 32, apart = W + SIDE_W + 80;
+    stack = sideSmall.matches || room / (split ? apart : beside) < STACK_Z;
+    if (stack) split = false;
+    total = stack ? W + 32 : split ? apart : beside;
+  } else if (vis) total = W + SIDE_GAP + SIDE_W + 32;
+  const fluid = !size && !sideForce && room > 0 && room < FLUID_W;
+  const z = sideForce || fluid || !room ? 1 : Math.max(.2, Math.min(1, room / total));
+  return {vis, split, stack, fluid, z, W, key: [vis, split, stack].join()};
+}
+// set main up for a plan; returns how much the zoom changed (the scroll position follows it)
+function fitApply(p, paged){
+  const old = viewZoom, has = !!main.querySelector('.slide');
+  main.classList.toggle('fit', has && !paged);
+  main.classList.toggle('side-on', p.vis); main.classList.toggle('side-split', p.split); main.classList.toggle('side-stack', p.stack);
+  document.body.classList.toggle('side-visible', p.vis);
+  main.style.setProperty('--cw', p.fluid ? 'min(' + p.W + 'px,100%)' : p.W + 'px');
+  main.style.setProperty('--sidew', p.fluid ? 'min(' + SIDE_W + 'px,100%)' : SIDE_W + 'px');
+  main.style.setProperty('--z', p.z);
+  viewZoom = p.z; main.style.zoom = p.z === 1 ? '' : p.z;
+  return p.z / old;
+}
+// the Default layout: slides side by side, or with their side pages (the printed layouts do the same in paginateView)
+function fitView(){
+  const has = !!main.querySelector('.slide');
+  main.classList.toggle('fit', has && !LAYOUTS[layout]);
+  const p = has ? fitPlan(CARD_W, null) : (fitW = main.getBoundingClientRect().width, {vis: false, split: false, stack: false, fluid: false, z: 1, W: CARD_W, key: 'false,false,false'});
+  const k = fitApply(p, !!LAYOUTS[layout]);
+  return Object.assign(p, {k});
+}
 function paginateView(){
   clearTimeout(pageTimer);
   const sel = getSelection(), keep = sel.rangeCount ? [sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset] : null;
-  const focused = document.activeElement, scrollY = window.scrollY;
+  const focused = document.activeElement;
+  let scrollY = window.scrollY;
   hideGap();
   flatten(main);
   const size = LAYOUTS[layout];
   if (size) sideJoin(main);
   main.classList.toggle('paged', !!size);
   if (!size || !main.querySelector('.slide')) {
-    main.style.zoom = ''; viewZoom = 1;
+    scrollY *= fitView().k;
   } else {
     const [W, H] = pxSize(size);
     main.style.setProperty('--sheet-w', W + 'px'); main.style.setProperty('--sheet-h', H + 'px');
-    const avail = main.getBoundingClientRect().width - 32;       // the page column, between the side panels
-    viewZoom = Math.min(1, avail / W); main.style.zoom = viewZoom === 1 ? '' : viewZoom;
+    const plan = fitPlan(W, size);
+    scrollY *= fitApply(plan, true); main.dataset.fit = plan.key;
+    const rows = plan.vis && !plan.split && !plan.stack;
     // like Default: each slide (with its notes) gets its own sheet, shrunk to fit if it is too big
-    const z = viewZoom, ROOM = (H - 2 * SHEET_MARGIN) * z;
+    const z = plan.z, ROOM = (H - 2 * SHEET_MARGIN) * z;
     const items = [...main.children];
     items.forEach(i => i.remove());
-    let pendingHead = [];
+    const sps = new Map(), later = [];
+    let pendingHead = [], last = null;
+    for (const it of items) if (it.classList.contains('sidepage')) { const k = it.dataset.for || (last && sideSid(last)); if (k) sps.set(k, it); else later.push(it); } else if (it.classList.contains('slide')) last = it;
     for (const it of items) {
+      if (it.classList.contains('sidepage')) continue;
       if (!it.classList.contains('slide')) { pendingHead.push(it); continue; }
       const sheet = document.createElement('div'); sheet.className = 'sheet'; main.append(sheet);
       pendingHead.forEach(h => sheet.append(h)); pendingHead = [];
@@ -4690,8 +4833,14 @@ function paginateView(){
         if (h <= room + 0.5 || h <= 0) break;
         f = f * room / h; it.style.zoom = f.toFixed(4);
       }
+      const sp = it.dataset.sid && sps.get(it.dataset.sid);
+      if (sp) {
+        sps.delete(it.dataset.sid);
+        if (rows) { const row = document.createElement('div'); row.className = 'srow'; sheet.before(row); row.append(sheet, sp); } else sheet.after(sp);
+      }
     }
     if (pendingHead.length) { const sheet = document.createElement('div'); sheet.className = 'sheet'; main.append(sheet); pendingHead.forEach(h => sheet.append(h)); }
+    main.append(...sps.values(), ...later);
     main.querySelectorAll('.strip').forEach(measureStrip);
   }
   sideLayout(); placeFloats(); spreadChips(); spellAllSoon();
@@ -4704,9 +4853,18 @@ function paginateView(){
 }
 function paginateSoon(){ if (LAYOUTS[layout]) { clearTimeout(pageTimer); pageTimer = setTimeout(paginateView, 700); } }
 // the page column changed width (window resized, a side panel opened or closed)
-function relayout(){ if (LAYOUTS[layout]) paginateView(); else { placeFloats(); spreadChips(); } }
+function relayout(){ if (LAYOUTS[layout]) paginateView(); else { sideLayout(); placeFloats(); spreadChips(); } }
 let resizeTimer = null;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(relayout, 250); });
+// the column changed width (a panel opened, the divider was dragged): scale it again, now
+const fitRuns = [];
+new ResizeObserver(() => {
+  const w = main.getBoundingClientRect().width, now = Date.now();
+  if (Math.abs(w - fitW) <= .5 && (LAYOUTS[layout] || main.classList.contains('fit') === !!main.querySelector('.slide'))) return;
+  while (fitRuns.length && now - fitRuns[0] > 1500) fitRuns.shift();
+  if (fitRuns.push(now) > 6) return;                // (a scroll bar that comes and goes with the scale must not make it flicker for ever)
+  clearTimeout(resizeTimer); resizeTimer = setTimeout(relayout, 30);
+}).observe(main);
 
 document.querySelectorAll('.notes-toggle').forEach(b => b.onclick = () => {
   const hide = notesBtnMode() === 'hide';            // do exactly what the button says
@@ -4717,6 +4875,48 @@ document.querySelectorAll('.notes-toggle').forEach(b => b.onclick = () => {
   }
   afterNotesToggle();
 });
+// View › Hide notes: the notes on your pages only (side page notes stay open), every note, or show them all again
+const notesMenu = document.createElement('div');
+notesMenu.id = 'notesMenu'; notesMenu.className = 'menu pop notesmenu'; notesMenu.hidden = true; notesMenu.setAttribute('role', 'menu');
+notesMenu.innerHTML = `<button type="button" role="menuitem" data-hide="main"><strong>Hide notes on the pages</strong><small>Notes on your slides and pages shrink to pencil icons; side page notes stay open</small></button>
+  <button type="button" role="menuitem" data-hide="all"><strong>Hide all notes</strong><small>Side page notes too</small></button>
+  <button type="button" role="menuitem" data-hide="none"><strong>Show all notes</strong><small>Every note opens where its pencil icon is</small></button>`;
+document.body.append(notesMenu);
+const onSide = b => !!b.closest('.sidepage');
+function fillNotesMenu(){
+  const boxes = [...main.querySelectorAll('.notebox')], open = b => !b.classList.contains('collapsed') && !b.classList.contains('pinned');
+  notesMenu.querySelector('[data-hide="main"]').disabled = !boxes.some(b => onSide(b) ? b.classList.contains('collapsed') : open(b));
+  notesMenu.querySelector('[data-hide="all"]').disabled = !boxes.some(open);
+  notesMenu.querySelector('[data-hide="none"]').disabled = !boxes.some(b => b.classList.contains('collapsed'));
+}
+function closeNotesMenu(back){ if (notesMenu.hidden) return; notesMenu.hidden = true; $('#notesMenuBtn').setAttribute('aria-expanded', 'false'); if (back) $('#notesMenuBtn').focus(); }
+$('#notesMenuBtn').onclick = e => {
+  if (!notesMenu.hidden) return closeNotesMenu();
+  fillNotesMenu(); notesMenu.hidden = false; $('#notesMenuBtn').setAttribute('aria-expanded', 'true');
+  const a = e.currentTarget.getBoundingClientRect(), w = notesMenu.offsetWidth;
+  Object.assign(notesMenu.style, {right: 'auto', left: Math.max(8, Math.min(innerWidth - w - 8, a.left)) + 'px', top: a.bottom + 6 + 'px'});
+  if (e.detail === 0) notesMenu.querySelector('button:not(:disabled)')?.focus();
+};
+notesMenu.addEventListener('click', e => {
+  const b = e.target.closest('button[data-hide]'); if (!b || b.disabled) return;
+  const scope = b.dataset.hide; closeNotesMenu();
+  if (scope !== 'none' && document.activeElement?.closest?.('.notebox')) document.activeElement.blur();
+  for (const box of main.querySelectorAll('.notebox')) {
+    const hide = scope === 'all' || (scope === 'main' && !onSide(box));
+    if (hide) setCollapsed(box, true);                                     // pinned notes stay open
+    else if (box.classList.contains('collapsed')) openNote(box);
+  }
+  afterNotesToggle();
+  toast(scope === 'main' ? 'Notes on your pages are hidden; side page notes stay open.' : scope === 'all' ? 'All notes are hidden. Click a pencil icon to open one.' : 'All notes are showing.');
+});
+notesMenu.addEventListener('keydown', e => {
+  const items = [...notesMenu.querySelectorAll('button:not(:disabled)')], i = items.indexOf(document.activeElement);
+  if (e.key === 'Escape') { e.preventDefault(); closeNotesMenu(true); }
+  else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length]?.focus(); }
+  else if (e.key === 'Tab') closeNotesMenu();
+});
+document.addEventListener('mousedown', e => { if (!e.target.closest('#notesMenu, #notesMenuBtn')) closeNotesMenu(); });
+addEventListener('resize', () => closeNotesMenu());
 // ================= box outline & fill =================
 const CHIP = '#ffd54a';            // the usual yellow pencil icon
 let boxStyle = {outline: true, border: '#9aa3b2', fill: '', chip: CHIP};
@@ -4947,6 +5147,7 @@ async function openFormula(existing){
   }
   fInput.value = existing ? existing.dataset.src || '' : '';
   $('#fInsert').textContent = existing ? 'Update' : 'Insert';
+  $('#fDelete').hidden = !existing;
   fPanel.hidden = false; fInput.focus();
   fPreview.textContent = 'Loading…';
   try { await loadKatex(); updatePreview(); } catch { fPreview.textContent = 'Formulas need an internet connection the first time.'; }
@@ -4991,6 +5192,15 @@ $('#fInsert').onclick = () => {
   formulaNote = null; closeFormula(); saveSoon();
 };
 $('#fBtn').onclick = () => openFormula(null);
+// delete the formula being edited (and the space after it); a note left empty goes too
+$('#fDelete').onclick = () => {
+  const f = editingFormula; if (!f?.isConnected) { closeFormula(); return; }
+  const note = f.closest('.mine'), next = f.nextSibling;
+  if (next?.nodeType === 3 && /^[ \u00a0]/.test(next.data)) next.data = next.data.slice(1);
+  f.remove(); closeFormula();
+  if (note && !note.textContent.trim() && !note.querySelector('img, .media, .formula, .wtable, .jrnl, .tpl')) dropIfEmpty(note); else if (note && !reading) focusNote(note, {preventScroll: true});
+  saveSoon(); toast('Formula deleted. Back (Ctrl+Z) brings it back.');
+};
 
 // ================= pictures, videos and sound =================
 function readAsUrl(file){ return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(file); }); }
@@ -5723,6 +5933,22 @@ function selectTab(name, focus){
     if (on && focus) t.focus();
   }
 }
+// a tab's tools scroll sideways when they don't fit: the edge with more tools beyond it fades, and the scroll bar shows only while you point at the ribbon or scroll it
+function panelFade(p){
+  if (p.hidden) return;
+  const max = p.scrollWidth - p.clientWidth;
+  p.classList.toggle('more-l', p.scrollLeft > 2); p.classList.toggle('more-r', p.scrollLeft < max - 2);
+}
+{
+  const panels = [...ribbon.querySelectorAll('.panel')], ro = new ResizeObserver(es => es.forEach(en => panelFade(en.target.closest('.panel') || en.target)));
+  panels.forEach(p => { ro.observe(p); [...p.children].forEach(c => ro.observe(c)); });
+  ribbon.addEventListener('scroll', e => {
+    const p = e.target; if (!p.classList?.contains('panel')) return;
+    panelFade(p); p.classList.add('scrolling'); clearTimeout(p.scrollT); p.scrollT = setTimeout(() => p.classList.remove('scrolling'), 900);
+  }, true);
+  addEventListener('resize', () => panels.forEach(panelFade));
+  document.fonts?.ready.then(() => panels.forEach(panelFade));
+}
 ribbon.querySelector('.tabs').addEventListener('click', e => {
   const t = e.target.closest('.tab'); if (!t) return;
   // tabs only: a tab opens its tools over the page until you go back to the page (or press it again)
@@ -5826,6 +6052,7 @@ function renderPages(){
     const th = document.createElement('span'); th.className = 'thumb';
     if (el.classList.contains('pagecard')) { th.classList.add('img'); th.style.setProperty('--pg', el.style.getPropertyValue('--pg')); th.style.aspectRatio = `${el.dataset.w} / ${el.dataset.h}`; }
     else {
+      if (el.classList.contains('blankpage') && el.style.aspectRatio) th.style.aspectRatio = el.style.aspectRatio;
       const t = document.createElement('b'); t.textContent = title.slice(0, 80);
       th.append(t, (el.querySelector('.content')?.textContent || '').replace(/\s+/g, ' ').trim().slice(title.length, title.length + 160));
     }
@@ -6870,7 +7097,8 @@ function docBoxes(){
   for (const el of main.children) {
     if (el.classList.contains('sidewrap')) continue;
     out.push(...el.querySelectorAll('.notebox'));
-    if (el.classList.contains('slide') && !el.nextElementSibling?.classList.contains('sidepage')) { const sp = sideOf(el); if (sp) out.push(...sp.querySelectorAll('.notebox')); }
+    const sl = el.classList.contains('slide') ? el : el.matches('.sheet, .srow') ? el.querySelector('.slide') : null, sp = sl && sideOf(sl);
+    if (sp && !el.contains(sp) && el.nextElementSibling !== sp) out.push(...sp.querySelectorAll('.notebox'));
   }
   return out;
 }
@@ -6902,33 +7130,36 @@ function sideRead(){
   sidePaintUi();
 }
 function sideLayout(){
-  const slides = [...main.querySelectorAll(':scope > .slide')];
-  if (!main.querySelector('.slide')) side.on = false;                // (in A4 and A3 the slides are inside sheets)
-  const vis = side.on && !LAYOUTS[layout] && slides.length > 0;
-  const split = vis && !side.sync && !sideForce && !sideSmall.matches;
-  const was = main.classList.contains('side-on') + ':' + main.classList.contains('side-split');
-  main.classList.toggle('side-on', vis); main.classList.toggle('side-split', split);
-  document.body.classList.toggle('side-visible', vis);
-  const y = scrollY;
+  const size = LAYOUTS[layout], slides = [...main.querySelectorAll('.slide')];
+  if (!slides.length) side.on = false;
+  const y = scrollY, was = main.classList.contains('side-on') + ':' + main.classList.contains('side-split') + ':' + main.classList.contains('side-stack');
+  let p;
+  if (size) {                                                       // (the printed sheets are rebuilt only when the arrangement changes)
+    p = fitPlan(pxSize(size)[0], size);
+    if (main.dataset.fit !== p.key) return paginateView();
+    fitApply(p, true);
+  } else { p = fitView(); if (p.k !== 1) window.scrollTo(0, y * p.k); }
+  const {vis, split} = p;
   if (!split) sideJoin(main);
   if (vis) {
-    let col = main.querySelector(':scope > .sidewrap > .sidecol');
+    let col = main.querySelector(':scope > .sidewrap > .sidecol'), fresh = false;
     if (split && !col) {
       const wrap = document.createElement('div'); wrap.className = 'sidewrap'; col = document.createElement('div'); col.className = 'sidecol';
       wrap.append(col); main.append(wrap);
     }
     slides.forEach((s, i) => {
       let sp = sideOf(s);
-      if (!sp) { sp = document.createElement('aside'); sp.className = 'sidepage'; sp.dataset.for = sideSid(s); }
+      if (!sp) { sp = document.createElement('aside'); sp.className = 'sidepage'; sp.dataset.for = sideSid(s); if (size && !split) { main.append(sp); fresh = true; } }
       if (split) { if (col.children[i] !== sp) col.insertBefore(sp, col.children[i] || null); }
-      else if (sp.previousElementSibling !== s) s.after(sp);
+      else if (!size && sp.previousElementSibling !== s) s.after(sp);
       sideStyle(sp);
       sp.dataset.label = 'Page ' + (i + 1); sp.setAttribute('aria-label', 'Side notes for page ' + (i + 1));
       for (const b of sp.querySelectorAll(':scope > .notebox[data-link]')) if (!annoGet(s, b.dataset.link)) b.removeAttribute('data-link');   // its highlight is gone
     });
+    if (fresh) return paginateView();                                // (new side pages go into the sheets' rows)
     placeFloats(); sideSizes();
   }
-  if (was !== main.classList.contains('side-on') + ':' + main.classList.contains('side-split')) window.scrollTo(0, y);
+  if (was !== main.classList.contains('side-on') + ':' + main.classList.contains('side-split') + ':' + main.classList.contains('side-stack')) window.scrollTo(0, y);
   sidePaintUi(); sideDraw();
 }
 // a side page is as tall as its slide at least (in the row; in the separate column by its own height), and taller when its notes need the room
@@ -6939,7 +7170,7 @@ function sideSizes(){
     for (const b of sp.querySelectorAll(':scope > .notebox')) need = Math.max(need, b.offsetTop + b.offsetHeight + 28);
     if (sp.dataset.ink) need = Math.max(need, Math.ceil(sideInkEnd(sp)) + 12);
     const s = split && sideSlide(sp);
-    if (s) need = Math.max(need, Math.round(s.getBoundingClientRect().height));
+    if (s) need = Math.max(need, Math.round(s.getBoundingClientRect().height / (zoomOf(s) || 1)));
     const v = need ? need + 'px' : '';
     if (sp.style.minHeight !== v) sp.style.minHeight = v;
   }
@@ -7024,8 +7255,8 @@ function sideAddBox(sp, x, y, w, link){
 const sideWidth = sp => Math.round(Math.min(280, Math.max(150, sp.clientWidth * .62)));
 function sideClick(e){
   if (getSelection().toString().trim() || sidePick) return;
-  const sp = e.target.closest('.sidepage'), r = sp.getBoundingClientRect(), w = sideWidth(sp);
-  sideAddBox(sp, Math.max(30, Math.min(sp.clientWidth - w - 10, e.clientX - r.left - 10)), e.clientY - r.top - 20, w);
+  const sp = e.target.closest('.sidepage'), r = sp.getBoundingClientRect(), w = sideWidth(sp), z = zoomOf(sp) || 1;
+  sideAddBox(sp, Math.max(30, Math.min(sp.clientWidth - w - 10, (e.clientX - r.left) / z - 10)), (e.clientY - r.top) / z - 20, w);
 }
 // somewhere on the side page for a note that starts at y: not on top of another note
 function sideFree(sp, x, y, w){
@@ -7041,8 +7272,8 @@ function sideLinkNew(card, id){
   const sp = sideShown() && sideOf(card), m = sp && markRect(card, id);
   if (!sp || !m) { toast('Turn on Side notes in the View tab first.'); return; }
   sideUnlinkId(id);
-  const r = sp.getBoundingClientRect(), w = sideWidth(sp), x = Math.max(30, Math.min(40, sp.clientWidth - w - 10));
-  sideAddBox(sp, x, sideFree(sp, x, m.top + m.height / 2 - r.top - 24, w), w, id);
+  const r = sp.getBoundingClientRect(), w = sideWidth(sp), x = Math.max(30, Math.min(40, sp.clientWidth - w - 10)), z = zoomOf(sp) || 1;
+  sideAddBox(sp, x, sideFree(sp, x, (m.top + m.height / 2 - r.top) / z - 24, w), w, id);
   saveSoon();
 }
 function sideUnlinkId(id){
@@ -7123,7 +7354,7 @@ function sidePaintUi(){
   if (side.on) wrap.removeAttribute('data-tip'); else { wrap.dataset.tip = tip; closeSideBg(); }      // (a disabled button can't be pointed at, so its box carries the tip)
   sw.style.setProperty('--pvbg', side.bg); sw.dataset.pat = side.pat; sw.classList.toggle('dark', sideDark(side.bg));
   bb.setAttribute('aria-label', `Side page background: ${(SIDE_BGS.find(b => b[0] === side.bg) || [0, 'custom colour'])[1].toLowerCase()}, ${side.pat}`);
-  if (!side.on) sideCornerHide();
+  sideCornerPlace();
   sideBgPop.querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === side.bg));
   sideBgPop.querySelectorAll('.pat').forEach(b => b.setAttribute('aria-pressed', b.dataset.pat === side.pat));
   sideBgPop.querySelectorAll('.pv').forEach(v => { v.style.setProperty('--pvbg', side.bg); v.classList.toggle('dark', sideDark(side.bg)); });
@@ -7147,21 +7378,36 @@ function openSideBg(from){
   for (const b of [$('#sideBgBtn'), sideCorner]) b.setAttribute('aria-expanded', b === from);
 }
 function closeSideBg(){ sideBgPop.hidden = true; for (const b of [$('#sideBgBtn'), sideCorner]) b.setAttribute('aria-expanded', 'false'); if (!sideCornerSp) sideCornerHide(); }
-// show the palette button in the top right corner of a side page (the part of it you can see), until you point or tap elsewhere
-let sideCornerSp = null;
-function sideCornerPlace(){
-  const sp = sideCornerSp; if (!sp?.isConnected || !sideShown()) { sideCornerHide(); return; }
+// the palette button sits in the top right corner of a side page (the part of it you can see). It is clear until the pointer is within SIDE_ZONE of
+// that corner, the page is tapped, or it is focused with Tab; it never shows just because you are writing on the page
+const SIDE_ZONE = [120, 80];
+let sideCornerSp = null, sideTouchT = 0, sideTouchZone = false, sideTouch = false, sideByMouse = false;
+function sideCornerBox(sp){
+  if (!sp?.isConnected) return null;
   const r = sp.getBoundingClientRect(), col = sp.closest('.sidecol')?.getBoundingClientRect();
-  const top = Math.max(r.top, col ? col.top : 0, appbar.getBoundingClientRect().bottom) + 6, right = Math.min(r.right, col ? col.right : r.right, innerWidth) - 8;
-  if (top + 34 > Math.min(r.bottom, innerHeight - 34) || right - r.left < 60) { sideCorner.hidden = true; return; }
-  sideCorner.hidden = false;
-  sideCorner.style.top = top + 'px'; sideCorner.style.left = (right - sideCorner.offsetWidth) + 'px';
+  const top = Math.max(r.top, col ? col.top : 0, appbar.getBoundingClientRect().bottom), right = Math.min(r.right, col ? col.right : r.right, innerWidth) - 8;
+  return top + 40 > Math.min(r.bottom, innerHeight - 34) || right - r.left < 60 ? null : {top: top + 6, right};
 }
-function sideCornerShow(sp){ sideCornerSp = sp; sideCornerPlace(); }
-function sideCornerHide(){ sideCornerSp = null; if (sideBgPop.hidden || sideBgFrom !== sideCorner) sideCorner.hidden = true; }
+const sideInZone = (sp, x, y) => { const b = sideCornerBox(sp); return !!b && x >= b.right - SIDE_ZONE[0] && x <= b.right + 8 && y >= b.top - 6 && y <= b.top - 6 + SIDE_ZONE[1]; };
+// the side page most in view: the pointer's page, or this one, is where the button waits for the keyboard
+function sideLook(){
+  let best = null, most = 0;
+  const top = appbar.getBoundingClientRect().bottom;
+  for (const sp of main.querySelectorAll('.sidepage')) { const r = sp.getBoundingClientRect(), o = Math.min(r.bottom, innerHeight) - Math.max(r.top, top); if (r.width && o > most) { most = o; best = sp; } }
+  return best;
+}
+function sideNear(on){ sideCorner.classList.toggle('near', on); }
+function sideCornerPlace(){
+  const b = side.on && sideShown() ? sideCornerBox(sideCornerSp?.isConnected ? sideCornerSp : sideLook()) : null;
+  if (!b) { sideCorner.hidden = true; sideNear(false); return; }
+  sideCorner.hidden = false;
+  sideCorner.style.top = b.top + 'px'; sideCorner.style.left = (b.right - sideCorner.offsetWidth) + 'px';
+}
+function sideCornerHide(){ sideCornerSp = null; sideTouch = false; clearTimeout(sideTouchT); if (sideBgPop.hidden || sideBgFrom !== sideCorner) sideNear(false); sideCornerPlace(); }
+let sideCornerRaf = 0;
+const sideCornerSoon = () => { if (!sideCornerRaf) sideCornerRaf = requestAnimationFrame(() => { sideCornerRaf = 0; sideCornerPlace(); }); };
 $('#sideBtn').onclick = () => {
   if (!main.querySelector('.slide')) { toast('Open a file first, then turn on side notes.'); return; }
-  if (LAYOUTS[layout]) { toast('Side notes show in the Default layout. Choose Layout: Default first.'); return; }
   side.on = !side.on;
   main.querySelectorAll('.sidepage').forEach(sideStyle);
   sideLayout(); saveSoon();
@@ -7169,7 +7415,7 @@ $('#sideBtn').onclick = () => {
 };
 $('#sideSync').onclick = () => {
   side.sync = !side.sync; pref.set('side-sync', side.sync ? '1' : '0'); sideLayout();
-  if (side.on && !LAYOUTS[layout]) hint(side.sync ? 'Sync scrolling: each side page sits beside its slide again.' : 'Sync scrolling off: the side pages scroll by themselves in a column on the right.');
+  if (side.on) hint(side.sync ? 'Sync scrolling: each side page sits beside its slide again.' : 'Sync scrolling off: the side pages scroll by themselves in a column on the right.');
 };
 $('#sideLinks').onclick = () => { side.links = !side.links; pref.set('side-links', side.links ? '1' : '0'); sidePaintUi(); sideDraw(); };
 for (const b of [$('#sideBgBtn'), sideCorner]) b.onclick = e => {
@@ -7177,27 +7423,35 @@ for (const b of [$('#sideBgBtn'), sideCorner]) b.onclick = e => {
   if (!sideBgPop.hidden) { const same = sideBgFrom === b; closeSideBg(); if (same) return; }
   openSideBg(b);
 };
-// pointing at a side page (or tapping it with a finger or pen) shows the corner button; pointing elsewhere puts it away
+// pointing near a side page's corner (or tapping the page with a finger or pen) shows the button; pointing away puts it away
 document.addEventListener('pointermove', e => {
   if (e.pointerType !== 'mouse' || e.buttons || !side.on) return;
-  const sp = e.target.closest?.('.sidepage');
-  if (sp) { if (sp !== sideCornerSp) sideCornerShow(sp); }
-  else if (sideCornerSp && !e.target.closest?.('#sideBgCorner, #sideBgPop')) sideCornerHide();
+  sideTouch = false;
+  const onBtn = !!e.target.closest?.('#sideBgCorner, #sideBgPop'), sp = e.target.closest?.('.sidepage') || (onBtn ? sideCornerSp : null);
+  if (!sp) { if (sideCornerSp) sideCornerHide(); return; }
+  if (sp !== sideCornerSp) { sideCornerSp = sp; sideCornerPlace(); }
+  const near = onBtn || sideInZone(sp, e.clientX, e.clientY);
+  sideNear(near); sideByMouse = near;
 });
+document.documentElement.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && sideCornerSp) sideCornerHide(); });
 document.addEventListener('pointerdown', e => {
   if (e.pointerType === 'mouse' || !side.on) return;
   const sp = e.target.closest?.('.sidepage');
-  if (sp) sideCornerShow(sp); else if (!e.target.closest?.('#sideBgCorner, #sideBgPop')) sideCornerHide();
+  if (sp) {                           // a tap shows it for a moment; it goes as soon as you start writing, unless you tapped by the corner
+    sideCornerSp = sp; sideCornerPlace(); sideTouch = true; sideTouchZone = sideInZone(sp, e.clientX, e.clientY); sideNear(true);
+    clearTimeout(sideTouchT); sideTouchT = setTimeout(() => { if (sideBgPop.hidden) sideNear(false); }, sideTouchZone ? 6000 : 3500);
+  } else if (!e.target.closest?.('#sideBgCorner, #sideBgPop')) sideCornerHide();
 }, true);
-addEventListener('scroll', () => { if (sideCornerSp) sideCornerPlace(); }, {passive: true, capture: true});
-addEventListener('resize', () => { if (sideCornerSp) sideCornerPlace(); });
+document.addEventListener('input', e => { if (sideTouch && !sideTouchZone && e.target.closest?.('.sidepage') && sideBgPop.hidden) sideNear(false); }, true);
+addEventListener('scroll', sideCornerSoon, {passive: true, capture: true});
+addEventListener('resize', sideCornerSoon);
 sideBgPop.addEventListener('click', e => {
   const sw = e.target.closest('.sw'), pt = e.target.closest('.pat');
   if (sw) sideSet({bg: sw.dataset.c}); else if (pt) sideSet({pat: pt.dataset.pat});
 });
 $('#sideCustom').addEventListener('input', e => sideSet({bg: e.target.value}));
 document.addEventListener('mousedown', e => { if (!sideBgPop.hidden && !sideBgPop.contains(e.target) && !$('#sideBgBtn').contains(e.target) && !sideCorner.contains(e.target)) closeSideBg(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sideBgPop.hidden) { e.stopPropagation(); const f = sideBgFrom; closeSideBg(); f?.focus(); } }, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sideBgPop.hidden) { e.stopPropagation(); const f = sideBgFrom; closeSideBg(); if (!(f === sideCorner && sideByMouse)) f?.focus(); } }, true);
 addEventListener('resize', () => { if (!sideBgPop.hidden) placeSideBg(); });
 addEventListener('scroll', () => { if (!sideBgPop.hidden) placeSideBg(); }, {passive: true});
 // the bar that shows when you select words: one more choice
@@ -8108,17 +8362,22 @@ async function driveDownload(d){
 async function driveParent(id){
   try { return (await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?fields=parents&supportsAllDrives=true`)).json()).parents?.[0] || ''; } catch { return ''; }
 }
+// which content a Drive file has: its head revision (a new one only when the content changes), else its checksum.
+// (Drive's "version" also goes up when Drive itself works on the file after an upload, which looked like someone else's change.)
+const DRIVE_REV = 'headRevisionId,md5Checksum';
+const driveRev = j => j?.headRevisionId ? 'r:' + j.headRevisionId : j?.md5Checksum ? 'm:' + j.md5Checksum : '';
+const driveRevKnown = v => /^[rm]:/.test(v || '');           // one remembered the old way (a plain version number) can't be compared
 // can this person change the file? (a notebook shared with them to view only can't be saved back over)
 async function driveCanEdit(id){
   drive.ver = '';
-  try { const j = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?fields=capabilities(canEdit),version&supportsAllDrives=true`)).json(); drive.ver = j.version || ''; return j.capabilities?.canEdit !== false; } catch { return true; }
+  try { const j = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?fields=capabilities(canEdit),${DRIVE_REV}&supportsAllDrives=true`)).json(); drive.ver = driveRev(j); return j.capabilities?.canEdit !== false; } catch { return true; }
 }
 async function driveOpen(){
   if (!driveSetUp()) return;
   try {
     const picked = await drivePick();
     for (const [i, d] of picked.entries()) {
-      if (docs.some(x => x.driveNb === d.id && !x.trashed)) { await driveOpenNotebook(d); continue; }         // already here: bring it up to date instead of a second copy
+      if (docs.some(x => x.driveNb === d.id && !x.trashed)) { await cloudOpen(CLOUD.google, d); continue; }         // already here: bring it up to date instead of a second copy
       await driveOpenOne(d, picked.length > 1 ? ` (${i + 1} of ${picked.length})` : '');
     }
   } catch (err) { driveSay(err, 'open from Google Drive'); }
@@ -8163,7 +8422,18 @@ function driveSend(method, url, meta, blob, progress, again){
 }
 // kind: 'notebook' or 'pdf'. The first save makes a file (next to the source, if it came from Drive); after that the same file is updated.
 // A notebook you can't edit (shared with you to view only) is saved as a copy in your own Drive instead. Gives back {id, name, copy}.
-async function driveStore(kind, quiet, auto){
+// a save to the cloud holds the background checks off until it is done and its new revision is remembered
+async function syncHold(fn){
+  if (sync.busy) return fn();                   // already held (a save by syncNow)
+  sync.busy = true; clearTimeout(sync.timer); syncShow();
+  try { return await fn(); }
+  finally {
+    sync.busy = false; sync.checked = Date.now(); syncShow();
+    if (sync.again || curDoc()?.driveDirty) { sync.again = false; setTimeout(syncSoon); }      // changes made while it was saving go up next
+  }
+}
+function driveStore(kind, quiet, auto){ return kind === 'notebook' ? syncHold(() => driveStore0(kind, quiet, auto)) : driveStore0(kind, quiet, auto); }
+async function driveStore0(kind, quiet, auto){
   const key = kind === 'pdf' ? 'drivePdf' : 'driveNb';
   await flushSave();
   const gen = sync.gen;
@@ -8171,10 +8441,10 @@ async function driveStore(kind, quiet, auto){
   let last = -1;
   const progress = quiet || file.blob.size < 1.5e6 ? null : f => { const n = Math.round(f * 100); if (n !== last) { last = n; toast(`Uploading “${file.name}” to Google Drive: ${n}%`); } };
   if (!quiet) toast(progress ? `Uploading “${file.name}” to Google Drive…` : 'Saving to Google Drive…');
-  const fields = '&fields=id,name,parents,version&supportsAllDrives=true';
+  const fields = `&fields=id,name,parents,${DRIVE_REV}&supportsAllDrives=true`;
   const create = (meta, blob = file.blob) => driveSend('POST', `${DRIVE_UPLOAD}/files?uploadType=multipart${fields}`, {mimeType: blob.type, ...meta}, blob, progress);
   const copy = () => create({name: notebookName() + ' (my copy).html'});          // into your own Drive, not the shared folder
-  let out, mine = false;
+  let out, mine = false, from = '';
   if (kind === 'notebook' && !doc?.[key] && doc?.driveNbRO) { out = await copy(); mine = true; }
   else if (doc?.[key]) {
     try { out = await driveSend('PATCH', `${DRIVE_UPLOAD}/files/${encodeURIComponent(doc[key])}?uploadType=multipart${fields}`, {}, file.blob, progress); }
@@ -8189,10 +8459,10 @@ async function driveStore(kind, quiet, auto){
     doc[key] = out.id;
     if (mine) { delete doc.driveNbRO; doc.driveFolder = out.parents?.[0] || ''; }
     else if (!doc.driveFolder && out.parents?.[0]) doc.driveFolder = out.parents[0];
-    if (kind === 'notebook') { doc.driveVer = out.version || ''; delete doc.driveStop; if (sync.gen === gen) delete doc.driveDirty; if (doc === curDoc()) syncShow(); }
+    if (kind === 'notebook') { from = relink(doc, 'google'); doc.driveVer = driveRev(out); delete doc.driveStop; if (sync.gen === gen) delete doc.driveDirty; if (doc === curDoc()) syncShow(); }
     putAll({docs});
   }
-  return {id: out.id, name: out.name || file.name, copy: mine};
+  return {id: out.id, name: out.name || file.name, copy: mine, from};
 }
 async function driveSave(kind){
   if (!driveSetUp()) return;
@@ -8200,68 +8470,101 @@ async function driveSave(kind){
   try {
     await driveToken();                         // sign in first, while the click still counts, then build the file
     const out = await driveStore(kind), at = new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'});
-    toast(out.copy ? `You can only view the original, so a copy was saved in your own Drive: ${out.name} (${at}). It keeps in sync from now on.` : kind === 'notebook' ? `Saved to Google Drive: ${out.name} (${at}). From now on it keeps in sync by itself, so you can carry on from another device.` : `Saved to Google Drive: ${out.name} (${at})`);
+    toast(out.copy ? `You can only view the original, so a copy was saved in your own Drive: ${out.name} (${at}). It keeps in sync from now on.${relinked(out.from)}` : kind === 'notebook' ? `Saved to Google Drive: ${out.name} (${at}). From now on it keeps in sync by itself, so you can carry on from another device.${relinked(out.from)}` : `Saved to Google Drive: ${out.name} (${at})`);
   } catch (err) { driveSay(err, 'save to Google Drive'); }
 }
 
 // ---------- keeping it in sync ----------
-// Once a notebook is in your Google Drive, each change goes up by itself a few seconds after you stop:
+// Once a notebook is in your Google Drive or OneDrive, each change goes up by itself a few seconds after you stop:
 // one upload, only when something changed, and never a sign-in pop-up (that waits for a click on the cloud).
+// Both clouds share this code. A cloud is a small object: hasLink/linkOf (the file the notebook is tied to), tokenOk (can we go on without asking?),
+// quiet (get a token without any window), meta (version and whether it's gone), upload, download, save (the click version), stops (what an error means), list and openOne.
+// A notebook is tied to one cloud at a time, the one it was saved to last; driveDirty and driveStop belong to whichever it is.
+const CLOUD = {google: {
+  key: 'google', name: 'Google Drive', short: 'Drive', account: 'Google', ico: 'drive', bin: 'bin', ver: 'driveVer', lock: 'You can no longer change this file in Google Drive.',
+  hasLink: d => !!d.driveNb, linkOf: d => d.driveNb, tokenOk: driveTokenOk, quiet: async () => driveTokenOk(), token: driveToken, say: driveSay, setUp: driveSetUp,
+  async meta(d){ const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=${DRIVE_REV},trashed&supportsAllDrives=true`)).json(); return {ver: driveRev(r), gone: !!r.trashed}; },
+  known: driveRevKnown,
+  upload: d => driveStore('notebook', true, true),
+  download: d => driveDownload({id: d.driveNb, name: d.name + '.html', mime: 'text/html'}),
+  save: () => driveSave('notebook'),
+  stops: err => err.status === 404 ? 'gone' : err.status === 403 && !/rate|quota/i.test(err.message) ? 'locked' : '',
+  revive(d, stop){ if (stop === 'gone') delete d.driveNb; if (stop === 'locked') { d.driveNbRO = d.driveNb; delete d.driveNb; } },       // 'gone': a new file, in the same folder
+  nbs: {title: 'Your notebooks in Drive', looking: 'Looking in your Google Drive…', hint: 'Notebooks you’ve saved to Google Drive from any device. Pick one to carry on where you left off; it keeps in sync from then on.',
+    none: 'No notebooks in your Drive yet. On the device you started on, use Download › Notebook to Drive once; after that it keeps itself in sync.'},
+  async list(){
+    const q = encodeURIComponent("trashed=false and (mimeType='text/html' or name contains '.html')");
+    const r = await (await driveFetch(`${DRIVE_API}/files?q=${q}&orderBy=modifiedTime desc&pageSize=100&fields=files(id,name,modifiedTime)&supportsAllDrives=true&includeItemsFromAllDrives=true`)).json();
+    return (r.files || []).filter(f => /\.html?$/i.test(f.name)).map(f => ({id: f.id, name: f.name, when: f.modifiedTime}));
+  },
+  openOne: f => driveOpenOne(f),
+}};
+const cloudOf = d => d?.driveNb ? CLOUD.google : d?.odNb && CLOUD.onedrive || null;
+const CLOUD_LINK = {google: ['driveNb', 'driveNbRO', 'driveVer'], onedrive: ['odNb', 'odDrive', 'odVer']};
+// the notebook now follows `to`; if it followed the other one, that link is dropped (the file there stays as it was). Gives that cloud's name, or ''.
+function relink(doc, to){
+  const from = CLOUD[to === 'google' ? 'onedrive' : 'google'], was = from.hasLink(doc);
+  for (const k of CLOUD_LINK[from.key]) delete doc[k];
+  return was ? from.name : '';
+}
+const relinked = from => from ? ` It used to sync with ${from}; that file stays as it was.` : '';
+
 function syncSoon(now){
-  const d = curDoc(); syncShow();
-  if (!d?.driveNb || !d.driveDirty || d.driveStop || !navigator.onLine || !driveTokenOk()) return;
+  const d = curDoc(), P = cloudOf(d); syncShow();
+  if (!P || !d.driveDirty || d.driveStop || !navigator.onLine || !P.tokenOk()) return;
   const t = Date.now(); sync.first ||= t;
   clearTimeout(sync.timer);
   sync.timer = setTimeout(syncNow, now ? 0 : Math.max(0, Math.min(5000, sync.first + 60000 - t)));       // 5 s after the last change, at least once a minute
 }
 async function syncNow(){
   sync.timer = 0;
-  const d = curDoc();
-  if (!d?.driveNb || !d.driveDirty || d.driveStop || !navigator.onLine || !driveTokenOk()) return syncShow();
+  const d = curDoc(), P = cloudOf(d);
+  if (!P || !d.driveDirty || d.driveStop || !navigator.onLine || !P.tokenOk()) return syncShow();
   if (sync.busy) { sync.again = true; return; }
   sync.busy = true; sync.first = 0; sync.err = null; syncShow();
   try {
-    // someone else changed it in Drive since: don't write over their work
-    const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=version,trashed&supportsAllDrives=true`)).json();
-    if (r.trashed) d.driveStop = 'gone';
-    else if (d.driveVer && r.version && String(r.version) !== String(d.driveVer)) d.driveStop = 'changed';
-    else if (curDoc() === d) await driveStore('notebook', true, true);
+    // someone else changed it in the cloud since: don't write over their work
+    if (await P.quiet()) {
+      const r = await P.meta(d, true);
+      if (r.gone) d.driveStop = 'gone';
+      else if (P.known(d[P.ver]) && r.ver && String(r.ver) !== String(d[P.ver])) d.driveStop = 'changed';
+      else if (curDoc() === d) await P.upload(d);
+    }
   } catch (err) {
-    if (err.status === 404) d.driveStop = 'gone';
-    else if (err.status === 403 && !/rate|quota/i.test(err.message)) d.driveStop = 'locked';
-    else sync.err = err;
+    const st = P.stops(err);
+    if (st) d.driveStop = st;
+    else if (err.kind !== 'signin') sync.err = err;
   }
   if (d.driveStop) putAll({docs});
   sync.busy = false; syncShow();
   if (sync.again) { sync.again = false; syncSoon(); }
   else if (sync.err && navigator.onLine) { clearTimeout(sync.timer); sync.timer = setTimeout(syncNow, 30000); }       // try again in a while
 }
-const SYNC_SAY = {
-  synced: ['saved', 'Synced to Drive', 'This notebook is in your Google Drive and every change goes there by itself.'],
-  waiting: ['drive', 'Syncing soon', 'Your latest changes go to Google Drive in a few seconds.'],
-  syncing: ['drive', 'Syncing…', 'Sending your latest changes to Google Drive.'],
-  signin: ['drive', 'Sign in to sync', 'Google sign-in has run out. Click to sign in again, and your changes go to Drive.'],
-  offline: ['cloud-off', 'Syncs when online', 'You’re offline. Your notes are saved in this browser and go to Google Drive when you’re back online.'],
-  error: ['alert', 'Sync paused', 'Google Drive didn’t take the last changes. Click to try again.'],
-  changed: ['alert', 'Changed in two places', 'This notebook changed in Google Drive (on another device, or by someone you shared it with) while it also changed here. Click to choose which to keep.'],
-  gone: ['alert', 'Not in Drive', 'This notebook’s file was deleted or moved to the bin in Google Drive. Click to save it to Drive again.'],
-  locked: ['alert', 'Can’t sync', 'You can no longer change this file in Google Drive. Click to save a copy in your own Drive.'],
-};
+const syncSay = P => ({
+  synced: ['saved', `Synced to ${P.short}`, `This notebook is in your ${P.name} and every change goes there by itself.`],
+  waiting: [P.ico, 'Syncing soon', `Your latest changes go to ${P.name} in a few seconds.`],
+  syncing: [P.ico, 'Syncing…', `Sending your latest changes to ${P.name}.`],
+  signin: [P.ico, 'Sign in to sync', `${P.account} sign-in has run out. Click to sign in again, and your changes go to ${P.short}.`],
+  offline: ['cloud-off', 'Syncs when online', `You’re offline. Your notes are saved in this browser and go to ${P.name} when you’re back online.`],
+  error: ['alert', 'Sync paused', `${P.name} didn’t take the last changes. Click to try again.`],
+  changed: ['alert', 'Changed in two places', `This notebook changed in ${P.name} (on another device, or by someone you shared it with) while it also changed here. Click to choose which to keep.`],
+  gone: ['alert', `Not in ${P.short}`, `This notebook’s file was deleted or moved to the ${P.bin} in ${P.name}. Click to save it to ${P.short} again.`],
+  locked: ['alert', 'Can’t sync', `${P.lock} Click to save a copy in your own ${P.short}.`],
+});
 function syncShow(){
-  const el = $('#driveSync'), d = curDoc();
-  const s = !d?.driveNb && !d?.driveStop ? '' : d.driveStop || (!d.driveDirty ? 'synced' : !navigator.onLine ? 'offline' : sync.busy ? 'syncing' : sync.err ? 'error' : !driveTokenOk() ? 'signin' : 'waiting');
-  el.hidden = !s; if (!s || (el.dataset.s === s && el.innerHTML)) return;
-  const [ico, say, tip] = SYNC_SAY[s];
-  el.dataset.s = s; el.innerHTML = icon(ico) + `<span>${say}</span>`; el.dataset.tip = tip; el.setAttribute('aria-label', say);
+  const el = $('#driveSync'), d = curDoc(), P = cloudOf(d);
+  const s = !P ? '' : d.driveStop || (!d.driveDirty ? 'synced' : !navigator.onLine ? 'offline' : sync.busy ? 'syncing' : sync.err ? 'error' : !P.tokenOk() ? 'signin' : 'waiting');
+  el.hidden = !s; if (!s || (el.dataset.s === s && el.dataset.p === P.key && el.innerHTML)) return;
+  const [ico, say, tip] = syncSay(P)[s];
+  el.dataset.s = s; el.dataset.p = P.key; el.innerHTML = icon(ico) + `<span>${say}</span>`; el.dataset.tip = tip; el.setAttribute('aria-label', say);
 }
 $('#driveSync').addEventListener('click', async () => {
-  const d = curDoc(), s = $('#driveSync').dataset.s; if (!d) return;
+  const d = curDoc(), P = cloudOf(d), s = $('#driveSync').dataset.s; if (!d || !P) return;
   if (s === 'synced' || s === 'syncing' || s === 'waiting' || s === 'offline') { if (s === 'waiting') syncSoon(true); return; }
   if (d.driveStop === 'changed') { syncChoose(); return; }
-  if (d.driveStop === 'gone') delete d.driveNb;           // a new file, in the same folder
-  if (d.driveStop === 'locked') { d.driveNbRO = d.driveNb; delete d.driveNb; }
+  P.revive(d, d.driveStop);
   delete d.driveStop; sync.err = null;
-  await driveSave('notebook');                            // a click: signing in again is allowed here
+  await P.save();                                         // a click: signing in again is allowed here
   syncShow();
 });
 addEventListener('online', () => { syncSoon(true); syncCheck(); }); addEventListener('offline', () => syncShow());
@@ -8271,25 +8574,27 @@ setInterval(() => { if (!$('#driveSync').hidden) syncShow(); }, 30000);      // 
 
 // changes made on another device (or by someone it's shared with): fetched when the notebook is opened, when you come back to it, and every minute or so
 async function syncCheck(){
-  const d = curDoc();
-  if (!d?.driveNb || d.driveStop || sync.busy || !navigator.onLine || !driveTokenOk() || main.querySelector('.welcome')) return;
+  const d = curDoc(), P = cloudOf(d);
+  if (!P || d.driveStop || sync.busy || !navigator.onLine || !P.tokenOk() || main.querySelector('.welcome')) return;
   sync.checked = Date.now();
   try {
-    const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=version,trashed&supportsAllDrives=true`)).json();
+    if (!await P.quiet()) return syncShow();
+    const r = await P.meta(d, true);
     if (curDoc() !== d || sync.busy) return;
-    if (r.trashed) { d.driveStop = 'gone'; putAll({docs}); return syncShow(); }
-    if (!r.version || String(r.version) === String(d.driveVer || '')) return;
-    if (!d.driveVer) { d.driveVer = String(r.version); putAll({docs}); return; }       // nothing to compare with yet
+    if (r.gone) { d.driveStop = 'gone'; putAll({docs}); return syncShow(); }
+    if (!r.ver || String(r.ver) === String(d[P.ver] || '')) return;
+    if (!P.known(d[P.ver])) { d[P.ver] = String(r.ver); putAll({docs}); return; }       // nothing to compare with yet
     if (d.driveDirty) { d.driveStop = 'changed'; putAll({docs}); return syncShow(); }
-    await syncPull(d, r.version);
-    toast('Updated with the latest changes from Google Drive.');
+    await syncPull(d, r.ver);
+    toast(`Updated with the latest changes from ${P.name}.`);
   } catch (err) { if (err.status === 404) { d.driveStop = 'gone'; putAll({docs}); syncShow(); } }
 }
-// put Drive's copy in place of this browser's (Back still brings the old one back)
+// put the cloud's copy in place of this browser's (Back still brings the old one back)
 async function syncPull(d, ver){
+  const P = cloudOf(d);
   sync.busy = true; syncShow();
   try {
-    const f = await driveDownload({id: d.driveNb, name: d.name + '.html', mime: 'text/html'});
+    const f = await P.download(d);
     const data = readNotebookHtml(await f.text());
     if (!data) throw new DriveError('that file isn’t a notebook', 'other');
     if (curDoc() !== d) return;
@@ -8299,34 +8604,30 @@ async function syncPull(d, ver){
     sync.quiet = true;
     try { await saveNow(); } finally { sync.quiet = false; }
     scrollTo(0, y);
-    d.driveVer = String(ver || ''); delete d.driveDirty; delete d.driveStop; putAll({docs});
+    d[P.ver] = String(ver || ''); delete d.driveDirty; delete d.driveStop; putAll({docs});
   } finally { sync.busy = false; syncShow(); }
 }
-// both changed: keep this one, take Drive's, or keep both
+// both changed: keep this one, take the cloud's, or keep both
 let syncPop = null;
 function syncChoose(){
-  const d = curDoc(), btn = $('#driveSync'); if (!d) return;
+  const d = curDoc(), P = cloudOf(d), btn = $('#driveSync'); if (!d || !P) return;
   if (!syncPop) {
     syncPop = Object.assign(document.createElement('div'), {className: 'pop syncpop', hidden: true});
     syncPop.setAttribute('role', 'menu'); syncPop.setAttribute('aria-label', 'Which version to keep');
-    syncPop.innerHTML = `<p>This notebook changed here and in Google Drive. Which should it keep?</p>
-<button type="button" role="menuitem" data-k="mine"><strong>This version</strong><small>Saves what you see here over the copy in Drive</small></button>
-<button type="button" role="menuitem" data-k="theirs"><strong>Drive’s version</strong><small>Replaces this with the copy in Drive (Back brings this one back)</small></button>
-<button type="button" role="menuitem" data-k="both"><strong>Keep both</strong><small>This version becomes a separate notebook, then this one takes Drive’s</small></button>`;
     document.body.append(syncPop);
     syncPop.addEventListener('click', async e => {
       const k = e.target.closest('[data-k]')?.dataset.k; if (!k) return;
-      const d = curDoc(); syncPop.hidden = true; $('#driveSync').focus();
-      if (!d) return;
+      const d = curDoc(), P = cloudOf(d); syncPop.hidden = true; $('#driveSync').focus();
+      if (!d || !P) return;
       delete d.driveStop; sync.err = null;
       try {
-        if (k === 'mine') { await driveSave('notebook'); return; }
-        await driveToken();
-        const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=version&supportsAllDrives=true`)).json();
+        if (k === 'mine') { await P.save(); return; }
+        await P.token();
+        const r = await P.meta(d);
         if (k === 'both') { await flushSave(); await duplicateDoc(d.id); if (curDoc() !== d) await switchDoc(d.id); }
-        await syncPull(d, r.version);
-        toast(k === 'both' ? 'Kept both: your version is now a separate notebook, and this one has Drive’s changes.' : 'This notebook now has Drive’s version. Back brings yours back.');
-      } catch (err) { driveSay(err, 'sync with Google Drive'); }
+        await syncPull(d, r.ver);
+        toast(k === 'both' ? `Kept both: your version is now a separate notebook, and this one has ${P.name}’s changes.` : `This notebook now has ${P.name}’s version. Back brings yours back.`);
+      } catch (err) { P.say(err, `sync with ${P.name}`); }
       syncShow();
     });
     syncPop.addEventListener('keydown', e => {
@@ -8336,6 +8637,10 @@ function syncChoose(){
     });
     document.addEventListener('mousedown', e => { if (!syncPop.hidden && !syncPop.contains(e.target) && !e.target.closest('#driveSync')) syncPop.hidden = true; });
   }
+  syncPop.innerHTML = `<p>This notebook changed here and in ${P.name}. Which should it keep?</p>
+<button type="button" role="menuitem" data-k="mine"><strong>This version</strong><small>Saves what you see here over the copy in ${P.short}</small></button>
+<button type="button" role="menuitem" data-k="theirs"><strong>${P.short}’s version</strong><small>Replaces this with the copy in ${P.short} (Back brings this one back)</small></button>
+<button type="button" role="menuitem" data-k="both"><strong>Keep both</strong><small>This version becomes a separate notebook, then this one takes ${P.short}’s</small></button>`;
   const r = btn.getBoundingClientRect();
   syncPop.hidden = false;
   syncPop.style.left = Math.max(8, Math.min(r.left, innerWidth - syncPop.offsetWidth - 8)) + 'px';
@@ -8343,18 +8648,19 @@ function syncChoose(){
   syncPop.querySelector('[data-k]').focus();
 }
 
-// ---------- your notebooks in Drive, from any device ----------
-// Only files this app made or opened are visible to it (the drive.file permission), so this is exactly your notebooks.
-let nbsBox = null, nbsScrim = null, nbsPrev = null;
+// ---------- your notebooks in Drive or OneDrive, from any device ----------
+// Google only shows files this app made or opened (the drive.file permission); OneDrive lists the Between the Lines folder, plus any notebook opened from elsewhere.
+let nbsBox = null, nbsScrim = null, nbsPrev = null, nbsP = null;
 function nbsClose(){ if (!nbsBox || nbsBox.hidden) return; nbsBox.hidden = nbsScrim.hidden = true; nbsPrev?.focus?.(); }
-async function driveNotebooks(){
-  if (!driveSetUp()) return;
+async function cloudNotebooks(P){
+  if (!P.setUp()) return;
+  nbsP = P;
   if (!nbsBox) {
     nbsScrim = Object.assign(document.createElement('div'), {className: 'shscrim', hidden: true});
     nbsBox = Object.assign(document.createElement('div'), {className: 'pop sharebox nbsbox', hidden: true});
     nbsBox.setAttribute('role', 'dialog'); nbsBox.setAttribute('aria-modal', 'true'); nbsBox.setAttribute('aria-labelledby', 'nbsTitle');
-    nbsBox.innerHTML = `<div class="shhead"><h2 id="nbsTitle">Your notebooks in Drive</h2><button type="button" class="btn" id="nbsClose" aria-label="Close" title="Close (Esc)">${icon('x')}</button></div>
-<p class="nbshint">Notebooks you’ve saved to Google Drive from any device. Pick one to carry on where you left off; it keeps in sync from then on.</p>
+    nbsBox.innerHTML = `<div class="shhead"><h2 id="nbsTitle"></h2><button type="button" class="btn" id="nbsClose" aria-label="Close" title="Close (Esc)">${icon('x')}</button></div>
+<p class="nbshint"></p>
 <div class="nbslist" role="list"></div>`;
     document.body.append(nbsScrim, nbsBox);
     nbsScrim.addEventListener('click', nbsClose);
@@ -8366,37 +8672,38 @@ async function driveNotebooks(){
     });
     nbsBox.querySelector('.nbslist').addEventListener('click', e => {
       const b = e.target.closest('.nbsrow'); if (!b) return;
-      nbsClose(); driveOpenNotebook({id: b.dataset.id, name: b.dataset.name, mime: 'text/html'});
+      nbsClose(); cloudOpen(nbsP, {id: b.dataset.id, drive: b.dataset.drive, name: b.dataset.name, mime: 'text/html'});
     });
   }
   const list = nbsBox.querySelector('.nbslist');
+  nbsBox.querySelector('#nbsTitle').textContent = P.nbs.title; nbsBox.querySelector('.nbshint').textContent = P.nbs.hint;
   try {
-    await driveToken();                          // sign in while the click still counts
+    await P.token();                             // sign in while the click still counts
     nbsPrev = document.activeElement;
     nbsBox.hidden = nbsScrim.hidden = false;
-    list.innerHTML = '<p class="nbsempty">Looking in your Google Drive…</p>';
+    list.innerHTML = `<p class="nbsempty">${P.nbs.looking}</p>`;
     nbsBox.querySelector('#nbsClose').focus();
-    const q = encodeURIComponent("trashed=false and (mimeType='text/html' or name contains '.html')");
-    const r = await (await driveFetch(`${DRIVE_API}/files?q=${q}&orderBy=modifiedTime desc&pageSize=100&fields=files(id,name,modifiedTime)&supportsAllDrives=true&includeItemsFromAllDrives=true`)).json();
-    const files = (r.files || []).filter(f => /\.html?$/i.test(f.name));
+    const files = await P.list();
+    if (nbsP !== P) return;
     const when = t => { const d = new Date(t); return isNaN(d) ? '' : d.toLocaleString('en-GB', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'}); };
     list.innerHTML = files.length ? files.map(f => {
-      const here = docs.some(x => x.driveNb === f.id && !x.trashed);
-      return `<button type="button" class="nbsrow" role="listitem" data-id="${esc(f.id)}" data-name="${esc(f.name)}">${icon('file')}<span class="nbsname">${esc(f.name.replace(/\.html?$/i, ''))}</span><small>${here ? 'On this device · ' : ''}Changed ${esc(when(f.modifiedTime))}</small></button>`;
-    }).join('') : '<p class="nbsempty">No notebooks in your Drive yet. On the device you started on, use Download › Notebook to Drive once; after that it keeps itself in sync.</p>';
+      const here = docs.some(x => P.linkOf(x) === f.id && !x.trashed);
+      return `<button type="button" class="nbsrow" role="listitem" data-id="${esc(f.id)}" data-drive="${esc(f.drive || '')}" data-name="${esc(f.name)}">${icon('file')}<span class="nbsname">${esc(f.name.replace(/\.html?$/i, ''))}</span><small>${here ? 'On this device · ' : ''}${f.when ? 'Changed ' + esc(when(f.when)) : ''}</small></button>`;
+    }).join('') : `<p class="nbsempty">${P.nbs.none}</p>`;
     if (files.length) list.querySelector('.nbsrow').focus();
-  } catch (err) { driveSay(err, 'list your notebooks in Google Drive'); if (!nbsBox.hidden) list.innerHTML = '<p class="nbsempty">Google Drive couldn’t be reached just now. Close this and try again.</p>'; }
+  } catch (err) { P.say(err, `list your notebooks in ${P.name}`); if (!nbsBox.hidden) list.innerHTML = `<p class="nbsempty">${P.name} couldn’t be reached just now. Close this and try again.</p>`; }
 }
-// a notebook from Drive: the one already on this device (brought up to date), or a new one
-async function driveOpenNotebook(f){
-  const have = docs.find(x => x.driveNb === f.id && !x.trashed);
+const driveNotebooks = () => cloudNotebooks(CLOUD.google);
+// a notebook from the cloud: the one already on this device (brought up to date), or a new one
+async function cloudOpen(P, f){
+  const have = docs.find(x => P.linkOf(x) === f.id && !x.trashed);
   if (have) {
     if (have.id !== curId) await switchDoc(have.id);
     if (narrow.matches) setPanel('pages', false);
     await syncCheck(); syncSoon();
     return;
   }
-  await driveOpenOne(f);
+  await P.openOne(f);
 }
 
 // ---------- share from the app ----------
@@ -8553,7 +8860,7 @@ async function driveShare(kind, prep, back){
     if (!main.querySelector('.slide')) { toast('Open your slides first, then share.'); return; }
     const out = await driveStore(kind);
     toast('');
-    shOpenDialog(out, kind, out.copy ? 'You can only view the original, so this is a copy saved in your own Drive. That is the file being shared.' : '', back);
+    shOpenDialog(out, kind, [out.copy && 'You can only view the original, so this is a copy saved in your own Drive. That is the file being shared.', out.from && `It now keeps in sync with Google Drive instead of ${out.from}.`].filter(Boolean).join(' '), back);
   } catch (err) { driveSay(err, 'share through Google Drive'); }
 }
 // the notebook's ⋯ menu: make it the open notebook, then share it
@@ -8657,7 +8964,7 @@ const OD_API = 'https://graph.microsoft.com/v1.0';
 const OD_MSAL = 'https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.1/lib/msal-browser.min.js';
 const OD_SCOPES = ['User.Read', 'Files.ReadWrite.All'];          // Files.ReadWrite.All is what lets "Shared with me" files be opened
 const OD_DIR = 'Between the Lines', OD_SIMPLE = 4e6, OD_CHUNK = 10 * 320 * 1024;          // up to 4 MB goes in one request; bigger files in pieces
-const od = {app: null, init: null, wait: null, account: null, token: '', expires: 0, force: false, user: null, drive: ''};
+const od = {app: null, init: null, wait: null, account: null, token: '', expires: 0, force: false, user: null, drive: '', silent: undefined};          // silent: false once a quiet renewal has failed, so syncing waits for a click
 class OdError extends Error { constructor(msg, kind, status, code){ super(msg); this.kind = kind; this.status = status; this.code = code; } }
 const odBase = (drive, id) => drive ? `/drives/${encodeURIComponent(drive)}/items/${encodeURIComponent(id)}` : `/me/drive/items/${encodeURIComponent(id)}`;
 const odSleep = ms => new Promise(r => setTimeout(r, ms));
@@ -8698,15 +9005,20 @@ function odErr(e){
 }
 const odNeedsUser = e => /interaction_required|consent_required|login_required|no_tokens_found|invalid_grant|no_account_error|token_refresh_required/.test(e?.errorCode || '') || (window.msal?.InteractionRequiredAuthError && e instanceof msal.InteractionRequiredAuthError);
 // a sign-in left half done (a pop-up closed by a crash) can block the next one: forget the mark it left
+const odRemembers = () => { try { return Object.keys(sessionStorage).some(k => k.startsWith('msal.') && !/interaction\.status$/.test(k)); } catch { return false; } };          // has MSAL kept a sign-in in this tab?
 const odUnstick = () => { try { Object.keys(sessionStorage).filter(k => /interaction\.status$/.test(k)).forEach(k => sessionStorage.removeItem(k)); } catch {} };
 
 // an access token: the one in memory, else a quiet renewal, else Microsoft's pop-up. One at a time, so two clicks never open two pop-ups.
-function odToken(){
+// quiet (syncing in the background) never opens a window: if the quiet renewal fails it throws a 'signin' error and syncing waits for a click.
+function odToken(quiet){
   if (odTokenOk()) return Promise.resolve(od.token);
+  if (quiet) return odGet(false, true);          // (not shared with a click's, which has to be able to open the window)
   return od.wait ??= odGet().finally(() => { od.wait = null; });
 }
-async function odGet(again){
+const odQuiet = () => odToken(true).then(() => true, err => { if (err.kind === 'signin') return false; throw err; });
+async function odGet(again, quiet){
   if (navigator.onLine === false) throw new OdError('you appear to be offline', 'network');
+  if (quiet && !od.app && !od.account && !odRemembers()) { od.silent = false; syncShow(); throw new OdError('Microsoft sign-in has run out', 'signin'); }          // nothing to renew, so don't even load Microsoft's script
   await odLoad();
   try {
     const account = od.account || od.app.getAllAccounts()[0], req = {scopes: OD_SCOPES, account};
@@ -8715,31 +9027,34 @@ async function odGet(again){
       try { r = await od.app.acquireTokenSilent({...req, forceRefresh: od.force}); }
       catch (e) { if (!odNeedsUser(e)) throw e; }
     }
+    if (!r && quiet) { od.silent = false; syncShow(); throw new OdError('Microsoft sign-in has run out', 'signin'); }
     r ??= account ? await od.app.acquireTokenPopup(req) : await od.app.loginPopup({scopes: OD_SCOPES, prompt: 'select_account'});
+    const was = od.silent; od.silent = true;
     od.force = false; od.account = r.account || account; od.token = r.accessToken;
     od.expires = r.expiresOn ? +new Date(r.expiresOn) : Date.now() + 3600e3;
     od.user = {name: od.account?.name || '', email: od.account?.username || ''};
     renderOd();
+    if (was === false) setTimeout(() => { syncSoon(); syncCheck(); });          // signed in again: pick up where syncing stopped
     return od.token;
   } catch (e) {
     const err = odErr(e);
-    if (err.kind === 'busy' && !again) { odUnstick(); return odGet(true); }
+    if (err.kind === 'busy' && !again) { odUnstick(); return odGet(true, quiet); }
     throw err;
   }
 }
 // a request to Graph with the token. A 401 renews the token once; "slow down" (429) waits as long as Microsoft says, twice at most.
-async function odFetch(url, opts = {}){
+async function odFetch(url, {quiet, ...opts} = {}){
   if (!/^https:/.test(url)) url = OD_API + url;
   let renewed = false, waited = 0;
   for (;;) {
-    const token = await odToken();
+    const token = await odToken(quiet);
     let res;
     try { res = await fetch(url, {...opts, headers: {...opts.headers, Authorization: 'Bearer ' + token}}); }
     catch (err) { throw new OdError(navigator.onLine === false ? 'you appear to be offline' : err?.message || 'no connection', 'network'); }
     if (res.status === 401 && !renewed) { renewed = true; od.token = ''; od.force = true; continue; }
     if ((res.status === 429 || res.status === 503) && waited < 2) {
       const s = Math.min(30, Math.max(1, +res.headers.get('Retry-After') || 3));
-      waited++; toast(`Microsoft asked us to wait a moment (${s} s)…`); await odSleep(s * 1000); continue;
+      waited++; if (!quiet) toast(`Microsoft asked us to wait a moment (${s} s)…`); await odSleep(s * 1000); continue;
     }
     if (!res.ok) throw await odHttp(res);
     return res;
@@ -8770,6 +9085,34 @@ function odSetUp(){
   return false;
 }
 const odMyDrive = async () => od.drive ||= (await (await odFetch('/me/drive?$select=id')).json()).id || '';
+// a file's version: cTag changes with its content only (eTag also with a rename or a change of who can see it), so a quiet change of name or sharing doesn't look like an edit
+async function odMeta(drive, id, quiet){
+  const r = await (await odFetch(`${odBase(drive, id)}?$select=cTag,eTag,deleted`, {quiet})).json();
+  return {ver: r.cTag || r.eTag || '', gone: !!r.deleted};
+}
+CLOUD.onedrive = {
+  key: 'onedrive', name: 'OneDrive', short: 'OneDrive', account: 'Microsoft', ico: 'onedrive', bin: 'recycle bin', ver: 'odVer', lock: 'You can’t change this file in OneDrive.',
+  hasLink: d => !!d.odNb, linkOf: d => d.odNb, setUp: odSetUp, token: odToken, say: odSay, quiet: odQuiet,
+  tokenOk: () => odTokenOk() || od.silent !== false,          // a quiet renewal is still worth trying
+  meta: (d, quiet) => odMeta(d.odDrive, d.odNb, quiet), known: v => !!v,
+  upload: d => odStore(true, true),
+  download: d => odDownload({id: d.odNb, drive: d.odDrive, name: d.name + '.html'}, false, true),
+  save: odSave,
+  stops: err => err.status === 404 ? 'gone' : err.status === 403 && !/limit|quota|throttl/i.test(err.code + ' ' + err.message) ? 'locked' : '',
+  revive: () => {},          // saving again makes a new file when it's gone, and a copy of your own when it's locked
+  nbs: {title: 'Your notebooks in OneDrive', looking: 'Looking in your OneDrive…', hint: 'Notebooks you’ve saved to OneDrive from any device (in the “Between the Lines” folder, or opened from elsewhere in your OneDrive). Pick one to carry on where you left off; it keeps in sync from then on.',
+    none: 'No notebooks in your OneDrive yet. On the device you started on, use Download › Save to OneDrive once; after that it keeps itself in sync.'},
+  async list(){
+    let url = `/me/drive/root:/${encodeURIComponent(OD_DIR)}:/children?$select=id,name,file,lastModifiedDateTime,parentReference&$top=200`;
+    const rows = [];
+    try { for (let i = 0; url && i < 3; i++) { const j = await (await odFetch(url)).json(); rows.push(...(j.value || [])); url = j['@odata.nextLink'] || ''; } }
+    catch (err) { if (err.status !== 404) throw err; }          // no folder yet: nothing has been saved from here
+    const out = rows.filter(r => r.file && /\.html?$/i.test(r.name)).map(r => ({id: r.id, drive: r.parentReference?.driveId || '', name: r.name, when: r.lastModifiedDateTime || ''}));
+    for (const d of docs) if (d.odNb && !d.trashed && !out.some(f => f.id === d.odNb)) out.push({id: d.odNb, drive: d.odDrive || '', name: d.name + '.html', when: ''});          // opened from elsewhere in OneDrive
+    return out.sort((a, b) => (b.when > a.when) - (b.when < a.when));
+  },
+  openOne: f => odOpenOne(f, false),
+};
 
 // ---------- the file picker ----------
 // Our own small browser over Graph: My files (folders and a path), Shared with me, Recent, and a search box.
@@ -8971,7 +9314,7 @@ function odpMark(){
 
 // ---------- open from OneDrive ----------
 // a file as a File with the right ending. PowerPoint and Word can come as a PDF, made by OneDrive, so they look exactly as in Office; if that fails, the file itself is used.
-async function odDownload(d, pdf){
+async function odDownload(d, pdf, quiet){
   const at = odBase(d.drive, d.id), ext = (d.name.match(/\.([^.]+)$/) || [])[1]?.toLowerCase() || '';
   if (pdf && (ext === 'pptx' || ext === 'docx')) {
     try {
@@ -8983,7 +9326,7 @@ async function odDownload(d, pdf){
       toast(`Couldn’t make a PDF of “${d.name}”, so its original file is being opened instead…`);
     }
   }
-  const blob = await (await odFetch(`${at}/content`)).blob();
+  const blob = await (await odFetch(`${at}/content`, {quiet})).blob();
   return new File([blob], d.name, {type: OD_MIME[ext] || blob.type});
 }
 async function odOpen(){
@@ -8991,24 +9334,29 @@ async function odOpen(){
   try {
     const {items, pdf} = await odPick();
     for (const [i, d] of items.entries()) {
-      toast(`Downloading “${d.name}” from OneDrive…${items.length > 1 ? ` (${i + 1} of ${items.length})` : ''}`);
-      let file;
-      try { file = await odDownload(d, pdf); }
-      catch (err) { odSay(err, `download “${d.name}”`); continue; }
-      const isNb = /\.html?$/i.test(file.name), before = curId, had = !!main.querySelector('.slide');
-      await openFiles([file]);
-      const doc = curDoc();
-      if (isNb && doc && main.querySelector('.slide') && (curId !== before || !had)) { doc.odNb = d.id; doc.odDrive = d.drive; putAll({docs}); }          // the notebook remembers its file, so saving updates it
+      if (docs.some(x => x.odNb === d.id && !x.trashed)) { await cloudOpen(CLOUD.onedrive, d); continue; }          // already here: bring it up to date instead of a second copy
+      await odOpenOne(d, pdf, items.length > 1 ? ` (${i + 1} of ${items.length})` : '');
     }
   } catch (err) { odSay(err, 'open from OneDrive'); }
+}
+async function odOpenOne(d, pdf, of = ''){
+  toast(`Downloading “${d.name}” from OneDrive…${of}`);
+  const ver = /\.html?$/i.test(d.name) ? await odMeta(d.drive, d.id).then(m => m.ver, () => '') : '';          // the version we are about to read, to compare with later
+  let file;
+  try { file = await odDownload(d, pdf); }
+  catch (err) { odSay(err, `download “${d.name}”`); return; }
+  const isNb = /\.html?$/i.test(file.name), before = curId, had = !!main.querySelector('.slide');
+  await openFiles([file]);
+  const doc = curDoc();
+  if (isNb && doc && main.querySelector('.slide') && (curId !== before || !had)) { doc.odNb = d.id; doc.odDrive = d.drive; doc.odVer = ver; delete doc.driveDirty; delete doc.driveStop; putAll({docs}); syncShow(); }          // the notebook remembers its file, so saving updates it
 }
 
 // ---------- save to OneDrive ----------
 // small files go up in one request; bigger ones in pieces through an upload session (Microsoft's way past the 4 MB limit)
-async function odUpload(t, blob, progress){
+async function odUpload(t, blob, progress, quiet){
   const at = t.id ? odBase(t.drive, t.id) : `/me/drive/root:/${encodeURIComponent(OD_DIR)}/${encodeURIComponent(t.name)}:`, how = t.id ? 'replace' : 'rename';       // a new file never overwrites another
-  if (blob.size <= OD_SIMPLE) return (await odFetch(`${at}/content${t.id ? '' : '?@microsoft.graph.conflictBehavior=' + how}`, {method: 'PUT', headers: {'Content-Type': blob.type || 'application/octet-stream'}, body: blob})).json();
-  const s = await (await odFetch(`${at}/createUploadSession`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({item: {'@microsoft.graph.conflictBehavior': how}})})).json();
+  if (blob.size <= OD_SIMPLE) return (await odFetch(`${at}/content${t.id ? '' : '?@microsoft.graph.conflictBehavior=' + how}`, {method: 'PUT', headers: {'Content-Type': blob.type || 'application/octet-stream'}, body: blob, quiet})).json();
+  const s = await (await odFetch(`${at}/createUploadSession`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({item: {'@microsoft.graph.conflictBehavior': how}}), quiet})).json();
   try {
     for (let start = 0; ;) {
       const end = Math.min(start + OD_CHUNK, blob.size);
@@ -9024,17 +9372,21 @@ async function odUpload(t, blob, progress){
 }
 // The first save makes "<name> (notes).html" in the Between the Lines folder; after that the same file is updated.
 // A notebook you can't change (shared with you to view only) is saved as a copy in your own OneDrive instead. Gives back {id, drive, name, url, copy}.
-async function odStore(quiet){
+// auto: syncing by itself (no sign-in window, no new files or copies; it stops and says so instead)
+function odStore(quiet, auto){ return syncHold(() => odStore0(quiet, auto)); }
+async function odStore0(quiet, auto){
   await flushSave();
+  const gen = sync.gen;
   const doc = curDoc(), file = await notebookFile();
   let last = -1;
   const progress = quiet || file.blob.size <= OD_SIMPLE ? null : f => { const n = Math.round(f * 100); if (n !== last) { last = n; toast(`Uploading “${file.name}” to OneDrive: ${n}%`); } };
   if (!quiet) toast(progress ? `Uploading “${file.name}” to OneDrive…` : 'Saving to OneDrive…');
   const create = name => odUpload({name}, file.blob, progress);
-  let out, mine = false, same = false;
+  let out, mine = false, same = false, from = '';
   if (doc?.odNb) {
-    try { out = await odUpload({id: doc.odNb, drive: doc.odDrive}, file.blob, progress); same = true; }
+    try { out = await odUpload({id: doc.odNb, drive: doc.odDrive}, file.blob, progress, auto); same = true; }
     catch (err) {
+      if (auto) throw err;
       if (err.status === 404) out = await create(file.name);          // the file is gone from OneDrive: make a new one
       else if (err.status === 403 && !/limit|quota|throttl/i.test(err.code + ' ' + err.message)) { out = await create(notebookName() + ' (my copy).html'); mine = true; }          // not allowed to change it
       else throw err;
@@ -9042,8 +9394,12 @@ async function odStore(quiet){
   } else out = await create(file.name);
   if (!out?.id) throw new OdError('Microsoft sent back something unexpected', 'http');
   const drive = out.parentReference?.driveId || (same ? doc.odDrive : await odMyDrive());
-  if (doc && docs.includes(doc)) { doc.odNb = out.id; doc.odDrive = drive; putAll({docs}); }
-  return {id: out.id, drive, name: out.name || file.name, url: out.webUrl || '', copy: mine};
+  if (doc && docs.includes(doc)) {
+    doc.odNb = out.id; doc.odDrive = drive; from = relink(doc, 'onedrive');
+    doc.odVer = out.cTag || out.eTag || ''; delete doc.driveStop; if (sync.gen === gen) delete doc.driveDirty; if (doc === curDoc()) syncShow();
+    putAll({docs});
+  }
+  return {id: out.id, drive, name: out.name || file.name, url: out.webUrl || '', copy: mine, from};
 }
 async function odSave(){
   if (!odSetUp()) return;
@@ -9051,7 +9407,7 @@ async function odSave(){
   try {
     await odToken();                         // sign in first, while the click still counts, then build the file
     const out = await odStore(), at = new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'});
-    toast(out.copy ? `You can only view the original, so a copy was saved in your own OneDrive: ${out.name} (${at})` : `Saved to OneDrive: ${out.name} (${at})`);
+    toast((out.copy ? `You can only view the original, so a copy was saved in your own OneDrive: ${out.name} (${at}). It keeps in sync from now on.` : `Saved to OneDrive: ${out.name} (${at}). From now on it keeps in sync by itself, so you can carry on from another device.`) + relinked(out.from));
   } catch (err) { odSay(err, 'save to OneDrive'); }
 }
 
@@ -9064,7 +9420,7 @@ async function odShare(prep, back){
     if (!main.querySelector('.slide')) { toast('Open your slides first, then share.'); return; }
     const out = await odStore();
     toast('');
-    shOpenDialog(out, 'notebook', out.copy ? 'You can only view the original, so this is a copy saved in your own OneDrive. That is the file being shared.' : '', back, 'onedrive');
+    shOpenDialog(out, 'notebook', [out.copy && 'You can only view the original, so this is a copy saved in your own OneDrive. That is the file being shared.', out.from && `It now keeps in sync with OneDrive instead of ${out.from}.`].filter(Boolean).join(' '), back, 'onedrive');
   } catch (err) { odSay(err, 'share through OneDrive'); }
 }
 // the notebook's ⋯ menu: make it the open notebook, then share it
@@ -9121,6 +9477,7 @@ async function odShGeneral(val){
 // ---------- buttons, and the Help & settings section ----------
 document.addEventListener('click', e => {
   if (e.target.closest('[data-od-open]')) { if (narrow.matches) setPanel('pages', false); odOpen(); return; }
+  if (e.target.closest('[data-od-nbs]')) { if (narrow.matches) setPanel('pages', false); cloudNotebooks(CLOUD.onedrive); return; }
   const b = e.target.closest('#saveMenu [data-od]'); if (!b) return;
   saveMenu.hidden = true; $('#save').setAttribute('aria-expanded', 'false');
   if (b.dataset.od === 'share') odShare(null, () => $('#save')); else odSave();
@@ -9133,9 +9490,9 @@ function renderOd(){
 }
 $('#odOff').onclick = async () => {
   const app = od.app;
-  od.token = ''; od.expires = 0; od.user = null; od.account = null; od.drive = '';
+  od.token = ''; od.expires = 0; od.user = null; od.account = null; od.drive = ''; od.silent = false;
   try { for (const account of app?.getAllAccounts?.() || []) await app.clearCache({account}); } catch {}
-  renderOd();
+  renderOd(); syncShow();
   toast('Signed out of OneDrive. Your files in OneDrive have not been touched.');
 };
 
@@ -9239,6 +9596,7 @@ const CK_ACTIONS = [
   {id: 'new', label: 'New notebook', ico: 'plus', words: 'create blank page', run: ckClick('#newDocBtn')},
   {id: 'open', label: 'Open a file', ico: 'folder', words: 'pdf powerpoint word markdown picture upload', run: ckClick('#openBtn')},
   {id: 'drivenbs', label: 'Your notebooks in Drive', ico: 'drive', words: 'google drive sync carry on continue another device ipad phone laptop cloud', ok: () => !!GDRIVE.clientId, run: () => driveNotebooks()},
+  {id: 'odnbs', label: 'Your notebooks in OneDrive', ico: 'onedrive', words: 'onedrive microsoft sync carry on continue another device ipad phone laptop cloud', ok: () => !!ONEDRIVE.clientId, run: () => cloudNotebooks(CLOUD.onedrive)},
   {id: 'focus', label: 'Focus mode', ico: 'focus', hint: 'Ctrl+Shift+F', words: 'hide toolbar panels distraction', run: ckClick('#focusBtn')},
   {id: 'study', label: 'Study mode', ico: 'book', words: 'read only revise', run: ckClick('#readBtn')},
   {id: 'sidebg', label: 'Side page background', ico: 'palette', words: 'side notes paper colour pattern lined grid dots cream dark', run: () => openSideBg($('#sideBgBtn'))},
@@ -9663,7 +10021,7 @@ async function duplicateDoc(id){
   if (id === curId) await flushSave();                    // so the copy has what is on the page now
   const html = (await get('doc:' + id)) || '';
   const copy = {...d, id: newId(), name: d.name.slice(0, 112) + ' (copy)', named: true, copiedFrom: id, updated: Date.now()};
-  delete copy.fav; delete copy.trashed; delete copy.driveNb; delete copy.driveNbRO; delete copy.drivePdf; delete copy.driveVer; delete copy.driveDirty; delete copy.driveStop; delete copy.odNb; delete copy.odDrive;       // a copy gets its own files in Google Drive and OneDrive
+  delete copy.fav; delete copy.trashed; delete copy.driveNb; delete copy.driveNbRO; delete copy.drivePdf; delete copy.driveVer; delete copy.driveDirty; delete copy.driveStop; delete copy.odNb; delete copy.odDrive; delete copy.odVer;       // a copy gets its own files in Google Drive and OneDrive
   docs.splice(docs.indexOf(d) + 1, 0, copy);
   await putAll({['doc:' + copy.id]: html, docs});
   renderDocs();
@@ -10012,7 +10370,7 @@ if ('launchQueue' in window) launchQueue.setConsumer(async p => { if (p.files?.l
 const WG_PATS = [['grid', 'Grid', 'Squares, like squared paper'], ['lines', 'Lines', 'Ruled lines, like lined paper'], ['dots', 'Dots', 'A grid of dots']];
 const WG_MIN = {w: 160, h: 100};
 const wgClamp = (v, a, b) => Math.min(b, Math.max(a, v));
-const wg = {el: null, r: null, pat: pref.get('wg-pat', 'grid'), gap: wgClamp(Math.round(+pref.get('wg-gap', 28)) || 28, 12, 48), op: wgClamp(Math.round(+pref.get('wg-op', 55)) || 55, 10, 100)};
+const wg = {el: null, r: null, pop: null, pin: false, held: false, quiet: false, bt: 0, pt: 0, lp: 0, pat: pref.get('wg-pat', 'grid'), gap: wgClamp(Math.round(+pref.get('wg-gap', 28)) || 28, 12, 48), op: wgClamp(Math.round(+pref.get('wg-op', 55)) || 55, 10, 100)};
 if (!WG_PATS.some(p => p[0] === wg.pat)) wg.pat = 'grid';
 const wgBtn = $('#wgBtn');
 function wgSet(l, t, w, h){
@@ -10022,27 +10380,49 @@ function wgSet(l, t, w, h){
   Object.assign(wg.el.style, {left: wg.r.l + 'px', top: wg.r.t + 'px', width: wg.r.w + 'px', height: wg.r.h + 'px'});
 }
 function wgPaint(){
-  const el = wg.el; if (!el) return;
-  el.dataset.pat = wg.pat; el.style.setProperty('--wg-gap', wg.gap + 'px'); el.style.setProperty('--wg-op', (wg.op / 100).toFixed(2));
-  el.querySelectorAll('[data-pick]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pick === wg.pat));
-  el.querySelector('output').textContent = wg.gap + 'px';
-  el.querySelector('[data-k="gap"]').value = wg.gap; el.querySelector('[data-k="op"]').value = wg.op;
+  const el = wg.el;
+  if (el) { el.dataset.pat = wg.pat; el.style.setProperty('--wg-gap', wg.gap + 'px'); el.style.setProperty('--wg-op', (wg.op / 100).toFixed(2)); }
+  for (const r of [el, wg.pop]) {            // the bar on the guide and the pop-out under Insert
+    if (!r) continue;
+    r.querySelectorAll('[data-pick]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pick === wg.pat));
+    r.querySelector('output').textContent = wg.gap + 'px';
+    r.querySelector('[data-k="gap"]').value = wg.gap; r.querySelector('[data-k="op"]').value = wg.op;
+  }
 }
+// the settings, as the bar and the pop-out under Insert both show them
+const wgSeg = () => '<span class="seg" role="group" aria-label="Pattern">' + WG_PATS.map(([k, name, tip]) => `<button type="button" class="btn" data-pick="${k}" aria-pressed="false" data-tip="${name}: ${tip}">${name}</button>`).join('') + '</span>';
+const wgGap = () => '<span class="wg-grp" role="group" aria-label="Spacing">' +
+  '<button type="button" class="btn" data-step="-2" aria-label="Closer together" data-tip="Closer together">−</button>' +
+  '<input type="range" data-k="gap" min="12" max="48" step="2" aria-label="Spacing" data-tip="Spacing: how far apart the lines are">' +
+  '<button type="button" class="btn" data-step="2" aria-label="Further apart" data-tip="Further apart">+</button><output aria-live="polite"></output></span>';
+const wgOp = () => `<span class="wg-grp"><span class="wg-ico" aria-hidden="true">${icon('eye')}</span><input type="range" data-k="op" min="10" max="100" step="5" aria-label="Opacity" data-tip="Opacity: how strong the lines are"></span>`;
 function wgBuild(){
   const el = document.createElement('div'); el.className = 'wguide'; el.id = 'wguide';
   el.setAttribute('role', 'group'); el.setAttribute('aria-label', 'Writing guide');
   el.innerHTML = '<div class="wg-pat" aria-hidden="true"></div>' +
+    `<button type="button" class="wg-ind" aria-label="Writing guide settings" aria-expanded="true" data-tip="Writing guide settings: point here, or tap, to show the bar with the pattern, spacing and opacity">${icon('wguide')}</button>` +
     '<div class="wg-bar" role="toolbar" aria-label="Writing guide controls">' +
     `<button type="button" class="btn wg-move" aria-label="Move the writing guide" data-tip="Move: drag to put the guide anywhere, even on another page. The arrow keys nudge it; with Shift they resize it.">${icon('grip')}</button>` +
-    '<span class="seg" role="group" aria-label="Pattern">' + WG_PATS.map(([k, name, tip]) => `<button type="button" class="btn" data-pick="${k}" aria-pressed="false" data-tip="${name}: ${tip}">${name}</button>`).join('') + '</span>' +
-    '<span class="wg-grp" role="group" aria-label="Spacing">' +
-    '<button type="button" class="btn" data-step="-2" aria-label="Closer together" data-tip="Closer together">−</button>' +
-    '<input type="range" data-k="gap" min="12" max="48" step="2" aria-label="Spacing" data-tip="Spacing: how far apart the lines are">' +
-    '<button type="button" class="btn" data-step="2" aria-label="Further apart" data-tip="Further apart">+</button><output aria-live="polite"></output></span>' +
-    `<span class="wg-grp"><span class="wg-ico" aria-hidden="true">${icon('eye')}</span><input type="range" data-k="op" min="10" max="100" step="5" aria-label="Opacity" data-tip="Opacity: how strong the lines are"></span>` +
+    wgSeg() + wgGap() + wgOp() +
     `<button type="button" class="btn" data-wgx aria-label="Remove the writing guide" data-tip="Remove the writing guide (Esc)">${icon('x')}</button></div>` +
     ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'].map(d => `<span class="wg-h wg-${d}" data-d="${d}" aria-hidden="true"></span>`).join('');
   return el;
+}
+// its bar shows when the guide is added, goes when you click or tap elsewhere, and comes back when you point at (or Tab to, or tap) the faint icon in its top left corner
+function wgShow(pin){
+  const el = wg.el; if (!el) return;
+  clearTimeout(wg.bt); el.classList.remove('bar-off'); if (pin) wg.pin = true;
+  el.querySelector('.wg-ind').setAttribute('aria-expanded', 'true');
+}
+function wgHide(){
+  const el = wg.el; if (!el) return;
+  clearTimeout(wg.bt); wg.pin = false; el.classList.add('bar-off');
+  el.querySelector('.wg-ind').setAttribute('aria-expanded', 'false');
+}
+// pointed away from the icon and the bar: gone after a moment (not while the pointer is on the bar, or the keyboard is in it)
+function wgLater(){
+  clearTimeout(wg.bt); if (!wg.el || wg.pin) return;
+  wg.bt = setTimeout(() => { const el = wg.el; if (el && !wg.pin && !el.querySelector('.wg-bar:hover, .wg-ind:hover, :focus-visible')) wgHide(); }, 600);
 }
 // a drag that follows the pointer in page coordinates, so the guide keeps up as the page scrolls under it
 function wgDrag(e, h, step){
@@ -10081,7 +10461,7 @@ function wgOpen(){
   const card = currentCard(), cr = (card || main).getBoundingClientRect();
   const left = Math.max(0, cr.left), right = Math.min(innerWidth, cr.right), top = Math.max(0, cr.top, Math.max(0, appbar.getBoundingClientRect().bottom) + 8);
   wgSet(left + scrollX, top + scrollY, right - left > WG_MIN.w ? right - left : innerWidth - left, Math.round(innerHeight * 0.6));
-  wgPaint(); wgBtn.setAttribute('aria-pressed', 'true');
+  wg.pin = true; wgPaint(); wgBtn.setAttribute('aria-pressed', 'true'); wgPopSync();
   el.addEventListener('pointerdown', e => {
     const h = e.target.closest('.wg-h, .wg-move'); if (!h) return;
     wgDrag(e, h, h.classList.contains('wg-move') ? wgMove : wgSize(h.dataset.d));
@@ -10092,26 +10472,87 @@ function wgOpen(){
     e.preventDefault(); const n = 10, r = wg.r;
     if (e.shiftKey) wgSet(r.l, r.t, r.w + k[0] * n, r.h + k[1] * n); else wgSet(r.l + k[0] * n, r.t + k[1] * n, r.w, r.h);
   });
-  el.addEventListener('click', e => {
+  wgWire(el);
+  el.addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });      // the cursor stays in the note
+  const ind = el.querySelector('.wg-ind'), bar = el.querySelector('.wg-bar'), mouse = e => e.pointerType !== 'touch';
+  ind.addEventListener('pointerenter', e => { if (mouse(e)) wgShow(); });
+  ind.addEventListener('pointerleave', e => { if (mouse(e)) wgLater(); });
+  ind.addEventListener('click', e => { if (e.pointerType === 'mouse') wgShow(true); else if (wg.pin && !el.classList.contains('bar-off')) wgHide(); else wgShow(true); });      // a tap (or Enter) shows it for good, or takes it away
+  bar.addEventListener('pointerenter', e => { if (mouse(e)) clearTimeout(wg.bt); });
+  bar.addEventListener('pointerleave', e => { if (mouse(e)) wgLater(); });
+  bar.addEventListener('pointerdown', () => { wg.pin = true; });         // using the bar keeps it
+  el.addEventListener('focusin', e => { if (e.target.matches(':focus-visible')) wgShow(); });
+  el.addEventListener('focusout', e => { if (!el.contains(e.relatedTarget)) wgLater(); });
+}
+// one place for what a click or a slider does, on the bar and in the pop-out
+function wgWire(root){
+  root.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.dataset.pick) wg.pat = b.dataset.pick;
     else if (b.dataset.step) wg.gap = wgClamp(wg.gap + +b.dataset.step, 12, 48);
     else if (b.hasAttribute('data-wgx')) { wgClose(); return; }
+    else if (b.hasAttribute('data-wgt')) { wg.el ? wgClose() : wgOpen(); return; }
     else return;
     wgPaint(); wgRemember();
   });
-  el.addEventListener('input', e => { const r = e.target.closest('input[type=range]'); if (r) { wg[r.dataset.k] = +r.value; wgPaint(); wgRemember(); } });
-  el.addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });      // the cursor stays in the note
+  root.addEventListener('input', e => { const r = e.target.closest('input[type=range]'); if (r) { wg[r.dataset.k] = +r.value; wgPaint(); wgRemember(); } });
 }
 const wgRemember = () => { pref.set('wg-pat', wg.pat); pref.set('wg-gap', wg.gap); pref.set('wg-op', wg.op); };
 function wgClose(){
   if (!wg.el) return;
-  wg.el.remove(); wg.el = null; wgBtn.setAttribute('aria-pressed', 'false'); document.body.classList.remove('wg-drag');
+  clearTimeout(wg.bt); wg.el.remove(); wg.el = null; wg.pin = false; wgBtn.setAttribute('aria-pressed', 'false'); document.body.classList.remove('wg-drag'); wgPopSync();
 }
-wgBtn.onclick = wgOpen;
+// Insert › Writing guide: clicking it adds or takes away the guide; pointing at it (or focusing it, or pressing and holding) opens its settings
+function wgPopClose(back){
+  clearTimeout(wg.pt); const p = wg.pop; if (!p) return;
+  const had = p.contains(document.activeElement); p.remove(); wg.pop = null; wgBtn.setAttribute('aria-expanded', 'false');
+  if (back && had) { wg.quiet = true; wgBtn.focus(); wg.quiet = false; }
+}
+function wgPopSync(){ const g = wg.pop?.querySelector('[data-wgt]'); if (g) g.textContent = wg.el ? 'Remove guide' : 'Show guide'; }
+function wgPopOpen(){
+  if (wg.pop) return;
+  clearTimeout(wg.pt); hideTip();
+  const p = wg.pop = document.createElement('div'); p.className = 'pop wgpop'; p.id = 'wgPop'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Writing guide settings');
+  const row = (name, html) => `<div class="wgp-row"><label>${name}</label>${html}</div>`;
+  p.innerHTML = '<p class="wgp-h">Writing guide</p><p class="wgp-d">A grid, lines or dots over the pages, to write straight with a pen. It is not saved with your notes.</p>' +
+    row('Pattern', wgSeg()) + row('Spacing', wgGap()) + row('Opacity', wgOp()) + '<button type="button" class="btn primary wgp-go" data-wgt></button>';
+  wgBtn.after(p);
+  wgWire(p); wgPaint(); wgPopSync();
+  const r = wgBtn.getBoundingClientRect();
+  p.style.left = Math.max(8, Math.min(innerWidth - p.offsetWidth - 8, r.left)) + 'px'; p.style.top = Math.min(innerHeight - p.offsetHeight - 8, r.bottom + 4) + 'px';
+  wgBtn.setAttribute('aria-expanded', 'true');
+  p.addEventListener('pointerenter', () => clearTimeout(wg.pt));
+  p.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') wgPopLater(); });
+  p.addEventListener('focusout', e => { if (e.relatedTarget && !p.contains(e.relatedTarget) && e.relatedTarget !== wgBtn) wgPopClose(); });
+}
+// pointed away: it goes after a moment (not while the pointer is on the button or the pop-out, or the keyboard is in the pop-out)
+function wgPopLater(){
+  clearTimeout(wg.pt);
+  wg.pt = setTimeout(() => { const p = wg.pop; if (p && !p.matches(':hover') && !wgBtn.matches(':hover') && !p.querySelector(':focus-visible')) wgPopClose(); }, 380);
+}
+wgBtn.addEventListener('pointerenter', e => { if (e.pointerType === 'touch') return; clearTimeout(wg.pt); wg.pt = setTimeout(wgPopOpen, 280); });
+wgBtn.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') wgPopLater(); });
+wgBtn.addEventListener('focus', () => { if (!wg.quiet && wgBtn.matches(':focus-visible')) wgPopOpen(); });
+wgBtn.addEventListener('keydown', e => { if (e.key === 'ArrowDown' && wg.pop) { e.preventDefault(); wg.pop.querySelector('button, input')?.focus(); } });
+wgBtn.addEventListener('contextmenu', e => { e.preventDefault(); wgPopOpen(); });
+wgBtn.addEventListener('pointerdown', e => {                          // pressing it means to click: no pop-out for that (a finger: press and hold)
+  if (!wg.pop) clearTimeout(wg.pt);
+  if (e.pointerType !== 'touch') return;
+  wg.held = false; clearTimeout(wg.lp);
+  wg.lp = setTimeout(() => { wg.held = true; wgPopOpen(); }, 500);
+});
+for (const t of ['pointerup', 'pointercancel', 'pointerleave']) wgBtn.addEventListener(t, () => clearTimeout(wg.lp));
+wgBtn.onclick = () => { if (wg.held) { wg.held = false; return; } wgOpen(); };
+addEventListener('keydown', e => { if (e.key === 'Escape' && wg.pop) { e.preventDefault(); e.stopPropagation(); wgPopClose(true); } }, true);
 addEventListener('keydown', e => { if (e.key === 'Escape' && wg.el && !e.defaultPrevented && !focusMode) wgClose(); });
-// a finger gets bigger handles, whatever the browser says about the screen
-document.addEventListener('pointerdown', e => { if (wg.el && e.pointerType === 'touch') wg.el.classList.add('wg-touch'); }, true);
+// a finger gets bigger handles, whatever the browser says about the screen; a click or tap anywhere but the bar and the handles puts the bar away
+document.addEventListener('pointerdown', e => {
+  const t = e.target instanceof Element ? e.target : null;
+  if (wg.pop && !t?.closest('.wgpop, #wgBtn')) wgPopClose();
+  if (!wg.el) return;
+  if (e.pointerType === 'touch') wg.el.classList.add('wg-touch');
+  if (!t?.closest('.wg-bar, .wg-h, .wg-ind, .wgpop')) wgHide();
+}, true);
 
 /* ---------- where a table or journal entry goes: in the note you're writing in, at the cursor, or in a new note in the nearest gap ---------- */
 function wtCtx(){
@@ -10160,7 +10601,7 @@ function wtAdd(kind, size, ctx = wtCtx()){
   const node = kind === 'table' ? wtMake(size?.r || 3, size?.c || 3) : jMake();
   const note = wtPlace(node, ctx);
   if (kind === 'table') wtFocus(node.querySelector('td'));
-  else jFocus(node.querySelector('.j-acct'));
+  else { jFocus(node.querySelector('.j-acct')); jTone(note.closest('.notebox')); }
   const box = note.closest('.notebox'); if (box) { raise(box); box.scrollIntoView({block: 'nearest', behavior: smoothScroll()}); }
   saveSoon();
 }
@@ -10170,9 +10611,10 @@ function wtUpgrade(){
   main.querySelectorAll('.jrnl').forEach(b => {
     b.contentEditable = 'false'; b.spellcheck = false;
     b.querySelectorAll('.j-date, .j-ind, .j-acct, .j-desc, .j-amt').forEach(f => { f.contentEditable = reading || f.classList.contains('off') ? 'false' : 'true'; });
-    jCheck(b);
+    b.querySelectorAll('.j-date, .j-desc').forEach(f => f.removeAttribute('data-ph'));       // (entries saved with a placeholder)
+    jTone(b.closest('.notebox')); jCheck(b);
   });
-  wtLayoutSoon();
+  wtLayoutSoon(); jxHide(); jMenuClose();
 }
 
 /* ---------- tables ---------- */
@@ -10427,6 +10869,7 @@ document.addEventListener('selectstart', e => { if (wt.drag?.on) e.preventDefaul
 const MODKEYS = new Set(['Shift', 'Control', 'Alt', 'Meta']);
 main.addEventListener('keydown', e => {
   if (e.isComposing || reading) return;
+  if ((e.key === 'Delete' || e.key === 'Backspace') && !e.ctrlKey && !e.metaKey && !e.altKey) { const b = jPicked(); if (b) { e.preventDefault(); e.stopPropagation(); jDelete(b); return; } }
   if (e.target.closest?.('.jrnl')) { jKey(e); return; }
   if (e.target.closest?.('.tpl')) { tplKey(e); return; }
   if (!e.target.closest?.('.mine')) return;
@@ -10614,8 +11057,8 @@ const jRowHtml = s => `<div class="j-row" data-s="${s}"><div class="j-ind" conte
 function jMake(){
   const b = document.createElement('div'); b.className = 'jrnl'; b.contentEditable = 'false'; b.spellcheck = false;
   b.setAttribute('role', 'group'); b.setAttribute('aria-label', 'Journal entry');
-  b.innerHTML = `<div class="j-date" contenteditable="true" role="textbox" data-ph="Date" aria-label="Date">${jDate(new Date())}</div>` + jRowHtml('dr') + jRowHtml('cr') +
-    '<div class="j-foot"><div class="j-desc" contenteditable="true" role="textbox" data-ph="Description" aria-label="Description"></div></div>';
+  b.innerHTML = `<div class="j-date" contenteditable="true" role="textbox" aria-label="Date">${jDate(new Date())}</div>` + jRowHtml('dr') + jRowHtml('cr') +
+    '<div class="j-foot"><div class="j-desc" contenteditable="true" role="textbox" aria-label="Description"></div></div>';
   return b;
 }
 const jFields = b => [...b.querySelectorAll('[contenteditable="true"]')];
@@ -10662,8 +11105,8 @@ function jSide(row, s){
   for (const [x, on] of [[row.querySelector('.j-d'), s === 'dr'], [row.querySelector('.j-c'), s === 'cr']]) { x.classList.toggle('off', !on); x.contentEditable = on ? 'true' : 'false'; x.textContent = on ? v : ''; }
   jCheck(row.closest('.jrnl'));
 }
-function jExit(b){
-  if (!b.nextSibling) return;
+function jExit(b, mk){
+  if (!b.nextSibling) { if (!mk) return; b.after(document.createElement('br')); }
   const note = b.closest('.mine'); note.focus({preventScroll: true});
   const r = document.createRange(); r.setStartAfter(b); r.collapse(true);
   const s = getSelection(); s.removeAllRanges(); s.addRange(r); active = note; savedRange = r.cloneRange();
@@ -10673,7 +11116,12 @@ function jKey(e){
   const f = e.target.closest('.jrnl [contenteditable="true"]'); if (!f) return;
   const b = f.closest('.jrnl'), row = f.closest('.j-row'), fields = jFields(b), i = fields.indexOf(f);
   const stop = () => { e.preventDefault(); e.stopPropagation(); };
-  if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'a') { stop(); jFocus(f, true); return; }      // Select all: this field's text, not the whole entry
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'a') {      // Select all: this field's text; again, the whole entry
+    stop(); if (jA === f) { jA = null; jPick(b); } else { jFocus(f, true); jA = f; }
+    return;
+  }
+  if (!MODKEYS.has(e.key)) jA = null;
+  if (e.key.startsWith('Arrow') && jArrow(e, b, f)) return;
   if (e.key === 'Tab') {
     stop(); const n = fields[i + (e.shiftKey ? -1 : 1)];
     if (n) jFocus(n, true); else if (!e.shiftKey) jExit(b);
@@ -10688,6 +11136,157 @@ function jKey(e){
     row.remove(); jFocus(to); jCheck(b); saveSoon();
   }
 }
+// Arrow keys go round the entry like a table. Up and Down keep to the same column (the date sits above the first row and the description below the last;
+// the column is remembered across them); Left and Right step to the next zone (indicator, account, amount) once the caret is at the end of the text.
+let jA = null;                                   // the field Select all was pressed in (pressed again: the whole entry)
+const J_ZONES = ['.j-ind', '.j-acct', '.j-amt:not(.off)'];
+const jZone = f => f.classList.contains('j-ind') ? 0 : f.classList.contains('j-acct') ? 1 : 2;
+// is the caret at the start / end of the field's text, and on its first / last line (a long account name can wrap)?
+function jCaret(f, left){
+  const s = getSelection(); if (!s.rangeCount || !s.isCollapsed || !f.contains(s.anchorNode)) return false;
+  const a = document.createRange(); a.selectNodeContents(f); a.setEnd(s.anchorNode, s.anchorOffset);
+  return left ? !a.toString().length : a.toString().length >= f.textContent.length;
+}
+function jLine(f, up){
+  const s = getSelection(); if (!s.rangeCount || !f.contains(s.anchorNode)) return true;
+  const r = s.getRangeAt(0).cloneRange(); r.collapse(true);
+  const c = r.getClientRects()[0], fr = f.getBoundingClientRect(); if (!c || !c.height) return true;
+  return up ? c.top - fr.top < c.height * .8 : fr.bottom - c.bottom < c.height * .8;
+}
+function jArrow(e, b, f){
+  if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return false;
+  const rows = [...b.querySelectorAll('.j-row')], row = f.closest('.j-row'), ri = rows.indexOf(row), k = e.key;
+  const stop = () => { e.preventDefault(); e.stopPropagation(); };
+  if (k === 'ArrowUp' || k === 'ArrowDown') {
+    const up = k === 'ArrowUp'; if (!jLine(f, up)) return false;
+    stop();
+    const z = row ? jZone(f) : b.jcol || 0; if (row) b.jcol = z;
+    const at = n => rows[n]?.querySelector(J_ZONES[z]);
+    const to = !row ? (f.classList.contains('j-date') ? (up ? null : at(0)) : (up ? at(rows.length - 1) : null))
+      : ri + (up ? -1 : 1) < 0 ? b.querySelector('.j-date') : ri + 1 >= rows.length && !up ? b.querySelector('.j-desc') : at(ri + (up ? -1 : 1));
+    if (to) jFocus(to); else if (up) jLeave(b); else jExit(b, true);
+    return true;
+  }
+  if (k !== 'ArrowLeft' && k !== 'ArrowRight') return false;
+  const left = k === 'ArrowLeft'; if (!jCaret(f, left)) return false;       // inside the text, it moves the caret as usual
+  stop();
+  const zones = rows.flatMap(r => J_ZONES.map(q => r.querySelector(q))), n = row && zones[zones.indexOf(f) + (left ? -1 : 1)];
+  if (n) jFocus(n);
+  return true;
+}
+// up out of the date: the caret goes to the end of what is above the entry (with nothing above it, it stays)
+function jLeave(b){
+  let p = b.previousSibling; while (p && p.nodeType === 3 && !p.data.trim()) p = p.previousSibling;
+  if (!p) return;
+  const note = b.closest('.mine'); document.activeElement?.blur(); note.focus({preventScroll: true});
+  const r = document.createRange();
+  if (p.nodeType === 3) r.setStart(p, p.length); else if (p.nodeName === 'BR') r.setStartBefore(p); else r.setStartAfter(p);
+  r.collapse(true);
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r); active = note; savedRange = r.cloneRange();
+}
+
+// the whole entry: selected by clicking its edge or by Select all twice, taken away by Delete, the × on it, or its menu (one step back undoes it)
+function jPick(b){
+  const note = b.closest('.mine'); if (!note || reading) return;
+  document.activeElement?.blur(); note.focus({preventScroll: true});
+  const r = document.createRange(); r.selectNode(b);
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r); active = note; savedRange = r.cloneRange();
+}
+function jPicked(){
+  const s = getSelection(); if (!s.rangeCount || s.isCollapsed) return null;
+  const r = s.getRangeAt(0), n = r.startContainer;
+  return r.endContainer === n && r.endOffset - r.startOffset === 1 && n.childNodes[r.startOffset]?.classList?.contains('jrnl') ? n.childNodes[r.startOffset] : null;
+}
+function jDelete(b){
+  if (!b?.isConnected || reading) return;
+  const note = b.closest('.mine'), at = b.nextSibling;
+  jxHide(); jMenuClose(); b.remove();
+  if (note) {
+    note.focus({preventScroll: true});
+    const r = document.createRange(); if (at?.parentNode === note) r.setStartBefore(at); else r.selectNodeContents(note); r.collapse(true);
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r); active = note; savedRange = r.cloneRange();
+    if (!note.textContent.trim()) { note.blur(); dropIfEmpty(note); }        // nothing else in it: it goes too
+    if (note.isConnected && document.activeElement !== note) { note.focus({preventScroll: true}); s.removeAllRanges(); s.addRange(r); }
+  }
+  saveSoon(); toast('Journal entry deleted. Back puts it back.');
+}
+main.addEventListener('mousedown', e => {
+  if (e.button || reading) return;
+  if (e.target.classList?.contains('jrnl')) { e.preventDefault(); jPick(e.target); }
+  else if (e.target.classList?.contains('j-foot')) { e.preventDefault(); jFocus(e.target.querySelector('.j-desc')); }
+});
+document.addEventListener('pointerdown', () => { jA = null; }, true);
+// the × at the top right of an entry you point at (a layer of its own over the page, so it is never saved, printed or shown in Study mode)
+let jx = null, jxT = 0;
+function jxHide(){ clearTimeout(jxT); jxT = 0; if (jx) jx.hidden = true; }
+function jxShow(b){
+  if (!jx) {
+    jx = document.createElement('button'); jx.type = 'button'; jx.id = 'jx'; jx.hidden = true;
+    jx.setAttribute('aria-label', 'Delete journal entry'); jx.dataset.tip = 'Delete journal entry'; jx.innerHTML = icon('x');
+    jx.addEventListener('mousedown', e => e.preventDefault());
+    jx.addEventListener('click', () => { const t = jx.b; jxHide(); jDelete(t); });
+    document.body.append(jx);
+  }
+  clearTimeout(jxT); jxT = 0;
+  const r = b.getBoundingClientRect(); jx.b = b; jx.hidden = false;
+  jx.style.left = Math.round(r.right - jx.offsetWidth - 2 + scrollX) + 'px'; jx.style.top = Math.round(r.top - jx.offsetHeight / 2 + scrollY) + 'px';
+}
+document.addEventListener('pointermove', e => {
+  if (reading || e.pointerType === 'touch' || !(e.target instanceof Element)) return;
+  const b = e.target.closest('.jrnl');
+  if (b && b.closest('.mine') && main.contains(b)) { if (jx?.b !== b || jx.hidden) jxShow(b); else { clearTimeout(jxT); jxT = 0; } }
+  else if (e.target.closest('#jx')) { clearTimeout(jxT); jxT = 0; }
+  else if (jx && !jx.hidden && !jxT) jxT = setTimeout(jxHide, 250);
+}, {passive: true});
+addEventListener('scroll', e => { if (jx && !jx.hidden && e.target !== jx) jxHide(); }, {capture: true, passive: true});
+// right-click, the menu key, or press and hold on a touch screen: the same menu as a table's
+const jm = {el: null, b: null, at: 0};
+function jMenuClose(back){
+  if (!jm.el) return;
+  const {b} = jm; jm.el.remove(); jm.el = null;
+  if (back && b?.isConnected) jFocus(b.querySelector('.j-acct'));
+}
+function jMenuOpen(b, x, y){
+  if (reading) return;
+  jMenuClose(); jxHide();
+  const el = jm.el = document.createElement('div'); el.className = 'pop spellmenu wtmenu'; el.setAttribute('role', 'menu'); el.setAttribute('aria-label', 'Journal entry');
+  el.innerHTML = '<button type="button" role="menuitem" class="danger">Delete journal entry</button>';
+  document.body.append(el);
+  el.style.left = Math.max(8, Math.min(innerWidth - el.offsetWidth - 8, x)) + 'px'; el.style.top = Math.max(8, Math.min(innerHeight - el.offsetHeight - 8, y)) + 'px';
+  jm.b = b; jm.at = performance.now();
+  el.addEventListener('mousedown', e => e.preventDefault());
+  el.addEventListener('click', () => { jMenuClose(); jDelete(b); });
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); jMenuClose(true); }
+    else if (e.key === 'Tab' || e.key.startsWith('Arrow')) { e.preventDefault(); jMenuClose(true); }
+  });
+  el.querySelector('button').focus({preventScroll: true});
+}
+document.addEventListener('mousedown', e => { if (jm.el && !e.target.closest('.wtmenu') && performance.now() - jm.at > 350) jMenuClose(); }, true);
+addEventListener('scroll', e => { if (jm.el && performance.now() - jm.at > 200 && (e.target === document || e.target.contains?.(jm.b))) jMenuClose(); }, {capture: true, passive: true});
+main.addEventListener('contextmenu', e => {
+  const b = e.target instanceof Element && e.target.closest('.jrnl'); if (!b || reading) return;
+  e.preventDefault(); let x = e.clientX, y = e.clientY;
+  if (!x && !y) { const r = e.target.getBoundingClientRect(); x = r.left + 8; y = r.bottom; }
+  jMenuOpen(b, x, y);
+}, true);
+main.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'touch' || reading) return;
+  const b = e.target.closest?.('.jrnl'); if (!b) return;
+  const x = e.clientX, y = e.clientY;
+  const stop = () => { clearTimeout(tm); removeEventListener('pointerup', stop); removeEventListener('pointercancel', stop); removeEventListener('pointermove', far); };
+  const far = ev => { if (Math.hypot(ev.clientX - x, ev.clientY - y) > 10) stop(); };
+  const tm = setTimeout(() => { stop(); jMenuOpen(b, x, y); }, 550);
+  addEventListener('pointerup', stop); addEventListener('pointercancel', stop); addEventListener('pointermove', far);
+});
+// an entry has no panel, so its colours follow the paper: the light set when the note's fill is dark (a dark side page does the same by itself)
+const jLum = hex => { const n = parseInt(hex.slice(1), 16); return [16, 8, 0].reduce((t, sh, i) => { const v = ((n >> sh) & 255) / 255; return t + [.2126, .7152, .0722][i] * (v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4); }, 0); };
+function jTone(box){
+  if (!box) return;
+  const f = box.style.getPropertyValue('--nb-fill').trim(), t = /^#[0-9a-f]{6}$/i.test(f) ? (jLum(f) < .3 ? 'dark' : 'light') : '';
+  if ((box.dataset.tone || '') !== t) { if (t) box.dataset.tone = t; else delete box.dataset.tone; }
+}
+new MutationObserver(ms => { for (const m of ms) if (m.target.classList.contains('notebox') && m.target.querySelector('.jrnl')) jTone(m.target); }).observe(main, {attributes: true, attributeFilter: ['style'], subtree: true});
 // amounts take digits, commas, a point, a minus and brackets; pasted text is plain
 main.addEventListener('beforeinput', e => {
   const f = e.target.closest?.('.jrnl [contenteditable="true"]'); if (!f) return;
