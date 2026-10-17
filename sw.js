@@ -1,6 +1,6 @@
 // Lets Between the Slides work offline once installed (or visited once).
 // The app itself is fetched fresh when online, so updates arrive straight away; the libraries it uses never change, so they come from the cache.
-const CACHE = 'bts-v2';          // a new name clears out the old copy (which could have kept a broken download)
+const CACHE = 'bts-v3';          // a new name clears out the old copy (which could have kept a broken download)
 const APP = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png'];
 const LIBS = [
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
@@ -9,6 +9,7 @@ const LIBS = [
   'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js',
   'https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js',
+  'https://cdn.jsdelivr.net/npm/docx-preview@0.3.7/dist/docx-preview.min.js',
 ];
 const LIB_HOSTS = /^(cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|fonts\.googleapis\.com|fonts\.gstatic\.com)$/;
 
