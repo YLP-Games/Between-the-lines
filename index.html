@@ -1118,7 +1118,7 @@ main.pdfpaper .tpl{--t-fg:currentColor;--t-str:#2a7a47;--t-bad:#b3402f;--j-dim:v
 .tui[aria-pressed="true"]{background:color-mix(in srgb,var(--j-acct) 22%,transparent);color:var(--t-fg);border-color:var(--j-acct)}
 .tpl .tui,.tpl .sv-hint{opacity:.7}
 .tpl:hover .tui,.tpl:focus-within .tui,.tpl:hover .sv-hint{opacity:1}
-main.reading .tpl .tui,main.reading .tpl .sv-ui,main.pdfpaper .tpl .tui,main.pdfpaper .tpl .sv-ui,main.pdfpaper .tpl .ce-in,main.reading .tpl .ce-in,main.pdfpaper .tpl .hd{display:none}
+main.reading .tpl .tui,main.reading .tpl .sv-ui,main.pdfpaper .tpl .tui,main.pdfpaper .tpl .sv-ui,main.pdfpaper .tpl .ce-in,main.reading .tpl .ce-in,main.pdfpaper .tpl .hnd{display:none}
 main.reading .tpl{cursor:default}
 /* accounting */
 .tpl-t{--cols:minmax(0,1fr) 5.4em minmax(0,1fr) 5.4em;width:min(100%,30em);column-gap:0;row-gap:0}
@@ -1275,8 +1275,8 @@ main.reading .cd-lang::after,main.pdfpaper .cd-lang::after{content:""}
 .sv .stk{fill:none;stroke:var(--j-acct);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .sv .bx{fill:color-mix(in srgb,currentColor 9%,transparent);stroke:var(--t-fg);stroke-width:2}
 .sv .fa{stroke:var(--j-acct);stroke-width:2.6;stroke-linecap:round}.sv .fh{fill:var(--j-acct)}
-.sv .hd{fill:var(--j-acct);fill-opacity:.18;stroke:var(--j-acct);stroke-width:1.5;cursor:grab;touch-action:none;r:7px}
-.sv .hd.sel,.sv .hd:hover{fill-opacity:.65}
+.sv .hnd{fill:var(--j-acct);fill-opacity:.18;stroke:var(--j-acct);stroke-width:1.5;cursor:grab;touch-action:none;r:7px}
+.sv .hnd.sel,.sv .hnd:hover{fill-opacity:.65}
 .sv-hint{font:11px var(--ui);color:var(--j-dim)}
 .sv-in{position:absolute;z-index:3;width:8em;font:inherit;font-size:.75em;padding:.15em .35em;border:1.5px solid var(--accent);border-radius:6px;background:var(--surface);color:var(--ink);box-sizing:border-box}
 .tpl-sd .sd-title{font-weight:700;color:var(--j-dim);margin-bottom:.1em}
@@ -1343,7 +1343,7 @@ main.reading .cd-lang::after,main.pdfpaper .cd-lang::after{content:""}
   .tpl .code{min-height:88px}
   .tui{min-height:40px;min-width:40px;padding:0 14px;font-size:14px}
   .cb{width:1.25em;height:1.25em}.cb::before{content:"";position:absolute;inset:-10px}
-  .sv .hd{r:15px}
+  .sv .hnd{r:15px}
   .tn{min-height:44px}.tmain{min-height:48px}.tstar{width:40px;height:40px}
   .tmenu button{min-height:44px}
 }
@@ -4507,7 +4507,7 @@ async function paintCard(card, scale, side){
     if (!el || !t.data.trim() || el.closest('.tl, .grip, .gappill, .gapline, .cardbar, .katex-mathml, .note-chip, summary, details:not([open])')) continue;
     const cs = getComputedStyle(el);
     if (cs.visibility === 'hidden' || cs.color === 'transparent' || cs.color === 'rgba(0, 0, 0, 0)') continue;
-    ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${(parseFloat(cs.fontSize) * zoomOf(el)).toFixed(2)}px ${cs.fontFamily}`;
+    ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${(parseFloat(cs.fontSize) * zoomOf(el) * svgK(el)).toFixed(2)}px ${cs.fontFamily}`;
     ctx.fillStyle = cs.color; ctx.textBaseline = 'alphabetic';
     const deco = [];
     for (let d = el; d && d !== root; d = d.parentElement) deco.push(getComputedStyle(d).textDecorationLine || '');
@@ -10738,7 +10738,7 @@ const tc = (cls, txt = '', label) => `<div class="tf calc ${cls}"${label ? ` ari
 const tTh = (txt, cls = '') => `<div class="th ${cls}">${txt}</div>`;
 const tRow = (cells, cls = '', at = '') => `<div class="tr ${cls}"${at}>${cells.join('')}</div>`;
 const tBtn = (act, txt, tip) => `<button type="button" class="tui" data-act="${act}" data-tip="${esc(tip || txt)}" aria-label="${esc(tip || txt)}">${txt}</button>`;
-const tBlock = (kind, label, inner, o = {}) => `<div class="tpl tpl-${kind}${o.cls ? ' ' + o.cls : ''}" data-t="${kind}" contenteditable="false" role="group" aria-label="${esc(label)}"${o.style ? ` style="${o.style}"` : ''}${o.attr || ''}>${inner}</div>`;
+const tBlock = (kind, label, inner, o = {}) => `<div class="tpl tpl-${kind}${o.cls ? ' ' + o.cls : ''}" data-t="${kind}" contenteditable="false" spellcheck="false" role="group" aria-label="${esc(label)}"${o.style ? ` style="${o.style}"` : ''}${o.attr || ''}>${inner}</div>`;
 const tNode = html => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
 const tFields = b => [...b.querySelectorAll('.tf:not(.calc), .cb')];
 const tRows = b => [...b.querySelectorAll('.tr.d')];
@@ -10874,7 +10874,7 @@ function tplUpgrade(){
   main.querySelectorAll('.tpl').forEach(b => {
     b.contentEditable = 'false'; b.spellcheck = false;
     b.querySelectorAll('.tf:not(.calc)').forEach(f => { f.contentEditable = reading ? 'false' : f.classList.contains('code') ? 'plaintext-only' : 'true'; });
-    b.querySelectorAll('.cb, .ans').forEach(x => { if (reading) { x.tabIndex = 0; } else x.removeAttribute('tabindex'); });
+    b.querySelectorAll('.ans').forEach(x => { if (reading) x.tabIndex = 0; else x.removeAttribute('tabindex'); });
     TK[b.dataset.t]?.upgrade?.(b);
     tplCalc(b);
   });
@@ -11557,7 +11557,7 @@ function sdDraw(b){
     const c = sdClip(P[0], P[1], P[2]); if (!c) return '';
     const o = sE('line', {class: `cv ${cls}${ghost ? ' ghost' : ''}`, x1: c[0], y1: c[1], x2: c[2], y2: c[3]});
     const t = P[2] > 0 ? sT(c[0] + 9, c[1] + 13, name, 'lab ' + cls + (ghost ? ' ghost' : ' ed'), ghost ? {} : {'data-e': k + 'l'}) : sT(c[2] + 6, c[3] - 2, name, 'lab ' + cls + (ghost ? ' ghost' : ' ed'), ghost ? {} : {'data-e': k + 'l'});
-    return o + t + (ghost ? '' : sE('circle', {class: 'hd', 'data-k': k + '-move', cx: c[0] + (c[2] - c[0]) * .22, cy: c[1] + (c[3] - c[1]) * .22, r: 8}) + sE('circle', {class: 'hd', 'data-k': k + '-rot', cx: c[2] - (c[2] - c[0]) * .06, cy: c[3] - (c[3] - c[1]) * .06, r: 8}));
+    return o + t + (ghost ? '' : sE('circle', {class: 'hnd', 'data-k': k + '-move', cx: c[0] + (c[2] - c[0]) * .22, cy: c[1] + (c[3] - c[1]) * .22, r: 8}) + sE('circle', {class: 'hnd', 'data-k': k + '-rot', cx: c[2] - (c[2] - c[0]) * .06, cy: c[3] - (c[3] - c[1]) * .06, r: 8}));
   };
   const nm = (k, s0) => shifted && s0 ? lab(k + 'l') + '₂' : lab(k + 'l');
   if (D0) h += curve(D0, 'dem', lab('dl') + '₁', true); if (S0) h += curve(S0, 'sup', lab('sl') + '₁', true);
@@ -11670,7 +11670,7 @@ function fbDraw(b){
     const ux = (ex - sx) / Math.hypot(ex - sx, ey - sy), uy = (ey - sy) / Math.hypot(ex - sx, ey - sy), hl = 11, hw = 5;
     h += sE('line', {class: 'fa', x1: sx, y1: sy, x2: ex - ux * hl * .7, y2: ey - uy * hl * .7}) + sE('path', {class: 'fh', d: `M${ex} ${ey}L${ex - ux * hl - uy * hw} ${ey - uy * hl + ux * hw}L${ex - ux * hl + uy * hw} ${ey - uy * hl - ux * hw}Z`});
     const lx = ex + ux * 15, ly = ey + uy * 15 + (uy > .3 ? 12 : uy < -.3 ? -2 : 5);
-    h += sT(lx, ly, name, 'lab ed ' + (ux > .35 ? '' : ux < -.35 ? 'end' : 'mid'), {'data-e': 'f' + i}) + sE('circle', {class: 'hd' + (fbSel && fbSel.b === b && fbSel.i === i ? ' sel' : ''), 'data-k': 'f' + i, cx: ex, cy: ey, r: 8});
+    h += sT(lx, ly, name, 'lab ed ' + (ux > .35 ? '' : ux < -.35 ? 'end' : 'mid'), {'data-e': 'f' + i}) + sE('circle', {class: 'hnd' + (fbSel && fbSel.b === b && fbSel.i === i ? ' sel' : ''), 'data-k': 'f' + i, cx: ex, cy: ey, r: 8});
   });
   if (svg.innerHTML !== h) svg.innerHTML = h;
 }
@@ -11700,7 +11700,7 @@ const mkFbd = demo => {
 
 // dragging a handle in a drawing (supply and demand, free-body diagram), and clicking a label to rename it
 main.addEventListener('pointerdown', e => {
-  const h = e.target.closest?.('.tpl .hd'); if (!h || reading || e.button > 0) return;
+  const h = e.target.closest?.('.tpl .hnd'); if (!h || reading || e.button > 0) return;
   const b = h.closest('.tpl'), k = TK[b.dataset.t]; if (!k?.drag) return;
   e.preventDefault(); e.stopPropagation();
   const svg = b.querySelector('svg'), step = k.drag(b, e, h); try { svg.setPointerCapture(e.pointerId); } catch {}
@@ -12103,6 +12103,8 @@ function tgClose(back){
 $('#tplBtn').onclick = () => tplOpen();
 
 /* ---------- in the PDF: the lines, fills and drawings of the blocks (the words are drawn with all the other words) ---------- */
+// how much a drawing is scaled on the page (a drawing's own units are not pixels)
+const svgK = el => { const s = el.ownerSVGElement; return s && s.viewBox.baseVal.width ? s.getBoundingClientRect().width / s.viewBox.baseVal.width : 1; };
 const tPaintSeen = c => c && c !== 'transparent' && !/rgba\(.*,\s*0\)$/.test(c);
 async function tplPaint(ctx, qa, ox, oy){
   ctx.save();
@@ -12128,7 +12130,7 @@ async function tplPaint(ctx, qa, ox, oy){
     const c = sv.cloneNode(true), a = [sv, ...sv.querySelectorAll('*')], b = [c, ...c.querySelectorAll('*')], drop = [];
     a.forEach((o, i) => {
       const e = b[i], cs = getComputedStyle(o);
-      if (o.matches('text, .hd, .tui')) { drop.push(e); return; }          // words are drawn as text; handles are only for the screen
+      if (o.matches('text, .hnd, .tui')) { drop.push(e); return; }          // words are drawn as text; handles are only for the screen
       for (const p of ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap', 'stroke-linejoin', 'opacity', 'fill-opacity', 'stroke-opacity']) e.style.setProperty(p, cs.getPropertyValue(p));
     });
     drop.forEach(e => e.remove());
