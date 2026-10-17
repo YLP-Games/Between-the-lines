@@ -33,7 +33,16 @@ A simple web page for taking notes on lecture slides.
 - **Spell check**: misspelt words get a red wavy line; right-click one (or tap it) for suggestions, **Add to dictionary** or **Ignore**. Your dictionary and favourite colours are in **Help & settings**.
 - **Select all** (Ctrl+A outside a note) selects every note on the page to restyle, move (drag or arrow keys) or delete together.
 - **Back / Forward** (Ctrl+Z / Ctrl+Y) undo and redo any change.
+- **Draw** (Insert tab) writes or highlights with a pen on PDF pages and on side-note pages, and the eraser rubs strokes out. Strokes are saved with the notebook, show in Study mode and come out in the PDF.
 - **Study mode** makes everything read-only while you revise; the editing tabs are put away and notes can still be opened and minimised.
+
+## On iPad and tablets
+
+- **Add to Home Screen** (in Safari: Share, then Add to Home Screen) and it opens full screen like an app, and keeps working offline.
+- **Apple Pencil** (and other pens, such as a Surface pen) draws on a PDF page or a side page with the tool from **Draw**, even when Draw is off, while your fingers scroll, tap and select as usual. A hand resting on the screen while you write is ignored. Pressing harder makes the line thicker (the highlighter stays flat), and the Pencil's eraser end rubs strokes out where the browser reports it. A quick tap with the Pencil is a tap, not a dot: it shows **+ Add here**. Turn this off with **Apple Pencil draws automatically** in Help & settings, and the Pencil then draws only while **Draw** is on. To draw with a finger, turn on **Draw**.
+- **Scribble**: tap inside a note and write with the Pencil, and iPadOS turns it into text (switch Scribble on in Settings › Apple Pencil). The Pencil never draws over a note, so you can always write in one.
+- **Press and hold** is the touch version of right-click: on **+ Add here** (sticky note or equation), on a pencil icon (its colours), on a misspelt word (suggestions; a tap works too) and on a notebook in the sidebar (its menu). Tap a note to show its handles for moving and resizing.
+- Buttons grow to fingertip size on touch screens, and the page keeps your place when you turn the iPad round. The keyboard never covers the note you are typing in.
 
 ## Saving
 
