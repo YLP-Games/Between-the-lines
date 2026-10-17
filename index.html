@@ -106,6 +106,7 @@ input[type=color]{width:28px;height:28px;padding:0;border:1px solid var(--line-s
 .sep{width:1px;align-self:stretch;background:var(--line);margin:4px 3px;flex:none}
 .tip{display:flex;align-items:center;margin:0;font-size:14px;color:var(--muted);padding:0 8px;max-width:520px;line-height:1.25}
 html[data-tips="off"] .ribbon .tip{display:none}
+@media (max-width:1799px){#panel-insert>.tip{display:none}}      /* only where it fits whole: the same hint is in Help */
 @media (max-width:1560px){#panel-view .vl{display:none}}           /* the View tab is long: its buttons keep their icons and lose their words on narrower windows (the tooltip says what each is) */
 .sizebox{display:inline-flex;align-items:center}
 #size{width:52px;height:32px;box-sizing:border-box;font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius) 0 0 var(--radius);padding:0 6px}
