@@ -105,6 +105,8 @@ input[type=color]{width:28px;height:28px;padding:0;border:1px solid var(--line-s
 .cap{font-size:11px;color:var(--muted);white-space:nowrap}
 .sep{width:1px;align-self:stretch;background:var(--line);margin:4px 3px;flex:none}
 .tip{display:flex;align-items:center;margin:0;font-size:14px;color:var(--muted);padding:0 8px;max-width:520px;line-height:1.25}
+html[data-tips="off"] .ribbon .tip{display:none}
+@media (max-width:1560px){#panel-view .vl{display:none}}           /* the View tab is long: its buttons keep their icons and lose their words on narrower windows (the tooltip says what each is) */
 .sizebox{display:inline-flex;align-items:center}
 #size{width:52px;height:32px;box-sizing:border-box;font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius) 0 0 var(--radius);padding:0 6px}
 #sizePick{width:30px;padding:0;appearance:none;-webkit-appearance:none;text-align:center;text-align-last:center;border-radius:0 var(--radius) var(--radius) 0;border-left:none}
@@ -266,6 +268,16 @@ div.mine:empty::before{content:"Type, or press / for options"}
 .g-se .i{width:14px;height:14px;stroke-width:2.4}
 .g-se:hover{color:var(--accent)}
 .notebox.inline > .g-s,.notebox.inline > .g-se{display:none}
+/* the left and top edges and the other three corners: a bar on each edge, a small dot on each corner */
+.g-w,.g-n,.g-nw,.g-ne,.g-sw{background:#fff;border:1.5px solid #8f8d86}
+.g-w{left:-4px;top:50%;width:7px;height:min(36px,60%);min-height:12px;translate:0 -50%;border-radius:9px;cursor:ew-resize}
+.g-n{top:-4px;left:50%;width:min(36px,40%);height:7px;translate:-50% 0;border-radius:9px;cursor:ns-resize}
+.g-nw,.g-ne,.g-sw{width:10px;height:10px;border-radius:50%}
+.g-nw{left:-5px;top:-5px;cursor:nwse-resize}
+.g-ne{right:-5px;top:-5px;cursor:nesw-resize}
+.g-sw{left:-5px;bottom:-5px;cursor:nesw-resize}
+.g-w:hover,.g-n:hover,.g-nw:hover,.g-ne:hover,.g-sw:hover{background:var(--accent);border-color:var(--accent)}
+.notebox.inline > :is(.g-w,.g-n,.g-nw,.g-ne,.g-sw){display:none}
 /* the toolbar: pin, float on top, minimise. Hidden, it can't be clicked by accident */
 .nbar{position:absolute;z-index:4;top:-16px;right:10px;display:flex;align-items:center;gap:1px;padding:2px;border:1.5px solid var(--pencil);border-radius:8px;background:var(--surface);box-shadow:2px 2px 0 rgba(47,43,36,.18);opacity:0;visibility:hidden;transition:opacity .15s,visibility .15s} /* taste-skill-ignore: a small toolbar floats over the note */
 .notebox:hover > .nbar,.notebox.touched > .nbar{opacity:1;visibility:visible}
@@ -278,10 +290,16 @@ div.mine:empty::before{content:"Type, or press / for options"}
 /* a finger can't point: tapping a note shows its handles, bigger, until you tap somewhere else
    (decided by how you touch, not by what the browser says the screen is: touchscreen laptops often claim they can't hover) */
 .notebox.touched .nbar .grip{width:34px;height:34px}
-.notebox.touched > .g-move{left:-22px;width:22px;height:32px}
+.notebox.touched > .g-move{left:-22px;width:22px;height:32px;z-index:4}          /* (it stays on top of the left edge handle, whose catching area reaches over it) */
 .notebox.touched > .g-e{width:12px;right:-6px}
 .notebox.touched > .g-s{height:12px;bottom:-6px}
 .notebox.touched > .g-se{width:20px;height:20px}
+.notebox.touched > .g-w{width:12px;left:-6px}
+.notebox.touched > .g-n{height:12px;top:-6px}
+.notebox.touched > :is(.g-nw,.g-ne,.g-sw){width:14px;height:14px}
+.notebox.touched > .g-nw{left:-7px;top:-7px}
+.notebox.touched > .g-ne{right:-7px;top:-7px}
+.notebox.touched > .g-sw{left:-7px;bottom:-7px}
 .notebox.moving{opacity:.9;z-index:100000!important}
 .notebox.moving > .mine{box-shadow:0 6px 18px rgba(0,0,0,.22);background:rgba(255,255,255,.85)} /* taste-skill-ignore: a note being dragged floats */
 .notebox.flash > .mine{animation:flash 1.6s ease-out}
@@ -424,6 +442,8 @@ body.multi .toast{bottom:calc(var(--status-h) + 74px + env(safe-area-inset-botto
 .keys dt{white-space:nowrap}
 .keys dd{margin:0;color:var(--muted)}
 kbd{font:12px ui-monospace,Menlo,Consolas,monospace;padding:1px 5px;border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:4px;background:var(--surface-2)} /* taste-skill-ignore: the formula box is where you type formula code */
+.setchk{margin:0 0 2px;font-size:14.5px}
+.setchk + .sethint{margin-left:24px}
 .penrow{margin-top:8px;font-size:14px}
 .sethint{margin:0 0 8px;font-size:12px;color:var(--muted);line-height:1.4}
 .dictadd{display:flex;gap:6px;margin-bottom:8px}
@@ -507,6 +527,11 @@ kbd{border-color:var(--pencil)}
 .sideacts{display:flex;flex-direction:column;padding:2px 6px 6px}
 .srow{display:flex;align-items:center;gap:9px;width:100%;min-height:34px;padding:0 8px;border:none;background:none;border-radius:var(--wob);font:inherit;font-size:16.5px;color:var(--ink);cursor:pointer;text-align:left}
 .srow:hover{background:var(--hover)}
+/* the cloud rows sit together under one small heading */
+#sideDrive{margin-top:26px;position:relative}
+#sideDrive::before{content:"Open from the cloud";position:absolute;left:8px;top:-22px;font-size:12px;letter-spacing:.04em;color:var(--muted)}
+.srow.cloud{padding-left:14px}
+#sideOd{margin-bottom:6px}
 .srow .i{width:17px;height:17px;color:var(--muted)}
 .sidesec{display:flex;align-items:baseline;gap:8px;padding:10px 14px 4px;font:700 15px var(--display);color:var(--muted)}
 .sidesec .count{font:13px var(--ui)}
@@ -616,6 +641,7 @@ body.focus .peekzone{display:none}
 .slide .notebox.sticky > .mine:focus{box-shadow:0 0 0 2px var(--accent),2px 4px 0 rgba(47,43,36,.22)} /* taste-skill-ignore: a ring marking focus, and the sticky's own shadow */
 .notebox.sticky .g-float{display:none}
 .notebox.sticky > .g-move{left:50%;top:-9px;width:76px;height:20px;transform:translateX(-50%) rotate(-2deg);border:none;border-radius:2px;background:rgba(206,190,138,.72);opacity:1;visibility:visible;cursor:grab;box-shadow:0 1px 1px rgba(0,0,0,.12)} /* taste-skill-ignore: the tape that holds a sticky note */
+.notebox.sticky > .g-n{left:22%}
 .notebox.sticky > .g-move:hover{background:rgba(196,178,120,.85)}
 .notebox.sticky > .g-move .i{display:none}
 .notebox.sticky.moving{opacity:1}
@@ -661,6 +687,7 @@ body.dragging-sticky,body.dragging-sticky *{cursor:grabbing!important}
 .pgdrop{position:fixed;z-index:300;height:3px;border-radius:2px;background:var(--accent);pointer-events:none}
 body.pgdragging,body.pgdragging *{cursor:grabbing!important}
 /* ================= Google Drive ================= */
+.menu .mhead.first{margin-top:2px;padding-top:4px;border-top:0}
 #saveMenu{max-height:calc(100dvh - 76px);overflow-y:auto;overscroll-behavior:contain}          /* a short screen scrolls the menu instead of cutting it off */
 .menu .mhead{margin:6px 0 2px;padding:8px 10px 2px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
 .linkbtn{border:none;background:none;padding:0;font:inherit;font-size:16px;color:var(--accent);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
@@ -893,6 +920,23 @@ body:not(.side-visible) #annoBar [data-side]{display:none}
 .sidebg .pv{display:block;width:100%;height:26px;box-sizing:border-box;border:1px solid var(--line-strong);border-radius:3px;background-color:var(--pvbg,#fff);--sp-line:rgba(47,43,36,.3)}
 .sidebg .pv.dark{--sp-line:rgba(236,230,214,.3)}
 .sidebg .cust{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.sidebg h2{margin:0;font:600 16px var(--ui)}
+.sidebg > p{margin:-4px 0 2px;font-size:13.5px;line-height:1.3;color:var(--muted)}
+/* the View tab's Side page background button shows the paper it will change */
+.sidesw{width:18px;height:18px;border-radius:4px;border:1px solid var(--line-strong);box-sizing:border-box;flex:none;background-color:var(--pvbg,#fff);--sp-line:rgba(47,43,36,.5)}
+.sidesw.dark{--sp-line:rgba(236,230,214,.55)}
+.sidesw[data-pat="lined"]{background-image:linear-gradient(transparent 4px,var(--sp-line) 4px,var(--sp-line) 5px,transparent 5px);background-size:100% 5px}
+.sidesw[data-pat="grid"]{background-image:linear-gradient(var(--sp-line) 1px,transparent 1px),linear-gradient(90deg,var(--sp-line) 1px,transparent 1px);background-size:6px 6px}
+.sidesw[data-pat="dots"]{background-image:radial-gradient(var(--sp-line) .8px,transparent 1.1px);background-size:5px 5px;background-position:2px 2px}
+/* a disabled button can't be pointed at, so its tooltip comes from the box around it */
+.tipwrap{display:inline-flex}
+.tipwrap > .btn:disabled{pointer-events:none}
+.cap .i{width:13px;height:13px;vertical-align:-2px;margin-right:4px;stroke-width:2}
+/* pointing at (or tapping) a side page shows a small palette button in its corner */
+.sidecorner{position:fixed;z-index:54;width:30px;min-width:30px;height:30px;padding:0;border-radius:8px;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);box-shadow:0 1px 4px rgba(0,0,0,.2);opacity:.92} /* taste-skill-ignore: a small button floats over the side page */
+.sidecorner:hover,.sidecorner[aria-expanded="true"]{opacity:1;background:var(--hover)}
+.sidecorner .i{width:16px;height:16px}
+@media (pointer:coarse){.sidecorner{width:40px;min-width:40px;height:40px}}
 main.reading .sidepage{cursor:auto}
 
 /* ================= split view: a second notebook to read, beside the one you write in ================= */
@@ -1080,6 +1124,11 @@ main.reading .jrnl .j-ind{cursor:default}
   .notebox.touched > .g-e::before{inset:-8px -16px -8px -2px}
   .notebox.touched > .g-s::before{inset:-2px -8px -16px -8px}
   .notebox.touched > .g-se::before{inset:-4px -14px -14px -4px}
+  .notebox.touched > .g-w::before{inset:-8px -2px -8px -16px}
+  .notebox.touched > .g-n::before{inset:-16px -8px -2px -8px}
+  .notebox.touched > .g-nw::before{inset:-14px -2px -2px -14px}
+  .notebox.touched > .g-ne::before{inset:-14px -14px -2px -2px}
+  .notebox.touched > .g-sw::before{inset:-2px -2px -14px -14px}
   .bdiv{left:-16px;width:32px}
   .grp .chk,.chk{min-height:40px}
 }
@@ -1172,6 +1221,13 @@ try {
 <symbol id="i-wguide" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></symbol>
 <symbol id="i-table" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M12 3v18"/></symbol>
 <symbol id="i-journal" viewBox="0 0 24 24"><path d="M5 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5Z"/><path d="M5 3v18"/><path d="M9 8h6"/><path d="M9 12h3"/><path d="M14 12h2"/><path d="M9 16h3"/><path d="M14 16h2"/></symbol>
+<symbol id="i-nalign-left" viewBox="0 0 24 24"><path d="M4 3v18"/><rect x="8" y="6" width="12" height="4" rx="1"/><rect x="8" y="14" width="7" height="4" rx="1"/></symbol>
+<symbol id="i-nalign-center" viewBox="0 0 24 24"><path d="M12 3v18"/><rect x="5" y="6" width="14" height="4" rx="1"/><rect x="8" y="14" width="8" height="4" rx="1"/></symbol>
+<symbol id="i-nalign-right" viewBox="0 0 24 24"><path d="M20 3v18"/><rect x="4" y="6" width="12" height="4" rx="1"/><rect x="9" y="14" width="7" height="4" rx="1"/></symbol>
+<symbol id="i-same-width" viewBox="0 0 24 24"><path d="M3 4v16"/><path d="M21 4v16"/><rect x="6" y="7" width="12" height="4" rx="1"/><rect x="6" y="14" width="12" height="4" rx="1"/></symbol>
+<symbol id="i-distribute" viewBox="0 0 24 24"><path d="M3 3h18"/><path d="M3 21h18"/><rect x="7" y="9" width="10" height="6" rx="1"/></symbol>
+<symbol id="i-tidy" viewBox="0 0 24 24"><path d="M4 4v16"/><path d="M8 7h12"/><path d="M8 12h8"/><path d="M8 17h11"/></symbol>
+<symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></symbol>
 </defs></svg>
 
 <header class="appbar" id="appbar">
@@ -1182,23 +1238,22 @@ try {
     <button class="btn" id="undoBtn" aria-label="Back" title="Back: undo the last change (Ctrl+Z)" disabled><svg class="i"><use href="#i-undo"/></svg></button>
     <button class="btn" id="redoBtn" aria-label="Forward" title="Forward: redo the change you undid (Ctrl+Y)" disabled><svg class="i"><use href="#i-redo"/></svg></button>
     <span class="vr"></span>
-    <button class="btn" id="focusBtn" aria-pressed="false" title="Focus mode: hide the toolbar, side panels and status bar so only your pages and notes are on screen (Ctrl+Shift+F)"><svg class="i"><use href="#i-focus"/></svg><span class="lbl">Focus</span></button>
-    <button class="btn" id="readBtn" aria-pressed="false" title="Study mode: read without changing anything by accident. Notes can still be opened and minimised."><svg class="i"><use href="#i-book"/></svg><span class="lbl">Study mode</span></button>
     <button class="btn outline" id="openBtn" title="Open a PDF, PowerPoint (.pptx), Word (.docx), picture or notebook file"><svg class="i"><use href="#i-folder"/></svg><span class="lbl">Open</span></button>
     <input id="file" type="file" accept=".pdf,.pptx,.docx,.md,.markdown,.txt,.html,.htm,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/html,text/markdown,text/plain,image/*" multiple hidden>
     <span class="savewrap">
       <button id="save" class="btn primary" aria-haspopup="true" aria-expanded="false"><svg class="i"><use href="#i-download"/></svg><span class="lbl">Download</span><svg class="i chev"><use href="#i-down"/></svg></button>
       <div class="menu" id="saveMenu" hidden>
-        <label for="pdfNotes">Notes in the PDF
+        <div class="mhead first">On this device</div>
+        <button type="button" data-kind="pdf"><strong>PDF</strong><small>Your pages and notes, in the page layout from View</small></button>
+        <button type="button" data-kind="notebook"><strong>Notebook file</strong><small>One .html file: open it later on any device to keep editing</small></button>
+        <button type="button" data-kind="markdown"><strong>Notes as Markdown</strong><small>Every note, by page, to paste into Notion or anywhere</small></button>
+        <label for="pdfNotes">Notes in the PDF (also for PDF to Drive)
           <select id="pdfNotes">
             <option value="page">Shown on the page</option>
             <option value="comments">As comments you click to open</option>
             <option value="none">Left out</option>
           </select>
         </label>
-        <button type="button" data-kind="pdf"><strong>PDF</strong><small>Your pages and notes, in the page layout from View</small></button>
-        <button type="button" data-kind="notebook"><strong>Notebook file</strong><small>One .html file: open it later on any device to keep editing</small></button>
-        <button type="button" data-kind="markdown"><strong>Notes as Markdown</strong><small>Every note, by page, to paste into Notion or anywhere</small></button>
         <div class="mhead">Google Drive</div>
         <button type="button" data-drive="notebook"><strong>Notebook to Drive</strong><small>Saves the notebook file in Google Drive; next time it updates the same file</small></button>
         <button type="button" data-drive="pdf"><strong>PDF to Drive</strong><small>The PDF, with notes as chosen above, saved in Google Drive</small></button>
@@ -1208,6 +1263,10 @@ try {
         <button type="button" data-od="share"><strong>Share via OneDrive…</strong><small>Saves it to OneDrive, then lets you add people or copy a link</small></button>
       </div>
     </span>
+    <span class="vr"></span>
+    <button class="btn" id="focusBtn" aria-pressed="false" title="Focus mode: hide the toolbar, side panels and status bar so only your pages and notes are on screen (Ctrl+Shift+F)"><svg class="i"><use href="#i-focus"/></svg><span class="lbl">Focus</span></button>
+    <button class="btn" id="readBtn" aria-pressed="false" title="Study mode: read without changing anything by accident. Notes can still be opened and minimised."><svg class="i"><use href="#i-book"/></svg><span class="lbl">Study mode</span></button>
+    <span class="vr"></span>
     <button class="btn" id="helpBtn" aria-haspopup="dialog" aria-expanded="false" aria-label="Help and settings" title="Help and settings: how to use it, shortcuts, your dictionary and favourite colours"><svg class="i"><use href="#i-help"/></svg></button>
     <button class="btn" id="notesBtn" aria-pressed="false" aria-controls="notesPanel" aria-label="Notes list" title="Notes: every note in one list, to search and jump to"><svg class="i"><use href="#i-panel-right"/></svg></button>
   </div>
@@ -1309,7 +1368,7 @@ try {
         <button class="btn" data-cmd="justifyLeft" aria-label="Align left" title="Align left"><svg class="i"><use href="#i-align-left"/></svg></button>
         <button class="btn" data-cmd="justifyCenter" aria-label="Centre" title="Centre"><svg class="i"><use href="#i-align-center"/></svg></button>
         <button class="btn" data-cmd="justifyRight" aria-label="Align right" title="Align right"><svg class="i"><use href="#i-align-right"/></svg></button>
-      </div><span class="cap">Align</span></div>
+      </div><span class="cap">Text align</span></div>
     </div>
 
     <div class="panel" role="tabpanel" id="panel-insert" aria-labelledby="tab-insert" data-edit hidden>
@@ -1333,10 +1392,13 @@ try {
       <div class="grp"><div class="row">
         <button class="btn" id="addPageBtn" title="Add a blank page after the current page (the one you last clicked)"><svg class="i"><use href="#i-page-add"/></svg>Blank page after</button>
         <button class="btn" id="addHereBtn" title="Add another file to the end of this notebook, instead of opening it as a new one"><svg class="i"><use href="#i-file"/></svg>Add a file here</button>
-        <button class="btn danger" id="delPageBtn" title="Remove the current page (the one you last clicked)"><svg class="i"><use href="#i-page-remove"/></svg><span>Remove page</span></button>
       </div><span class="cap">Pages</span></div>
       <span class="sep"></span>
       <p class="tip">On a PDF page, point between two lines and press “+ Add here” for a note (right-click it for a sticky note or an equation). In a note, type / for the same options.</p>
+      <span class="spacer"></span>
+      <div class="grp"><div class="row">
+        <button class="btn danger" id="delPageBtn" title="Remove the current page (the one you last clicked)"><svg class="i"><use href="#i-page-remove"/></svg><span>Remove page</span></button>
+      </div><span class="cap">Remove</span></div>
     </div>
 
     <div class="panel" role="tabpanel" id="panel-box" aria-labelledby="tab-box" data-edit hidden>
@@ -1356,8 +1418,21 @@ try {
       </div><span class="cap">Minimised icon</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row">
-        <button class="btn" id="selAllBtn" title="Select every note on the current page, to restyle, move or delete them together (Ctrl+A when you're not typing in a note)"><svg class="i"><use href="#i-select"/></svg>Select all notes on this page</button>
+        <button class="btn" id="selAllBtn" title="Select all: every note on the current page, to restyle, move, line up or delete them together (Ctrl+A when you're not typing in a note)"><svg class="i"><use href="#i-select"/></svg>Select all</button>
       </div><span class="cap">Select</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row" id="alignCtl">
+        <button class="btn" id="alLeft" aria-label="Align left" title="Align left: line the selected notes up on their left edge"><svg class="i"><use href="#i-nalign-left"/></svg></button>
+        <button class="btn" id="alCenter" aria-label="Align centre" title="Align centre: line the selected notes up on their middle"><svg class="i"><use href="#i-nalign-center"/></svg></button>
+        <button class="btn" id="alRight" aria-label="Align right" title="Align right: line the selected notes up on their right edge"><svg class="i"><use href="#i-nalign-right"/></svg></button>
+        <button class="btn" id="alWidth" title="Same width: make the selected notes as wide as the widest one"><svg class="i"><use href="#i-same-width"/></svg>Same width</button>
+        <button class="btn" id="alDist" title="Distribute: space three or more floating notes or sticky notes evenly, top to bottom"><svg class="i"><use href="#i-distribute"/></svg>Distribute</button>
+        <button class="btn" id="alTidy" title="Tidy page: line up every note between the lines on this page with the leftmost one, in the same order"><svg class="i"><use href="#i-tidy"/></svg>Tidy page</button>
+      </div><span class="cap">Align</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row">
+        <label class="chk" for="autoAlign" title="Auto-align notes: a new note between the lines lines up with the left edge of the note above or below it, when that is close"><input type="checkbox" id="autoAlign" checked> Auto-align notes</label>
+      </div><span class="cap">New notes</span></div>
     </div>
 
     <div class="panel" role="tabpanel" id="panel-view" aria-labelledby="tab-view" hidden>
@@ -1373,9 +1448,22 @@ try {
       <span class="sep"></span>
       <div class="grp"><div class="row">
         <button class="btn notes-toggle" disabled><svg class="i"><use href="#i-eye-off"/></svg><span>Hide notes</span></button>
-        <button class="btn" data-panel="pages" aria-pressed="false"><svg class="i"><use href="#i-panel-left"/></svg>Sidebar</button>
-        <button class="btn" data-panel="notes" aria-pressed="false"><svg class="i"><use href="#i-panel-right"/></svg>Notes list</button>
+        <button class="btn" data-panel="pages" aria-pressed="false" aria-label="Sidebar" title="Sidebar: your notebooks and their pages (Ctrl+\)"><svg class="i"><use href="#i-panel-left"/></svg><span class="vl">Sidebar</span></button>
+        <button class="btn" data-panel="notes" aria-pressed="false" aria-label="Notes list" title="Notes list: every note in one list, to search and jump to"><svg class="i"><use href="#i-panel-right"/></svg><span class="vl">Notes list</span></button>
       </div><span class="cap">Show</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row" id="sideCtl">
+        <button class="btn" id="sideBtn" aria-pressed="false" title="Side notes: a page for your own notes beside every slide, in the same row"><svg class="i"><use href="#i-sidepage"/></svg>Side notes</button>
+        <button class="btn" id="sideSync" aria-pressed="true" aria-label="Sync scrolling" title="Sync scrolling: on, each side page scrolls with its slide; off, the side pages move to a column on the right that scrolls by itself"><svg class="i"><use href="#i-sync"/></svg><span class="vl">Sync scrolling</span></button>
+        <button class="btn" id="sideLinks" aria-pressed="true" aria-label="Link lines" title="Link lines: show the lines that join a highlight to its side note"><svg class="i"><use href="#i-spline"/></svg><span class="vl">Link lines</span></button>
+        <span class="tipwrap" id="sideBgWrap"><button class="btn" id="sideBgBtn" aria-haspopup="dialog" aria-expanded="false" title="Side page background: the colour and pattern of the paper behind your side notes"><span class="sidesw" id="sideSw" aria-hidden="true"></span>Side page background</button></span>
+      </div><span class="cap"><svg class="i"><use href="#i-sidepage"/></svg>Side pages</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row seg" id="themeModes" role="group" aria-label="Theme">
+        <button class="btn" data-pick="system" aria-label="System" aria-pressed="true" title="System: follow the light or dark setting of this device"><svg class="i"><use href="#i-monitor"/></svg><span class="vl">System</span></button>
+        <button class="btn" data-pick="light" aria-label="Light" aria-pressed="false" title="Light: always use the light theme"><svg class="i"><use href="#i-sun"/></svg><span class="vl">Light</span></button>
+        <button class="btn" data-pick="dark" aria-label="Dark" aria-pressed="false" title="Dark: always use the dark theme"><svg class="i"><use href="#i-moon"/></svg><span class="vl">Dark</span></button>
+      </div><span class="cap">Theme</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row">
         <select id="spellLang" aria-label="Spell check" title="Spell check: misspelt words get a red wavy line; right-click one (or tap it) for suggestions">
@@ -1385,30 +1473,17 @@ try {
         </select>
       </div><span class="cap">Proofing</span></div>
       <span class="sep"></span>
-      <div class="grp"><div class="row">
-        <select class="pptx-mode-sel" aria-label="Open PowerPoint as" title="How PowerPoint files open: as the slides look (a picture of each slide you can write between the lines of), or rebuilt as editable text. It applies to the next file you open."><option value="look">Slides as they look</option><option value="text">Editable text</option></select>
-      </div><span class="cap">Open PowerPoint as</span></div>
-      <span class="sep"></span>
-      <div class="grp"><div class="row seg" id="themeModes" role="group" aria-label="Theme">
-        <button class="btn" data-pick="system" aria-pressed="true" title="System: follow the light or dark setting of this device"><svg class="i"><use href="#i-monitor"/></svg>System</button>
-        <button class="btn" data-pick="light" aria-pressed="false" title="Light: always use the light theme"><svg class="i"><use href="#i-sun"/></svg>Light</button>
-        <button class="btn" data-pick="dark" aria-pressed="false" title="Dark: always use the dark theme"><svg class="i"><use href="#i-moon"/></svg>Dark</button>
-      </div><span class="cap">Theme</span></div>
-      <span class="sep"></span>
-      <div class="grp"><div class="row" id="sideCtl">
-        <button class="btn" id="sideBtn" aria-pressed="false" title="Side notes: a page for your own notes beside every slide, in the same row"><svg class="i"><use href="#i-sidepage"/></svg>Side notes</button>
-        <button class="btn" id="sideSync" aria-pressed="true" title="Sync scrolling: on, each side page scrolls with its slide; off, the side pages move to a column on the right that scrolls by itself"><svg class="i"><use href="#i-sync"/></svg>Sync scrolling</button>
-        <button class="btn" id="sideLinks" aria-pressed="true" title="Link lines: show the lines that join a highlight to its side note"><svg class="i"><use href="#i-spline"/></svg>Link lines</button>
-        <button class="btn" id="sideBgBtn" aria-haspopup="dialog" aria-expanded="false" title="Background: the colour and pattern of the side pages"><svg class="i"><use href="#i-palette"/></svg>Background</button>
-      </div><span class="cap">Side notes</span></div>
-      <span class="sep"></span>
       <div class="grp"><div class="row seg" id="barModes">
         <button class="btn" data-mode="full" aria-pressed="true" title="Tabs and tools">Full</button>
-        <button class="btn" data-mode="compact" aria-pressed="false" title="Only the tabs: click one to open its tools">Tabs only</button>
+        <button class="btn" data-mode="compact" aria-pressed="false" title="Tabs only: show just the tabs; click one to open its tools">Tabs</button>
         <button class="btn" data-mode="hidden" aria-pressed="false" title="Hide the toolbar (bring it back with Show toolbar)">Hidden</button>
       </div><span class="cap">Toolbar</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row">
+        <button class="btn" id="tipsBtn" aria-pressed="true" aria-label="Show tips" title="Show tips: short hints that explain a feature the first time you use it. Messages about what happened always show."><svg class="i"><use href="#i-lightbulb"/></svg><span class="vl">Show tips</span></button>
+      </div><span class="cap">Help</span></div>
       <span class="spacer"></span>
-      <div class="grp"><div class="row"><button class="btn outline danger" id="clear"><svg class="i"><use href="#i-trash"/></svg><span>Clear this notebook</span></button></div><span class="cap">Notebook</span></div>
+      <div class="grp"><div class="row"><button class="btn outline danger" id="clear"><svg class="i"><use href="#i-trash"/></svg><span>Clear notebook</span></button></div><span class="cap">Notebook</span></div>
     </div>
   </div>
 </header>
@@ -1424,9 +1499,9 @@ try {
       <button type="button" class="srow" id="newDocBtn" title="A new notebook with a blank page to write on"><svg class="i"><use href="#i-plus"/></svg>New notebook</button>
       <button type="button" class="srow" id="newFolderBtn" title="A folder to group notebooks in, like a course or a topic"><svg class="i"><use href="#i-folder-plus"/></svg>New folder</button>
       <button type="button" class="srow" id="sideOpen" title="Open a PDF, PowerPoint or Word file as a new notebook"><svg class="i"><use href="#i-folder"/></svg>Open a file</button>
-      <button type="button" class="srow" id="sideDrive" data-drive-open title="Open a file from Google Drive: PDF, PowerPoint, Word, Google Slides or Docs, pictures or a notebook file"><svg class="i"><use href="#i-drive"/></svg>Open from Google Drive</button>
-      <button type="button" class="srow" id="sideDriveNbs" data-drive data-drive-nbs title="Your notebooks saved in Google Drive, from any of your devices: pick one up where you left off"><svg class="i"><use href="#i-drive"/></svg>Your notebooks in Drive</button>
-      <button type="button" class="srow" id="sideOd" data-od-open title="Open a file from OneDrive or SharePoint with your Microsoft account: PDF, PowerPoint, Word, pictures or a notebook file"><svg class="i"><use href="#i-onedrive"/></svg>Open from OneDrive</button>
+      <button type="button" class="srow cloud" id="sideDrive" data-drive-open title="Open a file from Google Drive: PDF, PowerPoint, Word, Google Slides or Docs, pictures or a notebook file"><svg class="i"><use href="#i-drive"/></svg>Google Drive</button>
+      <button type="button" class="srow cloud" id="sideDriveNbs" data-drive data-drive-nbs title="Your notebooks saved in Google Drive, from any of your devices: pick one up where you left off"><svg class="i"><use href="#i-drive"/></svg>Your Drive notebooks</button>
+      <button type="button" class="srow cloud" id="sideOd" data-od-open title="Open a file from OneDrive or SharePoint with your Microsoft account: PDF, PowerPoint, Word, pictures or a notebook file"><svg class="i"><use href="#i-onedrive"/></svg>OneDrive</button>
       <button type="button" class="srow" id="sideAdd" title="Write a note for the page you're on, in the Notes panel"><svg class="i"><use href="#i-pen"/></svg>Add a note</button>
       <button type="button" class="srow" id="sideSearch" title="Search: find a notebook, page or note, or run an action (Ctrl+K)"><svg class="i"><use href="#i-search"/></svg>Search</button>
     </div>
@@ -1494,7 +1569,9 @@ try {
         <li><b>Sticky notes</b> sit on top of the page: drag one by its tape to move it, even onto another page. In the <b>Notes</b> panel, type a note and press <b>Add note</b>, or drag <b>Sticky</b> onto any page.</li>
         <li><b>Draw</b> (Insert tab) writes or highlights on PDF pages with a pen, and the eraser rubs strokes out. Select words on any page to highlight them, or press <b>Comment</b>; open comments are listed in the <b>Notes</b> panel until you resolve them.</li>
         <li>The <b>Home</b> tab styles your notes: the font, size and colour are used for new notes, or click in a note (or select words) to change just that.</li>
-        <li>Drag a note’s edges to resize it, or its move handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
+        <li>Point at a note (or tap it) and drag any edge or corner to resize it: the opposite side stays where it is. Drag its move handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
+        <li>New notes line up with the note above or below them when they are close (<b>Box › Auto-align notes</b>). To tidy up, <b>Select all</b> on the Box tab, then use <b>Align</b>: left, centre or right, <b>Same width</b>, <b>Distribute</b> (floating and sticky notes, evenly spaced) or <b>Tidy page</b>. Each is one step you can take Back.</li>
+        <li><b>View › Side pages</b> gives each slide a page for your own notes beside it. Point at a side page (or tap it) and press the palette button in its corner to change its paper, or use <b>Side page background</b> in the View tab.</li>
         <li>On each note: the arrows float it on top of the page, the minus minimises it to a pencil icon (drag the icon aside, right-click it to colour it), and the pin keeps it open.</li>
         <li>The <b>sidebar</b> (left) lists your notebooks: click one to switch, and the one you're in shows its pages. Use its <b>⋯</b> to rename or delete it. Hide it with <b>«</b> (Ctrl+\) and point at the left edge to peek at it. A notebook’s <b>⋯</b> menu can also star it as a <b>Favourite</b>, <b>Duplicate</b> it, or move it to the <b>Trash</b>, where it waits 30 days (and can be restored) before it is gone for ever. Group notebooks in <b>folders</b> (<b>New folder</b>): drag a notebook or a folder onto a folder to move it, or use <b>Move to…</b> in its <b>⋯</b> menu.</li>
         <li><b>Notes</b> (right) lists every note in the notebook to search, filter by icon colour and jump to.</li>
@@ -1529,6 +1606,13 @@ try {
         <dt><kbd>/</kbd></dt><dd>In a note: add an equation, table or journal entry, or turn it into a sticky note</dd>
         <dt><kbd>Esc</kbd></dt><dd>Close a menu or end a selection</dd>
       </dl>
+    </section>
+    <section id="tipsSec">
+      <h3>Tips and tooltips</h3>
+      <label class="chk setchk" for="setTips"><input type="checkbox" id="setTips" checked> Show tips</label>
+      <p class="sethint">Short hints that explain a feature as you use it, such as how to leave Focus mode. Messages about what happened (Saved, errors, Google Drive) always show.</p>
+      <label class="chk setchk" for="setTooltips"><input type="checkbox" id="setTooltips" checked> Button tooltips</label>
+      <p class="sethint">The little note that pops up when you point at a button. Screen readers still read it out.</p>
     </section>
     <section>
       <h3>New notes</h3>
@@ -1682,6 +1766,9 @@ function applyTheme(t){
 applyTheme(themeNow());
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintThemeColor);
 if (pref.get('ui-font') === 'clean') document.documentElement.dataset.uiFont = 'clean';
+// Show tips (hints that teach a feature) and Button tooltips are on unless turned off
+const tipsOn = () => pref.get('tips', '1') !== '0', qtipsOn = () => pref.get('tooltips', '1') !== '0', autoAlignOn = () => pref.get('auto-align', '1') !== '0';
+if (!tipsOn()) document.documentElement.dataset.tips = 'off';
 const COLORS = [['#1f4fd1', 'Blue'], ['#c62828', 'Red'], ['#2e7d32', 'Green'], ['#7b1fa2', 'Purple'], ['#d35400', 'Orange'], ['#1d1d1f', 'Black']];
 const SIZES = [8,9,10,11,12,14,16,18,20,24,28,32,36,40,48,60,72];
 // the fallback used if a font isn't on this device
@@ -1701,6 +1788,8 @@ function toast(t){
   el.textContent = t; el.classList.add('show');
   toastTimer = setTimeout(() => el.classList.remove('show'), Math.min(8000, 2500 + t.length * 40));
 }
+// a tip teaches a feature; it is left out when Show tips is off (what happened, and errors, always use toast)
+const hint = t => { if (tipsOn()) toast(t); };
 
 /* ================= toolbar ================= */
 SIZES.forEach(s => $('#sizePick').add(new Option(s, s)));
@@ -1998,7 +2087,7 @@ function togglePin(box){
   const on = !box.classList.contains('pinned');
   box.classList.toggle('pinned', on);
   gripTitles(box);
-  toast(on ? 'Pinned: this note stays open until you unpin it.' : 'Unpinned.');
+  if (on) hint('Pinned: this note stays open until you unpin it.'); else toast('Unpinned.');
   updateNotesBtn(); saveSoon();
 }
 // what each handle does, for the tooltips (they change when a note is pinned or floated)
@@ -2008,9 +2097,10 @@ function gripTitles(box){
   t('pin', box.classList.contains('pinned') ? 'Unpin: let this note be minimised again' : 'Pin: keep this note open');
   t('float', box.classList.contains('floating') ? 'Put this note back between the lines' : 'Float this note on top of the page, so it can sit beside the text');
   t('min', 'Minimise this note to a small pencil icon');
-  t('e', 'Drag to change the width'); t('s', 'Drag to change the height'); t('se', 'Drag to resize');
+  t('e', 'Drag to change the width'); t('w', 'Drag to change the width'); t('s', 'Drag to change the height'); t('n', 'Drag to change the height');
+  for (const d of ['se', 'sw', 'ne', 'nw']) t(d, 'Drag to resize');
 }
-// a note box's handles: dots to drag it, a toolbar (pin, float on top, minimise), and resize handles on its right edge, bottom edge and corner
+// a note box's handles: dots to drag it, a toolbar (pin, float on top, minimise), and resize handles on every edge and corner
 function addGrips(box){
   box.querySelectorAll(':scope > .grip, :scope > .nbar, :scope > .note-chip').forEach(g => g.remove());
   const inline = box.classList.contains('inline');
@@ -2027,7 +2117,8 @@ function addGrips(box){
   const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'note-chip'; chip.title = 'Show this note'; chip.innerHTML = icon('pen');
   box.append(chip);
   if (box.classList.contains('collapsed')) setCollapsed(box, true);
-  grip('e'); grip('s'); grip('se', 'corner');
+  for (const d of ['e', 's', 'w', 'n', 'nw', 'ne', 'sw']) grip(d);
+  grip('se', 'corner');
   gripTitles(box);
 }
 function makeBox(inline){
@@ -2098,7 +2189,7 @@ function noteSummary(m){
 function addBlockNote(after, slide){
   const {box, el} = makeBox();
   if (after) after.after(box); else (slide.querySelector('.content') || slide).append(box);
-  focusNote(el);
+  autoAlign(box); focusNote(el);
 }
 main.addEventListener('pointerdown', e => {
   const chip = e.target.closest('.note-chip');
@@ -2115,28 +2206,56 @@ main.addEventListener('pointerdown', e => {
     return;
   }
   if (kind === 'move') return startMove(g.parentElement, g, e);
-  e.preventDefault();
-  const box = g.parentElement, r = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, dir = g.dataset.dir || 'se';
-  const holder = box.closest('.content, .slide') || box.parentElement;
-  const max = holder.getBoundingClientRect().right - r.left, bz = zoomOf(box);
-  const {xs, ys} = snapTargets(box);
-  g.setPointerCapture(e.pointerId);
-  const move = ev => {
-    const lines = [], free = noSnap(ev);
-    let w = r.width + ev.clientX - sx, h = r.height + ev.clientY - sy;
-    if (dir.includes('e')) {               // line the right edge up with other boxes' edges
-      const s = free ? null : snapAxis([r.left + w], xs); if (s) { w += s.d; lines.push(...s.hits.map(t => ({x: t.v, a: Math.min(r.top, t.r.top), b: Math.max(r.top + h, t.r.bottom)}))); }
-      box.style.width = Math.round(Math.max(60 * bz, Math.min(max, w)) / bz) + 'px';
-    }
-    if (dir.includes('s')) {
-      const s = free ? null : snapAxis([r.top + h], ys); if (s) { h += s.d; lines.push(...s.hits.map(t => ({y: t.v, a: Math.min(r.left, t.r.left), b: Math.max(r.left + w, t.r.right)}))); }
-      box.style.height = ''; box.style.minHeight = Math.round(Math.max(30 * bz, h) / bz) + 'px';
-    }
-    showGuides(lines);
-  };
-  const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); hideGuides(); saveSoon(); };
-  g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up);
+  if (e.pointerType === 'pen' && (drawing || penAuto())) return;       // a Pencil press by a note's edge is for writing, not for dragging it
+  startResize(g.parentElement, g, e);
 });
+// resize from any edge or corner: the side you drag moves, and the opposite side stays where it is.
+// Floating notes and stickies change their size and position; a note between the lines changes its width and left margin (and, from the top, its top margin).
+function startResize(box, g, e){
+  e.preventDefault();
+  const dir = g.dataset.dir, W = dir.includes('w'), N = dir.includes('n'), E = dir.includes('e'), S = dir.includes('s');
+  const r = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, bz = zoomOf(box), fl = box.classList.contains('floating');
+  const hr = (box.closest('.content, .slide, .sidepage') || box.parentElement).getBoundingClientRect();
+  const fm = fl ? null : flowMetrics(box), minL = fl ? hr.left : fm.cL, mt0 = parseFloat(getComputedStyle(box).marginTop) || 0;
+  const minW = 60 * bz, minH = 30 * bz, {xs, ys} = snapTargets(box);
+  let at = {l: r.left, t: r.top}, moved = false, ended = false;
+  try { g.setPointerCapture(e.pointerId); } catch {}
+  document.documentElement.style.overflowAnchor = 'none';       // the page must not scroll by itself as the note grows
+  const move = ev => {
+    if (ev.type === 'pointermove' && !ev.buttons && ev.pointerType === 'mouse') return up({type: 'lost'});
+    const free = noSnap(ev), dx = ev.clientX - sx, dy = ev.clientY - sy, vx = [], vy = [];
+    let l = r.left, t = r.top, rt = r.right, b = r.bottom;
+    const snap = (v, targets, hits) => { const s = free ? null : snapAxis([v], targets); if (s) hits.push(...s.hits); return s ? v + s.d : v; };
+    if (E) rt = Math.max(l + minW, Math.min(hr.right, snap(r.right + dx, xs, vx)));
+    if (W) l = Math.max(minL, Math.min(rt - minW, snap(r.left + dx, xs, vx)));
+    if (S) b = Math.max(t + minH, snap(r.bottom + dy, ys, vy));
+    if (N) t = Math.max(hr.top, Math.min(b - minH, snap(r.top + dy, ys, vy)));
+    moved = true;
+    if (E || W) box.style.width = Math.round((rt - l) / bz) + 'px';
+    if (S || N) { box.style.height = ''; box.style.minHeight = Math.round((b - t) / bz) + 'px'; }
+    // a note can't be smaller than its words, so the fixed side is worked out from the size it really has
+    const nr = box.getBoundingClientRect(), nl = W ? r.right - nr.width : r.left, nt = N ? r.bottom - nr.height : r.top;
+    at = {l: nl, t: nt};
+    if (fl) box.style.translate = `${(nl - r.left) / bz}px ${(nt - r.top) / bz}px`;
+    else {
+      if (W) box.style.marginLeft = (fm.contentW > 0 ? Math.max(0, nl - fm.cL) / fm.contentW * 100 : 0).toFixed(4) + '%';
+      if (N) {                    // (margins can join up, so check where the top really is and nudge)
+        let m = mt0 - (r.top - nt) / bz;
+        for (let k = 0; k < 3; k++) { box.style.marginTop = m + 'px'; const d = nt - box.getBoundingClientRect().top; if (Math.abs(d) < .4) break; m += d / bz; }
+      }
+    }
+    showGuides([...vx.map(h => ({x: h.v, a: Math.min(nt, h.r.top), b: Math.max(nt + nr.height, h.r.bottom)})), ...vy.map(h => ({y: h.v, a: Math.min(nl, h.r.left), b: Math.max(nl + nr.width, h.r.right)}))]);
+  };
+  const up = ev => {
+    if (ended) return; ended = true;
+    for (const [t, f] of [['pointermove', move], ['pointerup', up], ['pointercancel', up], ['lostpointercapture', up]]) g.removeEventListener(t, f);
+    hideGuides(); document.documentElement.style.overflowAnchor = '';
+    if (!moved) return;
+    if (fl) { box.style.translate = ''; setFloatPos(box, at.l, at.t); placeFloats(); spreadChips(); }
+    saveSoon();
+  };
+  g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up); g.addEventListener('lostpointercapture', up);
+}
 // a press that already did something: the click that ends it is ignored
 let swallowClick = false;
 function swallow(ms = 600){ swallowClick = true; setTimeout(() => { swallowClick = false; }, ms); }
@@ -3408,14 +3527,14 @@ function insertBoxAt(card, y, box){
 function placeFloats(root){
   for (const box of (root || main).querySelectorAll('.notebox.floating')) {
     const card = box.parentElement; if (!card || !card.matches('.slide, .sidepage')) continue;
-    const s = zoomOf(card) || 1, cr = card.getBoundingClientRect(), py = +box.dataset.py || 0;
+    const s = zoomOf(card) || 1, cr = card.getBoundingClientRect(), py = +box.dataset.py || 0, ct = card.clientTop * s;
     if (card.classList.contains('pagecard')) {
       const strips = [...card.querySelectorAll(':scope > .strip')];
       const atEnd = box.dataset.pe === '1';      // anchored to the bottom of the piece of page that ends at py
       const st = (atEnd && strips.find(x => Math.abs(+x.dataset.y1 - py) < 0.02)) || strips.find(x => py >= +x.dataset.y0 && py < +x.dataset.y1) || strips[strips.length - 1];
       if (!st) continue;
       const y0 = +st.dataset.y0, y1 = +st.dataset.y1, sr = st.getBoundingClientRect();
-      box.style.top = ((sr.top - cr.top + (Math.min(py, y1) - y0) / (y1 - y0) * sr.height) / s + (+box.dataset.oy || 0)).toFixed(2) + 'px';
+      box.style.top = ((sr.top - cr.top - ct + (Math.min(py, y1) - y0) / (y1 - y0) * sr.height) / s + (+box.dataset.oy || 0)).toFixed(2) + 'px';
     } else box.style.top = py.toFixed(2) + 'px';
     box.style.left = ((+box.dataset.px || 0) * 100).toFixed(4) + '%';
     if (card.classList.contains('sidepage') && box.offsetWidth) {         // a side note stays inside its page, even where the page is narrower
@@ -3430,13 +3549,13 @@ function toggleFloat(box){
   const cr = card.getBoundingClientRect(), br = box.getBoundingClientRect();
   delete box.dataset.oy; delete box.dataset.pe;
   if (!box.classList.contains('floating')) {
-    box.dataset.px = Math.max(0, (br.left - cr.left) / cr.width).toFixed(4);
+    box.dataset.px = Math.max(0, floatFrac(card, br.left)).toFixed(4);
     if (isPage) {
       const prev = box.previousElementSibling, next = box.nextElementSibling;
       box.dataset.py = prev?.classList.contains('strip') ? prev.dataset.y1 : next?.classList.contains('strip') ? next.dataset.y0 : 0;
-    } else box.dataset.py = ((br.top - cr.top) / s).toFixed(1);
+    } else box.dataset.py = ((br.top - cr.top - card.clientTop * s) / s).toFixed(1);
     if (!box.style.width || br.width > cr.width * 0.6) box.style.width = Math.round(cr.width * 0.4 / s) + 'px';
-    box.style.marginLeft = '';
+    box.style.marginLeft = ''; box.style.marginTop = '';
     box.remove(); if (isPage) mergeStrips(card);
     box.classList.add('floating'); card.append(box);
   } else {
@@ -3509,7 +3628,7 @@ const hLines = (hits, b) => hits.map(t => ({y: t.v, a: Math.min(b.left, t.r.left
 // store where a floating note sits, from its top-left corner on screen
 function setFloatPos(box, nl, nt){
   const card = box.parentElement, cr = card.getBoundingClientRect(), s = zoomOf(card) || 1;
-  box.dataset.px = ((nl - cr.left) / cr.width).toFixed(5);
+  box.dataset.px = floatFrac(card, nl);
   delete box.dataset.oy; delete box.dataset.pe;
   if (card.classList.contains('pagecard')) {
     const strips = [...card.querySelectorAll(':scope > .strip')].map(x => ({x, r: x.getBoundingClientRect(), y0: +x.dataset.y0, y1: +x.dataset.y1}));
@@ -3521,7 +3640,12 @@ function setFloatPos(box, nl, nt){
       if (above) { box.dataset.py = above.y1; box.dataset.pe = '1'; box.dataset.oy = ((nt - above.r.bottom) / s).toFixed(2); }
       else { box.dataset.py = strips[0].y0; box.dataset.oy = ((nt - strips[0].r.top) / s).toFixed(2); }
     }
-  } else box.dataset.py = ((nt - cr.top) / s).toFixed(2);
+  } else box.dataset.py = ((nt - cr.top - card.clientTop * s) / s).toFixed(2);
+}
+// how far across a page (inside its border) a screen position is
+function floatFrac(card, x){
+  const s = zoomOf(card) || 1;
+  return ((x - card.getBoundingClientRect().left - card.clientLeft * s) / (card.clientWidth * s)).toFixed(5);
 }
 // across-the-page position of a note between the lines: its room, and where it starts in it
 function flowMetrics(box){
@@ -3634,7 +3758,7 @@ function startMove(box, g, e){
     if (ev.type === 'pointercancel') return;
     const frac = contentW > 0 ? left / contentW : 0;
     if (target) {
-      const from = box.parentNode; box.remove(); mergeStrips(from);
+      const from = box.parentNode; box.remove(); mergeStrips(from); box.style.marginTop = '';
       if (target.card) insertBoxAt(target.card, target.y, box);
       else if (target.after) target.after.after(box);
       else (target.slide.querySelector('.content') || target.slide).prepend(box);
@@ -3650,7 +3774,7 @@ function insertAt(strip, y){
   if (y - y0 < 3) strip.before(box);
   else if (y1 - y < 3) strip.after(box);
   else strip.replaceWith(makeStrip(card, y0, y), box, makeStrip(card, y, y1));
-  focusNote(el);
+  autoAlign(box); focusNote(el);
   return {box, el};
 }
 // close the gap again when a note between two pieces of the same page is removed
@@ -3807,7 +3931,7 @@ async function openFiles(picked, here = false){
     main.append(head);
     try {
       await (read === readImage ? readImage(f) : read(await f.arrayBuffer(), f.name));
-      if (ext === 'pptx' && head.nextElementSibling && pref.get('pptx-tip') !== 'off') head.after(pptxTip(pptxMode(), f));
+      if (ext === 'pptx' && head.nextElementSibling && pref.get('pptx-tip') !== 'off' && tipsOn()) head.after(pptxTip(pptxMode(), f));
       first ??= head;
       toast(''); saveSoon();
     } catch (err) {
@@ -3833,11 +3957,11 @@ $('#clear').onclick = () => {
   const b = $('#clear'), label = b.querySelector('span');
   clearTimeout(clearTimer);
   if (!b.classList.contains('sure')) {
-    b.classList.add('sure'); label.textContent = 'Clear this notebook? Click again';
-    clearTimer = setTimeout(() => { b.classList.remove('sure'); label.textContent = 'Clear this notebook'; }, 3000);
+    b.classList.add('sure'); label.textContent = 'Clear notebook? Click again';
+    clearTimer = setTimeout(() => { b.classList.remove('sure'); label.textContent = 'Clear notebook'; }, 3000);
     return;
   }
-  b.classList.remove('sure'); label.textContent = 'Clear this notebook';
+  b.classList.remove('sure'); label.textContent = 'Clear notebook';
   main.innerHTML = ''; clearMediaSel(); clearMulti(); active = null; savedRange = null; showEmpty(); paginateView(); saveSoon();
   toast('This notebook was cleared. Press Back (Ctrl+Z) to bring it back.');
 };
@@ -4222,7 +4346,7 @@ const LAYOUTS = {'default': null, 'a4-portrait': [595.28, 841.89], 'a4-landscape
 let layout = pref.get('pdf-layout', 'default');
 if (!(layout in LAYOUTS)) layout = 'default';
 $('#layout').value = layout;
-$('#layout').onchange = e => { layout = e.target.value; pref.set('pdf-layout', layout); paginateView(); if (LAYOUTS[layout] && side.on) toast('Side notes are hidden in A4 and A3 layouts. They are still saved, and come back in the Default layout.'); };
+$('#layout').onchange = e => { layout = e.target.value; pref.set('pdf-layout', layout); paginateView(); if (LAYOUTS[layout] && side.on) hint('Side notes are hidden in A4 and A3 layouts. They are still saved, and come back in the Default layout.'); };
 // ================= page layout on screen: A4 / A3 sheets, portrait or landscape =================
 let viewZoom = 1, pageTimer = null;
 const pxSize = ([pw, ph]) => [Math.round(pw * 96 / 72), Math.round(ph * 96 / 72)];   // points to screen pixels
@@ -4711,7 +4835,7 @@ $('#readBtn').onclick = () => {
   pref.set('study-mode', reading ? '1' : '0');
   if (reading) { if (document.activeElement?.closest?.('.mine')) document.activeElement.blur(); active = null; savedRange = null; hideGap(); closeInsMenu(); clearMediaSel(); fPanel.hidden = true; }
   applyReadMode(); spellAll();
-  toast(reading ? 'Study mode: nothing can be changed by accident. You can still open and minimise notes.' : '');
+  if (reading) hint('Study mode: nothing can be changed by accident. You can still open and minimise notes.'); else toast('');
 };
 
 // ================= spell check =================
@@ -5028,7 +5152,7 @@ function selectAllNotes(card){
   $('#multiCount').textContent = `${boxes.length} note${boxes.length > 1 ? 's' : ''} selected`;
   $('#multibar').hidden = false; document.body.classList.add('multi');
   showStyle(noteStyle(boxes[0].querySelector('.mine'))); showBox(boxOf(boxes[0]));
-  toast('Change the font, size or colours in the toolbar, drag a move handle or use the arrow keys to move them, or press Delete. Esc to finish.');
+  hint('Change the font, size or colours in the toolbar, drag a move handle or use the arrow keys to move them, line them up on the Box tab, or press Delete. Esc to finish.');
 }
 function deleteMulti(){
   const n = multi.size; if (!n) return;
@@ -5105,6 +5229,112 @@ document.addEventListener('mousedown', e => {
   clearMulti();
 }, true);
 main.addEventListener('focusin', e => { if (multi.size && e.target.closest?.('.mine')) clearMulti(); });
+
+// ================= Align (Box tab): line up the selected notes, and Auto-align for new ones =================
+// a note's left edge, in screen pixels, keeping its width (a floating note stays inside its page; a note between the lines inside its room)
+function setBoxLeft(b, x){
+  if (b.classList.contains('floating')) {
+    const cr = b.parentElement.getBoundingClientRect(), w = b.getBoundingClientRect().width;
+    b.dataset.px = floatFrac(b.parentElement, Math.max(cr.left, Math.min(cr.right - w, x)));
+  } else { const m = flowMetrics(b); setFlowLeft(b, m, x - m.cL); }
+}
+// the notes to line up: the ones selected (Select all), else the one you are writing in
+const alignTargets = () => (multi.size ? [...multi] : [noteActive()?.closest('.notebox')]).filter(b => b?.isConnected && !b.classList.contains('collapsed') && !b.classList.contains('inline'));
+// each page's notes on their own (a page and its side page are lined up separately)
+function alignGroups(boxes){
+  const g = new Map();
+  for (const b of boxes) { const k = b.closest('.sidepage, .slide'); if (!g.has(k)) g.set(k, []); g.get(k).push(b); }
+  return [...g.values()];
+}
+// every Align button is one step you can go Back over: what is waiting to be saved goes into the history first
+async function alignAct(fn){
+  if (reading) return;
+  const boxes = alignTargets(); if (!boxes.length) { toast('Select some notes first: Select all on this tab, or click in a note.'); return; }
+  await flushSave();
+  const done = fn(boxes);
+  if (!done) return;
+  placeFloats(); spreadChips(); saveSoon(); toast(done);
+}
+function alignTo(how){
+  return boxes => {
+    for (const g of alignGroups(boxes)) {
+      const rs = g.map(b => b.getBoundingClientRect());
+      let L = Math.min(...rs.map(r => r.left)), R = Math.max(...rs.map(r => r.right));
+      if (g.length === 1) {            // on its own: the edges of its page, less the side margins it has
+        const b = g[0], cs = getComputedStyle(b), z = zoomOf(b);
+        if (b.classList.contains('floating')) { const cr = b.parentElement.getBoundingClientRect(); L = cr.left; R = cr.right; }
+        else { const m = flowMetrics(b), inset = (parseFloat(cs.marginRight) || 0) * z; L = m.cL + inset; R = m.cL + m.contentW - inset; }
+      }
+      g.forEach((b, i) => setBoxLeft(b, how === 'left' ? L : how === 'right' ? R - rs[i].width : (L + R) / 2 - rs[i].width / 2));
+    }
+    return `Lined up ${boxes.length} note${boxes.length > 1 ? 's' : ''} on the ${how === 'center' ? 'middle' : how}.`;
+  };
+}
+function sameWidth(boxes){
+  const groups = alignGroups(boxes).filter(g => g.length > 1);
+  if (!groups.length) { toast('Select two or more notes to give them the same width.'); return ''; }
+  for (const g of groups) {
+    const w = Math.max(...g.map(b => b.getBoundingClientRect().width));
+    for (const b of g) { const left = b.getBoundingClientRect().left; b.style.width = Math.round(w / zoomOf(b)) + 'px'; setBoxLeft(b, left); }
+  }
+  return 'Gave the notes the same width.';
+}
+// three or more floating notes (or sticky notes) on a page: the top and bottom ones stay, the rest are spaced evenly between
+function distribute(boxes){
+  let n = 0;
+  for (const g of alignGroups(boxes.filter(b => b.classList.contains('floating')))) {
+    if (g.length < 3) continue;
+    const it = g.map(b => ({b, r: b.getBoundingClientRect()})).sort((a, c) => a.r.top - c.r.top);
+    const end = it.at(-1).r.bottom, gap = Math.max(0, (end - it[0].r.top - it.reduce((t, x) => t + x.r.height, 0)) / (it.length - 1));
+    let y = it[0].r.top;
+    for (const x of it) { setFloatPos(x.b, x.r.left, y); y += x.r.height + gap; n += 1; }
+  }
+  if (!n) { toast('Distribute spaces three or more floating notes or sticky notes evenly. Select them first.'); return ''; }
+  return `Spaced ${n} notes evenly.`;
+}
+// every note between the lines on a page lines up with the leftmost one; their order does not change, and floating notes stay where they are
+function tidyPage(){
+  if (reading) return;
+  const card = (multi.size ? [...multi][0].closest('.slide') : null) || currentCard();
+  const flow = card ? [...card.querySelectorAll('.notebox:not(.floating):not(.inline):not(.collapsed)')].filter(hasContent) : [];
+  if (flow.length < 2) { toast('Tidy page needs two or more notes between the lines on the page.'); return; }
+  flushSave().then(() => {
+    const L = Math.min(...flow.map(b => b.getBoundingClientRect().left));
+    flow.forEach(b => setBoxLeft(b, L));
+    saveSoon(); toast(`Tidied ${flow.length} notes: they now line up on the left.`);
+  });
+}
+function setAutoAlign(on){
+  pref.set('auto-align', on ? '1' : '0'); $('#autoAlign').checked = on;
+  toast(on ? 'Auto-align is on: new notes line up with the note above or below.' : 'Auto-align is off.');
+}
+// a new note between the lines lines up with the left edge of the nearest note above or below it on the page, when that is within 40px;
+// its right edge stays where it was, so it narrows (or widens) a little
+function autoAlign(box){
+  if (!autoAlignOn() || box.classList.contains('floating') || box.classList.contains('inline')) return;
+  const card = box.closest('.slide'); if (!card) return;
+  const br = box.getBoundingClientRect(), z = zoomOf(box); if (!br.width) return;
+  let best = null;
+  for (const o of card.querySelectorAll('.notebox:not(.floating):not(.inline):not(.collapsed)')) {
+    if (o === box || !hasContent(o)) continue;
+    const r = o.getBoundingClientRect(), d = Math.abs(r.left - br.left);
+    if (!r.width || d > 40 * z) continue;
+    const gap = Math.max(0, r.top - br.bottom, br.top - r.bottom);
+    if (!best || gap < best.gap) best = {gap, left: r.left};
+  }
+  if (!best || Math.abs(best.left - br.left) < .5) return;
+  const m = flowMetrics(box), left = Math.max(m.cL, best.left);
+  box.style.width = Math.round((br.right - left) / z) + 'px';
+  box.style.marginLeft = (m.contentW > 0 ? (left - m.cL) / m.contentW * 100 : 0).toFixed(4) + '%';
+}
+$('#alLeft').onclick = () => alignAct(alignTo('left'));
+$('#alCenter').onclick = () => alignAct(alignTo('center'));
+$('#alRight').onclick = () => alignAct(alignTo('right'));
+$('#alWidth').onclick = () => alignAct(sameWidth);
+$('#alDist').onclick = () => alignAct(distribute);
+$('#alTidy').onclick = tidyPage;
+$('#autoAlign').checked = autoAlignOn();
+$('#autoAlign').onchange = e => setAutoAlign(e.target.checked);
 
 // ================= ⚙ Help & settings =================
 const settingsBox = $('#settings'), helpBtn = $('#helpBtn');
@@ -5241,7 +5471,7 @@ function setBar(mode){
 $('#barModes').addEventListener('click', e => {
   const b = e.target.closest('[data-mode]'); if (!b) return;
   setBar(b.dataset.mode);
-  if (b.dataset.mode === 'hidden') toast('Toolbar hidden. Bring it back with Show toolbar at the top right.');
+  if (b.dataset.mode === 'hidden') hint('Toolbar hidden. Bring it back with Show toolbar at the top right.');
 });
 $('#ribbonFold').onclick = () => setBar(barMode === 'compact' ? 'full' : 'compact');
 $('#showBar').onclick = () => setBar(pref.get('bar-last') === 'compact' ? 'compact' : 'full');
@@ -5454,7 +5684,7 @@ function setFocus(on){
   else for (const k in panelOpen) panelEl[k].hidden = !panelOpen[k];
   relayout();
 }
-$('#focusBtn').onclick = () => { setFocus(true); toast('Focus mode: just your pages and notes. Press Esc or Exit focus to bring the tools back.'); };
+$('#focusBtn').onclick = () => { setFocus(true); hint('Focus mode: just your pages and notes. Press Esc or Exit focus to bring the tools back.'); };
 $('#focusExit').onclick = () => setFocus(false);
 document.addEventListener('keydown', e => {
   if (!focusMode) {
@@ -5557,7 +5787,7 @@ document.addEventListener('keydown', e => {
   if (!(e.ctrlKey || e.metaKey) || e.altKey || e.key.toLowerCase() !== 's') return;
   e.preventDefault(); flushSave();
   if (main.querySelector('.slide')) { saveMenu.hidden = false; $('#save').setAttribute('aria-expanded', 'true'); }
-  toast('Your work saves itself in this browser. To keep a copy, download a PDF or a notebook file.');
+  hint('Your work saves itself in this browser. To keep a copy, download a PDF or a notebook file.');
 });
 
 // ================= notebooks, Notion style: each file you open is its own notebook in the sidebar =================
@@ -5658,10 +5888,12 @@ function openDocMenu(id, from, kind = 'doc'){
   if (kind === 'folder') docMenu.innerHTML = folderMenuHtml(id);
   else {
     const fav = docs.find(x => x.id === id)?.fav;
-    docMenu.innerHTML = `<button type="button" role="menuitem" data-act="rename">${icon('pen')}Rename</button><button type="button" role="menuitem" data-act="duplicate">${icon('copy')}Duplicate</button>` +
-      (id !== curId ? `<button type="button" role="menuitem" data-act="beside">${icon('panel-right')}${id === bs.id ? 'Close beside' : 'Open beside'}</button>` : '') +
+    docMenu.innerHTML = `<button type="button" role="menuitem" data-act="rename">${icon('pen')}Rename</button>` +
+      `<button type="button" role="menuitem" data-act="fav">${icon(fav ? 'star-off' : 'star')}${fav ? 'Remove from Favourites' : 'Add to Favourites'}</button>` +
       (folders.length ? `<button type="button" role="menuitem" data-act="move" aria-expanded="false">${icon('folder')}Move to…</button>` : '') +
-      `<button type="button" role="menuitem" data-act="fav">${icon(fav ? 'star-off' : 'star')}${fav ? 'Remove from Favourites' : 'Add to Favourites'}</button><button type="button" role="menuitem" data-act="share" title="Save this notebook to Google Drive and share it with people or by link">${icon('drive')}Share via Google Drive…</button><button type="button" role="menuitem" data-act="odshare" title="Save this notebook to OneDrive and share it with people or by link">${icon('onedrive')}Share via OneDrive…</button><hr><button type="button" role="menuitem" data-act="trash">${icon('trash')}Move to Trash</button>`;
+      `<hr><button type="button" role="menuitem" data-act="duplicate">${icon('copy')}Duplicate</button>` +
+      (id !== curId ? `<button type="button" role="menuitem" data-act="beside">${icon('panel-right')}${id === bs.id ? 'Close beside' : 'Open beside'}</button>` : '') +
+      `<button type="button" role="menuitem" data-act="share" title="Save this notebook to Google Drive and share it with people or by link">${icon('drive')}Share via Google Drive…</button><button type="button" role="menuitem" data-act="odshare" title="Save this notebook to OneDrive and share it with people or by link">${icon('onedrive')}Share via OneDrive…</button><hr><button type="button" role="menuitem" class="danger" data-act="trash">${icon('trash')}Move to Trash</button>`;
   }
   docMenu.hidden = false; placeMenu();
   docMenu.querySelector('button').focus();
@@ -6588,14 +6820,28 @@ document.addEventListener('keydown', e => { if (sidePick && e.key === 'Escape') 
 
 // ---------- the View tab: Side notes, Sync scrolling, Link lines and Background ----------
 const sideBgPop = document.createElement('div');
-sideBgPop.id = 'sideBgPop'; sideBgPop.className = 'pop sidebg'; sideBgPop.hidden = true; sideBgPop.setAttribute('role', 'dialog'); sideBgPop.setAttribute('aria-label', 'Side page background');
-sideBgPop.innerHTML = '<h3>Colour</h3><div class="sws">' + SIDE_BGS.map(([c, n]) => `<button type="button" class="sw" data-c="${c}" style="--c:${c}" title="${n}" aria-label="${n}" aria-pressed="false"></button>`).join('') +
+sideBgPop.id = 'sideBgPop'; sideBgPop.className = 'pop sidebg'; sideBgPop.hidden = true; sideBgPop.setAttribute('role', 'dialog'); sideBgPop.setAttribute('aria-labelledby', 'sideBgTitle');
+sideBgPop.innerHTML = '<h2 id="sideBgTitle">Side page background</h2><p>The paper behind your side notes</p><h3>Colour</h3><div class="sws">' + SIDE_BGS.map(([c, n]) => `<button type="button" class="sw" data-c="${c}" style="--c:${c}" title="${n}" aria-label="${n}" aria-pressed="false"></button>`).join('') +
   '</div><label class="cust"><input type="color" id="sideCustom" aria-label="Custom colour"> Custom colour</label><h3>Pattern</h3><div class="pats">' +
   SIDE_PATS.map(([p, n]) => `<button type="button" class="btn outline pat" data-pat="${p}" title="${n}: ${{plain: 'a blank page', lined: 'ruled lines', grid: 'small squares', dots: 'a grid of dots'}[p]}" aria-pressed="false"><span class="pv" data-pat="${p}"></span>${n}</button>`).join('') + '</div>';
 document.body.append(sideBgPop);
+// the palette button that shows in the corner of the side page you point at (or tap)
+const sideCorner = document.createElement('button');
+sideCorner.type = 'button'; sideCorner.id = 'sideBgCorner'; sideCorner.className = 'btn sidecorner'; sideCorner.hidden = true;
+sideCorner.setAttribute('aria-haspopup', 'dialog'); sideCorner.setAttribute('aria-expanded', 'false'); sideCorner.setAttribute('aria-label', 'Side page background');
+sideCorner.title = 'Side page background: change the colour and pattern of the paper'; sideCorner.innerHTML = icon('palette');
+document.body.append(sideCorner);
+let sideBgFrom = null;
+const SIDE_BG_TIP = 'Side page background: the colour and pattern of the paper behind your side notes';
 function sidePaintUi(){
   const set = (id, on) => $(id)?.setAttribute('aria-pressed', on);
   set('#sideBtn', side.on); set('#sideSync', side.sync); set('#sideLinks', side.links);
+  const bb = $('#sideBgBtn'), sw = $('#sideSw'), wrap = $('#sideBgWrap'), tip = side.on ? SIDE_BG_TIP : 'Turn on side pages first';
+  bb.disabled = !side.on; bb.removeAttribute('title'); bb.dataset.tip = tip; bb.setAttribute('aria-description', tip);
+  if (side.on) wrap.removeAttribute('data-tip'); else { wrap.dataset.tip = tip; closeSideBg(); }      // (a disabled button can't be pointed at, so its box carries the tip)
+  sw.style.setProperty('--pvbg', side.bg); sw.dataset.pat = side.pat; sw.classList.toggle('dark', sideDark(side.bg));
+  bb.setAttribute('aria-label', `Side page background: ${(SIDE_BGS.find(b => b[0] === side.bg) || [0, 'custom colour'])[1].toLowerCase()}, ${side.pat}`);
+  if (!side.on) sideCornerHide();
   sideBgPop.querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === side.bg));
   sideBgPop.querySelectorAll('.pat').forEach(b => b.setAttribute('aria-pressed', b.dataset.pat === side.pat));
   sideBgPop.querySelectorAll('.pv').forEach(v => { v.style.setProperty('--pvbg', side.bg); v.classList.toggle('dark', sideDark(side.bg)); });
@@ -6607,37 +6853,69 @@ function sideSet(change){
   main.querySelectorAll('.sidepage').forEach(sideStyle);
   sidePaintUi(); saveSoon();
 }
+// the pop-up sits under the button that opened it (or at the top right, when that is out of sight)
 function placeSideBg(){
-  const b = $('#sideBgBtn').getBoundingClientRect(), w = sideBgPop.offsetWidth;
-  sideBgPop.style.left = Math.max(8, Math.min(innerWidth - w - 8, b.left)) + 'px';
-  sideBgPop.style.top = (b.bottom + 6) + 'px';
+  const w = sideBgPop.offsetWidth, a = sideBgFrom?.getClientRects().length ? sideBgFrom.getBoundingClientRect() : null;
+  sideBgPop.style.left = Math.max(8, Math.min(innerWidth - w - 8, a ? a.left : innerWidth - w - 16)) + 'px';
+  sideBgPop.style.top = Math.max(8, Math.min(innerHeight - sideBgPop.offsetHeight - 8, a ? a.bottom + 6 : appbar.getBoundingClientRect().bottom + 8)) + 'px';
 }
-function closeSideBg(){ sideBgPop.hidden = true; $('#sideBgBtn').setAttribute('aria-expanded', 'false'); }
+function openSideBg(from){
+  if (!side.on) { toast('Turn on side pages first: View › Side notes.'); return; }
+  sideBgFrom = from; sideBgPop.hidden = false; placeSideBg();
+  for (const b of [$('#sideBgBtn'), sideCorner]) b.setAttribute('aria-expanded', b === from);
+}
+function closeSideBg(){ sideBgPop.hidden = true; for (const b of [$('#sideBgBtn'), sideCorner]) b.setAttribute('aria-expanded', 'false'); if (!sideCornerSp) sideCornerHide(); }
+// show the palette button in the top right corner of a side page (the part of it you can see), until you point or tap elsewhere
+let sideCornerSp = null;
+function sideCornerPlace(){
+  const sp = sideCornerSp; if (!sp?.isConnected || !sideShown()) { sideCornerHide(); return; }
+  const r = sp.getBoundingClientRect(), col = sp.closest('.sidecol')?.getBoundingClientRect();
+  const top = Math.max(r.top, col ? col.top : 0, appbar.getBoundingClientRect().bottom) + 6, right = Math.min(r.right, col ? col.right : r.right, innerWidth) - 8;
+  if (top + 34 > Math.min(r.bottom, innerHeight - 34) || right - r.left < 60) { sideCorner.hidden = true; return; }
+  sideCorner.hidden = false;
+  sideCorner.style.top = top + 'px'; sideCorner.style.left = (right - sideCorner.offsetWidth) + 'px';
+}
+function sideCornerShow(sp){ sideCornerSp = sp; sideCornerPlace(); }
+function sideCornerHide(){ sideCornerSp = null; if (sideBgPop.hidden || sideBgFrom !== sideCorner) sideCorner.hidden = true; }
 $('#sideBtn').onclick = () => {
   if (!main.querySelector('.slide')) { toast('Open a file first, then turn on side notes.'); return; }
   if (LAYOUTS[layout]) { toast('Side notes show in the Default layout. Choose Layout: Default first.'); return; }
   side.on = !side.on;
   main.querySelectorAll('.sidepage').forEach(sideStyle);
   sideLayout(); saveSoon();
-  toast(side.on ? 'Side notes on: click a side page to write a note beside its slide.' : 'Side notes hidden. They stay saved, and come back when you turn them on.');
+  hint(side.on ? 'Side notes on: click a side page to write a note beside its slide.' : 'Side notes hidden. They stay saved, and come back when you turn them on.');
 };
 $('#sideSync').onclick = () => {
   side.sync = !side.sync; pref.set('side-sync', side.sync ? '1' : '0'); sideLayout();
-  if (side.on && !LAYOUTS[layout]) toast(side.sync ? 'Sync scrolling: each side page sits beside its slide again.' : 'Sync scrolling off: the side pages scroll by themselves in a column on the right.');
+  if (side.on && !LAYOUTS[layout]) hint(side.sync ? 'Sync scrolling: each side page sits beside its slide again.' : 'Sync scrolling off: the side pages scroll by themselves in a column on the right.');
 };
 $('#sideLinks').onclick = () => { side.links = !side.links; pref.set('side-links', side.links ? '1' : '0'); sidePaintUi(); sideDraw(); };
-$('#sideBgBtn').onclick = e => {
+for (const b of [$('#sideBgBtn'), sideCorner]) b.onclick = e => {
   e.stopPropagation();
-  if (!sideBgPop.hidden) { closeSideBg(); return; }
-  sideBgPop.hidden = false; $('#sideBgBtn').setAttribute('aria-expanded', 'true'); placeSideBg();
+  if (!sideBgPop.hidden) { const same = sideBgFrom === b; closeSideBg(); if (same) return; }
+  openSideBg(b);
 };
+// pointing at a side page (or tapping it with a finger or pen) shows the corner button; pointing elsewhere puts it away
+document.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'mouse' || e.buttons || !side.on) return;
+  const sp = e.target.closest?.('.sidepage');
+  if (sp) { if (sp !== sideCornerSp) sideCornerShow(sp); }
+  else if (sideCornerSp && !e.target.closest?.('#sideBgCorner, #sideBgPop')) sideCornerHide();
+});
+document.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' || !side.on) return;
+  const sp = e.target.closest?.('.sidepage');
+  if (sp) sideCornerShow(sp); else if (!e.target.closest?.('#sideBgCorner, #sideBgPop')) sideCornerHide();
+}, true);
+addEventListener('scroll', () => { if (sideCornerSp) sideCornerPlace(); }, {passive: true, capture: true});
+addEventListener('resize', () => { if (sideCornerSp) sideCornerPlace(); });
 sideBgPop.addEventListener('click', e => {
   const sw = e.target.closest('.sw'), pt = e.target.closest('.pat');
   if (sw) sideSet({bg: sw.dataset.c}); else if (pt) sideSet({pat: pt.dataset.pat});
 });
 $('#sideCustom').addEventListener('input', e => sideSet({bg: e.target.value}));
-document.addEventListener('mousedown', e => { if (!sideBgPop.hidden && !sideBgPop.contains(e.target) && !$('#sideBgBtn').contains(e.target)) closeSideBg(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sideBgPop.hidden) { e.stopPropagation(); closeSideBg(); $('#sideBgBtn').focus(); } }, true);
+document.addEventListener('mousedown', e => { if (!sideBgPop.hidden && !sideBgPop.contains(e.target) && !$('#sideBgBtn').contains(e.target) && !sideCorner.contains(e.target)) closeSideBg(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sideBgPop.hidden) { e.stopPropagation(); const f = sideBgFrom; closeSideBg(); f?.focus(); } }, true);
 addEventListener('resize', () => { if (!sideBgPop.hidden) placeSideBg(); });
 addEventListener('scroll', () => { if (!sideBgPop.hidden) placeSideBg(); }, {passive: true});
 // the bar that shows when you select words: one more choice
@@ -7167,7 +7445,24 @@ document.addEventListener('keydown', e => {
   e.preventDefault();
   const t = THEMES[(THEMES.indexOf(themeNow()) + 1) % THEMES.length]; setTheme(t); toast('Theme: ' + THEME_NAMES[t]);
 });
-paintStar(); fillPrefs(); paintUiFont(); paintTheme();
+// Show tips, Button tooltips: in Help & settings, the View tab and Ctrl+K
+function paintTips(){
+  $('#setTips').checked = tipsOn(); $('#setTooltips').checked = qtipsOn();
+  $('#tipsBtn').setAttribute('aria-pressed', tipsOn());
+  if (tipsOn()) delete document.documentElement.dataset.tips; else document.documentElement.dataset.tips = 'off';
+}
+function setTips(on){
+  pref.set('tips', on ? '1' : '0'); paintTips();
+  toast(on ? 'Tips are on.' : 'Tips are off. Turn them back on in the View tab or Help & settings.');
+}
+function setTooltips(on){
+  pref.set('tooltips', on ? '1' : '0'); hideTip(); paintTips();
+  toast(on ? 'Button tooltips are on.' : 'Button tooltips are off. Turn them back on in Help & settings.');
+}
+$('#setTips').onchange = e => setTips(e.target.checked);
+$('#setTooltips').onchange = e => setTooltips(e.target.checked);
+$('#tipsBtn').onclick = () => setTips(!tipsOn());
+paintStar(); fillPrefs(); paintUiFont(); paintTheme(); paintTips();
 $('#penAuto').checked = penAuto();
 $('#penAuto').onchange = e => { pref.set('pen-auto', e.target.checked ? '1' : '0'); toast(e.target.checked ? 'The Pencil now draws by itself.' : 'The Pencil now draws only while Draw is on.'); };
 
@@ -8572,7 +8867,7 @@ function addNoteToPage(text){
   const card = currentCard() || firstPage();
   const {box, el} = makeBox();
   if (card.classList.contains('pagecard')) card.append(box); else (card.querySelector('.content') || card).append(box);
-  el.innerText = text;
+  el.innerText = text; autoAlign(box);
   if (LAYOUTS[layout]) paginateView();
   showAdded(box);
   toast(`Added to page ${[...main.querySelectorAll('.slide')].indexOf(card) + 1}.`);
@@ -8658,6 +8953,10 @@ const CK_ACTIONS = [
   {id: 'drivenbs', label: 'Your notebooks in Drive', ico: 'drive', words: 'google drive sync carry on continue another device ipad phone laptop cloud', ok: () => !!GDRIVE.clientId, run: () => driveNotebooks()},
   {id: 'focus', label: 'Focus mode', ico: 'focus', hint: 'Ctrl+Shift+F', words: 'hide toolbar panels distraction', run: ckClick('#focusBtn')},
   {id: 'study', label: 'Study mode', ico: 'book', words: 'read only revise', run: ckClick('#readBtn')},
+  {id: 'sidebg', label: 'Side page background', ico: 'palette', words: 'side notes paper colour pattern lined grid dots cream dark', run: () => openSideBg($('#sideBgBtn'))},
+  {id: 'tips', label: 'Show tips on or off', ico: 'lightbulb', words: 'help hints coach teaching messages', run: () => setTips(!tipsOn())},
+  {id: 'tooltips', label: 'Button tooltips on or off', ico: 'help', words: 'hover pop up labels help', run: () => setTooltips(!qtipsOn())},
+  {id: 'autoalign', label: 'Auto-align notes on or off', ico: 'nalign-left', words: 'align line up box left edge tidy', run: () => setAutoAlign(!autoAlignOn())},
   {id: 'pdf', label: 'Download PDF', ico: 'download', words: 'save export print', ok: ckPages, run: ckDownload('pdf')},
   {id: 'file', label: 'Download notebook file', ico: 'download', words: 'save export html backup', ok: ckPages, run: ckDownload('notebook')},
   {id: 'md', label: 'Download notes as Markdown', ico: 'download', words: 'save export md text notion', ok: ckPages, run: ckDownload('markdown')},
@@ -8946,7 +9245,8 @@ addEventListener('online', showOffline); addEventListener('offline', showOffline
 // ================= tooltips: a short note on what each control does, after a brief pause =================
 // they take the place of the browser's own (slow, plain) tooltips: a tooltip shows about half a second after you point
 // at something, straight away as you move along to the next one, for keyboard focus too, and goes as soon as you click,
-// scroll, type or move off. Touch screens don't get them.
+// scroll, type or move off. Touch screens don't get them. With Button tooltips off they never show, but a title still moves out
+// (so the browser's own doesn't show either) and stays readable by screen readers.
 const qtip = Object.assign(document.createElement('div'), {className: 'qtip', id: 'qtip', hidden: true});
 qtip.setAttribute('role', 'tooltip');
 document.body.append(qtip);
@@ -8991,7 +9291,7 @@ function placeQtip(el){
 function showTip(el, now){
   clearTimeout(tipTimer);
   const text = tipText(el);
-  if (!text || text === el.textContent.trim()) { hideTip(); return; }     // nothing to add to what it already says
+  if (!text || text === el.textContent.trim() || !qtipsOn()) { hideTip(); return; }     // nothing to add to what it already says, or Button tooltips is off
   if (!qtip.hidden) { qtip.hidden = true; qtip.classList.remove('on'); tipHiddenAt = Date.now(); }
   tipFor = el;
   const wait = now || Date.now() - tipHiddenAt < 600 ? 0 : 450;
