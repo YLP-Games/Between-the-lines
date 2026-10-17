@@ -96,7 +96,15 @@ input[type=color]{width:28px;height:28px;padding:0;border:1px solid var(--line-s
 .tab{height:36px;padding:0 14px;border:none;border-bottom:2px solid transparent;background:none;font:inherit;font-size:13.5px;color:var(--muted);cursor:pointer;margin-bottom:-1px}
 .tab:hover{color:var(--ink)}
 .tab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
-.panel{display:flex;align-items:stretch;gap:2px;padding:6px 0;height:64px;box-sizing:border-box;overflow-x:auto;scrollbar-width:thin}
+.panel{--sbh:9px;display:flex;align-items:stretch;gap:2px;padding:6px 0;height:calc(64px + var(--sbh));margin-bottom:calc(0px - var(--sbh));box-sizing:border-box;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:transparent transparent;transition:scrollbar-color .25s}
+/* the scroll bar sits in a strip (--sbh) below the tools that the next row overlaps, so it never squeezes them; it is clear, and shows while you point at the ribbon or scroll it; a soft fade at an edge says there is more that way */
+.ribbon:hover .panel,.panel.scrolling{scrollbar-color:var(--line-strong) transparent}
+@supports not (scrollbar-color:auto){.panel::-webkit-scrollbar{height:7px}.panel::-webkit-scrollbar-thumb{border-radius:4px;background:transparent}.ribbon:hover .panel::-webkit-scrollbar-thumb,.panel.scrolling::-webkit-scrollbar-thumb{background:var(--line-strong)}}
+.panel::before,.panel::after{content:"";position:sticky;flex:none;width:32px;align-self:stretch;z-index:3;pointer-events:none;opacity:0;transition:opacity .2s}
+.panel::before{left:0;margin-right:-34px;background:linear-gradient(to right,var(--surface) 25%,transparent)}
+.panel::after{right:0;margin-left:-34px;background:linear-gradient(to left,var(--surface) 25%,transparent)}
+.panel.more-l::before,.panel.more-r::after{opacity:1}
+@media (prefers-reduced-motion:reduce){.panel,.panel::before,.panel::after{transition:none}}
 .ribbon.compact:not(.peek) .panel{display:none}
 .ribbon.compact.peek .panel{position:absolute;left:0;right:0;top:100%;padding:6px var(--gutter-r) 6px var(--gutter-l);background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 8px 16px rgba(16,24,40,.12)} /* taste-skill-ignore: the folded toolbar floats over the page */
 .ribbon.compact .tab[aria-selected="true"]:not(.peeking){font-weight:400;border-bottom-color:transparent;color:var(--muted)}
@@ -182,7 +190,7 @@ body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
 @media (max-width:640px){
   .titlebar .brand,.vr,.btn .lbl,.cap,.savestate span,#save .chev{display:none}
   .titlebar{gap:0;padding-inline:6px}
-  .panel{height:auto}
+  .panel{height:auto;margin-bottom:0}
   .titlebar .btn{min-width:32px;padding:0 6px}
   .doc-title{font-size:13px}
 }
@@ -195,9 +203,13 @@ body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
 .statusbar .btn .i{width:16px;height:16px}
 
 /* ================= the document ================= */
-main{position:relative;z-index:0;flex:1 1 0;min-width:0;max-width:960px;margin:0 auto;padding-block:24px calc(120px + var(--status-h));padding-inline:16px;display:flex;flex-direction:column;gap:16px}
+main{--cw:960px;--sidew:560px;--z:1;position:relative;z-index:0;flex:1 1 0;min-width:0;max-width:960px;margin:0 auto;padding-block:24px calc(120px + var(--status-h));padding-inline:16px;display:flex;flex-direction:column;gap:16px}
 main.paged{max-width:none;align-items:center;gap:24px}
-.slide,.sheet,.file-head,.notebox{scroll-margin-top:calc(var(--appbar-h) + 16px);scroll-margin-bottom:calc(var(--status-h) + 16px)}
+/* a slide, its side page and its notes are laid out at one fixed width and scaled to the room there is (main's zoom, --z), so nothing moves or rewraps when the window or a panel changes */
+main.fit{max-width:none;align-items:center}
+main.fit > :not(.sidewrap){width:var(--cw);flex:none}
+main.fit > .sidepage{width:var(--sidew)}
+.slide,.sheet,.file-head,.notebox{scroll-margin-top:calc((var(--appbar-h) + 16px) / var(--z,1));scroll-margin-bottom:calc((var(--status-h) + 16px) / var(--z,1))}
 .sheet{width:var(--sheet-w);min-height:var(--sheet-h);background:#fff;padding:48px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;flex-shrink:0;color:#1b2330}
 .sheet > .slide{box-shadow:none;border-radius:0;flex-shrink:0;align-self:center;width:100%}
 .sheet > .file-head{margin:0;color:#1b2330}
@@ -888,18 +900,22 @@ main.side-on .sidepage{display:block}
 .sidepage .g-float{display:none}
 .sidepage > .notebox.floating.collapsed > .note-chip{left:calc(4px + var(--ci, 0) * 23px)}
 /* beside the slides: two columns, each side page in the row of its slide (the row is as tall as the taller of the two) */
-main.side-on{max-width:1500px}
-main.side-on:not(.side-split){display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);column-gap:18px;row-gap:16px;align-items:start}
-main.side-on:not(.side-split) > .file-head{grid-column:1 / -1}
-main.side-on:not(.side-split) > .slide{grid-column:1}
-main.side-on:not(.side-split) > .sidepage{grid-column:2;align-self:stretch}
-/* sync scrolling off: the side pages stand in a column of their own on the right, which scrolls by itself */
-main.side-split{--sw:min(400px,34vw);padding-right:calc(var(--sw) + 32px)}
+main.fit.side-on:not(.side-split):not(.side-stack){display:grid;grid-template-columns:var(--cw) var(--sidew);justify-content:center;column-gap:18px;row-gap:16px;align-items:start}
+main.fit.side-on:not(.side-split):not(.side-stack) > *{width:auto}
+main.fit.side-on:not(.side-split):not(.side-stack) > :not(.slide):not(.sidepage):not(.sidewrap){grid-column:1 / -1;justify-self:start;width:var(--cw)}
+main.fit.side-on:not(.side-split):not(.side-stack) > .slide{grid-column:1}
+main.fit.side-on:not(.side-split):not(.side-stack) > .sidepage{grid-column:2;align-self:stretch}
+/* the printed pages: a sheet and its side page share a row, as tall as the taller of the two */
+.srow{display:flex;align-items:stretch;gap:18px;flex:none}
+.srow > .sheet{flex:none}
+.srow > .sidepage{width:var(--sidew);flex:none}
+main.paged > .sidepage{width:var(--sidew);flex:none}
+/* sync scrolling off: the side pages stand in a column of their own on the right, which scrolls by itself (the column's sizes are divided by --z, as main is zoomed) */
+main.side-split{--sw:calc(var(--sidew) + 32px);padding-right:calc(var(--sw) + 32px)}
 .sidewrap{position:absolute;top:0;bottom:0;right:16px;width:var(--sw);pointer-events:none}
-.sidecol{position:sticky;top:var(--appbar-h);height:calc(100dvh - var(--appbar-h) - var(--status-h));overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;pointer-events:auto;display:flex;flex-direction:column;gap:18px;padding:14px 8px 80px 24px;box-sizing:border-box}
+.sidecol{position:sticky;top:calc(var(--appbar-h) / var(--z,1));height:calc((100dvh - var(--appbar-h) - var(--status-h)) / var(--z,1));overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;pointer-events:auto;display:flex;flex-direction:column;gap:18px;padding:14px 8px 80px 24px;box-sizing:border-box}
 main.side-split .sidepage{flex:none}
 main.side-split .sidepage::before{display:block}
-@media (max-width:760px){main.side-on:not(.side-split){grid-template-columns:minmax(0,1fr)}main.side-on:not(.side-split) > .sidepage{grid-column:1;align-self:start}}
 /* joining a highlight to a note: click the note */
 body.side-picking .sidepage,body.side-picking .sidepage .mine{cursor:crosshair}
 body.side-picking .sidepage .notebox:not(.collapsed) > .mine{box-shadow:0 0 0 2px var(--accent)} /* taste-skill-ignore: a ring marking what can be picked */
@@ -933,9 +949,11 @@ body:not(.side-visible) #annoBar [data-side]{display:none}
 .tipwrap{display:inline-flex}
 .tipwrap > .btn:disabled{pointer-events:none}
 .cap .i{width:13px;height:13px;vertical-align:-2px;margin-right:4px;stroke-width:2}
-/* pointing at (or tapping) a side page shows a small palette button in its corner */
-.sidecorner{position:fixed;z-index:54;width:30px;min-width:30px;height:30px;padding:0;border-radius:8px;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);box-shadow:0 1px 4px rgba(0,0,0,.2);opacity:.92} /* taste-skill-ignore: a small button floats over the side page */
-.sidecorner:hover,.sidecorner[aria-expanded="true"]{opacity:1;background:var(--hover)}
+/* a small palette button waits (clear, but a Tab stop) in the top right corner of the side page in view; it shows when you point near that corner, tap the page, or Tab to it */
+.sidecorner{position:fixed;z-index:54;width:30px;min-width:30px;height:30px;padding:0;border-radius:8px;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);box-shadow:0 1px 4px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .2s ease} /* taste-skill-ignore: a small button floats over the side page */
+.sidecorner.near,.sidecorner:focus-visible,.sidecorner[aria-expanded="true"]{opacity:.92;pointer-events:auto}
+.sidecorner:hover{opacity:1;background:var(--hover)}
+@media (prefers-reduced-motion:reduce){.sidecorner{transition:none}}
 .sidecorner .i{width:16px;height:16px}
 @media (pointer:coarse){.sidecorner{width:40px;min-width:40px;height:40px}}
 main.reading .sidepage{cursor:auto}
@@ -1572,7 +1590,7 @@ try {
         <li>The <b>Home</b> tab styles your notes: the font, size and colour are used for new notes, or click in a note (or select words) to change just that.</li>
         <li>Point at a note (or tap it) and drag any edge or corner to resize it: the opposite side stays where it is. Drag its move handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
         <li>New notes line up with the note above or below them when they are close (<b>Box › Auto-align notes</b>). To tidy up, <b>Select all</b> on the Box tab, then use <b>Align</b>: left, centre or right, <b>Same width</b>, <b>Distribute</b> (floating and sticky notes, evenly spaced) or <b>Tidy page</b>. Each is one step you can take Back.</li>
-        <li><b>View › Side pages</b> gives each slide a page for your own notes beside it. Point at a side page (or tap it) and press the palette button in its corner to change its paper, or use <b>Side page background</b> in the View tab.</li>
+        <li><b>View › Side pages</b> gives each slide a page for your own notes beside it. They work in the Default, A4 and A3 layouts (each printed page gets one beside it, and both shrink together when the window is narrow). Point near the top right corner of a side page (or tap it, or press Tab) to show a palette button that changes its paper, or use <b>Side page background</b> in the View tab. Slides, side pages and notes are scaled to fit the window as one, so nothing moves when you open the sidebar.</li>
         <li>On each note: the arrows float it on top of the page, the minus minimises it to a pencil icon (drag the icon aside, right-click it to colour it), and the pin keeps it open.</li>
         <li>The <b>sidebar</b> (left) lists your notebooks: click one to switch, and the one you're in shows its pages. Use its <b>⋯</b> to rename or delete it. Hide it with <b>«</b> (Ctrl+\) and point at the left edge to peek at it. A notebook’s <b>⋯</b> menu can also star it as a <b>Favourite</b>, <b>Duplicate</b> it, or move it to the <b>Trash</b>, where it waits 30 days (and can be restored) before it is gone for ever. Group notebooks in <b>folders</b> (<b>New folder</b>): drag a notebook or a folder onto a folder to move it, or use <b>Move to…</b> in its <b>⋯</b> menu.</li>
         <li><b>Notes</b> (right) lists every note in the notebook to search, filter by icon colour and jump to.</li>
@@ -4255,7 +4273,7 @@ async function paintCard(card, scale, side){
     const xml = new XMLSerializer().serializeToString(sv).replace(/currentColor/g, col).replace('<svg', sv.getAttribute('xmlns') ? '<svg' : '<svg xmlns="http://www.w3.org/2000/svg"').replace('<svg', `<svg fill="${col}"`);
     try { const im = await loadImg('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml)); ctx.drawImage(im, r.left - ox, r.top - oy, r.width, r.height); } catch {}
   }
-  if (side) sidePaintLines(ctx, card, side, ox, oy);
+  if (side) sidePaintLines(ctx, sideSlide(side) || card, side, ox, oy);
   return c;
 }
 const alphaNo = n => { let s = ''; while (n > 0) { n--; s = String.fromCharCode(97 + n % 26) + s; n = Math.floor(n / 26); } return s; };
@@ -4318,7 +4336,7 @@ async function pdfFile(){
     for (let i = 0; i < cards.length; i++) {
       toast(`Making your PDF: page ${i + 1} of ${cards.length}`);
       const card = cards[i], cr = card.getBoundingClientRect();
-      const annots = [], sp = !size && sideShown() ? sideOf(card) : null;
+      const annots = [], sp = sideShown() ? sideOf(size ? card.querySelector('.slide') : card) : null;
       if (mode === 'comments') for (const b of [...card.querySelectorAll('.notebox'), ...(sp ? sp.querySelectorAll('.notebox') : [])]) {
         const text = (b.querySelector('.mine')?.innerText || '').trim(); if (!text) continue;
         const br = b.getBoundingClientRect();
@@ -4328,9 +4346,10 @@ async function pdfFile(){
         const mr = markRect(pg, c.id); if (!mr) continue;
         annots.push({fx: (mr.left - cr.left) / cr.width, fy: (mr.top - cr.top) / cr.height, text: `${c.text}\n\nOn: “${c.quote}”`, color: c.color});
       }
-      const canvas = await paintCard(card, 2 / viewZoom, mode === 'page' ? sp : null);
+      const withSide = mode === 'page' ? sp : null, canvas = await paintCard(card, 2 / viewZoom, withSide);
       const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
-      pages.push({w: canvas.width, h: canvas.height, pw: size?.[0], ph: size?.[1], annots, jpeg: new Uint8Array(await blob.arrayBuffer())});
+      // a printed page with its side page beside it is wider than A4: the sheet keeps its true size, and the page grows to hold both
+      pages.push({w: canvas.width, h: canvas.height, pw: size && (withSide ? canvas.width * .375 : size[0]), ph: size && (withSide ? canvas.height * .375 : size[1]), annots, jpeg: new Uint8Array(await blob.arrayBuffer())});
     }
     const extra = [size ? layout.replace('-', ' ') : '', mode === 'comments' ? 'comments' : mode === 'none' ? 'no notes' : ''].filter(Boolean).join(', ');
     return {name: notebookName() + ` (notes${extra ? ', ' + extra : ''}).pdf`, blob: makePdf(pages)};
@@ -4347,7 +4366,7 @@ const LAYOUTS = {'default': null, 'a4-portrait': [595.28, 841.89], 'a4-landscape
 let layout = pref.get('pdf-layout', 'default');
 if (!(layout in LAYOUTS)) layout = 'default';
 $('#layout').value = layout;
-$('#layout').onchange = e => { layout = e.target.value; pref.set('pdf-layout', layout); paginateView(); if (LAYOUTS[layout] && side.on) hint('Side notes are hidden in A4 and A3 layouts. They are still saved, and come back in the Default layout.'); };
+$('#layout').onchange = e => { layout = e.target.value; pref.set('pdf-layout', layout); paginateView(); };
 // ================= page layout on screen: A4 / A3 sheets, portrait or landscape =================
 let viewZoom = 1, pageTimer = null;
 const pxSize = ([pw, ph]) => [Math.round(pw * 96 / 72), Math.round(ph * 96 / 72)];   // points to screen pixels
@@ -4356,11 +4375,9 @@ const SHEET_MARGIN = 48;
 // how much an element is shrunk on screen by the page view and slide fitting
 function zoomOf(el){ let z = 1; for (let n = el; n && n.style; n = n.parentElement) { const v = parseFloat(n.style.zoom); if (v) z *= v; } return z; }
 function flatten(root){
-  const sheets = [...root.querySelectorAll(':scope > .sheet')];
-  if (sheets.length) {
-    const items = []; sheets.forEach(s => items.push(...s.children));
-    sheets.forEach(s => s.remove());
-    items.forEach(i => root.append(i));
+  for (const w of [...root.querySelectorAll(':scope > .sheet, :scope > .srow')]) {         // (a row: a sheet and its side page)
+    if (w.classList.contains('sheet')) w.replaceWith(...w.children);
+    else { const sh = w.querySelector(':scope > .sheet'); w.replaceWith(...(sh?.children || []), ...[...w.children].filter(c => c !== sh)); }
   }
   for (const c of [...root.querySelectorAll(':scope > .cont')]) {
     const prev = c.previousElementSibling;
@@ -4376,28 +4393,74 @@ function measureStrip(s){
     if (actual > 0 && target > 0) sp.style.transform = `scaleX(${(target / actual).toFixed(4)})`;
   });
 }
+// ---------- one fixed layout, scaled to fit ----------
+// A slide (or printed sheet), its side page and every note are laid out at one fixed width, and main is zoomed to the room there is, so
+// the notes keep their place on the slide and their text wraps the same at any window width, with or without the sidebar or side pages.
+// Only a phone-sized column (FLUID_W) stays fluid, and side pages go below their slide when beside it would shrink everything under STACK_Z.
+const CARD_W = 960, SIDE_W = 560, SIDE_GAP = 18, FLUID_W = 440, STACK_Z = 0.6;
+let fitW = 0;
+function fitPlan(W, size){
+  const room = main.getBoundingClientRect().width, vis = side.on && !!main.querySelector('.slide');
+  fitW = room;
+  let split = false, stack = false, total = W + 32;
+  if (vis && !sideForce) {                      // (while the PDF is made the side pages sit beside their slides, at full size)
+    split = !side.sync;
+    const beside = W + SIDE_GAP + SIDE_W + 32, apart = W + SIDE_W + 80;
+    stack = sideSmall.matches || room / (split ? apart : beside) < STACK_Z;
+    if (stack) split = false;
+    total = stack ? W + 32 : split ? apart : beside;
+  } else if (vis) total = W + SIDE_GAP + SIDE_W + 32;
+  const fluid = !size && !sideForce && room > 0 && room < FLUID_W;
+  const z = sideForce || fluid || !room ? 1 : Math.max(.2, Math.min(1, room / total));
+  return {vis, split, stack, fluid, z, W, key: [vis, split, stack].join()};
+}
+// set main up for a plan; returns how much the zoom changed (the scroll position follows it)
+function fitApply(p, paged){
+  const old = viewZoom, has = !!main.querySelector('.slide');
+  main.classList.toggle('fit', has && !paged);
+  main.classList.toggle('side-on', p.vis); main.classList.toggle('side-split', p.split); main.classList.toggle('side-stack', p.stack);
+  document.body.classList.toggle('side-visible', p.vis);
+  main.style.setProperty('--cw', p.fluid ? 'min(' + p.W + 'px,100%)' : p.W + 'px');
+  main.style.setProperty('--sidew', p.fluid ? 'min(' + SIDE_W + 'px,100%)' : SIDE_W + 'px');
+  main.style.setProperty('--z', p.z);
+  viewZoom = p.z; main.style.zoom = p.z === 1 ? '' : p.z;
+  return p.z / old;
+}
+// the Default layout: slides side by side, or with their side pages (the printed layouts do the same in paginateView)
+function fitView(){
+  const has = !!main.querySelector('.slide');
+  main.classList.toggle('fit', has && !LAYOUTS[layout]);
+  const p = has ? fitPlan(CARD_W, null) : (fitW = main.getBoundingClientRect().width, {vis: false, split: false, stack: false, fluid: false, z: 1, W: CARD_W, key: 'false,false,false'});
+  const k = fitApply(p, !!LAYOUTS[layout]);
+  return Object.assign(p, {k});
+}
 function paginateView(){
   clearTimeout(pageTimer);
   const sel = getSelection(), keep = sel.rangeCount ? [sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset] : null;
-  const focused = document.activeElement, scrollY = window.scrollY;
+  const focused = document.activeElement;
+  let scrollY = window.scrollY;
   hideGap();
   flatten(main);
   const size = LAYOUTS[layout];
   if (size) sideJoin(main);
   main.classList.toggle('paged', !!size);
   if (!size || !main.querySelector('.slide')) {
-    main.style.zoom = ''; viewZoom = 1;
+    scrollY *= fitView().k;
   } else {
     const [W, H] = pxSize(size);
     main.style.setProperty('--sheet-w', W + 'px'); main.style.setProperty('--sheet-h', H + 'px');
-    const avail = main.getBoundingClientRect().width - 32;       // the page column, between the side panels
-    viewZoom = Math.min(1, avail / W); main.style.zoom = viewZoom === 1 ? '' : viewZoom;
+    const plan = fitPlan(W, size);
+    scrollY *= fitApply(plan, true); main.dataset.fit = plan.key;
+    const rows = plan.vis && !plan.split && !plan.stack;
     // like Default: each slide (with its notes) gets its own sheet, shrunk to fit if it is too big
-    const z = viewZoom, ROOM = (H - 2 * SHEET_MARGIN) * z;
+    const z = plan.z, ROOM = (H - 2 * SHEET_MARGIN) * z;
     const items = [...main.children];
     items.forEach(i => i.remove());
-    let pendingHead = [];
+    const sps = new Map(), later = [];
+    let pendingHead = [], last = null;
+    for (const it of items) if (it.classList.contains('sidepage')) { const k = it.dataset.for || (last && sideSid(last)); if (k) sps.set(k, it); else later.push(it); } else if (it.classList.contains('slide')) last = it;
     for (const it of items) {
+      if (it.classList.contains('sidepage')) continue;
       if (!it.classList.contains('slide')) { pendingHead.push(it); continue; }
       const sheet = document.createElement('div'); sheet.className = 'sheet'; main.append(sheet);
       pendingHead.forEach(h => sheet.append(h)); pendingHead = [];
@@ -4410,8 +4473,14 @@ function paginateView(){
         if (h <= room + 0.5 || h <= 0) break;
         f = f * room / h; it.style.zoom = f.toFixed(4);
       }
+      const sp = it.dataset.sid && sps.get(it.dataset.sid);
+      if (sp) {
+        sps.delete(it.dataset.sid);
+        if (rows) { const row = document.createElement('div'); row.className = 'srow'; sheet.before(row); row.append(sheet, sp); } else sheet.after(sp);
+      }
     }
     if (pendingHead.length) { const sheet = document.createElement('div'); sheet.className = 'sheet'; main.append(sheet); pendingHead.forEach(h => sheet.append(h)); }
+    main.append(...sps.values(), ...later);
     main.querySelectorAll('.strip').forEach(measureStrip);
   }
   sideLayout(); placeFloats(); spreadChips(); spellAllSoon();
@@ -4424,9 +4493,18 @@ function paginateView(){
 }
 function paginateSoon(){ if (LAYOUTS[layout]) { clearTimeout(pageTimer); pageTimer = setTimeout(paginateView, 700); } }
 // the page column changed width (window resized, a side panel opened or closed)
-function relayout(){ if (LAYOUTS[layout]) paginateView(); else { placeFloats(); spreadChips(); } }
+function relayout(){ if (LAYOUTS[layout]) paginateView(); else { sideLayout(); placeFloats(); spreadChips(); } }
 let resizeTimer = null;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(relayout, 250); });
+// the column changed width (a panel opened, the divider was dragged): scale it again, now
+const fitRuns = [];
+new ResizeObserver(() => {
+  const w = main.getBoundingClientRect().width, now = Date.now();
+  if (Math.abs(w - fitW) <= .5 && (LAYOUTS[layout] || main.classList.contains('fit') === !!main.querySelector('.slide'))) return;
+  while (fitRuns.length && now - fitRuns[0] > 1500) fitRuns.shift();
+  if (fitRuns.push(now) > 6) return;                // (a scroll bar that comes and goes with the scale must not make it flicker for ever)
+  clearTimeout(resizeTimer); resizeTimer = setTimeout(relayout, 30);
+}).observe(main);
 
 document.querySelectorAll('.notes-toggle').forEach(b => b.onclick = () => {
   const hide = notesBtnMode() === 'hide';            // do exactly what the button says
@@ -5441,6 +5519,22 @@ function selectTab(name, focus){
     $('#panel-' + t.dataset.tab).hidden = !on;
     if (on && focus) t.focus();
   }
+}
+// a tab's tools scroll sideways when they don't fit: the edge with more tools beyond it fades, and the scroll bar shows only while you point at the ribbon or scroll it
+function panelFade(p){
+  if (p.hidden) return;
+  const max = p.scrollWidth - p.clientWidth;
+  p.classList.toggle('more-l', p.scrollLeft > 2); p.classList.toggle('more-r', p.scrollLeft < max - 2);
+}
+{
+  const panels = [...ribbon.querySelectorAll('.panel')], ro = new ResizeObserver(es => es.forEach(en => panelFade(en.target.closest('.panel') || en.target)));
+  panels.forEach(p => { ro.observe(p); [...p.children].forEach(c => ro.observe(c)); });
+  ribbon.addEventListener('scroll', e => {
+    const p = e.target; if (!p.classList?.contains('panel')) return;
+    panelFade(p); p.classList.add('scrolling'); clearTimeout(p.scrollT); p.scrollT = setTimeout(() => p.classList.remove('scrolling'), 900);
+  }, true);
+  addEventListener('resize', () => panels.forEach(panelFade));
+  document.fonts?.ready.then(() => panels.forEach(panelFade));
 }
 ribbon.querySelector('.tabs').addEventListener('click', e => {
   const t = e.target.closest('.tab'); if (!t) return;
@@ -6589,7 +6683,8 @@ function docBoxes(){
   for (const el of main.children) {
     if (el.classList.contains('sidewrap')) continue;
     out.push(...el.querySelectorAll('.notebox'));
-    if (el.classList.contains('slide') && !el.nextElementSibling?.classList.contains('sidepage')) { const sp = sideOf(el); if (sp) out.push(...sp.querySelectorAll('.notebox')); }
+    const sl = el.classList.contains('slide') ? el : el.matches('.sheet, .srow') ? el.querySelector('.slide') : null, sp = sl && sideOf(sl);
+    if (sp && !el.contains(sp) && el.nextElementSibling !== sp) out.push(...sp.querySelectorAll('.notebox'));
   }
   return out;
 }
@@ -6621,33 +6716,36 @@ function sideRead(){
   sidePaintUi();
 }
 function sideLayout(){
-  const slides = [...main.querySelectorAll(':scope > .slide')];
-  if (!main.querySelector('.slide')) side.on = false;                // (in A4 and A3 the slides are inside sheets)
-  const vis = side.on && !LAYOUTS[layout] && slides.length > 0;
-  const split = vis && !side.sync && !sideForce && !sideSmall.matches;
-  const was = main.classList.contains('side-on') + ':' + main.classList.contains('side-split');
-  main.classList.toggle('side-on', vis); main.classList.toggle('side-split', split);
-  document.body.classList.toggle('side-visible', vis);
-  const y = scrollY;
+  const size = LAYOUTS[layout], slides = [...main.querySelectorAll('.slide')];
+  if (!slides.length) side.on = false;
+  const y = scrollY, was = main.classList.contains('side-on') + ':' + main.classList.contains('side-split') + ':' + main.classList.contains('side-stack');
+  let p;
+  if (size) {                                                       // (the printed sheets are rebuilt only when the arrangement changes)
+    p = fitPlan(pxSize(size)[0], size);
+    if (main.dataset.fit !== p.key) return paginateView();
+    fitApply(p, true);
+  } else { p = fitView(); if (p.k !== 1) window.scrollTo(0, y * p.k); }
+  const {vis, split} = p;
   if (!split) sideJoin(main);
   if (vis) {
-    let col = main.querySelector(':scope > .sidewrap > .sidecol');
+    let col = main.querySelector(':scope > .sidewrap > .sidecol'), fresh = false;
     if (split && !col) {
       const wrap = document.createElement('div'); wrap.className = 'sidewrap'; col = document.createElement('div'); col.className = 'sidecol';
       wrap.append(col); main.append(wrap);
     }
     slides.forEach((s, i) => {
       let sp = sideOf(s);
-      if (!sp) { sp = document.createElement('aside'); sp.className = 'sidepage'; sp.dataset.for = sideSid(s); }
+      if (!sp) { sp = document.createElement('aside'); sp.className = 'sidepage'; sp.dataset.for = sideSid(s); if (size && !split) { main.append(sp); fresh = true; } }
       if (split) { if (col.children[i] !== sp) col.insertBefore(sp, col.children[i] || null); }
-      else if (sp.previousElementSibling !== s) s.after(sp);
+      else if (!size && sp.previousElementSibling !== s) s.after(sp);
       sideStyle(sp);
       sp.dataset.label = 'Page ' + (i + 1); sp.setAttribute('aria-label', 'Side notes for page ' + (i + 1));
       for (const b of sp.querySelectorAll(':scope > .notebox[data-link]')) if (!annoGet(s, b.dataset.link)) b.removeAttribute('data-link');   // its highlight is gone
     });
+    if (fresh) return paginateView();                                // (new side pages go into the sheets' rows)
     placeFloats(); sideSizes();
   }
-  if (was !== main.classList.contains('side-on') + ':' + main.classList.contains('side-split')) window.scrollTo(0, y);
+  if (was !== main.classList.contains('side-on') + ':' + main.classList.contains('side-split') + ':' + main.classList.contains('side-stack')) window.scrollTo(0, y);
   sidePaintUi(); sideDraw();
 }
 // a side page is as tall as its slide at least (in the row; in the separate column by its own height), and taller when its notes need the room
@@ -6658,7 +6756,7 @@ function sideSizes(){
     for (const b of sp.querySelectorAll(':scope > .notebox')) need = Math.max(need, b.offsetTop + b.offsetHeight + 28);
     if (sp.dataset.ink) need = Math.max(need, Math.ceil(sideInkEnd(sp)) + 12);
     const s = split && sideSlide(sp);
-    if (s) need = Math.max(need, Math.round(s.getBoundingClientRect().height));
+    if (s) need = Math.max(need, Math.round(s.getBoundingClientRect().height / (zoomOf(s) || 1)));
     const v = need ? need + 'px' : '';
     if (sp.style.minHeight !== v) sp.style.minHeight = v;
   }
@@ -6743,8 +6841,8 @@ function sideAddBox(sp, x, y, w, link){
 const sideWidth = sp => Math.round(Math.min(280, Math.max(150, sp.clientWidth * .62)));
 function sideClick(e){
   if (getSelection().toString().trim() || sidePick) return;
-  const sp = e.target.closest('.sidepage'), r = sp.getBoundingClientRect(), w = sideWidth(sp);
-  sideAddBox(sp, Math.max(30, Math.min(sp.clientWidth - w - 10, e.clientX - r.left - 10)), e.clientY - r.top - 20, w);
+  const sp = e.target.closest('.sidepage'), r = sp.getBoundingClientRect(), w = sideWidth(sp), z = zoomOf(sp) || 1;
+  sideAddBox(sp, Math.max(30, Math.min(sp.clientWidth - w - 10, (e.clientX - r.left) / z - 10)), (e.clientY - r.top) / z - 20, w);
 }
 // somewhere on the side page for a note that starts at y: not on top of another note
 function sideFree(sp, x, y, w){
@@ -6760,8 +6858,8 @@ function sideLinkNew(card, id){
   const sp = sideShown() && sideOf(card), m = sp && markRect(card, id);
   if (!sp || !m) { toast('Turn on Side notes in the View tab first.'); return; }
   sideUnlinkId(id);
-  const r = sp.getBoundingClientRect(), w = sideWidth(sp), x = Math.max(30, Math.min(40, sp.clientWidth - w - 10));
-  sideAddBox(sp, x, sideFree(sp, x, m.top + m.height / 2 - r.top - 24, w), w, id);
+  const r = sp.getBoundingClientRect(), w = sideWidth(sp), x = Math.max(30, Math.min(40, sp.clientWidth - w - 10)), z = zoomOf(sp) || 1;
+  sideAddBox(sp, x, sideFree(sp, x, (m.top + m.height / 2 - r.top) / z - 24, w), w, id);
   saveSoon();
 }
 function sideUnlinkId(id){
@@ -6842,7 +6940,7 @@ function sidePaintUi(){
   if (side.on) wrap.removeAttribute('data-tip'); else { wrap.dataset.tip = tip; closeSideBg(); }      // (a disabled button can't be pointed at, so its box carries the tip)
   sw.style.setProperty('--pvbg', side.bg); sw.dataset.pat = side.pat; sw.classList.toggle('dark', sideDark(side.bg));
   bb.setAttribute('aria-label', `Side page background: ${(SIDE_BGS.find(b => b[0] === side.bg) || [0, 'custom colour'])[1].toLowerCase()}, ${side.pat}`);
-  if (!side.on) sideCornerHide();
+  sideCornerPlace();
   sideBgPop.querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === side.bg));
   sideBgPop.querySelectorAll('.pat').forEach(b => b.setAttribute('aria-pressed', b.dataset.pat === side.pat));
   sideBgPop.querySelectorAll('.pv').forEach(v => { v.style.setProperty('--pvbg', side.bg); v.classList.toggle('dark', sideDark(side.bg)); });
@@ -6866,21 +6964,36 @@ function openSideBg(from){
   for (const b of [$('#sideBgBtn'), sideCorner]) b.setAttribute('aria-expanded', b === from);
 }
 function closeSideBg(){ sideBgPop.hidden = true; for (const b of [$('#sideBgBtn'), sideCorner]) b.setAttribute('aria-expanded', 'false'); if (!sideCornerSp) sideCornerHide(); }
-// show the palette button in the top right corner of a side page (the part of it you can see), until you point or tap elsewhere
-let sideCornerSp = null;
-function sideCornerPlace(){
-  const sp = sideCornerSp; if (!sp?.isConnected || !sideShown()) { sideCornerHide(); return; }
+// the palette button sits in the top right corner of a side page (the part of it you can see). It is clear until the pointer is within SIDE_ZONE of
+// that corner, the page is tapped, or it is focused with Tab; it never shows just because you are writing on the page
+const SIDE_ZONE = [120, 80];
+let sideCornerSp = null, sideTouchT = 0, sideTouchZone = false, sideTouch = false, sideByMouse = false;
+function sideCornerBox(sp){
+  if (!sp?.isConnected) return null;
   const r = sp.getBoundingClientRect(), col = sp.closest('.sidecol')?.getBoundingClientRect();
-  const top = Math.max(r.top, col ? col.top : 0, appbar.getBoundingClientRect().bottom) + 6, right = Math.min(r.right, col ? col.right : r.right, innerWidth) - 8;
-  if (top + 34 > Math.min(r.bottom, innerHeight - 34) || right - r.left < 60) { sideCorner.hidden = true; return; }
-  sideCorner.hidden = false;
-  sideCorner.style.top = top + 'px'; sideCorner.style.left = (right - sideCorner.offsetWidth) + 'px';
+  const top = Math.max(r.top, col ? col.top : 0, appbar.getBoundingClientRect().bottom), right = Math.min(r.right, col ? col.right : r.right, innerWidth) - 8;
+  return top + 40 > Math.min(r.bottom, innerHeight - 34) || right - r.left < 60 ? null : {top: top + 6, right};
 }
-function sideCornerShow(sp){ sideCornerSp = sp; sideCornerPlace(); }
-function sideCornerHide(){ sideCornerSp = null; if (sideBgPop.hidden || sideBgFrom !== sideCorner) sideCorner.hidden = true; }
+const sideInZone = (sp, x, y) => { const b = sideCornerBox(sp); return !!b && x >= b.right - SIDE_ZONE[0] && x <= b.right + 8 && y >= b.top - 6 && y <= b.top - 6 + SIDE_ZONE[1]; };
+// the side page most in view: the pointer's page, or this one, is where the button waits for the keyboard
+function sideLook(){
+  let best = null, most = 0;
+  const top = appbar.getBoundingClientRect().bottom;
+  for (const sp of main.querySelectorAll('.sidepage')) { const r = sp.getBoundingClientRect(), o = Math.min(r.bottom, innerHeight) - Math.max(r.top, top); if (r.width && o > most) { most = o; best = sp; } }
+  return best;
+}
+function sideNear(on){ sideCorner.classList.toggle('near', on); }
+function sideCornerPlace(){
+  const b = side.on && sideShown() ? sideCornerBox(sideCornerSp?.isConnected ? sideCornerSp : sideLook()) : null;
+  if (!b) { sideCorner.hidden = true; sideNear(false); return; }
+  sideCorner.hidden = false;
+  sideCorner.style.top = b.top + 'px'; sideCorner.style.left = (b.right - sideCorner.offsetWidth) + 'px';
+}
+function sideCornerHide(){ sideCornerSp = null; sideTouch = false; clearTimeout(sideTouchT); if (sideBgPop.hidden || sideBgFrom !== sideCorner) sideNear(false); sideCornerPlace(); }
+let sideCornerRaf = 0;
+const sideCornerSoon = () => { if (!sideCornerRaf) sideCornerRaf = requestAnimationFrame(() => { sideCornerRaf = 0; sideCornerPlace(); }); };
 $('#sideBtn').onclick = () => {
   if (!main.querySelector('.slide')) { toast('Open a file first, then turn on side notes.'); return; }
-  if (LAYOUTS[layout]) { toast('Side notes show in the Default layout. Choose Layout: Default first.'); return; }
   side.on = !side.on;
   main.querySelectorAll('.sidepage').forEach(sideStyle);
   sideLayout(); saveSoon();
@@ -6888,7 +7001,7 @@ $('#sideBtn').onclick = () => {
 };
 $('#sideSync').onclick = () => {
   side.sync = !side.sync; pref.set('side-sync', side.sync ? '1' : '0'); sideLayout();
-  if (side.on && !LAYOUTS[layout]) hint(side.sync ? 'Sync scrolling: each side page sits beside its slide again.' : 'Sync scrolling off: the side pages scroll by themselves in a column on the right.');
+  if (side.on) hint(side.sync ? 'Sync scrolling: each side page sits beside its slide again.' : 'Sync scrolling off: the side pages scroll by themselves in a column on the right.');
 };
 $('#sideLinks').onclick = () => { side.links = !side.links; pref.set('side-links', side.links ? '1' : '0'); sidePaintUi(); sideDraw(); };
 for (const b of [$('#sideBgBtn'), sideCorner]) b.onclick = e => {
@@ -6896,27 +7009,35 @@ for (const b of [$('#sideBgBtn'), sideCorner]) b.onclick = e => {
   if (!sideBgPop.hidden) { const same = sideBgFrom === b; closeSideBg(); if (same) return; }
   openSideBg(b);
 };
-// pointing at a side page (or tapping it with a finger or pen) shows the corner button; pointing elsewhere puts it away
+// pointing near a side page's corner (or tapping the page with a finger or pen) shows the button; pointing away puts it away
 document.addEventListener('pointermove', e => {
   if (e.pointerType !== 'mouse' || e.buttons || !side.on) return;
-  const sp = e.target.closest?.('.sidepage');
-  if (sp) { if (sp !== sideCornerSp) sideCornerShow(sp); }
-  else if (sideCornerSp && !e.target.closest?.('#sideBgCorner, #sideBgPop')) sideCornerHide();
+  sideTouch = false;
+  const onBtn = !!e.target.closest?.('#sideBgCorner, #sideBgPop'), sp = e.target.closest?.('.sidepage') || (onBtn ? sideCornerSp : null);
+  if (!sp) { if (sideCornerSp) sideCornerHide(); return; }
+  if (sp !== sideCornerSp) { sideCornerSp = sp; sideCornerPlace(); }
+  const near = onBtn || sideInZone(sp, e.clientX, e.clientY);
+  sideNear(near); sideByMouse = near;
 });
+document.documentElement.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && sideCornerSp) sideCornerHide(); });
 document.addEventListener('pointerdown', e => {
   if (e.pointerType === 'mouse' || !side.on) return;
   const sp = e.target.closest?.('.sidepage');
-  if (sp) sideCornerShow(sp); else if (!e.target.closest?.('#sideBgCorner, #sideBgPop')) sideCornerHide();
+  if (sp) {                           // a tap shows it for a moment; it goes as soon as you start writing, unless you tapped by the corner
+    sideCornerSp = sp; sideCornerPlace(); sideTouch = true; sideTouchZone = sideInZone(sp, e.clientX, e.clientY); sideNear(true);
+    clearTimeout(sideTouchT); sideTouchT = setTimeout(() => { if (sideBgPop.hidden) sideNear(false); }, sideTouchZone ? 6000 : 3500);
+  } else if (!e.target.closest?.('#sideBgCorner, #sideBgPop')) sideCornerHide();
 }, true);
-addEventListener('scroll', () => { if (sideCornerSp) sideCornerPlace(); }, {passive: true, capture: true});
-addEventListener('resize', () => { if (sideCornerSp) sideCornerPlace(); });
+document.addEventListener('input', e => { if (sideTouch && !sideTouchZone && e.target.closest?.('.sidepage') && sideBgPop.hidden) sideNear(false); }, true);
+addEventListener('scroll', sideCornerSoon, {passive: true, capture: true});
+addEventListener('resize', sideCornerSoon);
 sideBgPop.addEventListener('click', e => {
   const sw = e.target.closest('.sw'), pt = e.target.closest('.pat');
   if (sw) sideSet({bg: sw.dataset.c}); else if (pt) sideSet({pat: pt.dataset.pat});
 });
 $('#sideCustom').addEventListener('input', e => sideSet({bg: e.target.value}));
 document.addEventListener('mousedown', e => { if (!sideBgPop.hidden && !sideBgPop.contains(e.target) && !$('#sideBgBtn').contains(e.target) && !sideCorner.contains(e.target)) closeSideBg(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sideBgPop.hidden) { e.stopPropagation(); const f = sideBgFrom; closeSideBg(); f?.focus(); } }, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sideBgPop.hidden) { e.stopPropagation(); const f = sideBgFrom; closeSideBg(); if (!(f === sideCorner && sideByMouse)) f?.focus(); } }, true);
 addEventListener('resize', () => { if (!sideBgPop.hidden) placeSideBg(); });
 addEventListener('scroll', () => { if (!sideBgPop.hidden) placeSideBg(); }, {passive: true});
 // the bar that shows when you select words: one more choice
