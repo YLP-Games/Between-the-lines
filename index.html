@@ -9320,7 +9320,7 @@ function ckBuild(raw){
       }
     }
     sec('Notes', notes);
-    if (!reading) sec('Templates', TPLS.filter(t => ckHit(t.w, q)).map(t => ({key: 'tpl:' + t.id, kind: 'act', ico: 'library', name: ckHi(t.name, q), sub: esc(SUBJ[t.s]), hint: 'Insert', run: () => tplInsert(t)})));
+    if (!reading) sec('Templates', TPLS.filter(t => ckHit(t.wc, q)).map(t => ({key: 'tpl:' + t.id, kind: 'act', ico: 'library', name: ckHi(t.name, q), sub: esc(SUBJ[t.s]), hint: 'Insert', run: () => tplInsert(t)})));
     sec('Actions', acts.filter(a => ckHit(a.w ??= ckWords(a.label + ' ' + a.words), q)).map(actRow));
   }
   let left = 20;                                  // at most 6 in a section and 20 in all
@@ -11806,7 +11806,7 @@ const TPLS = [
   {id: 'drugcard', s: 'med', name: 'Drug card', desc: 'Name, class, mechanism, indications, side effects, dose', words: 'pharmacology medicine drug medication', make: () => labelled(['Drug (generic and brand)', 'Class', 'Mechanism of action', 'Indications', 'Side effects', 'Dose and route', 'Cautions and interactions'], {w: 28})},
 ];
 function SUB(n){ return `<sub>${n}</sub>`; }
-TPLS.forEach(t => { t.w = ckWords(`${t.name} ${SUBJ[t.s]} ${t.words || ''}`); });
+TPLS.forEach(t => { t.w = ckWords(`${t.name} ${SUBJ[t.s]} ${t.words || ''}`); t.wc = ckWords(`${t.name} ${SUBJ[t.s]}`); });          // the gallery searches the extra words too; Ctrl+K only the name and subject
 const tplById = id => TPLS.find(t => t.id === id);
 
 /* ---------- the formula library: common formulas, each with what its symbols mean ---------- */
