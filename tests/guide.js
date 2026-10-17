@@ -43,7 +43,7 @@ const {start, settle, addNote, notebookDoc, pdfPages, pixels, ok, OUT, path, res
   ok(await isShown(), 'NEW: the bar shows straight away when a guide is added');
   const bs0 = await barState();
   ok(bs0.inView && bs0.exp === 'true', '(and it is on screen)');
-  ok(bs0.indW === 48 && bs0.indH === 48 && bs0.indL === 0 && bs0.indT >= 0 && bs0.indT < 4, `NEW: a 48 × 48 icon sits in the guide's top left corner (${bs0.indW}×${bs0.indH} at ${bs0.indL},${Math.round(bs0.indT)})`);
+  ok(bs0.indW === 48 && bs0.indH === 48 && bs0.indL >= 0 && bs0.indL <= 2 && bs0.indT >= 0 && bs0.indT < 4, `NEW: a 48 × 48 icon sits in the guide's top left corner (${bs0.indW}×${bs0.indH} at ${bs0.indL},${Math.round(bs0.indT)})`);
   ok(bs0.indOp === '0.35' && bs0.indPe === 'auto', 'faint (0.35 opacity) and the only part of the corner that takes the pointer');
   ok(await page.getAttribute('.wg-ind', 'aria-label') === 'Writing guide settings' && !!(await page.getAttribute('.wg-ind', 'data-tip')), 'with a name and a tooltip');
   ok(await page.evaluate(() => document.querySelector('.wg-ind').tagName === 'BUTTON' && document.querySelector('.wg-ind').closest('#wguide') && !!document.querySelector('.wg-ind svg')), 'a real button with a grid glyph');

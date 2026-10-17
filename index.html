@@ -1026,7 +1026,7 @@ body.bresizing .beside{pointer-events:none}
 .wguide.bar-off .wg-bar{visibility:hidden;pointer-events:none}
 :is(.wg-bar,.wgpop) .btn{height:30px;min-width:30px;padding:0 8px}
 :is(.wg-bar,.wgpop) .seg .btn{height:26px}
-.wg-ind{position:sticky;top:var(--appbar-h,0px);display:flex;align-items:center;justify-content:center;width:48px;height:48px;margin:0 0 -48px;padding:0;border:0;background:none;color:var(--wg-ink);opacity:.35;cursor:pointer;pointer-events:auto}
+.wg-ind{position:sticky;top:var(--appbar-h,0px);display:flex;align-items:center;justify-content:center;width:48px;height:48px;margin:1px 0 -49px 1px;padding:0;border:0;background:none;color:var(--wg-ink);opacity:.35;cursor:pointer;pointer-events:auto;z-index:1}      /* over the corner handle's inner quarter, 1px in so the corner itself still grabs the handle */
 .wg-ind:hover,.wg-ind:focus-visible{opacity:.9}
 .wg-ind:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:8px}
 .wg-ind .i{width:22px;height:22px}
@@ -1723,7 +1723,7 @@ try {
   </div>
   <div class="fpreview" id="fPreview"></div>
   <div class="fhelp">Type <b>/</b> for a fraction (use brackets for longer parts: <b>(a+b)/(c+d)</b>), <b>^</b> for a power, <b>_</b> for a small low letter, <b>sqrt()</b>, <b>sum</b>. Press Enter to insert.</div>
-  <div class="factions"><button class="btn primary" id="fInsert">Insert</button></div>
+  <div class="factions"><button class="btn danger" id="fDelete" hidden title="Remove this formula from the note (Back brings it back)"><svg class="i"><use href="#i-trash"/></svg><span>Delete</span></button><span class="spacer"></span><button class="btn primary" id="fInsert">Insert</button></div>
 </div>
 
 <template id="emptyTpl">
@@ -4776,6 +4776,7 @@ async function openFormula(existing){
   }
   fInput.value = existing ? existing.dataset.src || '' : '';
   $('#fInsert').textContent = existing ? 'Update' : 'Insert';
+  $('#fDelete').hidden = !existing;
   fPanel.hidden = false; fInput.focus();
   fPreview.textContent = 'Loading…';
   try { await loadKatex(); updatePreview(); } catch { fPreview.textContent = 'Formulas need an internet connection the first time.'; }
@@ -4819,6 +4820,15 @@ $('#fInsert').onclick = () => {
   formulaNote = null; closeFormula(); saveSoon();
 };
 $('#fBtn').onclick = () => openFormula(null);
+// delete the formula being edited (and the space after it); a note left empty goes too
+$('#fDelete').onclick = () => {
+  const f = editingFormula; if (!f?.isConnected) { closeFormula(); return; }
+  const note = f.closest('.mine'), next = f.nextSibling;
+  if (next?.nodeType === 3 && /^[ \u00a0]/.test(next.data)) next.data = next.data.slice(1);
+  f.remove(); closeFormula();
+  if (note && !note.textContent.trim() && !note.querySelector('img, .media, .formula, .wtable, .jrnl')) dropIfEmpty(note); else if (note && !reading) focusNote(note, {preventScroll: true});
+  saveSoon(); toast('Formula deleted. Back (Ctrl+Z) brings it back.');
+};
 
 // ================= pictures, videos and sound =================
 function readAsUrl(file){ return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(file); }); }
