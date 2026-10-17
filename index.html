@@ -1170,6 +1170,14 @@ main.reading .jrnl .j-ind{cursor:default}
   .notebox.touched > .g-sw::before{inset:-2px -2px -14px -14px}
   .bdiv{left:-16px;width:32px}
   .grp .chk,.chk{min-height:40px}
+  .search{height:44px}
+  /* Safari zooms the page into a text box whose words are smaller than 16px when it is tapped */
+  #size,#setSize,#dictAdd,#fInput{font-size:16px}
+}
+/* an iPad turned sideways is short: the group captions under the tools give their room to the page */
+@media (pointer:coarse) and (max-height:900px){
+  .ribbon .cap{display:none}
+  .panel{height:calc(52px + var(--sbh))}
 }
 /* a press-and-hold is for menus and dragging, not for the iPad's text magnifier or callout */
 :is(.btn,.tab,.tbtn,.srow,.docrow,.pg,.gappill,.note-chip,.sw,.fav,.favx,.grip,.nbar,.stickytape,.cardbar,.imenu,.menu,.docmenu,.chippop,.spellmenu){-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
@@ -1778,6 +1786,28 @@ const APP_HTML = (() => {
   c.querySelector('#notebook-data')?.remove();
   const m = c.querySelector('#main'); if (m) m.innerHTML = '';
   return '<!doctype html>\n' + c.outerHTML;
+})();
+// The pages are scaled with CSS zoom, and everything that measures them expects the box as it is on screen (as Chrome, Edge and Firefox
+// give it). Safari before its standard zoom (on the iPad too) gives a zoomed box, and the boxes and text inside it, in unzoomed pixels:
+// on screen they are that times the zoom. There, the measuring is put right once, here, so a tap, a pen stroke or a dragged note lands
+// where it is on screen.
+(() => {
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:absolute;left:0;top:0;width:100px;height:1px;zoom:.5;visibility:hidden;pointer-events:none';
+  document.documentElement.append(probe);
+  const unzoomed = probe.getBoundingClientRect().width > 75; probe.remove();
+  if (!unzoomed) return;
+  const zoomAt = n => { let z = 1; for (; n && n.style; n = n.parentElement) { const v = parseFloat(n.style.zoom); if (v) z *= v; } return z; };
+  const scaled = (r, z) => new DOMRect(r.x * z, r.y * z, r.width * z, r.height * z);
+  const rangeZoom = r => { const n = r.commonAncestorContainer; return zoomAt(n.nodeType === 1 ? n : n.parentElement); };
+  const patch = (proto, name, zoomFor, list) => {
+    const orig = proto[name];
+    proto[name] = function(){ const r = orig.call(this), z = zoomFor(this); return z === 1 ? r : list ? Array.from(r, x => scaled(x, z)) : scaled(r, z); };
+  };
+  patch(Element.prototype, 'getBoundingClientRect', zoomAt);
+  patch(Element.prototype, 'getClientRects', zoomAt, true);
+  patch(Range.prototype, 'getBoundingClientRect', rangeZoom);
+  patch(Range.prototype, 'getClientRects', rangeZoom, true);
 })();
 const $ = s => document.querySelector(s);
 // the bottom of what you can see: the screen's height less the on-screen keyboard (and a pinch zoom)
