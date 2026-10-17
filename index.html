@@ -1009,12 +1009,11 @@ body.bresizing .beside{pointer-events:none}
 :root{
   --wg-ink:#6d84b4;
   --wt-ink:#2f5fd6;
-  --j-dim-l:#5d6877; --j-acct-l:#2b62b5; --j-amt-l:#8a5a14;
-  --j-dim-d:#dcdbd5; --j-acct-d:#8fc4ff; --j-amt-d:#f3e8b4;
-  --j-dim:var(--j-dim-l); --j-acct:var(--j-acct-l); --j-amt:var(--j-amt-l); --j-bg:transparent; --j-pad:0px;
+  --j-dim:#5d6877; --j-acct:#2b62b5; --j-amt:#8a5a14;       /* the paper is white or cream, even in the dark theme */
+  --j-dim-d:#dcdbd5; --j-acct-d:#8fc4ff; --j-amt-d:#f3e8b4;  /* for paper that really is dark: a dark side page, a dark fill */
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--wg-ink:#8da3d1;--j-dim:var(--j-dim-d);--j-acct:var(--j-acct-d);--j-amt:var(--j-amt-d);--j-bg:#1f2623;--j-pad:.6em}}
-:root[data-theme="dark"]{--wg-ink:#8da3d1;--j-dim:var(--j-dim-d);--j-acct:var(--j-acct-d);--j-amt:var(--j-amt-d);--j-bg:#1f2623;--j-pad:.6em}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--wg-ink:#8da3d1}}
+:root[data-theme="dark"]{--wg-ink:#8da3d1}
 
 /* the writing guide: a grid, ruled lines or dots over the pages, to write straight with a pen. It sits in the page (not in the notebook) and lets everything through except its bar and handles. */
 .wguide{position:absolute;z-index:17;box-sizing:border-box;pointer-events:none;outline:1px dashed color-mix(in srgb,var(--wg-ink) 65%,transparent);outline-offset:-1px;--wg-gap:28px;--wg-op:.55;--wg-hs:18px}
@@ -1022,16 +1021,28 @@ body.bresizing .beside{pointer-events:none}
 .wguide[data-pat="grid"] .wg-pat{background-image:linear-gradient(var(--wg-ink) 1px,transparent 1px),linear-gradient(90deg,var(--wg-ink) 1px,transparent 1px);background-size:var(--wg-gap) var(--wg-gap)}
 .wguide[data-pat="lines"] .wg-pat{background-image:linear-gradient(transparent calc(var(--wg-gap) - 1px),var(--wg-ink) calc(var(--wg-gap) - 1px));background-size:100% var(--wg-gap)}
 .wguide[data-pat="dots"] .wg-pat{background-image:radial-gradient(circle,var(--wg-ink) 1.4px,transparent 1.9px);background-size:var(--wg-gap) var(--wg-gap);background-position:calc(var(--wg-gap) / 2) calc(var(--wg-gap) / 2)}
-.wg-bar{position:sticky;top:calc(var(--appbar-h,0px) + 8px);display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;width:max-content;max-width:calc(100% - 16px);box-sizing:border-box;margin:8px;padding:4px 6px;
+.wg-bar{position:sticky;top:calc(var(--appbar-h,0px) + 8px);display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;width:max-content;max-width:calc(100% - 56px);box-sizing:border-box;margin:8px 8px 8px 48px;padding:4px 6px;
   background:var(--surface);color:var(--ink);border:1.5px solid var(--pencil);border-radius:10px;box-shadow:2px 3px 0 rgba(47,43,36,.22);pointer-events:auto;font:13px var(--ui)} /* taste-skill-ignore: a small bar floats over the page */
-.wg-bar .btn{height:30px;min-width:30px;padding:0 8px}
-.wg-bar .seg .btn{height:26px}
+.wguide.bar-off .wg-bar{visibility:hidden;pointer-events:none}
+:is(.wg-bar,.wgpop) .btn{height:30px;min-width:30px;padding:0 8px}
+:is(.wg-bar,.wgpop) .seg .btn{height:26px}
+.wg-ind{position:sticky;top:var(--appbar-h,0px);display:flex;align-items:center;justify-content:center;width:48px;height:48px;margin:0 0 -48px;padding:0;border:0;background:none;color:var(--wg-ink);opacity:.35;cursor:pointer;pointer-events:auto}
+.wg-ind:hover,.wg-ind:focus-visible{opacity:.9}
+.wg-ind:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:8px}
+.wg-ind .i{width:22px;height:22px}
+/* the settings that pop out under Insert › Writing guide */
+.wgpop{z-index:48;display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:10px 12px;width:max-content;max-width:calc(100vw - 16px);box-sizing:border-box;font:13px var(--ui)}
+.wgpop .wgp-h{margin:0;font-weight:600;font-size:14px}
+.wgpop .wgp-d{margin:-4px 0 0;max-width:260px;color:var(--muted);line-height:1.3}
+.wgpop .wgp-row{display:flex;align-items:center;gap:8px}
+.wgpop .wgp-row > label{min-width:4.6em;color:var(--muted)}
+.wgpop .wgp-go{align-self:stretch;justify-content:center}
 .wg-bar .wg-move{cursor:grab;touch-action:none;padding:0 4px;color:var(--muted)}
 .wg-bar .wg-move:active{cursor:grabbing}
-.wg-bar .wg-grp{display:inline-flex;align-items:center;gap:3px}
-.wg-bar output{min-width:2.6em;text-align:center;font-size:12px;color:var(--muted)}
-.wg-bar input[type=range]{width:84px;accent-color:var(--accent);margin:0}
-.wg-bar .wg-ico{color:var(--muted);display:inline-flex}
+:is(.wg-bar,.wgpop) .wg-grp{display:inline-flex;align-items:center;gap:3px}
+:is(.wg-bar,.wgpop) output{min-width:2.6em;text-align:center;font-size:12px;color:var(--muted)}
+:is(.wg-bar,.wgpop) input[type=range]{width:84px;accent-color:var(--accent);margin:0}
+:is(.wg-bar,.wgpop) .wg-ico{color:var(--muted);display:inline-flex}
 .wg-h{position:absolute;pointer-events:auto;touch-action:none;width:var(--wg-hs);height:var(--wg-hs)}
 .wg-h::after{content:"";position:absolute;left:50%;top:50%;translate:-50% -50%;width:10px;height:10px;box-sizing:border-box;background:var(--surface);border:1.5px solid var(--wg-ink);border-radius:3px}
 .wg-h:hover::after,.wg-h.on::after{background:var(--wg-ink)}
@@ -1041,7 +1052,7 @@ body.bresizing .beside{pointer-events:none}
 .wg-n::after,.wg-s::after{width:26px;height:7px;border-radius:5px} .wg-e::after,.wg-w::after{width:7px;height:26px;border-radius:5px}
 .wg-nw{left:calc(var(--wg-hs) / -2);top:calc(var(--wg-hs) / -2);cursor:nwse-resize} .wg-se{right:calc(var(--wg-hs) / -2);bottom:calc(var(--wg-hs) / -2);cursor:nwse-resize}
 .wg-ne{right:calc(var(--wg-hs) / -2);top:calc(var(--wg-hs) / -2);cursor:nesw-resize} .wg-sw{left:calc(var(--wg-hs) / -2);bottom:calc(var(--wg-hs) / -2);cursor:nesw-resize}
-@media (pointer:coarse){.wguide{--wg-hs:40px}.wg-bar .btn{height:40px;min-width:40px}.wg-bar .seg .btn{height:36px}.wg-bar input[type=range]{width:96px;height:40px}}
+@media (pointer:coarse){.wguide{--wg-hs:40px}:is(.wg-bar,.wgpop) .btn{height:40px;min-width:40px}:is(.wg-bar,.wgpop) .seg .btn{height:36px}:is(.wg-bar,.wgpop) input[type=range]{width:96px;height:40px}}
 .wguide.wg-touch{--wg-hs:40px}
 .wguide.wg-touch .wg-bar .btn{height:40px;min-width:40px}
 .wguide.wg-touch .wg-bar .seg .btn{height:36px}
@@ -1083,13 +1094,16 @@ body.wt-select{user-select:none;-webkit-user-select:none;cursor:cell}
 @media (pointer:coarse){.tblpick .tp-g{grid-template-columns:repeat(10,32px)}.tblpick .tp-g > i{width:32px;height:32px}}
 
 /* journal entries: an invisible four-column layout (indicator, account, debit, credit) with no borders */
-.mine .jrnl{display:grid;grid-template-columns:max-content minmax(7em,1fr) minmax(5.5em,max-content) minmax(5.5em,max-content);column-gap:.9em;row-gap:.08em;width:min(100%,26em);margin:.25em 0;box-sizing:border-box;padding:.15em var(--j-pad);background:var(--j-bg);border-radius:10px;line-height:1.25;font-variant-numeric:tabular-nums;cursor:text;-webkit-user-select:text;user-select:text}
-.sidepage.dark .jrnl{--j-dim:var(--j-dim-d);--j-acct:var(--j-acct-d);--j-amt:var(--j-amt-d);--j-bg:transparent;--j-pad:0px}
-main.pdfpaper .jrnl{--j-dim:var(--j-dim-l);--j-acct:var(--j-acct-l);--j-amt:var(--j-amt-l);--j-bg:transparent;--j-pad:0px}
+.mine .jrnl{display:grid;grid-template-columns:max-content minmax(7em,1fr) minmax(5.5em,max-content) minmax(5.5em,max-content);column-gap:.9em;row-gap:.08em;width:min(100%,26em);margin:.25em 0;box-sizing:border-box;padding:.2em 0;border-radius:6px;line-height:1.25;font-variant-numeric:tabular-nums;cursor:text;-webkit-user-select:text;user-select:text}
+/* no panel: it takes the note's fill. The colours suit paper; on a dark side page or a note with a dark fill (data-tone, set from the fill) they switch to the light set */
+.sidepage.dark .jrnl,.notebox[data-tone="dark"] .jrnl{--j-dim:var(--j-dim-d);--j-acct:var(--j-acct-d);--j-amt:var(--j-amt-d)}
+.sidepage.dark .notebox[data-tone="light"] .jrnl,.sidepage.dark .notebox.sticky:not([data-tone="dark"]) .jrnl{--j-dim:#5d6877;--j-acct:#2b62b5;--j-amt:#8a5a14}
 .jrnl .j-row{display:contents}
 .jrnl [contenteditable]{min-width:0;outline:none;white-space:pre-wrap;overflow-wrap:anywhere;border-radius:3px;caret-color:currentColor}
 .jrnl [contenteditable="true"]:focus{background:color-mix(in srgb,currentColor 11%,transparent)}
-.jrnl [data-ph]:empty::before{content:attr(data-ph);opacity:.38}
+.jrnl .j-acct[data-ph]:empty::before{content:attr(data-ph);opacity:.38}
+.jrnl .j-date,.jrnl .j-desc{min-height:1.25em}                       /* empty, they show nothing but stay there to be clicked */
+.jrnl .j-date:focus,.jrnl .j-desc:focus{outline:1px solid color-mix(in srgb,currentColor 30%,transparent);outline-offset:1px}
 .jrnl .j-date,.jrnl .j-foot{grid-column:1 / -1}
 .jrnl .j-date,.jrnl .j-desc{color:var(--j-dim)}
 .jrnl .j-ind,.jrnl .j-acct{color:var(--j-acct)}
@@ -1099,9 +1113,15 @@ main.pdfpaper .jrnl{--j-dim:var(--j-dim-l);--j-acct:var(--j-acct-l);--j-amt:var(
 .jrnl .j-row[data-s="cr"] .j-acct{padding-left:1.15em}
 .jrnl .j-amt.off{pointer-events:none}
 .jrnl .j-foot{display:flex;align-items:baseline;gap:.7em;margin-top:.22em}
-.jrnl .j-desc{flex:0 1 auto;min-width:6em}
-.jrnl .j-foot[data-diff]::after{content:attr(data-diff);flex:none;font-size:.62em;letter-spacing:.02em;color:var(--j-amt);opacity:.75;border:1px solid color-mix(in srgb,currentColor 45%,transparent);border-radius:99px;padding:0 .55em;white-space:nowrap}
+.jrnl .j-desc{flex:0 1 auto;min-width:8em}
+.jrnl .j-foot[data-diff]::after{content:attr(data-diff);flex:none;font-size:.62em;letter-spacing:.02em;color:var(--j-amt);border:1px solid color-mix(in srgb,currentColor 45%,transparent);border-radius:99px;padding:0 .55em;white-space:nowrap;opacity:0}
+.jrnl:hover .j-foot[data-diff]::after,.jrnl:focus-within .j-foot[data-diff]::after{opacity:.75}
 main.reading .jrnl .j-ind{cursor:default}
+#jx{position:absolute;z-index:16;width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0;border:1px solid var(--line-strong);border-radius:50%;background:var(--surface);color:var(--ink);cursor:pointer}
+#jx[hidden]{display:none}
+#jx:hover,#jx:focus-visible{background:var(--danger);border-color:var(--danger);color:var(--surface)}
+#jx .i{width:12px;height:12px;stroke-width:2.2}
+@media (pointer:coarse){#jx{width:32px;height:32px}}
 /* the little pictures in the add menu */
 .pv .tbv{display:grid;grid-template-columns:repeat(3,1fr);flex:1;border:1px solid #9aa3b2;border-right:0;border-bottom:0}
 .pv .tbv > s{border-right:1px solid #9aa3b2;border-bottom:1px solid #9aa3b2}
@@ -1399,7 +1419,7 @@ try {
       </div><span class="cap">Into the note</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row">
-        <button class="btn" id="wgBtn" aria-pressed="false" data-tip="Writing guide: a grid, ruled lines or dots over the pages, to help you write in straight lines with a pen. It is only for now: it isn't saved with your notes (Esc)"><svg class="i"><use href="#i-wguide"/></svg>Writing guide</button>
+        <button class="btn" id="wgBtn" aria-pressed="false" aria-haspopup="dialog" aria-expanded="false" data-tip="Writing guide: a grid, ruled lines or dots over the pages, to help you write in straight lines with a pen. It is only for now: it isn't saved with your notes. Point at the button for its settings (Esc)"><svg class="i"><use href="#i-wguide"/></svg>Writing guide</button>
         <button class="btn" id="tblBtn" aria-haspopup="dialog" aria-expanded="false" data-tip="Table: choose how many columns and rows. It goes into the note you're in, or a new note between the lines"><svg class="i"><use href="#i-table"/></svg>Table</button>
         <button class="btn" id="jeBtn" data-tip="Journal entry: an accounting entry with date, DR and CR lines, debit and credit amounts and a description, all lined up. It goes into the note you're in, or a new note between the lines"><svg class="i"><use href="#i-journal"/></svg>Journal entry</button>
       </div><span class="cap">Writing tools</span></div>
@@ -1585,7 +1605,7 @@ try {
         <li>PowerPoint files open as the slides look: each slide is a page with its text you can select, and you write between the lines as on a PDF. Complex animations and SmartArt may still differ; for an exact copy, save the slides as a PDF (File › Save as › PDF) and open that. Choose <b>Editable text</b> under <b>Open PowerPoint as</b> (View tab, or below) to rebuild the slides as text you can type inside instead.</li>
         <li>Word files keep their fonts, colours, tables, headers and pictures as editable text. A few pictures (old EMF or WMF drawings, for example) may not come through: save the file as a PDF and open that, or add the picture with Insert › Picture, video or sound.</li>
         <li>On a PDF page, point at a spot and press <b>+ Add here</b> to add a note there (the page opens up between the lines). <b>Right-click</b> the button (press and hold on a touch screen) to pick <b>Note</b>, <b>Sticky note</b> or <b>Equation</b>. On other pages, click where you want to write. In a note, type <b>/</b> for the same choices.</li>
-        <li><b>Writing tools</b> (Insert tab): <b>Writing guide</b> puts a grid, ruled lines or dots over the pages so you can write straight with a pen or Apple Pencil. Drag it by its handle, pull its edges to resize it, and press Esc or × to take it away; it is never saved in your notebook. <b>Table</b> opens a grid to choose the size, then drop it in a note: Tab moves between cells, drag the borders to size it, and right-click (or ⋯) for rows, columns and merging. <b>Journal entry</b> is an accounting entry, lined up in columns (also under + Add here and by typing /journal): click DR or CR to switch a row, Enter adds a row, Tab moves along.</li>
+        <li><b>Writing tools</b> (Insert tab): <b>Writing guide</b> puts a grid, ruled lines or dots over the pages so you can write straight with a pen or Apple Pencil. Drag it by its handle, pull its edges to resize it, and press Esc or × to take it away; it is never saved in your notebook. Its bar goes when you click elsewhere: point at the faint icon in its top left corner to bring it back, or point at the Insert button for its settings. <b>Table</b> opens a grid to choose the size, then drop it in a note: Tab moves between cells, drag the borders to size it, and right-click (or ⋯) for rows, columns and merging. <b>Journal entry</b> is an accounting entry, lined up in columns (also under + Add here and by typing /journal): click DR or CR to switch a row, Enter adds a row, Tab and the arrow keys move around like a table, and right-click (or the × when you point at it) deletes the entry.</li>
         <li><b>Sticky notes</b> sit on top of the page: drag one by its tape to move it, even onto another page. In the <b>Notes</b> panel, type a note and press <b>Add note</b>, or drag <b>Sticky</b> onto any page.</li>
         <li><b>Draw</b> (Insert tab) writes or highlights on PDF pages with a pen, and the eraser rubs strokes out. Select words on any page to highlight them, or press <b>Comment</b>; open comments are listed in the <b>Notes</b> panel until you resolve them.</li>
         <li>The <b>Home</b> tab styles your notes: the font, size and colour are used for new notes, or click in a note (or select words) to change just that.</li>
@@ -4338,7 +4358,6 @@ async function pdfFile(){
   const wasCollapsed = boxes.map(b => b.classList.contains('collapsed'));
   if (mode === 'page') boxes.forEach(b => b.classList.remove('collapsed'));
   else main.classList.add('clean');            // notes take no room, so the pages look like the originals
-  main.classList.add('pdfpaper');              // (writing tools) journal entries in their colours for paper
   try {
     const size = LAYOUTS[layout];
     sideForce = true;              // side pages sit beside their slides while the PDF is made
@@ -4367,7 +4386,7 @@ async function pdfFile(){
     return {name: notebookName() + ` (notes${extra ? ', ' + extra : ''}).pdf`, blob: makePdf(pages)};
   } finally {
     sideForce = false;
-    main.classList.remove('clean', 'pdfpaper');
+    main.classList.remove('clean');
     boxes.forEach((b, i) => b.classList.toggle('collapsed', wasCollapsed[i]));
     paginateView();
   }
@@ -9942,7 +9961,7 @@ if ('launchQueue' in window) launchQueue.setConsumer(async p => { if (p.files?.l
 const WG_PATS = [['grid', 'Grid', 'Squares, like squared paper'], ['lines', 'Lines', 'Ruled lines, like lined paper'], ['dots', 'Dots', 'A grid of dots']];
 const WG_MIN = {w: 160, h: 100};
 const wgClamp = (v, a, b) => Math.min(b, Math.max(a, v));
-const wg = {el: null, r: null, pat: pref.get('wg-pat', 'grid'), gap: wgClamp(Math.round(+pref.get('wg-gap', 28)) || 28, 12, 48), op: wgClamp(Math.round(+pref.get('wg-op', 55)) || 55, 10, 100)};
+const wg = {el: null, r: null, pop: null, pin: false, held: false, quiet: false, bt: 0, pt: 0, lp: 0, pat: pref.get('wg-pat', 'grid'), gap: wgClamp(Math.round(+pref.get('wg-gap', 28)) || 28, 12, 48), op: wgClamp(Math.round(+pref.get('wg-op', 55)) || 55, 10, 100)};
 if (!WG_PATS.some(p => p[0] === wg.pat)) wg.pat = 'grid';
 const wgBtn = $('#wgBtn');
 function wgSet(l, t, w, h){
@@ -9952,27 +9971,49 @@ function wgSet(l, t, w, h){
   Object.assign(wg.el.style, {left: wg.r.l + 'px', top: wg.r.t + 'px', width: wg.r.w + 'px', height: wg.r.h + 'px'});
 }
 function wgPaint(){
-  const el = wg.el; if (!el) return;
-  el.dataset.pat = wg.pat; el.style.setProperty('--wg-gap', wg.gap + 'px'); el.style.setProperty('--wg-op', (wg.op / 100).toFixed(2));
-  el.querySelectorAll('[data-pick]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pick === wg.pat));
-  el.querySelector('output').textContent = wg.gap + 'px';
-  el.querySelector('[data-k="gap"]').value = wg.gap; el.querySelector('[data-k="op"]').value = wg.op;
+  const el = wg.el;
+  if (el) { el.dataset.pat = wg.pat; el.style.setProperty('--wg-gap', wg.gap + 'px'); el.style.setProperty('--wg-op', (wg.op / 100).toFixed(2)); }
+  for (const r of [el, wg.pop]) {            // the bar on the guide and the pop-out under Insert
+    if (!r) continue;
+    r.querySelectorAll('[data-pick]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pick === wg.pat));
+    r.querySelector('output').textContent = wg.gap + 'px';
+    r.querySelector('[data-k="gap"]').value = wg.gap; r.querySelector('[data-k="op"]').value = wg.op;
+  }
 }
+// the settings, as the bar and the pop-out under Insert both show them
+const wgSeg = () => '<span class="seg" role="group" aria-label="Pattern">' + WG_PATS.map(([k, name, tip]) => `<button type="button" class="btn" data-pick="${k}" aria-pressed="false" data-tip="${name}: ${tip}">${name}</button>`).join('') + '</span>';
+const wgGap = () => '<span class="wg-grp" role="group" aria-label="Spacing">' +
+  '<button type="button" class="btn" data-step="-2" aria-label="Closer together" data-tip="Closer together">−</button>' +
+  '<input type="range" data-k="gap" min="12" max="48" step="2" aria-label="Spacing" data-tip="Spacing: how far apart the lines are">' +
+  '<button type="button" class="btn" data-step="2" aria-label="Further apart" data-tip="Further apart">+</button><output aria-live="polite"></output></span>';
+const wgOp = () => `<span class="wg-grp"><span class="wg-ico" aria-hidden="true">${icon('eye')}</span><input type="range" data-k="op" min="10" max="100" step="5" aria-label="Opacity" data-tip="Opacity: how strong the lines are"></span>`;
 function wgBuild(){
   const el = document.createElement('div'); el.className = 'wguide'; el.id = 'wguide';
   el.setAttribute('role', 'group'); el.setAttribute('aria-label', 'Writing guide');
   el.innerHTML = '<div class="wg-pat" aria-hidden="true"></div>' +
+    `<button type="button" class="wg-ind" aria-label="Writing guide settings" aria-expanded="true" data-tip="Writing guide settings: point here, or tap, to show the bar with the pattern, spacing and opacity">${icon('wguide')}</button>` +
     '<div class="wg-bar" role="toolbar" aria-label="Writing guide controls">' +
     `<button type="button" class="btn wg-move" aria-label="Move the writing guide" data-tip="Move: drag to put the guide anywhere, even on another page. The arrow keys nudge it; with Shift they resize it.">${icon('grip')}</button>` +
-    '<span class="seg" role="group" aria-label="Pattern">' + WG_PATS.map(([k, name, tip]) => `<button type="button" class="btn" data-pick="${k}" aria-pressed="false" data-tip="${name}: ${tip}">${name}</button>`).join('') + '</span>' +
-    '<span class="wg-grp" role="group" aria-label="Spacing">' +
-    '<button type="button" class="btn" data-step="-2" aria-label="Closer together" data-tip="Closer together">−</button>' +
-    '<input type="range" data-k="gap" min="12" max="48" step="2" aria-label="Spacing" data-tip="Spacing: how far apart the lines are">' +
-    '<button type="button" class="btn" data-step="2" aria-label="Further apart" data-tip="Further apart">+</button><output aria-live="polite"></output></span>' +
-    `<span class="wg-grp"><span class="wg-ico" aria-hidden="true">${icon('eye')}</span><input type="range" data-k="op" min="10" max="100" step="5" aria-label="Opacity" data-tip="Opacity: how strong the lines are"></span>` +
+    wgSeg() + wgGap() + wgOp() +
     `<button type="button" class="btn" data-wgx aria-label="Remove the writing guide" data-tip="Remove the writing guide (Esc)">${icon('x')}</button></div>` +
     ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'].map(d => `<span class="wg-h wg-${d}" data-d="${d}" aria-hidden="true"></span>`).join('');
   return el;
+}
+// its bar shows when the guide is added, goes when you click or tap elsewhere, and comes back when you point at (or Tab to, or tap) the faint icon in its top left corner
+function wgShow(pin){
+  const el = wg.el; if (!el) return;
+  clearTimeout(wg.bt); el.classList.remove('bar-off'); if (pin) wg.pin = true;
+  el.querySelector('.wg-ind').setAttribute('aria-expanded', 'true');
+}
+function wgHide(){
+  const el = wg.el; if (!el) return;
+  clearTimeout(wg.bt); wg.pin = false; el.classList.add('bar-off');
+  el.querySelector('.wg-ind').setAttribute('aria-expanded', 'false');
+}
+// pointed away from the icon and the bar: gone after a moment (not while the pointer is on the bar, or the keyboard is in it)
+function wgLater(){
+  clearTimeout(wg.bt); if (!wg.el || wg.pin) return;
+  wg.bt = setTimeout(() => { const el = wg.el; if (el && !wg.pin && !el.querySelector('.wg-bar:hover, .wg-ind:hover, :focus-visible')) wgHide(); }, 600);
 }
 // a drag that follows the pointer in page coordinates, so the guide keeps up as the page scrolls under it
 function wgDrag(e, h, step){
@@ -10011,7 +10052,7 @@ function wgOpen(){
   const card = currentCard(), cr = (card || main).getBoundingClientRect();
   const left = Math.max(0, cr.left), right = Math.min(innerWidth, cr.right), top = Math.max(0, cr.top, Math.max(0, appbar.getBoundingClientRect().bottom) + 8);
   wgSet(left + scrollX, top + scrollY, right - left > WG_MIN.w ? right - left : innerWidth - left, Math.round(innerHeight * 0.6));
-  wgPaint(); wgBtn.setAttribute('aria-pressed', 'true');
+  wg.pin = true; wgPaint(); wgBtn.setAttribute('aria-pressed', 'true'); wgPopSync();
   el.addEventListener('pointerdown', e => {
     const h = e.target.closest('.wg-h, .wg-move'); if (!h) return;
     wgDrag(e, h, h.classList.contains('wg-move') ? wgMove : wgSize(h.dataset.d));
@@ -10022,26 +10063,87 @@ function wgOpen(){
     e.preventDefault(); const n = 10, r = wg.r;
     if (e.shiftKey) wgSet(r.l, r.t, r.w + k[0] * n, r.h + k[1] * n); else wgSet(r.l + k[0] * n, r.t + k[1] * n, r.w, r.h);
   });
-  el.addEventListener('click', e => {
+  wgWire(el);
+  el.addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });      // the cursor stays in the note
+  const ind = el.querySelector('.wg-ind'), bar = el.querySelector('.wg-bar'), mouse = e => e.pointerType !== 'touch';
+  ind.addEventListener('pointerenter', e => { if (mouse(e)) wgShow(); });
+  ind.addEventListener('pointerleave', e => { if (mouse(e)) wgLater(); });
+  ind.addEventListener('click', e => { if (e.pointerType === 'mouse') wgShow(true); else if (wg.pin && !el.classList.contains('bar-off')) wgHide(); else wgShow(true); });      // a tap (or Enter) shows it for good, or takes it away
+  bar.addEventListener('pointerenter', e => { if (mouse(e)) clearTimeout(wg.bt); });
+  bar.addEventListener('pointerleave', e => { if (mouse(e)) wgLater(); });
+  bar.addEventListener('pointerdown', () => { wg.pin = true; });         // using the bar keeps it
+  el.addEventListener('focusin', e => { if (e.target.matches(':focus-visible')) wgShow(); });
+  el.addEventListener('focusout', e => { if (!el.contains(e.relatedTarget)) wgLater(); });
+}
+// one place for what a click or a slider does, on the bar and in the pop-out
+function wgWire(root){
+  root.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.dataset.pick) wg.pat = b.dataset.pick;
     else if (b.dataset.step) wg.gap = wgClamp(wg.gap + +b.dataset.step, 12, 48);
     else if (b.hasAttribute('data-wgx')) { wgClose(); return; }
+    else if (b.hasAttribute('data-wgt')) { wg.el ? wgClose() : wgOpen(); return; }
     else return;
     wgPaint(); wgRemember();
   });
-  el.addEventListener('input', e => { const r = e.target.closest('input[type=range]'); if (r) { wg[r.dataset.k] = +r.value; wgPaint(); wgRemember(); } });
-  el.addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });      // the cursor stays in the note
+  root.addEventListener('input', e => { const r = e.target.closest('input[type=range]'); if (r) { wg[r.dataset.k] = +r.value; wgPaint(); wgRemember(); } });
 }
 const wgRemember = () => { pref.set('wg-pat', wg.pat); pref.set('wg-gap', wg.gap); pref.set('wg-op', wg.op); };
 function wgClose(){
   if (!wg.el) return;
-  wg.el.remove(); wg.el = null; wgBtn.setAttribute('aria-pressed', 'false'); document.body.classList.remove('wg-drag');
+  clearTimeout(wg.bt); wg.el.remove(); wg.el = null; wg.pin = false; wgBtn.setAttribute('aria-pressed', 'false'); document.body.classList.remove('wg-drag'); wgPopSync();
 }
-wgBtn.onclick = wgOpen;
+// Insert › Writing guide: clicking it adds or takes away the guide; pointing at it (or focusing it, or pressing and holding) opens its settings
+function wgPopClose(back){
+  clearTimeout(wg.pt); const p = wg.pop; if (!p) return;
+  const had = p.contains(document.activeElement); p.remove(); wg.pop = null; wgBtn.setAttribute('aria-expanded', 'false');
+  if (back && had) { wg.quiet = true; wgBtn.focus(); wg.quiet = false; }
+}
+function wgPopSync(){ const g = wg.pop?.querySelector('[data-wgt]'); if (g) g.textContent = wg.el ? 'Remove guide' : 'Show guide'; }
+function wgPopOpen(){
+  if (wg.pop) return;
+  clearTimeout(wg.pt); hideTip();
+  const p = wg.pop = document.createElement('div'); p.className = 'pop wgpop'; p.id = 'wgPop'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Writing guide settings');
+  const row = (name, html) => `<div class="wgp-row"><label>${name}</label>${html}</div>`;
+  p.innerHTML = '<p class="wgp-h">Writing guide</p><p class="wgp-d">A grid, lines or dots over the pages, to write straight with a pen. It is not saved with your notes.</p>' +
+    row('Pattern', wgSeg()) + row('Spacing', wgGap()) + row('Opacity', wgOp()) + '<button type="button" class="btn primary wgp-go" data-wgt></button>';
+  wgBtn.after(p);
+  wgWire(p); wgPaint(); wgPopSync();
+  const r = wgBtn.getBoundingClientRect();
+  p.style.left = Math.max(8, Math.min(innerWidth - p.offsetWidth - 8, r.left)) + 'px'; p.style.top = Math.min(innerHeight - p.offsetHeight - 8, r.bottom + 4) + 'px';
+  wgBtn.setAttribute('aria-expanded', 'true');
+  p.addEventListener('pointerenter', () => clearTimeout(wg.pt));
+  p.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') wgPopLater(); });
+  p.addEventListener('focusout', e => { if (e.relatedTarget && !p.contains(e.relatedTarget) && e.relatedTarget !== wgBtn) wgPopClose(); });
+}
+// pointed away: it goes after a moment (not while the pointer is on the button or the pop-out, or the keyboard is in the pop-out)
+function wgPopLater(){
+  clearTimeout(wg.pt);
+  wg.pt = setTimeout(() => { const p = wg.pop; if (p && !p.matches(':hover') && !wgBtn.matches(':hover') && !p.querySelector(':focus-visible')) wgPopClose(); }, 380);
+}
+wgBtn.addEventListener('pointerenter', e => { if (e.pointerType === 'touch') return; clearTimeout(wg.pt); wg.pt = setTimeout(wgPopOpen, 280); });
+wgBtn.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') wgPopLater(); });
+wgBtn.addEventListener('focus', () => { if (!wg.quiet && wgBtn.matches(':focus-visible')) wgPopOpen(); });
+wgBtn.addEventListener('keydown', e => { if (e.key === 'ArrowDown' && wg.pop) { e.preventDefault(); wg.pop.querySelector('button, input')?.focus(); } });
+wgBtn.addEventListener('contextmenu', e => { e.preventDefault(); wgPopOpen(); });
+wgBtn.addEventListener('pointerdown', e => {                          // pressing it means to click: no pop-out for that (a finger: press and hold)
+  if (!wg.pop) clearTimeout(wg.pt);
+  if (e.pointerType !== 'touch') return;
+  wg.held = false; clearTimeout(wg.lp);
+  wg.lp = setTimeout(() => { wg.held = true; wgPopOpen(); }, 500);
+});
+for (const t of ['pointerup', 'pointercancel', 'pointerleave']) wgBtn.addEventListener(t, () => clearTimeout(wg.lp));
+wgBtn.onclick = () => { if (wg.held) { wg.held = false; return; } wgOpen(); };
+addEventListener('keydown', e => { if (e.key === 'Escape' && wg.pop) { e.preventDefault(); e.stopPropagation(); wgPopClose(true); } }, true);
 addEventListener('keydown', e => { if (e.key === 'Escape' && wg.el && !e.defaultPrevented && !focusMode) wgClose(); });
-// a finger gets bigger handles, whatever the browser says about the screen
-document.addEventListener('pointerdown', e => { if (wg.el && e.pointerType === 'touch') wg.el.classList.add('wg-touch'); }, true);
+// a finger gets bigger handles, whatever the browser says about the screen; a click or tap anywhere but the bar and the handles puts the bar away
+document.addEventListener('pointerdown', e => {
+  const t = e.target instanceof Element ? e.target : null;
+  if (wg.pop && !t?.closest('.wgpop, #wgBtn')) wgPopClose();
+  if (!wg.el) return;
+  if (e.pointerType === 'touch') wg.el.classList.add('wg-touch');
+  if (!t?.closest('.wg-bar, .wg-h, .wg-ind, .wgpop')) wgHide();
+}, true);
 
 /* ---------- where a table or journal entry goes: in the note you're writing in, at the cursor, or in a new note in the nearest gap ---------- */
 function wtCtx(){
@@ -10089,7 +10191,7 @@ function wtAdd(kind, size, ctx = wtCtx()){
   const node = kind === 'table' ? wtMake(size?.r || 3, size?.c || 3) : jMake();
   const note = wtPlace(node, ctx);
   if (kind === 'table') wtFocus(node.querySelector('td'));
-  else jFocus(node.querySelector('.j-acct'));
+  else { jFocus(node.querySelector('.j-acct')); jTone(note.closest('.notebox')); }
   const box = note.closest('.notebox'); if (box) { raise(box); box.scrollIntoView({block: 'nearest', behavior: smoothScroll()}); }
   saveSoon();
 }
@@ -10098,9 +10200,10 @@ function wtUpgrade(){
   main.querySelectorAll('.jrnl').forEach(b => {
     b.contentEditable = 'false'; b.spellcheck = false;
     b.querySelectorAll('.j-date, .j-ind, .j-acct, .j-desc, .j-amt').forEach(f => { f.contentEditable = reading || f.classList.contains('off') ? 'false' : 'true'; });
-    jCheck(b);
+    b.querySelectorAll('.j-date, .j-desc').forEach(f => f.removeAttribute('data-ph'));       // (entries saved with a placeholder)
+    jTone(b.closest('.notebox')); jCheck(b);
   });
-  wtLayoutSoon();
+  wtLayoutSoon(); jxHide(); jMenuClose();
 }
 
 /* ---------- tables ---------- */
@@ -10355,6 +10458,7 @@ document.addEventListener('selectstart', e => { if (wt.drag?.on) e.preventDefaul
 const MODKEYS = new Set(['Shift', 'Control', 'Alt', 'Meta']);
 main.addEventListener('keydown', e => {
   if (e.isComposing || reading) return;
+  if ((e.key === 'Delete' || e.key === 'Backspace') && !e.ctrlKey && !e.metaKey && !e.altKey) { const b = jPicked(); if (b) { e.preventDefault(); e.stopPropagation(); jDelete(b); return; } }
   if (e.target.closest?.('.jrnl')) { jKey(e); return; }
   if (!e.target.closest?.('.mine')) return;
   if (wt.sel && !MODKEYS.has(e.key)) {
@@ -10541,8 +10645,8 @@ const jRowHtml = s => `<div class="j-row" data-s="${s}"><div class="j-ind" conte
 function jMake(){
   const b = document.createElement('div'); b.className = 'jrnl'; b.contentEditable = 'false'; b.spellcheck = false;
   b.setAttribute('role', 'group'); b.setAttribute('aria-label', 'Journal entry');
-  b.innerHTML = `<div class="j-date" contenteditable="true" role="textbox" data-ph="Date" aria-label="Date">${jDate(new Date())}</div>` + jRowHtml('dr') + jRowHtml('cr') +
-    '<div class="j-foot"><div class="j-desc" contenteditable="true" role="textbox" data-ph="Description" aria-label="Description"></div></div>';
+  b.innerHTML = `<div class="j-date" contenteditable="true" role="textbox" aria-label="Date">${jDate(new Date())}</div>` + jRowHtml('dr') + jRowHtml('cr') +
+    '<div class="j-foot"><div class="j-desc" contenteditable="true" role="textbox" aria-label="Description"></div></div>';
   return b;
 }
 const jFields = b => [...b.querySelectorAll('[contenteditable="true"]')];
@@ -10589,8 +10693,8 @@ function jSide(row, s){
   for (const [x, on] of [[row.querySelector('.j-d'), s === 'dr'], [row.querySelector('.j-c'), s === 'cr']]) { x.classList.toggle('off', !on); x.contentEditable = on ? 'true' : 'false'; x.textContent = on ? v : ''; }
   jCheck(row.closest('.jrnl'));
 }
-function jExit(b){
-  if (!b.nextSibling) return;
+function jExit(b, mk){
+  if (!b.nextSibling) { if (!mk) return; b.after(document.createElement('br')); }
   const note = b.closest('.mine'); note.focus({preventScroll: true});
   const r = document.createRange(); r.setStartAfter(b); r.collapse(true);
   const s = getSelection(); s.removeAllRanges(); s.addRange(r); active = note; savedRange = r.cloneRange();
@@ -10600,7 +10704,12 @@ function jKey(e){
   const f = e.target.closest('.jrnl [contenteditable="true"]'); if (!f) return;
   const b = f.closest('.jrnl'), row = f.closest('.j-row'), fields = jFields(b), i = fields.indexOf(f);
   const stop = () => { e.preventDefault(); e.stopPropagation(); };
-  if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'a') { stop(); jFocus(f, true); return; }      // Select all: this field's text, not the whole entry
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'a') {      // Select all: this field's text; again, the whole entry
+    stop(); if (jA === f) { jA = null; jPick(b); } else { jFocus(f, true); jA = f; }
+    return;
+  }
+  if (!MODKEYS.has(e.key)) jA = null;
+  if (e.key.startsWith('Arrow') && jArrow(e, b, f)) return;
   if (e.key === 'Tab') {
     stop(); const n = fields[i + (e.shiftKey ? -1 : 1)];
     if (n) jFocus(n, true); else if (!e.shiftKey) jExit(b);
@@ -10615,6 +10724,157 @@ function jKey(e){
     row.remove(); jFocus(to); jCheck(b); saveSoon();
   }
 }
+// Arrow keys go round the entry like a table. Up and Down keep to the same column (the date sits above the first row and the description below the last;
+// the column is remembered across them); Left and Right step to the next zone (indicator, account, amount) once the caret is at the end of the text.
+let jA = null;                                   // the field Select all was pressed in (pressed again: the whole entry)
+const J_ZONES = ['.j-ind', '.j-acct', '.j-amt:not(.off)'];
+const jZone = f => f.classList.contains('j-ind') ? 0 : f.classList.contains('j-acct') ? 1 : 2;
+// is the caret at the start / end of the field's text, and on its first / last line (a long account name can wrap)?
+function jCaret(f, left){
+  const s = getSelection(); if (!s.rangeCount || !s.isCollapsed || !f.contains(s.anchorNode)) return false;
+  const a = document.createRange(); a.selectNodeContents(f); a.setEnd(s.anchorNode, s.anchorOffset);
+  return left ? !a.toString().length : a.toString().length >= f.textContent.length;
+}
+function jLine(f, up){
+  const s = getSelection(); if (!s.rangeCount || !f.contains(s.anchorNode)) return true;
+  const r = s.getRangeAt(0).cloneRange(); r.collapse(true);
+  const c = r.getClientRects()[0], fr = f.getBoundingClientRect(); if (!c || !c.height) return true;
+  return up ? c.top - fr.top < c.height * .8 : fr.bottom - c.bottom < c.height * .8;
+}
+function jArrow(e, b, f){
+  if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return false;
+  const rows = [...b.querySelectorAll('.j-row')], row = f.closest('.j-row'), ri = rows.indexOf(row), k = e.key;
+  const stop = () => { e.preventDefault(); e.stopPropagation(); };
+  if (k === 'ArrowUp' || k === 'ArrowDown') {
+    const up = k === 'ArrowUp'; if (!jLine(f, up)) return false;
+    stop();
+    const z = row ? jZone(f) : b.jcol || 0; if (row) b.jcol = z;
+    const at = n => rows[n]?.querySelector(J_ZONES[z]);
+    const to = !row ? (f.classList.contains('j-date') ? (up ? null : at(0)) : (up ? at(rows.length - 1) : null))
+      : ri + (up ? -1 : 1) < 0 ? b.querySelector('.j-date') : ri + 1 >= rows.length && !up ? b.querySelector('.j-desc') : at(ri + (up ? -1 : 1));
+    if (to) jFocus(to); else if (up) jLeave(b); else jExit(b, true);
+    return true;
+  }
+  if (k !== 'ArrowLeft' && k !== 'ArrowRight') return false;
+  const left = k === 'ArrowLeft'; if (!jCaret(f, left)) return false;       // inside the text, it moves the caret as usual
+  stop();
+  const zones = rows.flatMap(r => J_ZONES.map(q => r.querySelector(q))), n = row && zones[zones.indexOf(f) + (left ? -1 : 1)];
+  if (n) jFocus(n);
+  return true;
+}
+// up out of the date: the caret goes to the end of what is above the entry (with nothing above it, it stays)
+function jLeave(b){
+  let p = b.previousSibling; while (p && p.nodeType === 3 && !p.data.trim()) p = p.previousSibling;
+  if (!p) return;
+  const note = b.closest('.mine'); document.activeElement?.blur(); note.focus({preventScroll: true});
+  const r = document.createRange();
+  if (p.nodeType === 3) r.setStart(p, p.length); else if (p.nodeName === 'BR') r.setStartBefore(p); else r.setStartAfter(p);
+  r.collapse(true);
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r); active = note; savedRange = r.cloneRange();
+}
+
+// the whole entry: selected by clicking its edge or by Select all twice, taken away by Delete, the × on it, or its menu (one step back undoes it)
+function jPick(b){
+  const note = b.closest('.mine'); if (!note || reading) return;
+  document.activeElement?.blur(); note.focus({preventScroll: true});
+  const r = document.createRange(); r.selectNode(b);
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r); active = note; savedRange = r.cloneRange();
+}
+function jPicked(){
+  const s = getSelection(); if (!s.rangeCount || s.isCollapsed) return null;
+  const r = s.getRangeAt(0), n = r.startContainer;
+  return r.endContainer === n && r.endOffset - r.startOffset === 1 && n.childNodes[r.startOffset]?.classList?.contains('jrnl') ? n.childNodes[r.startOffset] : null;
+}
+function jDelete(b){
+  if (!b?.isConnected || reading) return;
+  const note = b.closest('.mine'), at = b.nextSibling;
+  jxHide(); jMenuClose(); b.remove();
+  if (note) {
+    note.focus({preventScroll: true});
+    const r = document.createRange(); if (at?.parentNode === note) r.setStartBefore(at); else r.selectNodeContents(note); r.collapse(true);
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r); active = note; savedRange = r.cloneRange();
+    if (!note.textContent.trim()) { note.blur(); dropIfEmpty(note); }        // nothing else in it: it goes too
+    if (note.isConnected && document.activeElement !== note) { note.focus({preventScroll: true}); s.removeAllRanges(); s.addRange(r); }
+  }
+  saveSoon(); toast('Journal entry deleted. Back puts it back.');
+}
+main.addEventListener('mousedown', e => {
+  if (e.button || reading) return;
+  if (e.target.classList?.contains('jrnl')) { e.preventDefault(); jPick(e.target); }
+  else if (e.target.classList?.contains('j-foot')) { e.preventDefault(); jFocus(e.target.querySelector('.j-desc')); }
+});
+document.addEventListener('pointerdown', () => { jA = null; }, true);
+// the × at the top right of an entry you point at (a layer of its own over the page, so it is never saved, printed or shown in Study mode)
+let jx = null, jxT = 0;
+function jxHide(){ clearTimeout(jxT); jxT = 0; if (jx) jx.hidden = true; }
+function jxShow(b){
+  if (!jx) {
+    jx = document.createElement('button'); jx.type = 'button'; jx.id = 'jx'; jx.hidden = true;
+    jx.setAttribute('aria-label', 'Delete journal entry'); jx.dataset.tip = 'Delete journal entry'; jx.innerHTML = icon('x');
+    jx.addEventListener('mousedown', e => e.preventDefault());
+    jx.addEventListener('click', () => { const t = jx.b; jxHide(); jDelete(t); });
+    document.body.append(jx);
+  }
+  clearTimeout(jxT); jxT = 0;
+  const r = b.getBoundingClientRect(); jx.b = b; jx.hidden = false;
+  jx.style.left = Math.round(r.right - jx.offsetWidth - 2 + scrollX) + 'px'; jx.style.top = Math.round(r.top - jx.offsetHeight / 2 + scrollY) + 'px';
+}
+document.addEventListener('pointermove', e => {
+  if (reading || e.pointerType === 'touch' || !(e.target instanceof Element)) return;
+  const b = e.target.closest('.jrnl');
+  if (b && b.closest('.mine') && main.contains(b)) { if (jx?.b !== b || jx.hidden) jxShow(b); else { clearTimeout(jxT); jxT = 0; } }
+  else if (e.target.closest('#jx')) { clearTimeout(jxT); jxT = 0; }
+  else if (jx && !jx.hidden && !jxT) jxT = setTimeout(jxHide, 250);
+}, {passive: true});
+addEventListener('scroll', e => { if (jx && !jx.hidden && e.target !== jx) jxHide(); }, {capture: true, passive: true});
+// right-click, the menu key, or press and hold on a touch screen: the same menu as a table's
+const jm = {el: null, b: null, at: 0};
+function jMenuClose(back){
+  if (!jm.el) return;
+  const {b} = jm; jm.el.remove(); jm.el = null;
+  if (back && b?.isConnected) jFocus(b.querySelector('.j-acct'));
+}
+function jMenuOpen(b, x, y){
+  if (reading) return;
+  jMenuClose(); jxHide();
+  const el = jm.el = document.createElement('div'); el.className = 'pop spellmenu wtmenu'; el.setAttribute('role', 'menu'); el.setAttribute('aria-label', 'Journal entry');
+  el.innerHTML = '<button type="button" role="menuitem" class="danger">Delete journal entry</button>';
+  document.body.append(el);
+  el.style.left = Math.max(8, Math.min(innerWidth - el.offsetWidth - 8, x)) + 'px'; el.style.top = Math.max(8, Math.min(innerHeight - el.offsetHeight - 8, y)) + 'px';
+  jm.b = b; jm.at = performance.now();
+  el.addEventListener('mousedown', e => e.preventDefault());
+  el.addEventListener('click', () => { jMenuClose(); jDelete(b); });
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); jMenuClose(true); }
+    else if (e.key === 'Tab' || e.key.startsWith('Arrow')) { e.preventDefault(); jMenuClose(true); }
+  });
+  el.querySelector('button').focus({preventScroll: true});
+}
+document.addEventListener('mousedown', e => { if (jm.el && !e.target.closest('.wtmenu') && performance.now() - jm.at > 350) jMenuClose(); }, true);
+addEventListener('scroll', e => { if (jm.el && performance.now() - jm.at > 200 && (e.target === document || e.target.contains?.(jm.b))) jMenuClose(); }, {capture: true, passive: true});
+main.addEventListener('contextmenu', e => {
+  const b = e.target instanceof Element && e.target.closest('.jrnl'); if (!b || reading) return;
+  e.preventDefault(); let x = e.clientX, y = e.clientY;
+  if (!x && !y) { const r = e.target.getBoundingClientRect(); x = r.left + 8; y = r.bottom; }
+  jMenuOpen(b, x, y);
+}, true);
+main.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'touch' || reading) return;
+  const b = e.target.closest?.('.jrnl'); if (!b) return;
+  const x = e.clientX, y = e.clientY;
+  const stop = () => { clearTimeout(tm); removeEventListener('pointerup', stop); removeEventListener('pointercancel', stop); removeEventListener('pointermove', far); };
+  const far = ev => { if (Math.hypot(ev.clientX - x, ev.clientY - y) > 10) stop(); };
+  const tm = setTimeout(() => { stop(); jMenuOpen(b, x, y); }, 550);
+  addEventListener('pointerup', stop); addEventListener('pointercancel', stop); addEventListener('pointermove', far);
+});
+// an entry has no panel, so its colours follow the paper: the light set when the note's fill is dark (a dark side page does the same by itself)
+const jLum = hex => { const n = parseInt(hex.slice(1), 16); return [16, 8, 0].reduce((t, sh, i) => { const v = ((n >> sh) & 255) / 255; return t + [.2126, .7152, .0722][i] * (v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4); }, 0); };
+function jTone(box){
+  if (!box) return;
+  const f = box.style.getPropertyValue('--nb-fill').trim(), t = /^#[0-9a-f]{6}$/i.test(f) ? (jLum(f) < .3 ? 'dark' : 'light') : '';
+  if ((box.dataset.tone || '') !== t) { if (t) box.dataset.tone = t; else delete box.dataset.tone; }
+}
+new MutationObserver(ms => { for (const m of ms) if (m.target.classList.contains('notebox') && m.target.querySelector('.jrnl')) jTone(m.target); }).observe(main, {attributes: true, attributeFilter: ['style'], subtree: true});
 // amounts take digits, commas, a point, a minus and brackets; pasted text is plain
 main.addEventListener('beforeinput', e => {
   const f = e.target.closest?.('.jrnl [contenteditable="true"]'); if (!f) return;
