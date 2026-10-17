@@ -544,7 +544,7 @@ kbd{border-color:var(--pencil)}
 #sideDrive{margin-top:26px;position:relative}
 #sideDrive::before{content:"Open from the cloud";position:absolute;left:8px;top:-22px;font-size:12px;letter-spacing:.04em;color:var(--muted)}
 .srow.cloud{padding-left:14px}
-#sideOd{margin-bottom:6px}
+#sideOdNbs{margin-bottom:6px}
 .srow .i{width:17px;height:17px;color:var(--muted)}
 .sidesec{display:flex;align-items:baseline;gap:8px;padding:10px 14px 4px;font:700 15px var(--display);color:var(--muted)}
 .sidesec .count{font:13px var(--ui)}
@@ -1521,6 +1521,7 @@ try {
       <button type="button" class="srow cloud" id="sideDrive" data-drive-open title="Open a file from Google Drive: PDF, PowerPoint, Word, Google Slides or Docs, pictures or a notebook file"><svg class="i"><use href="#i-drive"/></svg>Google Drive</button>
       <button type="button" class="srow cloud" id="sideDriveNbs" data-drive data-drive-nbs title="Your notebooks saved in Google Drive, from any of your devices: pick one up where you left off"><svg class="i"><use href="#i-drive"/></svg>Your Drive notebooks</button>
       <button type="button" class="srow cloud" id="sideOd" data-od-open title="Open a file from OneDrive or SharePoint with your Microsoft account: PDF, PowerPoint, Word, pictures or a notebook file"><svg class="i"><use href="#i-onedrive"/></svg>OneDrive</button>
+      <button type="button" class="srow cloud" id="sideOdNbs" data-od data-od-nbs title="Your notebooks saved in OneDrive, from any of your devices: pick one up where you left off"><svg class="i"><use href="#i-onedrive"/></svg>Your OneDrive notebooks</button>
       <button type="button" class="srow" id="sideAdd" title="Write a note for the page you're on, in the Notes panel"><svg class="i"><use href="#i-pen"/></svg>Add a note</button>
       <button type="button" class="srow" id="sideSearch" title="Search: find a notebook, page or note, or run an action (Ctrl+K)"><svg class="i"><use href="#i-search"/></svg>Search</button>
     </div>
@@ -1675,6 +1676,7 @@ try {
     <section id="odSec">
       <h3>OneDrive and Microsoft 365</h3>
       <p class="sethint" id="odStatus">Not connected</p>
+      <p class="sethint">A notebook saved to OneDrive keeps itself in sync: changes go up a few seconds after you stop writing, and changes made on another device are fetched when you come back. If Microsoft’s sign-in runs out, press the cloud button at the top to sign in again.</p>
       <p class="sethint" id="odHint" hidden>OneDrive isn't set up for this site yet. The site owner needs to register the app with Microsoft and paste its client ID at the top of the page's script (see “OneDrive and Microsoft 365” in the README).</p>
       <button type="button" class="btn outline" id="odOff" disabled title="Sign out of OneDrive on this device. Your files in OneDrive stay where they are.">Sign out</button>
     </section>
@@ -4100,7 +4102,7 @@ function saveSoon(){
   timer = setTimeout(saveNow, 500);
 }
 let lastStored = {id: null, html: null};     // what was last written for the open notebook, so an unchanged notebook isn't written again
-const sync = {timer: 0, first: 0, busy: false, again: false, gen: 0, err: null, quiet: false, checked: 0};     // keeping a notebook that's in Google Drive up to date there
+const sync = {timer: 0, first: 0, busy: false, again: false, gen: 0, err: null, quiet: false, checked: 0};     // keeping a notebook that's in Google Drive or OneDrive up to date there
 async function saveNow(){
   timer = null;
   if (db) await assetize();
@@ -4113,7 +4115,7 @@ async function saveNow(){
   const same = lastStored.id === d.id && lastStored.html === stored;
   if (same && d.name === name && d.pages === pages && d.notes === notes) { if (!timer) setSaveState('saved'); return; }
   Object.assign(d, {name, pages, notes}); if (!same) d.updated = Date.now();
-  if (!same && d.driveNb && lastStored.id === d.id && !sync.quiet) { d.driveDirty = 1; sync.gen++; }       // (not for the first write after opening it, nor for changes fetched from Drive)
+  if (!same && cloudOf(d) && lastStored.id === d.id && !sync.quiet) { d.driveDirty = 1; sync.gen++; }       // (not for the first write after opening it, nor for changes fetched from the cloud)
   const ok = await putAll({...(same ? {} : {['doc:' + d.id]: stored}), docs, cur: curId, style});
   if (ok) lastStored = {id: d.id, html: stored};
   if (!timer) setSaveState(ok ? 'saved' : 'error');
@@ -7952,7 +7954,7 @@ async function driveOpen(){
   try {
     const picked = await drivePick();
     for (const [i, d] of picked.entries()) {
-      if (docs.some(x => x.driveNb === d.id && !x.trashed)) { await driveOpenNotebook(d); continue; }         // already here: bring it up to date instead of a second copy
+      if (docs.some(x => x.driveNb === d.id && !x.trashed)) { await cloudOpen(CLOUD.google, d); continue; }         // already here: bring it up to date instead of a second copy
       await driveOpenOne(d, picked.length > 1 ? ` (${i + 1} of ${picked.length})` : '');
     }
   } catch (err) { driveSay(err, 'open from Google Drive'); }
@@ -8008,7 +8010,7 @@ async function driveStore(kind, quiet, auto){
   const fields = '&fields=id,name,parents,version&supportsAllDrives=true';
   const create = (meta, blob = file.blob) => driveSend('POST', `${DRIVE_UPLOAD}/files?uploadType=multipart${fields}`, {mimeType: blob.type, ...meta}, blob, progress);
   const copy = () => create({name: notebookName() + ' (my copy).html'});          // into your own Drive, not the shared folder
-  let out, mine = false;
+  let out, mine = false, from = '';
   if (kind === 'notebook' && !doc?.[key] && doc?.driveNbRO) { out = await copy(); mine = true; }
   else if (doc?.[key]) {
     try { out = await driveSend('PATCH', `${DRIVE_UPLOAD}/files/${encodeURIComponent(doc[key])}?uploadType=multipart${fields}`, {}, file.blob, progress); }
@@ -8023,10 +8025,10 @@ async function driveStore(kind, quiet, auto){
     doc[key] = out.id;
     if (mine) { delete doc.driveNbRO; doc.driveFolder = out.parents?.[0] || ''; }
     else if (!doc.driveFolder && out.parents?.[0]) doc.driveFolder = out.parents[0];
-    if (kind === 'notebook') { doc.driveVer = out.version || ''; delete doc.driveStop; if (sync.gen === gen) delete doc.driveDirty; if (doc === curDoc()) syncShow(); }
+    if (kind === 'notebook') { from = relink(doc, 'google'); doc.driveVer = out.version || ''; delete doc.driveStop; if (sync.gen === gen) delete doc.driveDirty; if (doc === curDoc()) syncShow(); }
     putAll({docs});
   }
-  return {id: out.id, name: out.name || file.name, copy: mine};
+  return {id: out.id, name: out.name || file.name, copy: mine, from};
 }
 async function driveSave(kind){
   if (!driveSetUp()) return;
@@ -8034,68 +8036,100 @@ async function driveSave(kind){
   try {
     await driveToken();                         // sign in first, while the click still counts, then build the file
     const out = await driveStore(kind), at = new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'});
-    toast(out.copy ? `You can only view the original, so a copy was saved in your own Drive: ${out.name} (${at}). It keeps in sync from now on.` : kind === 'notebook' ? `Saved to Google Drive: ${out.name} (${at}). From now on it keeps in sync by itself, so you can carry on from another device.` : `Saved to Google Drive: ${out.name} (${at})`);
+    toast(out.copy ? `You can only view the original, so a copy was saved in your own Drive: ${out.name} (${at}). It keeps in sync from now on.${relinked(out.from)}` : kind === 'notebook' ? `Saved to Google Drive: ${out.name} (${at}). From now on it keeps in sync by itself, so you can carry on from another device.${relinked(out.from)}` : `Saved to Google Drive: ${out.name} (${at})`);
   } catch (err) { driveSay(err, 'save to Google Drive'); }
 }
 
 // ---------- keeping it in sync ----------
-// Once a notebook is in your Google Drive, each change goes up by itself a few seconds after you stop:
+// Once a notebook is in your Google Drive or OneDrive, each change goes up by itself a few seconds after you stop:
 // one upload, only when something changed, and never a sign-in pop-up (that waits for a click on the cloud).
+// Both clouds share this code. A cloud is a small object: hasLink/linkOf (the file the notebook is tied to), tokenOk (can we go on without asking?),
+// quiet (get a token without any window), meta (version and whether it's gone), upload, download, save (the click version), stops (what an error means), list and openOne.
+// A notebook is tied to one cloud at a time, the one it was saved to last; driveDirty and driveStop belong to whichever it is.
+const CLOUD = {google: {
+  key: 'google', name: 'Google Drive', short: 'Drive', account: 'Google', ico: 'drive', bin: 'bin', ver: 'driveVer', lock: 'You can no longer change this file in Google Drive.',
+  hasLink: d => !!d.driveNb, linkOf: d => d.driveNb, tokenOk: driveTokenOk, quiet: async () => driveTokenOk(), token: driveToken, say: driveSay, setUp: driveSetUp,
+  async meta(d){ const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=version,trashed&supportsAllDrives=true`)).json(); return {ver: r.version, gone: !!r.trashed}; },
+  upload: d => driveStore('notebook', true, true),
+  download: d => driveDownload({id: d.driveNb, name: d.name + '.html', mime: 'text/html'}),
+  save: () => driveSave('notebook'),
+  stops: err => err.status === 404 ? 'gone' : err.status === 403 && !/rate|quota/i.test(err.message) ? 'locked' : '',
+  revive(d, stop){ if (stop === 'gone') delete d.driveNb; if (stop === 'locked') { d.driveNbRO = d.driveNb; delete d.driveNb; } },       // 'gone': a new file, in the same folder
+  nbs: {title: 'Your notebooks in Drive', looking: 'Looking in your Google Drive…', hint: 'Notebooks you’ve saved to Google Drive from any device. Pick one to carry on where you left off; it keeps in sync from then on.',
+    none: 'No notebooks in your Drive yet. On the device you started on, use Download › Notebook to Drive once; after that it keeps itself in sync.'},
+  async list(){
+    const q = encodeURIComponent("trashed=false and (mimeType='text/html' or name contains '.html')");
+    const r = await (await driveFetch(`${DRIVE_API}/files?q=${q}&orderBy=modifiedTime desc&pageSize=100&fields=files(id,name,modifiedTime)&supportsAllDrives=true&includeItemsFromAllDrives=true`)).json();
+    return (r.files || []).filter(f => /\.html?$/i.test(f.name)).map(f => ({id: f.id, name: f.name, when: f.modifiedTime}));
+  },
+  openOne: f => driveOpenOne(f),
+}};
+const cloudOf = d => d?.driveNb ? CLOUD.google : d?.odNb && CLOUD.onedrive || null;
+const CLOUD_LINK = {google: ['driveNb', 'driveNbRO', 'driveVer'], onedrive: ['odNb', 'odDrive', 'odVer']};
+// the notebook now follows `to`; if it followed the other one, that link is dropped (the file there stays as it was). Gives that cloud's name, or ''.
+function relink(doc, to){
+  const from = CLOUD[to === 'google' ? 'onedrive' : 'google'], was = from.hasLink(doc);
+  for (const k of CLOUD_LINK[from.key]) delete doc[k];
+  return was ? from.name : '';
+}
+const relinked = from => from ? ` It used to sync with ${from}; that file stays as it was.` : '';
+
 function syncSoon(now){
-  const d = curDoc(); syncShow();
-  if (!d?.driveNb || !d.driveDirty || d.driveStop || !navigator.onLine || !driveTokenOk()) return;
+  const d = curDoc(), P = cloudOf(d); syncShow();
+  if (!P || !d.driveDirty || d.driveStop || !navigator.onLine || !P.tokenOk()) return;
   const t = Date.now(); sync.first ||= t;
   clearTimeout(sync.timer);
   sync.timer = setTimeout(syncNow, now ? 0 : Math.max(0, Math.min(5000, sync.first + 60000 - t)));       // 5 s after the last change, at least once a minute
 }
 async function syncNow(){
   sync.timer = 0;
-  const d = curDoc();
-  if (!d?.driveNb || !d.driveDirty || d.driveStop || !navigator.onLine || !driveTokenOk()) return syncShow();
+  const d = curDoc(), P = cloudOf(d);
+  if (!P || !d.driveDirty || d.driveStop || !navigator.onLine || !P.tokenOk()) return syncShow();
   if (sync.busy) { sync.again = true; return; }
   sync.busy = true; sync.first = 0; sync.err = null; syncShow();
   try {
-    // someone else changed it in Drive since: don't write over their work
-    const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=version,trashed&supportsAllDrives=true`)).json();
-    if (r.trashed) d.driveStop = 'gone';
-    else if (d.driveVer && r.version && String(r.version) !== String(d.driveVer)) d.driveStop = 'changed';
-    else if (curDoc() === d) await driveStore('notebook', true, true);
+    // someone else changed it in the cloud since: don't write over their work
+    if (await P.quiet()) {
+      const r = await P.meta(d, true);
+      if (r.gone) d.driveStop = 'gone';
+      else if (d[P.ver] && r.ver && String(r.ver) !== String(d[P.ver])) d.driveStop = 'changed';
+      else if (curDoc() === d) await P.upload(d);
+    }
   } catch (err) {
-    if (err.status === 404) d.driveStop = 'gone';
-    else if (err.status === 403 && !/rate|quota/i.test(err.message)) d.driveStop = 'locked';
-    else sync.err = err;
+    const st = P.stops(err);
+    if (st) d.driveStop = st;
+    else if (err.kind !== 'signin') sync.err = err;
   }
   if (d.driveStop) putAll({docs});
   sync.busy = false; syncShow();
   if (sync.again) { sync.again = false; syncSoon(); }
   else if (sync.err && navigator.onLine) { clearTimeout(sync.timer); sync.timer = setTimeout(syncNow, 30000); }       // try again in a while
 }
-const SYNC_SAY = {
-  synced: ['saved', 'Synced to Drive', 'This notebook is in your Google Drive and every change goes there by itself.'],
-  waiting: ['drive', 'Syncing soon', 'Your latest changes go to Google Drive in a few seconds.'],
-  syncing: ['drive', 'Syncing…', 'Sending your latest changes to Google Drive.'],
-  signin: ['drive', 'Sign in to sync', 'Google sign-in has run out. Click to sign in again, and your changes go to Drive.'],
-  offline: ['cloud-off', 'Syncs when online', 'You’re offline. Your notes are saved in this browser and go to Google Drive when you’re back online.'],
-  error: ['alert', 'Sync paused', 'Google Drive didn’t take the last changes. Click to try again.'],
-  changed: ['alert', 'Changed in two places', 'This notebook changed in Google Drive (on another device, or by someone you shared it with) while it also changed here. Click to choose which to keep.'],
-  gone: ['alert', 'Not in Drive', 'This notebook’s file was deleted or moved to the bin in Google Drive. Click to save it to Drive again.'],
-  locked: ['alert', 'Can’t sync', 'You can no longer change this file in Google Drive. Click to save a copy in your own Drive.'],
-};
+const syncSay = P => ({
+  synced: ['saved', `Synced to ${P.short}`, `This notebook is in your ${P.name} and every change goes there by itself.`],
+  waiting: [P.ico, 'Syncing soon', `Your latest changes go to ${P.name} in a few seconds.`],
+  syncing: [P.ico, 'Syncing…', `Sending your latest changes to ${P.name}.`],
+  signin: [P.ico, 'Sign in to sync', `${P.account} sign-in has run out. Click to sign in again, and your changes go to ${P.short}.`],
+  offline: ['cloud-off', 'Syncs when online', `You’re offline. Your notes are saved in this browser and go to ${P.name} when you’re back online.`],
+  error: ['alert', 'Sync paused', `${P.name} didn’t take the last changes. Click to try again.`],
+  changed: ['alert', 'Changed in two places', `This notebook changed in ${P.name} (on another device, or by someone you shared it with) while it also changed here. Click to choose which to keep.`],
+  gone: ['alert', `Not in ${P.short}`, `This notebook’s file was deleted or moved to the ${P.bin} in ${P.name}. Click to save it to ${P.short} again.`],
+  locked: ['alert', 'Can’t sync', `${P.lock} Click to save a copy in your own ${P.short}.`],
+});
 function syncShow(){
-  const el = $('#driveSync'), d = curDoc();
-  const s = !d?.driveNb && !d?.driveStop ? '' : d.driveStop || (!d.driveDirty ? 'synced' : !navigator.onLine ? 'offline' : sync.busy ? 'syncing' : sync.err ? 'error' : !driveTokenOk() ? 'signin' : 'waiting');
-  el.hidden = !s; if (!s || (el.dataset.s === s && el.innerHTML)) return;
-  const [ico, say, tip] = SYNC_SAY[s];
-  el.dataset.s = s; el.innerHTML = icon(ico) + `<span>${say}</span>`; el.dataset.tip = tip; el.setAttribute('aria-label', say);
+  const el = $('#driveSync'), d = curDoc(), P = cloudOf(d);
+  const s = !P ? '' : d.driveStop || (!d.driveDirty ? 'synced' : !navigator.onLine ? 'offline' : sync.busy ? 'syncing' : sync.err ? 'error' : !P.tokenOk() ? 'signin' : 'waiting');
+  el.hidden = !s; if (!s || (el.dataset.s === s && el.dataset.p === P.key && el.innerHTML)) return;
+  const [ico, say, tip] = syncSay(P)[s];
+  el.dataset.s = s; el.dataset.p = P.key; el.innerHTML = icon(ico) + `<span>${say}</span>`; el.dataset.tip = tip; el.setAttribute('aria-label', say);
 }
 $('#driveSync').addEventListener('click', async () => {
-  const d = curDoc(), s = $('#driveSync').dataset.s; if (!d) return;
+  const d = curDoc(), P = cloudOf(d), s = $('#driveSync').dataset.s; if (!d || !P) return;
   if (s === 'synced' || s === 'syncing' || s === 'waiting' || s === 'offline') { if (s === 'waiting') syncSoon(true); return; }
   if (d.driveStop === 'changed') { syncChoose(); return; }
-  if (d.driveStop === 'gone') delete d.driveNb;           // a new file, in the same folder
-  if (d.driveStop === 'locked') { d.driveNbRO = d.driveNb; delete d.driveNb; }
+  P.revive(d, d.driveStop);
   delete d.driveStop; sync.err = null;
-  await driveSave('notebook');                            // a click: signing in again is allowed here
+  await P.save();                                         // a click: signing in again is allowed here
   syncShow();
 });
 addEventListener('online', () => { syncSoon(true); syncCheck(); }); addEventListener('offline', () => syncShow());
@@ -8105,25 +8139,27 @@ setInterval(() => { if (!$('#driveSync').hidden) syncShow(); }, 30000);      // 
 
 // changes made on another device (or by someone it's shared with): fetched when the notebook is opened, when you come back to it, and every minute or so
 async function syncCheck(){
-  const d = curDoc();
-  if (!d?.driveNb || d.driveStop || sync.busy || !navigator.onLine || !driveTokenOk() || main.querySelector('.welcome')) return;
+  const d = curDoc(), P = cloudOf(d);
+  if (!P || d.driveStop || sync.busy || !navigator.onLine || !P.tokenOk() || main.querySelector('.welcome')) return;
   sync.checked = Date.now();
   try {
-    const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=version,trashed&supportsAllDrives=true`)).json();
+    if (!await P.quiet()) return syncShow();
+    const r = await P.meta(d, true);
     if (curDoc() !== d || sync.busy) return;
-    if (r.trashed) { d.driveStop = 'gone'; putAll({docs}); return syncShow(); }
-    if (!r.version || String(r.version) === String(d.driveVer || '')) return;
-    if (!d.driveVer) { d.driveVer = String(r.version); putAll({docs}); return; }       // nothing to compare with yet
+    if (r.gone) { d.driveStop = 'gone'; putAll({docs}); return syncShow(); }
+    if (!r.ver || String(r.ver) === String(d[P.ver] || '')) return;
+    if (!d[P.ver]) { d[P.ver] = String(r.ver); putAll({docs}); return; }       // nothing to compare with yet
     if (d.driveDirty) { d.driveStop = 'changed'; putAll({docs}); return syncShow(); }
-    await syncPull(d, r.version);
-    toast('Updated with the latest changes from Google Drive.');
+    await syncPull(d, r.ver);
+    toast(`Updated with the latest changes from ${P.name}.`);
   } catch (err) { if (err.status === 404) { d.driveStop = 'gone'; putAll({docs}); syncShow(); } }
 }
-// put Drive's copy in place of this browser's (Back still brings the old one back)
+// put the cloud's copy in place of this browser's (Back still brings the old one back)
 async function syncPull(d, ver){
+  const P = cloudOf(d);
   sync.busy = true; syncShow();
   try {
-    const f = await driveDownload({id: d.driveNb, name: d.name + '.html', mime: 'text/html'});
+    const f = await P.download(d);
     const data = readNotebookHtml(await f.text());
     if (!data) throw new DriveError('that file isn’t a notebook', 'other');
     if (curDoc() !== d) return;
@@ -8133,34 +8169,30 @@ async function syncPull(d, ver){
     sync.quiet = true;
     try { await saveNow(); } finally { sync.quiet = false; }
     scrollTo(0, y);
-    d.driveVer = String(ver || ''); delete d.driveDirty; delete d.driveStop; putAll({docs});
+    d[P.ver] = String(ver || ''); delete d.driveDirty; delete d.driveStop; putAll({docs});
   } finally { sync.busy = false; syncShow(); }
 }
-// both changed: keep this one, take Drive's, or keep both
+// both changed: keep this one, take the cloud's, or keep both
 let syncPop = null;
 function syncChoose(){
-  const d = curDoc(), btn = $('#driveSync'); if (!d) return;
+  const d = curDoc(), P = cloudOf(d), btn = $('#driveSync'); if (!d || !P) return;
   if (!syncPop) {
     syncPop = Object.assign(document.createElement('div'), {className: 'pop syncpop', hidden: true});
     syncPop.setAttribute('role', 'menu'); syncPop.setAttribute('aria-label', 'Which version to keep');
-    syncPop.innerHTML = `<p>This notebook changed here and in Google Drive. Which should it keep?</p>
-<button type="button" role="menuitem" data-k="mine"><strong>This version</strong><small>Saves what you see here over the copy in Drive</small></button>
-<button type="button" role="menuitem" data-k="theirs"><strong>Drive’s version</strong><small>Replaces this with the copy in Drive (Back brings this one back)</small></button>
-<button type="button" role="menuitem" data-k="both"><strong>Keep both</strong><small>This version becomes a separate notebook, then this one takes Drive’s</small></button>`;
     document.body.append(syncPop);
     syncPop.addEventListener('click', async e => {
       const k = e.target.closest('[data-k]')?.dataset.k; if (!k) return;
-      const d = curDoc(); syncPop.hidden = true; $('#driveSync').focus();
-      if (!d) return;
+      const d = curDoc(), P = cloudOf(d); syncPop.hidden = true; $('#driveSync').focus();
+      if (!d || !P) return;
       delete d.driveStop; sync.err = null;
       try {
-        if (k === 'mine') { await driveSave('notebook'); return; }
-        await driveToken();
-        const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=version&supportsAllDrives=true`)).json();
+        if (k === 'mine') { await P.save(); return; }
+        await P.token();
+        const r = await P.meta(d);
         if (k === 'both') { await flushSave(); await duplicateDoc(d.id); if (curDoc() !== d) await switchDoc(d.id); }
-        await syncPull(d, r.version);
-        toast(k === 'both' ? 'Kept both: your version is now a separate notebook, and this one has Drive’s changes.' : 'This notebook now has Drive’s version. Back brings yours back.');
-      } catch (err) { driveSay(err, 'sync with Google Drive'); }
+        await syncPull(d, r.ver);
+        toast(k === 'both' ? `Kept both: your version is now a separate notebook, and this one has ${P.name}’s changes.` : `This notebook now has ${P.name}’s version. Back brings yours back.`);
+      } catch (err) { P.say(err, `sync with ${P.name}`); }
       syncShow();
     });
     syncPop.addEventListener('keydown', e => {
@@ -8170,6 +8202,10 @@ function syncChoose(){
     });
     document.addEventListener('mousedown', e => { if (!syncPop.hidden && !syncPop.contains(e.target) && !e.target.closest('#driveSync')) syncPop.hidden = true; });
   }
+  syncPop.innerHTML = `<p>This notebook changed here and in ${P.name}. Which should it keep?</p>
+<button type="button" role="menuitem" data-k="mine"><strong>This version</strong><small>Saves what you see here over the copy in ${P.short}</small></button>
+<button type="button" role="menuitem" data-k="theirs"><strong>${P.short}’s version</strong><small>Replaces this with the copy in ${P.short} (Back brings this one back)</small></button>
+<button type="button" role="menuitem" data-k="both"><strong>Keep both</strong><small>This version becomes a separate notebook, then this one takes ${P.short}’s</small></button>`;
   const r = btn.getBoundingClientRect();
   syncPop.hidden = false;
   syncPop.style.left = Math.max(8, Math.min(r.left, innerWidth - syncPop.offsetWidth - 8)) + 'px';
@@ -8177,18 +8213,19 @@ function syncChoose(){
   syncPop.querySelector('[data-k]').focus();
 }
 
-// ---------- your notebooks in Drive, from any device ----------
-// Only files this app made or opened are visible to it (the drive.file permission), so this is exactly your notebooks.
-let nbsBox = null, nbsScrim = null, nbsPrev = null;
+// ---------- your notebooks in Drive or OneDrive, from any device ----------
+// Google only shows files this app made or opened (the drive.file permission); OneDrive lists the Between the Lines folder, plus any notebook opened from elsewhere.
+let nbsBox = null, nbsScrim = null, nbsPrev = null, nbsP = null;
 function nbsClose(){ if (!nbsBox || nbsBox.hidden) return; nbsBox.hidden = nbsScrim.hidden = true; nbsPrev?.focus?.(); }
-async function driveNotebooks(){
-  if (!driveSetUp()) return;
+async function cloudNotebooks(P){
+  if (!P.setUp()) return;
+  nbsP = P;
   if (!nbsBox) {
     nbsScrim = Object.assign(document.createElement('div'), {className: 'shscrim', hidden: true});
     nbsBox = Object.assign(document.createElement('div'), {className: 'pop sharebox nbsbox', hidden: true});
     nbsBox.setAttribute('role', 'dialog'); nbsBox.setAttribute('aria-modal', 'true'); nbsBox.setAttribute('aria-labelledby', 'nbsTitle');
-    nbsBox.innerHTML = `<div class="shhead"><h2 id="nbsTitle">Your notebooks in Drive</h2><button type="button" class="btn" id="nbsClose" aria-label="Close" title="Close (Esc)">${icon('x')}</button></div>
-<p class="nbshint">Notebooks you’ve saved to Google Drive from any device. Pick one to carry on where you left off; it keeps in sync from then on.</p>
+    nbsBox.innerHTML = `<div class="shhead"><h2 id="nbsTitle"></h2><button type="button" class="btn" id="nbsClose" aria-label="Close" title="Close (Esc)">${icon('x')}</button></div>
+<p class="nbshint"></p>
 <div class="nbslist" role="list"></div>`;
     document.body.append(nbsScrim, nbsBox);
     nbsScrim.addEventListener('click', nbsClose);
@@ -8200,37 +8237,38 @@ async function driveNotebooks(){
     });
     nbsBox.querySelector('.nbslist').addEventListener('click', e => {
       const b = e.target.closest('.nbsrow'); if (!b) return;
-      nbsClose(); driveOpenNotebook({id: b.dataset.id, name: b.dataset.name, mime: 'text/html'});
+      nbsClose(); cloudOpen(nbsP, {id: b.dataset.id, drive: b.dataset.drive, name: b.dataset.name, mime: 'text/html'});
     });
   }
   const list = nbsBox.querySelector('.nbslist');
+  nbsBox.querySelector('#nbsTitle').textContent = P.nbs.title; nbsBox.querySelector('.nbshint').textContent = P.nbs.hint;
   try {
-    await driveToken();                          // sign in while the click still counts
+    await P.token();                             // sign in while the click still counts
     nbsPrev = document.activeElement;
     nbsBox.hidden = nbsScrim.hidden = false;
-    list.innerHTML = '<p class="nbsempty">Looking in your Google Drive…</p>';
+    list.innerHTML = `<p class="nbsempty">${P.nbs.looking}</p>`;
     nbsBox.querySelector('#nbsClose').focus();
-    const q = encodeURIComponent("trashed=false and (mimeType='text/html' or name contains '.html')");
-    const r = await (await driveFetch(`${DRIVE_API}/files?q=${q}&orderBy=modifiedTime desc&pageSize=100&fields=files(id,name,modifiedTime)&supportsAllDrives=true&includeItemsFromAllDrives=true`)).json();
-    const files = (r.files || []).filter(f => /\.html?$/i.test(f.name));
+    const files = await P.list();
+    if (nbsP !== P) return;
     const when = t => { const d = new Date(t); return isNaN(d) ? '' : d.toLocaleString('en-GB', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'}); };
     list.innerHTML = files.length ? files.map(f => {
-      const here = docs.some(x => x.driveNb === f.id && !x.trashed);
-      return `<button type="button" class="nbsrow" role="listitem" data-id="${esc(f.id)}" data-name="${esc(f.name)}">${icon('file')}<span class="nbsname">${esc(f.name.replace(/\.html?$/i, ''))}</span><small>${here ? 'On this device · ' : ''}Changed ${esc(when(f.modifiedTime))}</small></button>`;
-    }).join('') : '<p class="nbsempty">No notebooks in your Drive yet. On the device you started on, use Download › Notebook to Drive once; after that it keeps itself in sync.</p>';
+      const here = docs.some(x => P.linkOf(x) === f.id && !x.trashed);
+      return `<button type="button" class="nbsrow" role="listitem" data-id="${esc(f.id)}" data-drive="${esc(f.drive || '')}" data-name="${esc(f.name)}">${icon('file')}<span class="nbsname">${esc(f.name.replace(/\.html?$/i, ''))}</span><small>${here ? 'On this device · ' : ''}${f.when ? 'Changed ' + esc(when(f.when)) : ''}</small></button>`;
+    }).join('') : `<p class="nbsempty">${P.nbs.none}</p>`;
     if (files.length) list.querySelector('.nbsrow').focus();
-  } catch (err) { driveSay(err, 'list your notebooks in Google Drive'); if (!nbsBox.hidden) list.innerHTML = '<p class="nbsempty">Google Drive couldn’t be reached just now. Close this and try again.</p>'; }
+  } catch (err) { P.say(err, `list your notebooks in ${P.name}`); if (!nbsBox.hidden) list.innerHTML = `<p class="nbsempty">${P.name} couldn’t be reached just now. Close this and try again.</p>`; }
 }
-// a notebook from Drive: the one already on this device (brought up to date), or a new one
-async function driveOpenNotebook(f){
-  const have = docs.find(x => x.driveNb === f.id && !x.trashed);
+const driveNotebooks = () => cloudNotebooks(CLOUD.google);
+// a notebook from the cloud: the one already on this device (brought up to date), or a new one
+async function cloudOpen(P, f){
+  const have = docs.find(x => P.linkOf(x) === f.id && !x.trashed);
   if (have) {
     if (have.id !== curId) await switchDoc(have.id);
     if (narrow.matches) setPanel('pages', false);
     await syncCheck(); syncSoon();
     return;
   }
-  await driveOpenOne(f);
+  await P.openOne(f);
 }
 
 // ---------- share from the app ----------
@@ -8387,7 +8425,7 @@ async function driveShare(kind, prep, back){
     if (!main.querySelector('.slide')) { toast('Open your slides first, then share.'); return; }
     const out = await driveStore(kind);
     toast('');
-    shOpenDialog(out, kind, out.copy ? 'You can only view the original, so this is a copy saved in your own Drive. That is the file being shared.' : '', back);
+    shOpenDialog(out, kind, [out.copy && 'You can only view the original, so this is a copy saved in your own Drive. That is the file being shared.', out.from && `It now keeps in sync with Google Drive instead of ${out.from}.`].filter(Boolean).join(' '), back);
   } catch (err) { driveSay(err, 'share through Google Drive'); }
 }
 // the notebook's ⋯ menu: make it the open notebook, then share it
@@ -8491,7 +8529,7 @@ const OD_API = 'https://graph.microsoft.com/v1.0';
 const OD_MSAL = 'https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.1/lib/msal-browser.min.js';
 const OD_SCOPES = ['User.Read', 'Files.ReadWrite.All'];          // Files.ReadWrite.All is what lets "Shared with me" files be opened
 const OD_DIR = 'Between the Lines', OD_SIMPLE = 4e6, OD_CHUNK = 10 * 320 * 1024;          // up to 4 MB goes in one request; bigger files in pieces
-const od = {app: null, init: null, wait: null, account: null, token: '', expires: 0, force: false, user: null, drive: ''};
+const od = {app: null, init: null, wait: null, account: null, token: '', expires: 0, force: false, user: null, drive: '', silent: undefined};          // silent: false once a quiet renewal has failed, so syncing waits for a click
 class OdError extends Error { constructor(msg, kind, status, code){ super(msg); this.kind = kind; this.status = status; this.code = code; } }
 const odBase = (drive, id) => drive ? `/drives/${encodeURIComponent(drive)}/items/${encodeURIComponent(id)}` : `/me/drive/items/${encodeURIComponent(id)}`;
 const odSleep = ms => new Promise(r => setTimeout(r, ms));
@@ -8532,15 +8570,20 @@ function odErr(e){
 }
 const odNeedsUser = e => /interaction_required|consent_required|login_required|no_tokens_found|invalid_grant|no_account_error|token_refresh_required/.test(e?.errorCode || '') || (window.msal?.InteractionRequiredAuthError && e instanceof msal.InteractionRequiredAuthError);
 // a sign-in left half done (a pop-up closed by a crash) can block the next one: forget the mark it left
+const odRemembers = () => { try { return Object.keys(sessionStorage).some(k => k.startsWith('msal.') && !/interaction\.status$/.test(k)); } catch { return false; } };          // has MSAL kept a sign-in in this tab?
 const odUnstick = () => { try { Object.keys(sessionStorage).filter(k => /interaction\.status$/.test(k)).forEach(k => sessionStorage.removeItem(k)); } catch {} };
 
 // an access token: the one in memory, else a quiet renewal, else Microsoft's pop-up. One at a time, so two clicks never open two pop-ups.
-function odToken(){
+// quiet (syncing in the background) never opens a window: if the quiet renewal fails it throws a 'signin' error and syncing waits for a click.
+function odToken(quiet){
   if (odTokenOk()) return Promise.resolve(od.token);
+  if (quiet) return odGet(false, true);          // (not shared with a click's, which has to be able to open the window)
   return od.wait ??= odGet().finally(() => { od.wait = null; });
 }
-async function odGet(again){
+const odQuiet = () => odToken(true).then(() => true, err => { if (err.kind === 'signin') return false; throw err; });
+async function odGet(again, quiet){
   if (navigator.onLine === false) throw new OdError('you appear to be offline', 'network');
+  if (quiet && !od.app && !od.account && !odRemembers()) { od.silent = false; syncShow(); throw new OdError('Microsoft sign-in has run out', 'signin'); }          // nothing to renew, so don't even load Microsoft's script
   await odLoad();
   try {
     const account = od.account || od.app.getAllAccounts()[0], req = {scopes: OD_SCOPES, account};
@@ -8549,31 +8592,34 @@ async function odGet(again){
       try { r = await od.app.acquireTokenSilent({...req, forceRefresh: od.force}); }
       catch (e) { if (!odNeedsUser(e)) throw e; }
     }
+    if (!r && quiet) { od.silent = false; syncShow(); throw new OdError('Microsoft sign-in has run out', 'signin'); }
     r ??= account ? await od.app.acquireTokenPopup(req) : await od.app.loginPopup({scopes: OD_SCOPES, prompt: 'select_account'});
+    const was = od.silent; od.silent = true;
     od.force = false; od.account = r.account || account; od.token = r.accessToken;
     od.expires = r.expiresOn ? +new Date(r.expiresOn) : Date.now() + 3600e3;
     od.user = {name: od.account?.name || '', email: od.account?.username || ''};
     renderOd();
+    if (was === false) setTimeout(() => { syncSoon(); syncCheck(); });          // signed in again: pick up where syncing stopped
     return od.token;
   } catch (e) {
     const err = odErr(e);
-    if (err.kind === 'busy' && !again) { odUnstick(); return odGet(true); }
+    if (err.kind === 'busy' && !again) { odUnstick(); return odGet(true, quiet); }
     throw err;
   }
 }
 // a request to Graph with the token. A 401 renews the token once; "slow down" (429) waits as long as Microsoft says, twice at most.
-async function odFetch(url, opts = {}){
+async function odFetch(url, {quiet, ...opts} = {}){
   if (!/^https:/.test(url)) url = OD_API + url;
   let renewed = false, waited = 0;
   for (;;) {
-    const token = await odToken();
+    const token = await odToken(quiet);
     let res;
     try { res = await fetch(url, {...opts, headers: {...opts.headers, Authorization: 'Bearer ' + token}}); }
     catch (err) { throw new OdError(navigator.onLine === false ? 'you appear to be offline' : err?.message || 'no connection', 'network'); }
     if (res.status === 401 && !renewed) { renewed = true; od.token = ''; od.force = true; continue; }
     if ((res.status === 429 || res.status === 503) && waited < 2) {
       const s = Math.min(30, Math.max(1, +res.headers.get('Retry-After') || 3));
-      waited++; toast(`Microsoft asked us to wait a moment (${s} s)…`); await odSleep(s * 1000); continue;
+      waited++; if (!quiet) toast(`Microsoft asked us to wait a moment (${s} s)…`); await odSleep(s * 1000); continue;
     }
     if (!res.ok) throw await odHttp(res);
     return res;
@@ -8604,6 +8650,34 @@ function odSetUp(){
   return false;
 }
 const odMyDrive = async () => od.drive ||= (await (await odFetch('/me/drive?$select=id')).json()).id || '';
+// a file's version: cTag changes with its content only (eTag also with a rename or a change of who can see it), so a quiet change of name or sharing doesn't look like an edit
+async function odMeta(drive, id, quiet){
+  const r = await (await odFetch(`${odBase(drive, id)}?$select=cTag,eTag,deleted`, {quiet})).json();
+  return {ver: r.cTag || r.eTag || '', gone: !!r.deleted};
+}
+CLOUD.onedrive = {
+  key: 'onedrive', name: 'OneDrive', short: 'OneDrive', account: 'Microsoft', ico: 'onedrive', bin: 'recycle bin', ver: 'odVer', lock: 'You can’t change this file in OneDrive.',
+  hasLink: d => !!d.odNb, linkOf: d => d.odNb, setUp: odSetUp, token: odToken, say: odSay, quiet: odQuiet,
+  tokenOk: () => odTokenOk() || od.silent !== false,          // a quiet renewal is still worth trying
+  meta: (d, quiet) => odMeta(d.odDrive, d.odNb, quiet),
+  upload: d => odStore(true, true),
+  download: d => odDownload({id: d.odNb, drive: d.odDrive, name: d.name + '.html'}, false, true),
+  save: odSave,
+  stops: err => err.status === 404 ? 'gone' : err.status === 403 && !/limit|quota|throttl/i.test(err.code + ' ' + err.message) ? 'locked' : '',
+  revive: () => {},          // saving again makes a new file when it's gone, and a copy of your own when it's locked
+  nbs: {title: 'Your notebooks in OneDrive', looking: 'Looking in your OneDrive…', hint: 'Notebooks you’ve saved to OneDrive from any device (in the “Between the Lines” folder, or opened from elsewhere in your OneDrive). Pick one to carry on where you left off; it keeps in sync from then on.',
+    none: 'No notebooks in your OneDrive yet. On the device you started on, use Download › Save to OneDrive once; after that it keeps itself in sync.'},
+  async list(){
+    let url = `/me/drive/root:/${encodeURIComponent(OD_DIR)}:/children?$select=id,name,file,lastModifiedDateTime,parentReference&$top=200`;
+    const rows = [];
+    try { for (let i = 0; url && i < 3; i++) { const j = await (await odFetch(url)).json(); rows.push(...(j.value || [])); url = j['@odata.nextLink'] || ''; } }
+    catch (err) { if (err.status !== 404) throw err; }          // no folder yet: nothing has been saved from here
+    const out = rows.filter(r => r.file && /\.html?$/i.test(r.name)).map(r => ({id: r.id, drive: r.parentReference?.driveId || '', name: r.name, when: r.lastModifiedDateTime || ''}));
+    for (const d of docs) if (d.odNb && !d.trashed && !out.some(f => f.id === d.odNb)) out.push({id: d.odNb, drive: d.odDrive || '', name: d.name + '.html', when: ''});          // opened from elsewhere in OneDrive
+    return out.sort((a, b) => (b.when > a.when) - (b.when < a.when));
+  },
+  openOne: f => odOpenOne(f, false),
+};
 
 // ---------- the file picker ----------
 // Our own small browser over Graph: My files (folders and a path), Shared with me, Recent, and a search box.
@@ -8805,7 +8879,7 @@ function odpMark(){
 
 // ---------- open from OneDrive ----------
 // a file as a File with the right ending. PowerPoint and Word can come as a PDF, made by OneDrive, so they look exactly as in Office; if that fails, the file itself is used.
-async function odDownload(d, pdf){
+async function odDownload(d, pdf, quiet){
   const at = odBase(d.drive, d.id), ext = (d.name.match(/\.([^.]+)$/) || [])[1]?.toLowerCase() || '';
   if (pdf && (ext === 'pptx' || ext === 'docx')) {
     try {
@@ -8817,7 +8891,7 @@ async function odDownload(d, pdf){
       toast(`Couldn’t make a PDF of “${d.name}”, so its original file is being opened instead…`);
     }
   }
-  const blob = await (await odFetch(`${at}/content`)).blob();
+  const blob = await (await odFetch(`${at}/content`, {quiet})).blob();
   return new File([blob], d.name, {type: OD_MIME[ext] || blob.type});
 }
 async function odOpen(){
@@ -8825,24 +8899,29 @@ async function odOpen(){
   try {
     const {items, pdf} = await odPick();
     for (const [i, d] of items.entries()) {
-      toast(`Downloading “${d.name}” from OneDrive…${items.length > 1 ? ` (${i + 1} of ${items.length})` : ''}`);
-      let file;
-      try { file = await odDownload(d, pdf); }
-      catch (err) { odSay(err, `download “${d.name}”`); continue; }
-      const isNb = /\.html?$/i.test(file.name), before = curId, had = !!main.querySelector('.slide');
-      await openFiles([file]);
-      const doc = curDoc();
-      if (isNb && doc && main.querySelector('.slide') && (curId !== before || !had)) { doc.odNb = d.id; doc.odDrive = d.drive; putAll({docs}); }          // the notebook remembers its file, so saving updates it
+      if (docs.some(x => x.odNb === d.id && !x.trashed)) { await cloudOpen(CLOUD.onedrive, d); continue; }          // already here: bring it up to date instead of a second copy
+      await odOpenOne(d, pdf, items.length > 1 ? ` (${i + 1} of ${items.length})` : '');
     }
   } catch (err) { odSay(err, 'open from OneDrive'); }
+}
+async function odOpenOne(d, pdf, of = ''){
+  toast(`Downloading “${d.name}” from OneDrive…${of}`);
+  const ver = /\.html?$/i.test(d.name) ? await odMeta(d.drive, d.id).then(m => m.ver, () => '') : '';          // the version we are about to read, to compare with later
+  let file;
+  try { file = await odDownload(d, pdf); }
+  catch (err) { odSay(err, `download “${d.name}”`); return; }
+  const isNb = /\.html?$/i.test(file.name), before = curId, had = !!main.querySelector('.slide');
+  await openFiles([file]);
+  const doc = curDoc();
+  if (isNb && doc && main.querySelector('.slide') && (curId !== before || !had)) { doc.odNb = d.id; doc.odDrive = d.drive; doc.odVer = ver; delete doc.driveDirty; delete doc.driveStop; putAll({docs}); syncShow(); }          // the notebook remembers its file, so saving updates it
 }
 
 // ---------- save to OneDrive ----------
 // small files go up in one request; bigger ones in pieces through an upload session (Microsoft's way past the 4 MB limit)
-async function odUpload(t, blob, progress){
+async function odUpload(t, blob, progress, quiet){
   const at = t.id ? odBase(t.drive, t.id) : `/me/drive/root:/${encodeURIComponent(OD_DIR)}/${encodeURIComponent(t.name)}:`, how = t.id ? 'replace' : 'rename';       // a new file never overwrites another
-  if (blob.size <= OD_SIMPLE) return (await odFetch(`${at}/content${t.id ? '' : '?@microsoft.graph.conflictBehavior=' + how}`, {method: 'PUT', headers: {'Content-Type': blob.type || 'application/octet-stream'}, body: blob})).json();
-  const s = await (await odFetch(`${at}/createUploadSession`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({item: {'@microsoft.graph.conflictBehavior': how}})})).json();
+  if (blob.size <= OD_SIMPLE) return (await odFetch(`${at}/content${t.id ? '' : '?@microsoft.graph.conflictBehavior=' + how}`, {method: 'PUT', headers: {'Content-Type': blob.type || 'application/octet-stream'}, body: blob, quiet})).json();
+  const s = await (await odFetch(`${at}/createUploadSession`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({item: {'@microsoft.graph.conflictBehavior': how}}), quiet})).json();
   try {
     for (let start = 0; ;) {
       const end = Math.min(start + OD_CHUNK, blob.size);
@@ -8858,17 +8937,20 @@ async function odUpload(t, blob, progress){
 }
 // The first save makes "<name> (notes).html" in the Between the Lines folder; after that the same file is updated.
 // A notebook you can't change (shared with you to view only) is saved as a copy in your own OneDrive instead. Gives back {id, drive, name, url, copy}.
-async function odStore(quiet){
+// auto: syncing by itself (no sign-in window, no new files or copies; it stops and says so instead)
+async function odStore(quiet, auto){
   await flushSave();
+  const gen = sync.gen;
   const doc = curDoc(), file = await notebookFile();
   let last = -1;
   const progress = quiet || file.blob.size <= OD_SIMPLE ? null : f => { const n = Math.round(f * 100); if (n !== last) { last = n; toast(`Uploading “${file.name}” to OneDrive: ${n}%`); } };
   if (!quiet) toast(progress ? `Uploading “${file.name}” to OneDrive…` : 'Saving to OneDrive…');
   const create = name => odUpload({name}, file.blob, progress);
-  let out, mine = false, same = false;
+  let out, mine = false, same = false, from = '';
   if (doc?.odNb) {
-    try { out = await odUpload({id: doc.odNb, drive: doc.odDrive}, file.blob, progress); same = true; }
+    try { out = await odUpload({id: doc.odNb, drive: doc.odDrive}, file.blob, progress, auto); same = true; }
     catch (err) {
+      if (auto) throw err;
       if (err.status === 404) out = await create(file.name);          // the file is gone from OneDrive: make a new one
       else if (err.status === 403 && !/limit|quota|throttl/i.test(err.code + ' ' + err.message)) { out = await create(notebookName() + ' (my copy).html'); mine = true; }          // not allowed to change it
       else throw err;
@@ -8876,8 +8958,12 @@ async function odStore(quiet){
   } else out = await create(file.name);
   if (!out?.id) throw new OdError('Microsoft sent back something unexpected', 'http');
   const drive = out.parentReference?.driveId || (same ? doc.odDrive : await odMyDrive());
-  if (doc && docs.includes(doc)) { doc.odNb = out.id; doc.odDrive = drive; putAll({docs}); }
-  return {id: out.id, drive, name: out.name || file.name, url: out.webUrl || '', copy: mine};
+  if (doc && docs.includes(doc)) {
+    doc.odNb = out.id; doc.odDrive = drive; from = relink(doc, 'onedrive');
+    doc.odVer = out.cTag || out.eTag || ''; delete doc.driveStop; if (sync.gen === gen) delete doc.driveDirty; if (doc === curDoc()) syncShow();
+    putAll({docs});
+  }
+  return {id: out.id, drive, name: out.name || file.name, url: out.webUrl || '', copy: mine, from};
 }
 async function odSave(){
   if (!odSetUp()) return;
@@ -8885,7 +8971,7 @@ async function odSave(){
   try {
     await odToken();                         // sign in first, while the click still counts, then build the file
     const out = await odStore(), at = new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'});
-    toast(out.copy ? `You can only view the original, so a copy was saved in your own OneDrive: ${out.name} (${at})` : `Saved to OneDrive: ${out.name} (${at})`);
+    toast((out.copy ? `You can only view the original, so a copy was saved in your own OneDrive: ${out.name} (${at}). It keeps in sync from now on.` : `Saved to OneDrive: ${out.name} (${at}). From now on it keeps in sync by itself, so you can carry on from another device.`) + relinked(out.from));
   } catch (err) { odSay(err, 'save to OneDrive'); }
 }
 
@@ -8898,7 +8984,7 @@ async function odShare(prep, back){
     if (!main.querySelector('.slide')) { toast('Open your slides first, then share.'); return; }
     const out = await odStore();
     toast('');
-    shOpenDialog(out, 'notebook', out.copy ? 'You can only view the original, so this is a copy saved in your own OneDrive. That is the file being shared.' : '', back, 'onedrive');
+    shOpenDialog(out, 'notebook', [out.copy && 'You can only view the original, so this is a copy saved in your own OneDrive. That is the file being shared.', out.from && `It now keeps in sync with OneDrive instead of ${out.from}.`].filter(Boolean).join(' '), back, 'onedrive');
   } catch (err) { odSay(err, 'share through OneDrive'); }
 }
 // the notebook's ⋯ menu: make it the open notebook, then share it
@@ -8955,6 +9041,7 @@ async function odShGeneral(val){
 // ---------- buttons, and the Help & settings section ----------
 document.addEventListener('click', e => {
   if (e.target.closest('[data-od-open]')) { if (narrow.matches) setPanel('pages', false); odOpen(); return; }
+  if (e.target.closest('[data-od-nbs]')) { if (narrow.matches) setPanel('pages', false); cloudNotebooks(CLOUD.onedrive); return; }
   const b = e.target.closest('#saveMenu [data-od]'); if (!b) return;
   saveMenu.hidden = true; $('#save').setAttribute('aria-expanded', 'false');
   if (b.dataset.od === 'share') odShare(null, () => $('#save')); else odSave();
@@ -8967,9 +9054,9 @@ function renderOd(){
 }
 $('#odOff').onclick = async () => {
   const app = od.app;
-  od.token = ''; od.expires = 0; od.user = null; od.account = null; od.drive = '';
+  od.token = ''; od.expires = 0; od.user = null; od.account = null; od.drive = ''; od.silent = false;
   try { for (const account of app?.getAllAccounts?.() || []) await app.clearCache({account}); } catch {}
-  renderOd();
+  renderOd(); syncShow();
   toast('Signed out of OneDrive. Your files in OneDrive have not been touched.');
 };
 
@@ -9073,6 +9160,7 @@ const CK_ACTIONS = [
   {id: 'new', label: 'New notebook', ico: 'plus', words: 'create blank page', run: ckClick('#newDocBtn')},
   {id: 'open', label: 'Open a file', ico: 'folder', words: 'pdf powerpoint word markdown picture upload', run: ckClick('#openBtn')},
   {id: 'drivenbs', label: 'Your notebooks in Drive', ico: 'drive', words: 'google drive sync carry on continue another device ipad phone laptop cloud', ok: () => !!GDRIVE.clientId, run: () => driveNotebooks()},
+  {id: 'odnbs', label: 'Your notebooks in OneDrive', ico: 'onedrive', words: 'onedrive microsoft sync carry on continue another device ipad phone laptop cloud', ok: () => !!ONEDRIVE.clientId, run: () => cloudNotebooks(CLOUD.onedrive)},
   {id: 'focus', label: 'Focus mode', ico: 'focus', hint: 'Ctrl+Shift+F', words: 'hide toolbar panels distraction', run: ckClick('#focusBtn')},
   {id: 'study', label: 'Study mode', ico: 'book', words: 'read only revise', run: ckClick('#readBtn')},
   {id: 'sidebg', label: 'Side page background', ico: 'palette', words: 'side notes paper colour pattern lined grid dots cream dark', run: () => openSideBg($('#sideBgBtn'))},
@@ -9494,7 +9582,7 @@ async function duplicateDoc(id){
   if (id === curId) await flushSave();                    // so the copy has what is on the page now
   const html = (await get('doc:' + id)) || '';
   const copy = {...d, id: newId(), name: d.name.slice(0, 112) + ' (copy)', named: true, copiedFrom: id, updated: Date.now()};
-  delete copy.fav; delete copy.trashed; delete copy.driveNb; delete copy.driveNbRO; delete copy.drivePdf; delete copy.driveVer; delete copy.driveDirty; delete copy.driveStop; delete copy.odNb; delete copy.odDrive;       // a copy gets its own files in Google Drive and OneDrive
+  delete copy.fav; delete copy.trashed; delete copy.driveNb; delete copy.driveNbRO; delete copy.drivePdf; delete copy.driveVer; delete copy.driveDirty; delete copy.driveStop; delete copy.odNb; delete copy.odDrive; delete copy.odVer;       // a copy gets its own files in Google Drive and OneDrive
   docs.splice(docs.indexOf(d) + 1, 0, copy);
   await putAll({['doc:' + copy.id]: html, docs});
   renderDocs();
