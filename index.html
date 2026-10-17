@@ -631,6 +631,7 @@ body.dragging-sticky,body.dragging-sticky *{cursor:grabbing!important}
 .pgdrop{position:fixed;z-index:300;height:3px;border-radius:2px;background:var(--accent);pointer-events:none}
 body.pgdragging,body.pgdragging *{cursor:grabbing!important}
 /* ================= Google Drive ================= */
+#saveMenu{max-height:calc(100dvh - 76px);overflow-y:auto;overscroll-behavior:contain}          /* a short screen scrolls the menu instead of cutting it off */
 .menu .mhead{margin:6px 0 2px;padding:8px 10px 2px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
 .linkbtn{border:none;background:none;padding:0;font:inherit;font-size:16px;color:var(--accent);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .linkbtn:hover{color:var(--ink)}
@@ -672,6 +673,44 @@ body.pgdragging,body.pgdragging *{cursor:grabbing!important}
 .shsay{min-height:1.4em;font-size:15px;color:var(--ok)}
 .shsay[data-bad]{color:var(--danger)}
 
+/* the OneDrive file picker (it uses the share dialog's scrim and header) */
+.odbox{z-index:73;left:50%;top:max(16px,6vh);translate:-50% 0;width:min(640px,calc(100vw - 24px));height:min(640px,calc(100dvh - max(16px,6vh) - 12px));box-sizing:border-box;padding:12px 16px 14px;display:flex;flex-direction:column;gap:8px;font:16px/1.35 var(--ui)}
+.odtop{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.odtabs{display:flex;flex-wrap:wrap;gap:4px}
+.odtabs button{height:32px;padding:0 12px;border:1.5px solid var(--pencil);border-radius:var(--wob);background:var(--surface);color:var(--ink);font:inherit;font-size:15px;cursor:pointer}
+.odtabs button:hover{background:var(--hover)}
+.odtabs button[aria-selected="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.odq{flex:1 1 180px;min-width:0;height:34px;box-sizing:border-box;font:inherit;font-size:15px;color:var(--ink);background:var(--surface-2);border:1.5px solid var(--pencil);border-radius:var(--wob);padding:0 9px}
+.odbox button:focus-visible,.odq:focus,.odpdf input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.odcrumbs{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;min-height:24px;font-size:15px;color:var(--muted)}
+.odcrumbs .linkbtn{font-size:15px}
+.odcrumbs [aria-current]{color:var(--ink);font-weight:700}
+.odlist{flex:1;min-height:120px;overflow:auto;border:1.5px solid var(--line-strong);border-radius:var(--wob);padding:3px;background:var(--surface-2);outline:none;overscroll-behavior:contain}
+.odlist:focus-visible{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)} /* taste-skill-ignore: a ring marking focus, not a shadow */
+.odrow{display:flex;align-items:center;gap:10px;min-height:46px;padding:5px 8px;border-radius:8px;cursor:pointer;box-sizing:border-box}
+.odrow:hover{background:var(--hover)}
+.odrow[aria-selected="true"]{background:var(--accent-soft)}
+.odlist:focus .odrow[data-cur]{outline:2px solid var(--accent);outline-offset:-2px}
+.odcheck{flex:none;width:18px;height:18px;box-sizing:border-box;display:grid;place-items:center;border:1.5px solid var(--pencil);border-radius:5px;background:var(--surface)}
+.odrow[aria-selected="true"] .odcheck{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.odcheck .i{width:13px;height:13px;stroke-width:3}
+.odic{flex:none;color:var(--muted);display:inline-flex}
+.odrow[data-folder] .odic{color:var(--accent)}
+.odname{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}
+.odname b{font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.odname small{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.odrow[data-folder]>.i{color:var(--muted)}
+.odmsg{padding:18px 12px;text-align:center;color:var(--muted);font-size:15px}
+.odmsg.bad{color:var(--danger)}
+.odmsg .linkbtn{font-size:15px}
+.odnote{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:30px;font-size:14px;color:var(--muted)}
+.odnote .btn{height:30px;font-size:14px}
+.odfoot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px}
+.odpdf{margin:0;flex:1 1 230px;align-items:flex-start;line-height:1.3}
+.odpdf input{margin-top:2px;flex:none}
+.odbtns{display:flex;gap:8px;margin-left:auto}
+.odbtns .btn{height:36px}
+.odbtns .btn:disabled{opacity:.5;cursor:default}
 /* ================= add a note from the Notes panel ================= */
 .ncompose{display:flex;flex-direction:column;gap:8px;padding:2px 0 4px}
 .ncompose textarea{display:block;width:100%;box-sizing:border-box;min-height:62px;max-height:180px;resize:none;padding:6px 10px;border:1.5px solid var(--pencil);border-radius:var(--wob);background:#fff;color:#1f4fd1;font:22px/1.2 Caveat,cursive;outline:none}
@@ -985,6 +1024,9 @@ try {
         <button type="button" data-drive="notebook"><strong>Notebook to Drive</strong><small>Saves the notebook file in Google Drive; next time it updates the same file</small></button>
         <button type="button" data-drive="pdf"><strong>PDF to Drive</strong><small>The PDF, with notes as chosen above, saved in Google Drive</small></button>
         <button type="button" data-drive="share"><strong>Share…</strong><small>Saves it to Google Drive, then lets you add people or copy a link</small></button>
+        <div class="mhead">OneDrive</div>
+        <button type="button" data-od="save"><strong>Save to OneDrive</strong><small>Saves the notebook file in your OneDrive (in a “Between the Lines” folder); next time it updates the same file</small></button>
+        <button type="button" data-od="share"><strong>Share via OneDrive…</strong><small>Saves it to OneDrive, then lets you add people or copy a link</small></button>
       </div>
     </span>
     <button class="btn" id="helpBtn" aria-haspopup="dialog" aria-expanded="false" aria-label="Help and settings" title="Help and settings: how to use it, shortcuts, your dictionary and favourite colours"><svg class="i"><use href="#i-help"/></svg></button>
@@ -1194,6 +1236,7 @@ try {
       <button type="button" class="srow" id="newFolderBtn" title="A folder to group notebooks in, like a course or a topic"><svg class="i"><use href="#i-folder-plus"/></svg>New folder</button>
       <button type="button" class="srow" id="sideOpen" title="Open a PDF, PowerPoint or Word file as a new notebook"><svg class="i"><use href="#i-folder"/></svg>Open a file</button>
       <button type="button" class="srow" id="sideDrive" data-drive-open title="Open a file from Google Drive: PDF, PowerPoint, Word, Google Slides or Docs, pictures or a notebook file"><svg class="i"><use href="#i-drive"/></svg>Open from Google Drive</button>
+      <button type="button" class="srow" id="sideOd" data-od-open title="Open a file from OneDrive or SharePoint with your Microsoft account: PDF, PowerPoint, Word, pictures or a notebook file"><svg class="i"><use href="#i-onedrive"/></svg>Open from OneDrive</button>
       <button type="button" class="srow" id="sideAdd" title="Write a note for the page you're on, in the Notes panel"><svg class="i"><use href="#i-pen"/></svg>Add a note</button>
       <button type="button" class="srow" id="sideSearch" title="Search: find a notebook, page or note, or run an action (Ctrl+K)"><svg class="i"><use href="#i-search"/></svg>Search</button>
     </div>
@@ -1320,6 +1363,12 @@ try {
       <p class="sethint" id="driveHint" hidden>Google Drive isn't set up for this site yet. The site owner needs to add a Google client ID and API key at the top of the page's script (see “Google Drive” in the README).</p>
       <button type="button" class="btn outline" id="driveOff" disabled title="Sign out of Google Drive on this device. Your files in Drive stay where they are.">Disconnect</button>
     </section>
+    <section id="odSec">
+      <h3>OneDrive and Microsoft 365</h3>
+      <p class="sethint" id="odStatus">Not connected</p>
+      <p class="sethint" id="odHint" hidden>OneDrive isn't set up for this site yet. The site owner needs to register the app with Microsoft and paste its client ID at the top of the page's script (see “OneDrive and Microsoft 365” in the README).</p>
+      <button type="button" class="btn outline" id="odOff" disabled title="Sign out of OneDrive on this device. Your files in OneDrive stay where they are.">Sign out</button>
+    </section>
   </div>
 </div>
 
@@ -1355,6 +1404,7 @@ try {
         <button type="button" class="btn primary big" data-open><svg class="i"><use href="#i-folder"/></svg>Choose a file</button>
         <span class="or">or drop one anywhere on this page</span>
         <button type="button" class="linkbtn" data-drive-open title="Open a file from Google Drive">or open from Google Drive</button>
+        <button type="button" class="linkbtn" data-od-open title="Open a file from OneDrive or SharePoint with your Microsoft account">or from OneDrive</button>
       </div>
       <div class="kinds"><span>PDF</span><span>PowerPoint .pptx</span><span>Word .docx</span><span>Pictures</span><span>Notebook .html</span></div>
     </div>
@@ -1372,11 +1422,11 @@ try {
       <li><span><b>Write between the lines</b>Point at a gap and press “+ Add here” for a note; right-click it for a sticky note or an equation.</span></li>
       <li><span><b>Revise and download</b>Study mode, a searchable notes list, and PDF or notebook downloads.</span></li>
     </ol>
-    <p class="private"><svg class="i"><use href="#i-lock"/></svg>Everything stays on this device, unless you save it to Google Drive. Your notes are saved in this browser.</p>
+    <p class="private"><svg class="i"><use href="#i-lock"/></svg>Everything stays on this device, unless you save it to Google Drive or OneDrive. Your notes are saved in this browser.</p>
   </div>
 </template>
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="i-drive" viewBox="0 0 24 24"><path d="M9 3h6l7 12h-6L9 3Z"/><path d="M9 3 2 15l3 5 7-12"/><path d="M5 20h14l3-5H8"/></symbol></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="i-onedrive" viewBox="0 0 24 24"><path d="M7 18.5h10.5a3.75 3.75 0 0 0 .55-7.46A5.75 5.75 0 0 0 7.1 9.9 4.3 4.3 0 0 0 7 18.5Z"/></symbol><symbol id="i-drive" viewBox="0 0 24 24"><path d="M9 3h6l7 12h-6L9 3Z"/><path d="M9 3 2 15l3 5 7-12"/><path d="M5 20h14l3-5H8"/></symbol></svg>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
@@ -1384,6 +1434,9 @@ try {
 
 // Google Drive: the site owner fills these in (see "Google Drive" in the README). While clientId is empty, Drive is switched off.
 const GDRIVE = {clientId: '275073737192-soj2udsunimvb3lubkjkf1u3fbc8stbg.apps.googleusercontent.com', apiKey: 'AIzaSyCdr2kdNYXpMQYEgphdyfXwy0toaMqK1-s'};
+// OneDrive and Microsoft 365: the Application (client) ID from Microsoft Entra (see "OneDrive and Microsoft 365" in the README). While it is empty, OneDrive is switched off.
+// Never put a client secret here: this kind of app doesn't use one, and anything in this file is public.
+const ONEDRIVE = {clientId: ''};
 
 // a copy of this app as it is before anything is opened, for the downloadable notebook file
 const APP_HTML = (() => {
@@ -3983,7 +4036,7 @@ $('#dictAddForm').addEventListener('submit', e => {
   toast(words.length === 1 ? `“${words[0]}” added to your dictionary.` : `${words.length} words added to your dictionary.`);
 });
 $('#favManage').addEventListener('click', e => { const b = e.target.closest('button[data-c]'); if (b) removeFav(b.dataset.c); });
-function openSettings(fromKeys){ renderDict(); renderFavManage(); fillPrefs(); renderDrive(); settingsBox.hidden = false; helpBtn.setAttribute('aria-expanded', 'true'); if (fromKeys) $('#setClose').focus(); }
+function openSettings(fromKeys){ renderDict(); renderFavManage(); fillPrefs(); renderDrive(); renderOd(); settingsBox.hidden = false; helpBtn.setAttribute('aria-expanded', 'true'); if (fromKeys) $('#setClose').focus(); }
 function closeSettings(back){ if (settingsBox.hidden) return; settingsBox.hidden = true; helpBtn.setAttribute('aria-expanded', 'false'); if (back) helpBtn.focus(); }
 // a click with detail 0 came from the keyboard (Enter or Space)
 helpBtn.onclick = e => settingsBox.hidden ? openSettings(e.detail === 0) : closeSettings();
@@ -4454,7 +4507,7 @@ function openDocMenu(id, from, kind = 'doc'){
     docMenu.innerHTML = `<button type="button" role="menuitem" data-act="rename">${icon('pen')}Rename</button><button type="button" role="menuitem" data-act="duplicate">${icon('copy')}Duplicate</button>` +
       (id !== curId ? `<button type="button" role="menuitem" data-act="beside">${icon('panel-right')}${id === bs.id ? 'Close beside' : 'Open beside'}</button>` : '') +
       (folders.length ? `<button type="button" role="menuitem" data-act="move" aria-expanded="false">${icon('folder')}Move to…</button>` : '') +
-      `<button type="button" role="menuitem" data-act="fav">${icon(fav ? 'star-off' : 'star')}${fav ? 'Remove from Favourites' : 'Add to Favourites'}</button><button type="button" role="menuitem" data-act="share" title="Save this notebook to Google Drive and share it with people or by link">${icon('drive')}Share via Google Drive…</button><hr><button type="button" role="menuitem" data-act="trash">${icon('trash')}Move to Trash</button>`;
+      `<button type="button" role="menuitem" data-act="fav">${icon(fav ? 'star-off' : 'star')}${fav ? 'Remove from Favourites' : 'Add to Favourites'}</button><button type="button" role="menuitem" data-act="share" title="Save this notebook to Google Drive and share it with people or by link">${icon('drive')}Share via Google Drive…</button><button type="button" role="menuitem" data-act="odshare" title="Save this notebook to OneDrive and share it with people or by link">${icon('onedrive')}Share via OneDrive…</button><hr><button type="button" role="menuitem" data-act="trash">${icon('trash')}Move to Trash</button>`;
   }
   docMenu.hidden = false; placeMenu();
   docMenu.querySelector('button').focus();
@@ -4473,7 +4526,7 @@ docMenu.addEventListener('click', e => {
   closeDocMenu();
   if (b.dataset.to !== undefined) { (kind === 'folder' ? moveFolder : moveDoc)(id, b.dataset.to || null); return; }
   (kind === 'folder' ? {rename: startRenameFolder, sub: newFolder, here: newDocIn, rmfolder: deleteFolder}
-                     : {rename: startRename, duplicate: duplicateDoc, beside: toggleBeside, fav: toggleFav, share: shareDoc, trash: trashDoc})[b.dataset.act]?.(id);
+                     : {rename: startRename, duplicate: duplicateDoc, beside: toggleBeside, fav: toggleFav, share: shareDoc, odshare: shareOdDoc, trash: trashDoc})[b.dataset.act]?.(id);
 });
 document.addEventListener('mousedown', e => { if (!docMenu.hidden && !docMenu.contains(e.target) && !e.target.closest('[data-more], [data-fmore]')) closeDocMenu(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !docMenu.hidden) { const f = menuFrom; closeDocMenu(); f?.focus(); } });
@@ -6267,10 +6320,12 @@ async function driveSave(kind){
 }
 
 // ---------- share from the app ----------
-// The notebook (or PDF) is saved to Drive first, then a small dialog adds people, sets who can open the link, and copies it.
+// The notebook (or PDF) is saved to Drive (or OneDrive) first, then a small dialog adds people, sets who can open the link, and copies it.
+// One dialog serves both: share.p says which, and the few things that differ are looked up in SHP or branch on it.
+const SHP = {google: {name: 'Google Drive', icon: 'drive', open: 'Open in Drive', how: 'Open › From Google Drive'}, onedrive: {name: 'OneDrive', icon: 'onedrive', open: 'Open in OneDrive', how: 'Open › From OneDrive'}};
 const SH_ROLE = {owner: 'Owner', organizer: 'Manager', fileOrganizer: 'Manager', writer: 'Editor', commenter: 'Commenter', reader: 'Viewer'};
 const SH_MAIL = /^[^\s@,;<>()]+@[^\s@,;<>()]+\.[^\s@,;<>()]+$/;
-const share = {open: false, kind: 'notebook', id: '', name: '', link: '', perms: [], busy: false, prev: null, copied: 0};
+const share = {open: false, p: 'google', kind: 'notebook', id: '', drive: '', name: '', link: '', url: '', perms: [], busy: false, prev: null, copied: 0};
 let shBox = null, shScrim = null;
 const shEl = s => shBox.querySelector(s);
 function shBuild(){
@@ -6336,10 +6391,11 @@ const shNotifyShow = () => { shEl('#shMsg').hidden = !shEl('#shNotify').checked;
 const shSay = (t, bad) => { const e = shEl('#shSay'); e.textContent = t || ''; if (bad) e.dataset.bad = '1'; else delete e.dataset.bad; };
 // what Drive said, in one calm sentence
 function shWhy(err){
-  const k = err?.kind;
-  return k === 'network' ? `Couldn’t reach Google Drive (${err.message}). Nothing was changed.`
-    : k === 'closed' || k === 'denied' || k === 'blocked' ? 'Google sign-in didn’t go through, so nothing was changed.'
-    : `Google Drive said: ${err?.message || 'something went wrong'}`;
+  const k = err?.kind, n = SHP[share.p].name;
+  return k === 'network' ? `Couldn’t reach ${n} (${err.message}). Nothing was changed.`
+    : ['closed', 'denied', 'blocked', 'busy', 'admin'].includes(k) ? `${share.p === 'onedrive' ? 'Microsoft' : 'Google'} sign-in didn’t go through, so nothing was changed.`
+    : k === 'throttled' ? 'Microsoft is asking for a short break. Wait a minute and try again. Nothing was changed.'
+    : `${n} said: ${err?.message || 'something went wrong'}`;
 }
 // one request at a time; whatever goes wrong is said in the dialog and nothing else changes
 async function shRun(fn){
@@ -6350,34 +6406,45 @@ async function shRun(fn){
   catch (err) { console.warn(err); shSay(shWhy(err), true); }
   finally { share.busy = false; shBox.classList.remove('busy'); shBox.removeAttribute('aria-busy'); if (share.open) { shRender(); if (!shBox.contains(document.activeElement)) (shBox.contains(was) ? was : shEl('#shEmails')).focus(); } }
 }
-const shUrl = tail => `${DRIVE_API}/files/${encodeURIComponent(share.id)}${tail}`;
-const shJson = (method, url, body) => driveFetch(url, {method, ...(body ? {headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)} : {})});
+const shUrl = tail => share.p === 'onedrive' ? odBase(share.drive, share.id) + tail : `${DRIVE_API}/files/${encodeURIComponent(share.id)}${tail}`;
+const shJson = (method, url, body) => (share.p === 'onedrive' ? odFetch : driveFetch)(url, {method, ...(body ? {headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)} : {})});
 // the file's link and who has access
 async function shLoad(){
+  if (share.p === 'onedrive') return odShLoad();
   const [file, list] = await Promise.all([
     driveFetch(shUrl('?fields=webViewLink&supportsAllDrives=true')).then(r => r.json()),
     driveFetch(shUrl('/permissions?fields=permissions(id,emailAddress,displayName,role,type,domain)&pageSize=100&supportsAllDrives=true')).then(r => r.json()),
   ]);
-  share.link = file.webViewLink || ''; share.perms = list.permissions || [];
+  share.link = share.url = file.webViewLink || ''; share.perms = list.permissions || [];
 }
 function shRender(){
-  const nb = share.kind === 'notebook';
+  const nb = share.kind === 'notebook', P = SHP[share.p], one = share.p === 'onedrive';
   shEl('#shWhat').value = share.kind;
-  shEl('#shFile').textContent = `“${share.name}” is saved in your Google Drive.`;
-  shEl('#shHow').textContent = nb ? 'People you share with can open the notebook file in Between the Lines (Open › From Google Drive) to see your notes, or download it.' : 'People you share with can open the PDF in Google Drive to read your notes, or download it.';
+  shEl('#shFile').textContent = `“${share.name}” is saved in your ${P.name}.`;
+  shEl('#shHow').textContent = nb ? `People you share with can open the notebook file in Between the Lines (${P.how}) to see your notes, or download it.` : `People you share with can open the PDF in ${P.name} to read your notes, or download it.`;
   const people = share.perms.filter(p => p.type !== 'anyone');
   shEl('#shPeople').innerHTML = people.length ? people.map(p => {
     const who = p.type === 'domain' ? `Anyone at ${p.domain || 'your organisation'}` : p.displayName || p.emailAddress || 'Someone', sub = p.emailAddress && p.emailAddress !== who ? p.emailAddress : '';
-    return `<li><span class="shwho"><b>${esc(who)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span><span class="shrole">${SH_ROLE[p.role] || esc(p.role)}</span>` +
-      (p.role === 'owner' ? '' : `<button type="button" class="x" data-pid="${esc(p.id)}" aria-label="Remove ${esc(p.emailAddress || who)}" title="Remove access for ${esc(p.emailAddress || who)}">×</button>`) + '</li>';
+    return `<li><span class="shwho"><b>${esc(who)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</span><span class="shrole">${SH_ROLE[p.role] || esc(p.role)}${p.inherited ? ' (from the folder)' : ''}</span>` +
+      (p.role === 'owner' || p.inherited ? '' : `<button type="button" class="x" data-pid="${esc(p.id)}" aria-label="Remove ${esc(p.emailAddress || who)}" title="Remove access for ${esc(p.emailAddress || who)}">×</button>`) + '</li>';
   }).join('') : '<li class="none">Just you, so far.</li>';
-  const any = share.perms.find(p => p.type === 'anyone');
-  shEl('#shGeneral').value = any ? (any.role === 'commenter' ? 'commenter' : 'reader') : 'none';
-  shEl('#shGenNote').textContent = any ? 'Anyone who has the link can open it, without signing in.' : 'Only the people above can open it.';
+  const any = one ? share.perms.filter(p => p.type === 'anyone').sort((a, b) => (b.role === 'writer') - (a.role === 'writer'))[0] : share.perms.find(p => p.type === 'anyone');
+  shEl('#shGeneral').value = any ? (any.role === 'commenter' ? 'commenter' : any.role === 'writer' && one ? 'writer' : 'reader') : 'none';
+  shEl('#shGenNote').textContent = any ? `Anyone who has the link can ${one && any.role === 'writer' ? 'open and change' : 'open'} it, without signing in.` : 'Only the people above can open it.';
   shEl('#shLink').value = share.link;
-  const open = shEl('#shOpen'); if (share.link) open.href = share.link; else open.removeAttribute('href');
-  shEl('#shCopy').disabled = !share.link; open.hidden = !share.link;
+  const open = shEl('#shOpen'); if (share.url) open.href = share.url; else open.removeAttribute('href');
+  shEl('#shCopy').disabled = !share.link; open.hidden = !share.url;
   shNotifyShow();
+}
+// the words and choices that belong to Google Drive or to OneDrive
+function shTheme(){
+  const P = SHP[share.p], one = share.p === 'onedrive';
+  shEl('#shTitle').textContent = 'Share via ' + P.name;
+  shEl('.shwhat').hidden = one;
+  shEl('#shRole').innerHTML = `<option value="reader">Viewer</option>${one ? '' : '<option value="commenter">Commenter</option>'}<option value="writer">Editor</option>`;
+  shEl('#shGeneral').innerHTML = `<option value="none">Restricted</option><option value="reader">Anyone with the link: Viewer</option>${one ? '<option value="writer">Anyone with the link: Editor</option>' : '<option value="commenter">Anyone with the link: Commenter</option>'}`;
+  shEl('#shOpen').innerHTML = icon(P.icon) + P.open;
+  shEl('#shOpen').title = 'Open this file in ' + P.name;
 }
 function closeShare(){
   if (!share.open) return;
@@ -6385,9 +6452,10 @@ function closeShare(){
   if (share.prev?.isConnected && share.prev !== document.body) share.prev.focus({preventScroll: true});
   share.prev = null;
 }
-function shOpenDialog(out, kind, note, back){
+function shOpenDialog(out, kind, note, back, p = 'google'){
   if (!shBox) shBuild();
-  Object.assign(share, {kind, id: out.id, name: out.name, link: '', perms: []});
+  Object.assign(share, {p, kind, id: out.id, drive: out.drive || '', name: out.name, link: '', url: '', perms: []});
+  shTheme();
   const at = document.activeElement; share.prev = at && at !== document.body && at.getClientRects().length ? at : back?.() || null; share.open = true;
   shScrim.hidden = shBox.hidden = false;
   shEl('#shEmails').value = ''; shEl('#shMsg').value = ''; shEl('#shNotify').checked = true;
@@ -6431,7 +6499,12 @@ function shAdd(){
   shRun(async () => {
     const done = [], failed = []; let why = '';
     shSay('');
-    for (const m of list) {
+    if (share.p === 'onedrive') {            // one request for everyone: Microsoft takes all of them or none
+      try {
+        await shJson('POST', shUrl('/invite'), {requireSignIn: true, sendInvitation: notify, roles: [role === 'writer' ? 'write' : 'read'], recipients: list.map(email => ({email})), ...(notify && msg ? {message: msg} : {})});
+        done.push(...list);
+      } catch (err) { if (err.kind !== 'http') throw err; failed.push(...list); why = err.message; }
+    } else for (const m of list) {
       try {
         await shJson('POST', shUrl(`/permissions?supportsAllDrives=true&sendNotificationEmail=${notify}${notify && msg ? '&emailMessage=' + encodeURIComponent(msg) : ''}`), {type: 'user', role, emailAddress: m});
         done.push(m);
@@ -6439,7 +6512,7 @@ function shAdd(){
     }
     shEl('#shEmails').value = failed.join(', ');
     try { await shLoad(); } catch {}
-    if (failed.length) shSay(`${done.length ? `Shared with ${done.join(', ')}. ` : ''}Couldn’t share with ${failed.join(', ')}. Google Drive said: ${why}`, true);
+    if (failed.length) shSay(`${done.length ? `Shared with ${done.join(', ')}. ` : ''}Couldn’t share with ${failed.join(', ')}. ${SHP[share.p].name} said: ${why}`, true);
     else { shSay(`Shared with ${done.join(', ')}.${notify ? ' They’ll get an email.' : ''}`); shEl('#shMsg').value = ''; }
   });
 }
@@ -6447,13 +6520,14 @@ function shRemove(pid){
   const p = share.perms.find(x => x.id === pid); if (!p) return;
   shRun(async () => {
     shSay('');
-    await shJson('DELETE', shUrl(`/permissions/${encodeURIComponent(pid)}?supportsAllDrives=true`));
+    await shJson('DELETE', shUrl(`/permissions/${encodeURIComponent(pid)}${share.p === 'google' ? '?supportsAllDrives=true' : ''}`));
     await shLoad();
     shSay(`Removed ${p.emailAddress || p.displayName || 'them'}.`);
   });
 }
 // Restricted, or anyone with the link as a viewer or commenter
 function shGeneral(val){
+  if (share.p === 'onedrive') return shRun(() => odShGeneral(val));
   shRun(async () => {
     shSay('');
     const any = share.perms.find(p => p.type === 'anyone');
@@ -6492,6 +6566,496 @@ $('#driveOff').onclick = () => {
   try { google.accounts.oauth2.revoke(t, () => {}); } catch {}
   renderDrive();
   toast('Disconnected from Google Drive. Your files in Drive have not been touched.');
+};
+
+// ================= OneDrive and Microsoft 365 =================
+// Sign-in is Microsoft's MSAL.js in a pop-up (loaded only when wanted). Files are browsed with a small picker of our own, through Microsoft Graph,
+// and saving and sharing follow the Google Drive part above. The access token is kept in memory; MSAL keeps the sign-in itself in this tab's
+// session storage. There is no client secret: a single-page app like this one doesn't use one.
+const OD_API = 'https://graph.microsoft.com/v1.0';
+const OD_MSAL = 'https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.1/lib/msal-browser.min.js';
+const OD_SCOPES = ['User.Read', 'Files.ReadWrite.All'];          // Files.ReadWrite.All is what lets "Shared with me" files be opened
+const OD_DIR = 'Between the Lines', OD_SIMPLE = 4e6, OD_CHUNK = 10 * 320 * 1024;          // up to 4 MB goes in one request; bigger files in pieces
+const od = {app: null, init: null, wait: null, account: null, token: '', expires: 0, force: false, user: null, drive: ''};
+class OdError extends Error { constructor(msg, kind, status, code){ super(msg); this.kind = kind; this.status = status; this.code = code; } }
+const odBase = (drive, id) => drive ? `/drives/${encodeURIComponent(drive)}/items/${encodeURIComponent(id)}` : `/me/drive/items/${encodeURIComponent(id)}`;
+const odSleep = ms => new Promise(r => setTimeout(r, ms));
+const odTokenOk = () => !!od.token && Date.now() < od.expires - 60000;
+const OD_MIME = {pdf: 'application/pdf', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  html: 'text/html', htm: 'text/html', md: 'text/markdown', txt: 'text/plain', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp'};
+const OD_OK = /\.(pdf|pptx|docx|md|markdown|txt|html?|png|jpe?g|gif|webp|bmp)$/i;
+
+// MSAL loads only when wanted (and early, on pointing at a OneDrive button, so the sign-in pop-up can still open inside the click)
+function odLoad(){
+  od.init ??= (async () => {
+    if (!window.msal) { try { await loadScript(OD_MSAL); } catch { throw new OdError('Microsoft’s sign-in couldn’t be loaded. Check your internet connection (or an ad or script blocker) and try again.', 'load'); } }
+    const app = new msal.PublicClientApplication({
+      auth: {clientId: ONEDRIVE.clientId, authority: 'https://login.microsoftonline.com/common', redirectUri: new URL('msal-redirect.html', location.href).href},
+      cache: {cacheLocation: 'sessionStorage'},
+    });
+    await app.initialize();
+    od.app = app;
+  })().catch(err => { od.init = null; throw odErr(err); });
+  return od.init;
+}
+const odWarm = e => { if (ONEDRIVE.clientId && e.target.closest?.('[data-od-open], [data-od], [data-act="odshare"]')) odLoad().catch(() => {}); };
+document.addEventListener('pointerover', odWarm);
+document.addEventListener('focusin', odWarm);
+
+// whatever MSAL or Microsoft said, as one of our own kinds of error
+function odErr(e){
+  if (e instanceof OdError) return e;
+  const c = e?.errorCode || '', m = String(e?.errorMessage || e?.message || '');
+  const kind = c === 'user_cancelled' || c === 'monitor_window_timeout' ? 'closed'
+    : /popup_window_error|empty_window_error/.test(c) ? 'blocked'
+    : c === 'interaction_in_progress' ? 'busy'
+    : /AADSTS(90094|90095|650056|50105)|admin.{0,30}(approv|consent)/i.test(c + ' ' + m) ? 'admin'
+    : c === 'access_denied' || /AADSTS65004|declined|access_denied/i.test(c + ' ' + m) ? 'denied'
+    : /network|post_request_failed|endpoint_resolution|no_network/i.test(c) ? 'network'
+    : 'other';
+  return new OdError(kind === 'network' ? (navigator.onLine === false ? 'you appear to be offline' : 'no connection') : m.replace(/\s*Trace ID:[\s\S]*$/, '') || c || 'sign-in failed', kind, undefined, c);
+}
+const odNeedsUser = e => /interaction_required|consent_required|login_required|no_tokens_found|invalid_grant|no_account_error|token_refresh_required/.test(e?.errorCode || '') || (window.msal?.InteractionRequiredAuthError && e instanceof msal.InteractionRequiredAuthError);
+// a sign-in left half done (a pop-up closed by a crash) can block the next one: forget the mark it left
+const odUnstick = () => { try { Object.keys(sessionStorage).filter(k => /interaction\.status$/.test(k)).forEach(k => sessionStorage.removeItem(k)); } catch {} };
+
+// an access token: the one in memory, else a quiet renewal, else Microsoft's pop-up. One at a time, so two clicks never open two pop-ups.
+function odToken(){
+  if (odTokenOk()) return Promise.resolve(od.token);
+  return od.wait ??= odGet().finally(() => { od.wait = null; });
+}
+async function odGet(again){
+  if (navigator.onLine === false) throw new OdError('you appear to be offline', 'network');
+  await odLoad();
+  try {
+    const account = od.account || od.app.getAllAccounts()[0], req = {scopes: OD_SCOPES, account};
+    let r = null;
+    if (account) {
+      try { r = await od.app.acquireTokenSilent({...req, forceRefresh: od.force}); }
+      catch (e) { if (!odNeedsUser(e)) throw e; }
+    }
+    r ??= account ? await od.app.acquireTokenPopup(req) : await od.app.loginPopup({scopes: OD_SCOPES, prompt: 'select_account'});
+    od.force = false; od.account = r.account || account; od.token = r.accessToken;
+    od.expires = r.expiresOn ? +new Date(r.expiresOn) : Date.now() + 3600e3;
+    od.user = {name: od.account?.name || '', email: od.account?.username || ''};
+    renderOd();
+    return od.token;
+  } catch (e) {
+    const err = odErr(e);
+    if (err.kind === 'busy' && !again) { odUnstick(); return odGet(true); }
+    throw err;
+  }
+}
+// a request to Graph with the token. A 401 renews the token once; "slow down" (429) waits as long as Microsoft says, twice at most.
+async function odFetch(url, opts = {}){
+  if (!/^https:/.test(url)) url = OD_API + url;
+  let renewed = false, waited = 0;
+  for (;;) {
+    const token = await odToken();
+    let res;
+    try { res = await fetch(url, {...opts, headers: {...opts.headers, Authorization: 'Bearer ' + token}}); }
+    catch (err) { throw new OdError(navigator.onLine === false ? 'you appear to be offline' : err?.message || 'no connection', 'network'); }
+    if (res.status === 401 && !renewed) { renewed = true; od.token = ''; od.force = true; continue; }
+    if ((res.status === 429 || res.status === 503) && waited < 2) {
+      const s = Math.min(30, Math.max(1, +res.headers.get('Retry-After') || 3));
+      waited++; toast(`Microsoft asked us to wait a moment (${s} s)…`); await odSleep(s * 1000); continue;
+    }
+    if (!res.ok) throw await odHttp(res);
+    return res;
+  }
+}
+async function odHttp(res){
+  let e = {}; try { e = (await res.json()).error || {}; } catch {}
+  return new OdError(e.message || 'Microsoft said ' + res.status, [429, 503, 509].includes(res.status) ? 'throttled' : 'http', res.status, e.code);
+}
+// one calm sentence for whatever went wrong; nothing in the notebook is touched
+function odSay(err, doing){
+  console.warn(err);
+  const k = err?.kind;
+  toast(k === 'closed' ? 'The Microsoft sign-in window was closed, so nothing was done. Your notes are safe.'
+    : k === 'denied' ? 'OneDrive access wasn’t allowed, so nothing was done. Your notes are safe.'
+    : k === 'admin' ? 'Your organisation needs an administrator to approve this app before it can use OneDrive. Nothing was done, and your notes are safe.'
+    : k === 'blocked' ? 'Your browser blocked Microsoft’s sign-in window. Press the button again to try once more.'
+    : k === 'busy' ? 'A Microsoft sign-in window is already open. Finish or close it, then press the button again.'
+    : k === 'throttled' ? 'Microsoft is asking for a short break. Wait a minute, then try again. Your notes are still saved in this browser.'
+    : k === 'network' ? `Couldn’t reach OneDrive (${err.message}). Your notes are still saved in this browser.`
+    : k === 'load' ? err.message
+    : `Couldn’t ${doing} (${err?.message || 'something went wrong'}). Your notes are still saved in this browser.`);
+}
+// with no client ID the site owner hasn't set OneDrive up
+function odSetUp(){
+  if (ONEDRIVE.clientId) return true;
+  toast('OneDrive isn’t set up for this site yet.');
+  return false;
+}
+const odMyDrive = async () => od.drive ||= (await (await odFetch('/me/drive?$select=id')).json()).id || '';
+
+// ---------- the file picker ----------
+// Our own small browser over Graph: My files (folders and a path), Shared with me, Recent, and a search box.
+// Click a file to tick it (Space does too), Enter or double-click opens; Enter on a folder goes in, Backspace goes up. Esc closes.
+const OD_TABS = [['mine', 'My files'], ['shared', 'Shared with me'], ['recent', 'Recent']];
+const odp = {open: false, tab: 'mine', path: [], items: [], next: '', q: '', cur: -1, sel: new Map(), loading: false, err: '', seq: 0, done: null, prev: null, timer: 0};
+let odpBox = null, odpScrim = null;
+const odpEl = s => odpBox.querySelector(s);
+const odKey = it => it.drive + '/' + it.id;
+function odItem(raw){
+  const r = raw.remoteItem || raw;
+  return {id: r.id, drive: r.parentReference?.driveId || raw.parentReference?.driveId || '', name: raw.name || r.name || '', folder: !!r.folder, pkg: !!r.package, size: r.size ?? raw.size ?? 0,
+    when: raw.lastModifiedDateTime || r.lastModifiedDateTime || '', by: raw.remoteItem ? (r.shared?.sharedBy || r.shared?.owner)?.user?.displayName || '' : '',
+    where: (raw.parentReference?.path || '').split(':').pop().replace(/^\//, '').split('/').pop() || ''};
+}
+const odSize = n => n < 1024 ? n + ' B' : n < 1048576 ? Math.round(n / 1024) + ' KB' : (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + ' MB';
+const odDate = t => t ? new Date(t).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'}) : '';
+const odKind = it => it.folder ? 'folder' : /\.(png|jpe?g|gif|webp|bmp)$/i.test(it.name) ? 'image' : 'file';
+function odpBuild(){
+  odpScrim = Object.assign(document.createElement('div'), {className: 'shscrim', hidden: true});
+  odpBox = document.createElement('div'); odpBox.className = 'pop odbox'; odpBox.hidden = true;
+  odpBox.setAttribute('role', 'dialog'); odpBox.setAttribute('aria-modal', 'true'); odpBox.setAttribute('aria-labelledby', 'odpTitle');
+  odpBox.innerHTML = `<div class="shhead"><h2 id="odpTitle">Open from OneDrive</h2><button type="button" class="btn" id="odpClose" aria-label="Close" title="Close (Esc)">${icon('x')}</button></div>
+<div class="odtop">
+  <div class="odtabs" role="tablist" aria-label="Where to look">${OD_TABS.map(([k, n]) => `<button type="button" role="tab" id="odt-${k}" data-tab="${k}" aria-selected="false" tabindex="-1" title="${{mine: 'Your own files and folders', shared: 'Files other people have shared with you', recent: 'Files you opened or changed lately'}[k]}">${n}</button>`).join('')}</div>
+  <input type="search" class="odq" id="odpQ" aria-label="Search your OneDrive" placeholder="Search your OneDrive" autocomplete="off" spellcheck="false" title="Search all your files by name or words inside them (Enter)">
+</div>
+<nav class="odcrumbs" id="odpCrumbs" aria-label="Folder path"></nav>
+<div class="odlist" id="odpList" role="listbox" aria-multiselectable="true" aria-label="Files" tabindex="0"></div>
+<div class="odnote"><span id="odpSay" role="status" aria-live="polite"></span><button type="button" class="btn outline" id="odpMore" hidden>Show more</button></div>
+<div class="odfoot">
+  <label class="shchk odpdf" title="PowerPoint and Word files are turned into a PDF by OneDrive, so every page looks just as it does in Office. Untick it to open the original file and its text instead."><input type="checkbox" id="odpPdf"> Open PowerPoint/Word as it looks (PDF)</label>
+  <div class="odbtns"><button type="button" class="btn outline" id="odpCancel">Cancel</button><button type="button" class="btn primary" id="odpGo" disabled>Open</button></div>
+</div>`;
+  document.body.append(odpScrim, odpBox);
+  odpScrim.addEventListener('click', () => odpClose());
+  odpEl('#odpClose').onclick = odpEl('#odpCancel').onclick = () => odpClose();
+  odpEl('#odpGo').onclick = () => odpGo();
+  odpEl('#odpMore').onclick = () => { odpLoad(true); odpEl('#odpList').focus(); };
+  odpEl('#odpPdf').onchange = e => pref.set('od-pdf', e.target.checked ? '1' : '0');
+  const tabs = odpEl('.odtabs');
+  tabs.addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) odpTab(b.dataset.tab, true); });
+  tabs.addEventListener('keydown', e => {
+    const i = OD_TABS.findIndex(t => t[0] === odp.tab), n = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: OD_TABS.length - 1 }[e.key];
+    if (n === undefined) return;
+    e.preventDefault(); odpTab(OD_TABS[(n + OD_TABS.length) % OD_TABS.length][0], true);
+  });
+  const q = odpEl('#odpQ');
+  q.addEventListener('input', () => { clearTimeout(odp.timer); odp.timer = setTimeout(odpSearch, 350); });
+  q.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); clearTimeout(odp.timer); odpSearch(); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); odpEl('#odpList').focus(); }
+  });
+  odpEl('#odpCrumbs').addEventListener('click', e => {
+    const b = e.target.closest('[data-crumb]'); if (!b) return;
+    if (b.dataset.crumb === 'clear') { q.value = ''; odp.q = ''; odpLoad(); odpEl('#odpList').focus(); return; }
+    odp.path = odp.path.slice(0, +b.dataset.crumb); odpLoad(); odpEl('#odpList').focus();
+  });
+  const list = odpEl('#odpList');
+  list.addEventListener('click', e => {
+    const row = e.target.closest('[data-i]'); if (!row) return;
+    const it = odp.items[+row.dataset.i]; odp.cur = +row.dataset.i;
+    if (it.folder) odpEnter(it); else odpToggle(it);
+    list.focus();
+  });
+  list.addEventListener('dblclick', e => {
+    const row = e.target.closest('[data-i]'), it = row && odp.items[+row.dataset.i];
+    if (it && !it.folder) { odp.sel = new Map([[odKey(it), it]]); odpGo(); }
+  });
+  list.addEventListener('keydown', e => {
+    const n = odp.items.length, it = odp.items[odp.cur];
+    const to = { ArrowDown: odp.cur + 1, ArrowUp: odp.cur - 1, PageDown: odp.cur + 8, PageUp: odp.cur - 8, Home: 0, End: n - 1 }[e.key];
+    if (to !== undefined) { e.preventDefault(); if (n) { odp.cur = Math.max(0, Math.min(n - 1, to)); odpMark(); if (odp.cur >= n - 2 && odp.next && !odp.loading) odpLoad(true); } return; }
+    if (e.key === 'Enter') { e.preventDefault(); if (odp.sel.size) odpGo(); else if (it && !it.folder) { odp.sel = new Map([[odKey(it), it]]); odpGo(); } else if (it) odpEnter(it); }
+    else if (e.key === ' ') { e.preventDefault(); if (it && !it.folder) odpToggle(it); }
+    else if (e.key === 'ArrowRight') { if (it?.folder) { e.preventDefault(); odpEnter(it); } }
+    else if (e.key === 'Backspace' || e.key === 'ArrowLeft' || (e.altKey && e.key === 'ArrowLeft')) { if (odp.path.length) { e.preventDefault(); odp.path.pop(); odpLoad(); } }
+    else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) { q.focus(); }          // typing starts a search
+  });
+  odpBox.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); odpClose(); return; }
+    if (e.key !== 'Tab') return;
+    const f = [...odpBox.querySelectorAll('button, input, [tabindex="0"]')].filter(x => !x.disabled && !x.hidden && x.getClientRects().length && !(x.getAttribute('role') === 'tab' && x.tabIndex < 0));
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && (document.activeElement === first || !odpBox.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (document.activeElement === last || !odpBox.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
+  });
+  document.addEventListener('focusin', e => { if (odp.open && !odpBox.contains(e.target)) odpEl('#odpList').focus(); });
+  document.addEventListener('keydown', e => { if (odp.open && e.key === 'Escape' && !odpBox.contains(e.target)) { e.preventDefault(); odpClose(); } });       // focus got lost outside the dialog
+}
+// signed in first (while the click still counts), then the picker; gives {items, pdf}, with no items if it was cancelled
+function odPick(){
+  if (odp.open || odp.wait) return Promise.resolve({items: [], pdf: false});          // already signing in or choosing
+  odp.wait = true;
+  return odToken().then(() => new Promise(ok => {
+    if (!odpBox) odpBuild();
+    const at = document.activeElement;
+    Object.assign(odp, {open: true, done: ok, prev: at && at !== document.body && at.getClientRects().length ? at : null, tab: 'mine', path: [], items: [], next: '', q: '', cur: -1, sel: new Map(), err: ''});
+    odpEl('#odpQ').value = ''; odpEl('#odpPdf').checked = pref.get('od-pdf', '1') !== '0';
+    odpScrim.hidden = odpBox.hidden = false;
+    odpLoad(); odpEl('#odpList').focus();
+  })).finally(() => { odp.wait = false; });
+}
+function odpClose(result){
+  if (!odp.open) return;
+  odp.open = false; odp.seq++; clearTimeout(odp.timer); odpBox.hidden = odpScrim.hidden = true;
+  if (odp.prev?.isConnected && odp.prev !== document.body) odp.prev.focus({preventScroll: true});
+  const d = odp.done; odp.done = null; odp.prev = null;
+  d?.(result || {items: [], pdf: false});
+}
+function odpGo(){
+  const items = [...odp.sel.values()]; if (!items.length) return;
+  odpClose({items, pdf: odpEl('#odpPdf').checked});
+}
+function odpTab(tab, focus){
+  if (tab !== odp.tab || odp.q || odp.path.length) { odp.tab = tab; odp.path = []; odp.q = ''; odpEl('#odpQ').value = ''; odpLoad(); }
+  if (focus) odpEl('#odt-' + tab).focus();
+}
+function odpSearch(){
+  const q = odpEl('#odpQ').value.trim();
+  if (q === odp.q) return;
+  odp.q = q; odp.path = []; odpLoad();
+}
+function odpEnter(it){ odp.path.push({name: it.name, drive: it.drive, id: it.id}); odpEl('#odpQ').value = ''; odp.q = ''; odpLoad(); }
+function odpToggle(it){
+  const k = odKey(it); if (odp.sel.has(k)) odp.sel.delete(k); else odp.sel.set(k, it);
+  odpRender(true);
+}
+// what to ask Graph for
+function odpUrl(){
+  if (odp.q) return `/me/drive/root/search(q='${encodeURIComponent(odp.q.replace(/'/g, "''"))}')?$top=100`;
+  const c = odp.path.at(-1);
+  if (c) return `${odBase(c.drive, c.id)}/children?$top=200`;
+  return odp.tab === 'shared' ? '/me/drive/sharedWithMe' : odp.tab === 'recent' ? '/me/drive/recent' : '/me/drive/root/children?$top=200';
+}
+async function odpLoad(more){
+  const seq = ++odp.seq;
+  odp.loading = true; odp.err = '';
+  if (!more) { odp.items = []; odp.next = ''; odp.cur = -1; }
+  odpRender();
+  try {
+    let url = more ? odp.next : odpUrl(), rows = more ? odp.items.slice() : [], pages = 0;
+    do {
+      const j = await (await odFetch(url)).json();
+      if (seq !== odp.seq) return;
+      const have = new Set(rows.map(odKey));
+      for (const raw of j.value || []) { const it = odItem(raw); if (it.id && !it.pkg && (it.folder || OD_OK.test(it.name)) && !have.has(odKey(it))) { rows.push(it); have.add(odKey(it)); } }
+      url = j['@odata.nextLink'] || ''; pages++;
+    } while (url && pages < 4 && rows.length - (more ? odp.items.length : 0) < 20);          // a page of things we don't open shouldn't look like an empty folder
+    if (!odp.q && (odp.path.length || odp.tab === 'mine' || odp.tab === 'shared')) rows.sort((a, b) => b.folder - a.folder || a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+    odp.items = rows; odp.next = url;
+    if (odp.cur < 0 || odp.cur >= rows.length) odp.cur = 0;
+  } catch (err) {
+    if (seq !== odp.seq) return;
+    console.warn(err);
+    odp.err = err.kind === 'network' ? `Couldn’t reach OneDrive (${err.message}).`
+      : ['closed', 'denied', 'blocked', 'busy', 'admin'].includes(err.kind) ? odpWhySignIn(err)
+      : err.kind === 'throttled' ? 'Microsoft is asking for a short break. Wait a minute, then try again.'
+      : odp.tab === 'shared' && !odp.path.length && !odp.q ? `“Shared with me” couldn’t be loaded (${err.message}). You can still use My files, Recent and Search.`
+      : `Microsoft said: ${err.message}`;
+  } finally {
+    if (seq === odp.seq) { odp.loading = false; odpRender(); }
+  }
+}
+const odpWhySignIn = err => err.kind === 'closed' ? 'The Microsoft sign-in window was closed.' : err.kind === 'admin' ? 'Your organisation needs an administrator to approve this app first.' : 'Microsoft sign-in didn’t go through.';
+function odpRender(keep){
+  const list = odpEl('#odpList'), top = list.scrollTop;
+  for (const [k, n] of OD_TABS) { const b = odpEl('#odt-' + k), on = k === odp.tab; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; }
+  const root = OD_TABS.find(t => t[0] === odp.tab)[1];
+  odpEl('#odpCrumbs').innerHTML = odp.q ? `<span>Results for “${esc(odp.q)}”</span><button type="button" class="linkbtn" data-crumb="clear">Clear search</button>`
+    : [{name: root}, ...odp.path].map((c, i, a) => i === a.length - 1 ? `<span aria-current="location">${esc(c.name)}</span>` : `<button type="button" class="linkbtn" data-crumb="${i}">${esc(c.name)}</button><span aria-hidden="true">›</span>`).join('');
+  list.setAttribute('aria-busy', odp.loading);
+  if (!odp.items.length) {
+    const none = odp.q ? `Nothing found for “${odp.q}”.` : odp.path.length ? 'No PDF, PowerPoint, Word, picture or notebook files in this folder.' : odp.tab === 'shared' ? 'Nothing has been shared with you that can be opened here.' : odp.tab === 'recent' ? 'No recent files to show.' : 'No PDF, PowerPoint, Word, picture or notebook files here yet.';
+    list.innerHTML = odp.loading ? '<div class="odmsg">Loading…</div>' : odp.err ? `<div class="odmsg bad">${esc(odp.err)} <button type="button" class="linkbtn" data-retry>Try again</button></div>` : `<div class="odmsg">${esc(none)}</div>`;
+    list.querySelector('[data-retry]')?.addEventListener('click', () => { odpLoad(); list.focus(); });
+    list.removeAttribute('aria-activedescendant');
+  } else {
+    list.innerHTML = odp.items.map((it, i) => {
+      const on = odp.sel.has(odKey(it)), meta = it.folder ? 'Folder' : [odSize(it.size), odDate(it.when), it.by && 'Shared by ' + it.by, !odp.path.length && odp.tab !== 'shared' && it.where && 'in ' + it.where].filter(Boolean).join(' · ');
+      return `<div class="odrow" role="option" id="odr${i}" data-i="${i}"${it.folder ? ' data-folder="1"' : ` aria-selected="${on}"`}>${it.folder ? '' : `<span class="odcheck">${on ? icon('check') : ''}</span>`}<span class="odic">${icon(odKind(it))}</span><span class="odname"><b>${esc(it.name)}</b><small>${esc(meta)}</small></span>${it.folder ? icon('right') : ''}</div>`;
+    }).join('') + (odp.err ? `<div class="odmsg bad">${esc(odp.err)}</div>` : '');
+    if (keep) list.scrollTop = top;
+    odpMark();
+  }
+  const n = odp.sel.size;
+  odpEl('#odpSay').textContent = odp.loading ? 'Loading…' : odp.items.length ? `${odp.items.length} item${odp.items.length === 1 ? '' : 's'}${odp.next ? ' so far' : ''}${n ? `, ${n} ticked` : ''}` : '';
+  odpEl('#odpMore').hidden = !odp.next || odp.loading;
+  const go = odpEl('#odpGo'); go.disabled = !n; go.textContent = n > 1 ? `Open (${n})` : 'Open';
+}
+// the row the arrow keys are on
+function odpMark(){
+  const list = odpEl('#odpList');
+  list.querySelectorAll('[data-cur]').forEach(r => r.removeAttribute('data-cur'));
+  const row = odp.cur >= 0 && list.querySelector(`#odr${odp.cur}`);
+  if (row) { row.dataset.cur = '1'; list.setAttribute('aria-activedescendant', row.id); row.scrollIntoView({block: 'nearest'}); }
+}
+
+// ---------- open from OneDrive ----------
+// a file as a File with the right ending. PowerPoint and Word can come as a PDF, made by OneDrive, so they look exactly as in Office; if that fails, the file itself is used.
+async function odDownload(d, pdf){
+  const at = odBase(d.drive, d.id), ext = (d.name.match(/\.([^.]+)$/) || [])[1]?.toLowerCase() || '';
+  if (pdf && (ext === 'pptx' || ext === 'docx')) {
+    try {
+      const blob = await (await odFetch(`${at}/content?format=pdf`)).blob();
+      if ((await blob.slice(0, 5).text()) !== '%PDF-') throw new OdError('not a PDF', 'http');
+      return new File([blob], d.name.replace(/\.[^.]+$/, '') + '.pdf', {type: 'application/pdf'});
+    } catch (err) {
+      if (err.kind !== 'http') throw err;
+      toast(`Couldn’t make a PDF of “${d.name}”, so its original file is being opened instead…`);
+    }
+  }
+  const blob = await (await odFetch(`${at}/content`)).blob();
+  return new File([blob], d.name, {type: OD_MIME[ext] || blob.type});
+}
+async function odOpen(){
+  if (!odSetUp()) return;
+  try {
+    const {items, pdf} = await odPick();
+    for (const [i, d] of items.entries()) {
+      toast(`Downloading “${d.name}” from OneDrive…${items.length > 1 ? ` (${i + 1} of ${items.length})` : ''}`);
+      let file;
+      try { file = await odDownload(d, pdf); }
+      catch (err) { odSay(err, `download “${d.name}”`); continue; }
+      const isNb = /\.html?$/i.test(file.name), before = curId, had = !!main.querySelector('.slide');
+      await openFiles([file]);
+      const doc = curDoc();
+      if (isNb && doc && main.querySelector('.slide') && (curId !== before || !had)) { doc.odNb = d.id; doc.odDrive = d.drive; putAll({docs}); }          // the notebook remembers its file, so saving updates it
+    }
+  } catch (err) { odSay(err, 'open from OneDrive'); }
+}
+
+// ---------- save to OneDrive ----------
+// small files go up in one request; bigger ones in pieces through an upload session (Microsoft's way past the 4 MB limit)
+async function odUpload(t, blob, progress){
+  const at = t.id ? odBase(t.drive, t.id) : `/me/drive/root:/${encodeURIComponent(OD_DIR)}/${encodeURIComponent(t.name)}:`, how = t.id ? 'replace' : 'rename';       // a new file never overwrites another
+  if (blob.size <= OD_SIMPLE) return (await odFetch(`${at}/content${t.id ? '' : '?@microsoft.graph.conflictBehavior=' + how}`, {method: 'PUT', headers: {'Content-Type': blob.type || 'application/octet-stream'}, body: blob})).json();
+  const s = await (await odFetch(`${at}/createUploadSession`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({item: {'@microsoft.graph.conflictBehavior': how}})})).json();
+  try {
+    for (let start = 0; ;) {
+      const end = Math.min(start + OD_CHUNK, blob.size);
+      let res;
+      try { res = await fetch(s.uploadUrl, {method: 'PUT', headers: {'Content-Range': `bytes ${start}-${end - 1}/${blob.size}`}, body: blob.slice(start, end)}); }          // the upload address needs no token
+      catch { throw new OdError(navigator.onLine === false ? 'you appear to be offline' : 'no connection', 'network'); }
+      if (!res.ok) throw await odHttp(res);
+      progress?.(end / blob.size);
+      if (end >= blob.size) return res.json();
+      start = end;
+    }
+  } catch (err) { fetch(s.uploadUrl, {method: 'DELETE'}).catch(() => {}); throw err; }
+}
+// The first save makes "<name> (notes).html" in the Between the Lines folder; after that the same file is updated.
+// A notebook you can't change (shared with you to view only) is saved as a copy in your own OneDrive instead. Gives back {id, drive, name, url, copy}.
+async function odStore(quiet){
+  await flushSave();
+  const doc = curDoc(), file = await notebookFile();
+  let last = -1;
+  const progress = quiet || file.blob.size <= OD_SIMPLE ? null : f => { const n = Math.round(f * 100); if (n !== last) { last = n; toast(`Uploading “${file.name}” to OneDrive: ${n}%`); } };
+  if (!quiet) toast(progress ? `Uploading “${file.name}” to OneDrive…` : 'Saving to OneDrive…');
+  const create = name => odUpload({name}, file.blob, progress);
+  let out, mine = false, same = false;
+  if (doc?.odNb) {
+    try { out = await odUpload({id: doc.odNb, drive: doc.odDrive}, file.blob, progress); same = true; }
+    catch (err) {
+      if (err.status === 404) out = await create(file.name);          // the file is gone from OneDrive: make a new one
+      else if (err.status === 403 && !/limit|quota|throttl/i.test(err.code + ' ' + err.message)) { out = await create(notebookName() + ' (my copy).html'); mine = true; }          // not allowed to change it
+      else throw err;
+    }
+  } else out = await create(file.name);
+  if (!out?.id) throw new OdError('Microsoft sent back something unexpected', 'http');
+  const drive = out.parentReference?.driveId || (same ? doc.odDrive : await odMyDrive());
+  if (doc && docs.includes(doc)) { doc.odNb = out.id; doc.odDrive = drive; putAll({docs}); }
+  return {id: out.id, drive, name: out.name || file.name, url: out.webUrl || '', copy: mine};
+}
+async function odSave(){
+  if (!odSetUp()) return;
+  if (!main.querySelector('.slide')) { toast('Open your slides first, then save to OneDrive.'); return; }
+  try {
+    await odToken();                         // sign in first, while the click still counts, then build the file
+    const out = await odStore(), at = new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'});
+    toast(out.copy ? `You can only view the original, so a copy was saved in your own OneDrive: ${out.name} (${at})` : `Saved to OneDrive: ${out.name} (${at})`);
+  } catch (err) { odSay(err, 'save to OneDrive'); }
+}
+
+// ---------- share through OneDrive (the dialog is the one above) ----------
+async function odShare(prep, back){
+  if (!odSetUp() || share.open) return;
+  try {
+    await odToken();
+    if (prep) await prep();
+    if (!main.querySelector('.slide')) { toast('Open your slides first, then share.'); return; }
+    const out = await odStore();
+    toast('');
+    shOpenDialog(out, 'notebook', out.copy ? 'You can only view the original, so this is a copy saved in your own OneDrive. That is the file being shared.' : '', back, 'onedrive');
+  } catch (err) { odSay(err, 'share through OneDrive'); }
+}
+// the notebook's ⋯ menu: make it the open notebook, then share it
+function shareOdDoc(id){ odShare(async () => { if (id !== curId) await switchDoc(id); }, () => $(`#docList [data-more="${id}"]`)); }
+async function odPerms(url){
+  const all = [];
+  for (let i = 0; url && i < 5; i++) { const j = await (await odFetch(url)).json(); all.push(...(j.value || [])); url = j['@odata.nextLink']; }
+  return all;
+}
+// Graph's permissions as the dialog's own kind of list: people, "anyone" links and organisation links
+function odPerm(p){
+  const roles = p.roles || [], owner = roles.some(r => /owner/i.test(r)), role = owner ? 'owner' : roles.some(r => /write|edit|contribute|full/i.test(r)) ? 'writer' : 'reader';
+  const base = {id: p.id, role, inherited: !!p.inheritedFrom && !owner}, l = p.link;
+  if (l?.scope === 'anonymous') return [{...base, type: 'anyone', role: l.type === 'edit' ? 'writer' : 'reader', link: l.webUrl}];
+  if (l?.scope === 'organization') return [{...base, type: 'domain', role: l.type === 'edit' ? 'writer' : 'reader', link: l.webUrl}];
+  return (p.grantedToIdentitiesV2 || [p.grantedToV2 || p.grantedTo]).filter(Boolean).map(g => {
+    const u = g.user || g.siteUser || g.group || g.application || {};
+    return {...base, type: 'user', displayName: u.displayName || '', emailAddress: u.email || (/@/.test(u.loginName || '') ? u.loginName.split('|').pop() : '')};
+  }).filter(x => x.displayName || x.emailAddress);
+}
+async function odShLoad(){
+  let hidden = false;
+  const [it, raw] = await Promise.all([
+    odFetch(shUrl('?$select=id,webUrl')).then(r => r.json()),
+    odPerms(shUrl('/permissions')).catch(err => { if (err.status !== 403) throw err; hidden = true; return []; }),
+  ]);
+  share.perms = raw.flatMap(odPerm);
+  const l = share.perms.filter(p => p.type === 'anyone' && p.link).sort((a, b) => (b.role === 'writer') - (a.role === 'writer'))[0] || share.perms.find(p => p.type === 'domain' && p.link);
+  share.url = it.webUrl || ''; share.link = l?.link || share.url;
+  if (hidden) shSay('Microsoft doesn’t let you see who else has access to this file.', true);
+}
+// Restricted, or anyone with the link as a viewer or editor. If the organisation turned off links for anyone, a link for the organisation is made and the reason is shown.
+async function odShGeneral(val){
+  shSay('');
+  const anons = share.perms.filter(p => p.type === 'anyone'), drop = p => shJson('DELETE', shUrl(`/permissions/${encodeURIComponent(p.id)}`));
+  if (val === 'none') {
+    for (const p of anons) await drop(p);
+    await odShLoad(); shSay('Now only the people listed can open it.'); return;
+  }
+  const type = val === 'writer' ? 'edit' : 'view', make = scope => shJson('POST', shUrl('/createLink'), {type, scope}).then(r => r.json());
+  let note = '';
+  try {
+    const made = await make('anonymous');
+    for (const p of anons) if (p.id !== made.id) await drop(p).catch(() => {});          // one link at a time: the old viewer link goes when it becomes an editor link
+  } catch (err) {
+    if (err.kind !== 'http' || ![400, 403, 405].includes(err.status)) throw err;
+    try { await make('organization'); } catch { throw err; }
+    note = `Links for anyone aren’t allowed here (${err.message}), so people in your organisation with the link can ${type === 'edit' ? 'open and change' : 'open'} it instead.`;
+  }
+  await odShLoad();
+  shSay(note || `Anyone with the link can now ${type === 'edit' ? 'open and change' : 'view'} it.`, !!note);
+}
+
+// ---------- buttons, and the Help & settings section ----------
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-od-open]')) { if (narrow.matches) setPanel('pages', false); odOpen(); return; }
+  const b = e.target.closest('#saveMenu [data-od]'); if (!b) return;
+  saveMenu.hidden = true; $('#save').setAttribute('aria-expanded', 'false');
+  if (b.dataset.od === 'share') odShare(null, () => $('#save')); else odSave();
+});
+function renderOd(){
+  const on = !!od.account, u = od.user;
+  $('#odStatus').textContent = on ? 'Connected' + (u?.name || u?.email ? ` as ${u.name || u.email}${u.name && u.email ? ` (${u.email})` : ''}` : '') : 'Not connected';
+  $('#odHint').hidden = !!ONEDRIVE.clientId;
+  $('#odOff').disabled = !on;
+}
+$('#odOff').onclick = async () => {
+  const app = od.app;
+  od.token = ''; od.expires = 0; od.user = null; od.account = null; od.drive = '';
+  try { for (const account of app?.getAllAccounts?.() || []) await app.clearCache({account}); } catch {}
+  renderOd();
+  toast('Signed out of OneDrive. Your files in OneDrive have not been touched.');
 };
 
 // ================= add a note from the Notes panel =================
@@ -7004,7 +7568,7 @@ async function duplicateDoc(id){
   if (id === curId) await flushSave();                    // so the copy has what is on the page now
   const html = (await get('doc:' + id)) || '';
   const copy = {...d, id: newId(), name: d.name.slice(0, 112) + ' (copy)', named: true, copiedFrom: id, updated: Date.now()};
-  delete copy.fav; delete copy.trashed; delete copy.driveNb; delete copy.driveNbRO; delete copy.drivePdf;       // a copy gets its own files in Google Drive
+  delete copy.fav; delete copy.trashed; delete copy.driveNb; delete copy.driveNbRO; delete copy.drivePdf; delete copy.odNb; delete copy.odDrive;       // a copy gets its own files in Google Drive and OneDrive
   docs.splice(docs.indexOf(d) + 1, 0, copy);
   await putAll({['doc:' + copy.id]: html, docs});
   renderDocs();
