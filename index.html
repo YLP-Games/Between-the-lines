@@ -1090,8 +1090,8 @@ main.reading .jrnl .j-ind{cursor:default}
 :root[data-theme="dark"]{--t-fg:#ece6d6;--t-str:#9fd8a5;--t-bad:#ffa08c}
 .sidepage.dark .tpl{--t-fg:currentColor;--t-str:#9fd8a5;--t-bad:#ffa08c;--j-dim:var(--j-dim-d);--j-acct:var(--j-acct-d);--j-amt:var(--j-amt-d);--j-bg:transparent;--j-pad:0px}
 main.pdfpaper .tpl{--t-fg:currentColor;--t-str:#2a7a47;--t-bad:#b3402f;--j-dim:var(--j-dim-l);--j-acct:var(--j-acct-l);--j-amt:var(--j-amt-l);--j-bg:transparent;--j-pad:0px}
-.tpl{position:relative;display:block;box-sizing:border-box;width:min(100%,32em);margin:.3em 0;padding:calc(.15em + var(--j-pad) * .6) var(--j-pad);background:var(--j-bg);border-radius:10px;color:var(--t-fg);line-height:1.25;font-variant-numeric:tabular-nums;cursor:text;-webkit-user-select:text;user-select:text;text-align:left}
-.tpl .tf{min-width:0;outline:none;white-space:pre-wrap;overflow-wrap:anywhere;border-radius:3px;caret-color:currentColor;padding:.04em .22em}
+.tpl{position:relative;display:block;box-sizing:border-box;width:min(100%,32em);margin:.3em 0;padding:calc(.15em + var(--j-pad) * .6) var(--j-pad);background:var(--j-bg);border-radius:10px;color:var(--t-fg);line-height:1.25;font-variant-numeric:tabular-nums;cursor:text;-webkit-user-select:text;user-select:text;text-align:left;overflow-x:auto;overflow-y:hidden}
+.tpl .tf{min-width:0;outline:none;white-space:pre-wrap;overflow-wrap:break-word;border-radius:3px;caret-color:currentColor;padding:.04em .22em}
 .tpl .tf[contenteditable="true"]:focus,.tpl .tf[contenteditable="plaintext-only"]:focus{background:color-mix(in srgb,currentColor 11%,transparent)}
 .tpl [data-ph]:empty::before{content:attr(data-ph);opacity:.38}
 .tpl .calc{color:var(--j-amt);cursor:default}
@@ -1337,6 +1337,7 @@ main.reading .cd-lang::after,main.pdfpaper .cd-lang::after{content:""}
   .tplfoot{display:none}
   .tplbox .shhead h2{font-size:18px}
 }
+@media (max-width:640px){.tpl{font-size:.82em}.tpl-t{--cols:minmax(3.4em,1fr) 3.6em minmax(3.4em,1fr) 3.6em}.tpl-t .tf{padding-inline:.2em}}
 @media (pointer:coarse){
   .tpl .tf:not(.me):not(.calc){min-height:44px;padding:.3em .4em;box-sizing:border-box}
   .tpl .tf.me{min-height:44px;min-width:2.6em}
