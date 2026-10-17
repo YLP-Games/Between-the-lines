@@ -31,6 +31,8 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // Microsoft sign-in and Microsoft Graph (OneDrive) go straight to the network and are never saved; neither is the blank page the sign-in pop-up returns to
+  if (/(^|\.)(graph\.microsoft\.com|login\.microsoftonline\.com|login\.live\.com)$/.test(url.hostname) || (url.origin === location.origin && url.pathname.endsWith('/msal-redirect.html'))) return;
   if (url.origin === location.origin) {                 // the app: fresh when online, saved copy when offline
     e.respondWith((async () => {
       const c = await caches.open(CACHE);
