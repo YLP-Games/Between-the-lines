@@ -96,13 +96,14 @@ input[type=color]{width:28px;height:28px;padding:0;border:1px solid var(--line-s
 .tab{height:36px;padding:0 14px;border:none;border-bottom:2px solid transparent;background:none;font:inherit;font-size:13.5px;color:var(--muted);cursor:pointer;margin-bottom:-1px}
 .tab:hover{color:var(--ink)}
 .tab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
-.panel{--sbh:9px;display:flex;align-items:stretch;gap:2px;padding:6px 0;height:calc(64px + var(--sbh));margin-bottom:calc(0px - var(--sbh));box-sizing:border-box;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:transparent transparent;transition:scrollbar-color .25s}
+.panel{--sbh:9px;display:flex;align-items:stretch;gap:2px;padding:6px 0;height:calc(64px + var(--sbh));margin-bottom:calc(0px - var(--sbh));box-sizing:border-box;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scroll-padding-inline:20px;scrollbar-width:thin;scrollbar-color:transparent transparent;transition:scrollbar-color .25s}
+.panel > .grp, .panel > .tip{scroll-snap-align:start}      /* a sideways scroll comes to rest at the start of a group, with room before it: never half a button at the edge */
 /* the scroll bar sits in a strip (--sbh) below the tools that the next row overlaps, so it never squeezes them; it is clear, and shows while you point at the ribbon or scroll it; a soft fade at an edge says there is more that way */
 .ribbon:hover .panel,.panel.scrolling{scrollbar-color:var(--line-strong) transparent}
 @supports not (scrollbar-color:auto){.panel::-webkit-scrollbar{height:7px}.panel::-webkit-scrollbar-thumb{border-radius:4px;background:transparent}.ribbon:hover .panel::-webkit-scrollbar-thumb,.panel.scrolling::-webkit-scrollbar-thumb{background:var(--line-strong)}}
-.panel::before,.panel::after{content:"";position:sticky;flex:none;width:32px;align-self:stretch;z-index:3;pointer-events:none;opacity:0;transition:opacity .2s}
-.panel::before{left:0;margin-right:-34px;background:linear-gradient(to right,var(--surface) 25%,transparent)}
-.panel::after{right:0;margin-left:-34px;background:linear-gradient(to left,var(--surface) 25%,transparent)}
+.panel::before,.panel::after{content:"";position:sticky;flex:none;width:22px;align-self:stretch;z-index:3;pointer-events:none;opacity:0;transition:opacity .2s}
+.panel::before{left:0;margin-right:-24px;background:linear-gradient(to right,var(--surface) 72%,transparent)}
+.panel::after{right:0;margin-left:-24px;background:linear-gradient(to left,var(--surface) 72%,transparent)}
 .panel.more-l::before,.panel.more-r::after{opacity:1}
 @media (prefers-reduced-motion:reduce){.panel,.panel::before,.panel::after{transition:none}}
 .ribbon.compact:not(.peek) .panel{display:none}
@@ -1026,7 +1027,7 @@ body.bresizing .beside{pointer-events:none}
 .wguide.bar-off .wg-bar{visibility:hidden;pointer-events:none}
 :is(.wg-bar,.wgpop) .btn{height:30px;min-width:30px;padding:0 8px}
 :is(.wg-bar,.wgpop) .seg .btn{height:26px}
-.wg-ind{position:sticky;top:var(--appbar-h,0px);display:flex;align-items:center;justify-content:center;width:48px;height:48px;margin:0 0 -48px;padding:0;border:0;background:none;color:var(--wg-ink);opacity:.35;cursor:pointer;pointer-events:auto}
+.wg-ind{position:sticky;top:var(--appbar-h,0px);display:flex;align-items:center;justify-content:center;width:48px;height:48px;margin:1px 0 -49px 1px;padding:0;border:0;background:none;color:var(--wg-ink);opacity:.35;cursor:pointer;pointer-events:auto;z-index:1}      /* over the corner handle's inner quarter, 1px in so the corner itself still grabs the handle */
 .wg-ind:hover,.wg-ind:focus-visible{opacity:.9}
 .wg-ind:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:8px}
 .wg-ind .i{width:22px;height:22px}
@@ -1383,8 +1384,8 @@ try {
       </div><span class="cap">Text</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row">
-        <button class="btn" data-cmd="insertUnorderedList" aria-label="Bullet list" title="Bullet list"><svg class="i"><use href="#i-list"/></svg></button>
-        <button class="btn" data-cmd="insertOrderedList" aria-label="Numbered list" title="Numbered list"><svg class="i"><use href="#i-list-num"/></svg></button>
+        <button class="btn" data-cmd="insertUnorderedList" aria-label="Bullet list" title="Bullet list (or type - and a space at the start of a line)"><svg class="i"><use href="#i-list"/></svg></button>
+        <button class="btn" data-cmd="insertOrderedList" aria-label="Numbered list" title="Numbered list (or type 1. and a space at the start of a line)"><svg class="i"><use href="#i-list-num"/></svg></button>
         <button class="btn" data-cmd="outdent" aria-label="Decrease indent" title="Decrease indent (Shift+Tab)"><svg class="i"><use href="#i-outdent"/></svg></button>
         <button class="btn" data-cmd="indent" aria-label="Increase indent" title="Increase indent (Tab)"><svg class="i"><use href="#i-indent"/></svg></button>
         <select id="listStyle" aria-label="Bullet style" title="Bullet style for the list you are in (each sub-level has its own style)" style="margin-left:4px;width:90px">
@@ -1731,7 +1732,7 @@ try {
   </div>
   <div class="fpreview" id="fPreview"></div>
   <div class="fhelp">Type <b>/</b> for a fraction (use brackets for longer parts: <b>(a+b)/(c+d)</b>), <b>^</b> for a power, <b>_</b> for a small low letter, <b>sqrt()</b>, <b>sum</b>. Press Enter to insert.</div>
-  <div class="factions"><button class="btn primary" id="fInsert">Insert</button></div>
+  <div class="factions"><button class="btn danger" id="fDelete" hidden title="Remove this formula from the note (Back brings it back)"><svg class="i"><use href="#i-trash"/></svg><span>Delete</span></button><span class="spacer"></span><button class="btn primary" id="fInsert">Insert</button></div>
 </div>
 
 <template id="emptyTpl">
@@ -2375,6 +2376,30 @@ main.addEventListener('keydown', e => {
   if (e.key === 'Tab' && (inLi || note.tagName === 'DIV')) { e.preventDefault(); document.execCommand('styleWithCSS', false, false); document.execCommand(e.shiftKey ? 'outdent' : 'indent'); saveSoon(); return; }
   if (e.key === 'Enter' && !inLi) { e.preventDefault(); document.execCommand('insertLineBreak'); }
 });
+// "1. ", "- " or "* " at the start of a line makes it a numbered or bulleted list; Back gives the typed characters back
+const INLINE_TAGS = /^(B|I|U|S|EM|STRONG|SPAN|FONT|MARK|SUB|SUP|CODE)$/;
+main.addEventListener('input', e => {
+  if (e.inputType !== 'insertText' || !/^[  ]$/.test(e.data || '') || e.isComposing || reading) return;
+  const note = e.target.closest?.('.mine'), sel = getSelection(); if (!note || note.tagName === 'SPAN' || !sel.isCollapsed) return;
+  const n = sel.anchorNode, o = sel.anchorOffset;
+  if (n?.nodeType !== 3 || !note.contains(n) || n.parentElement.closest('li, .jrnl, .wtable, .formula, a, .media')) return;
+  const m = /^(?:(\d{1,3})\.|[-*])[  ]$/.exec(n.data.slice(0, o)); if (!m) return;
+  const before = x => { let p = x.previousSibling; while (p?.nodeType === 3 && !p.data) p = p.previousSibling; return p; };
+  let at = n; while (at.parentNode !== note && !before(at) && INLINE_TAGS.test(at.parentNode.nodeName)) at = at.parentNode;
+  const p = before(at); if (p && !/^(BR|DIV|P|UL|OL|BLOCKQUOTE|H\d)$/.test(p.nodeName)) return;      // only at the start of a line
+  snapshot(currentDoc());
+  n.deleteData(0, o); sel.collapse(n, 0);
+  if (!n.data) {                  // an empty line needs its line break to hold the cursor, or the list would take the line above
+    let nx = n.nextSibling; while (nx?.nodeType === 3 && !nx.data) nx = nx.nextSibling;
+    if (nx?.nodeName !== 'BR') { nx = document.createElement('br'); n.after(nx); }
+    const par = n.parentNode; n.remove(); sel.collapse(par, [...par.childNodes].indexOf(nx));
+  }
+  document.execCommand('styleWithCSS', false, false);
+  document.execCommand(m[1] ? 'insertOrderedList' : 'insertUnorderedList');
+  const a = sel.anchorNode, list = a && (a.nodeType === 1 ? a : a.parentElement).closest('ol');
+  if (m[1] && list && note.contains(list) && +m[1] > 1) list.start = +m[1];
+  saveSoon();
+});
 main.addEventListener('input', e => { const m = e.target.closest?.('.mine'); if (m) { wrapMedia(m); spellSoon(m); } saveSoon(); });
 main.addEventListener('pointerdown', e => { const b = e.target.closest('.notebox'); if (b && !b.classList.contains('collapsed')) raise(b); }, true);
 // a finger can't point at a note: tapping one shows its handles until you tap somewhere else
@@ -2956,7 +2981,7 @@ function ppDrawText(X, ctx, L, ox, oy, boxH, map, items){
       if (r.hl) { ctx.fillStyle = css4(r.hl); ctx.fillRect(cx, y - r.size * .95, width, r.size * 1.2); }
       ctx.fillStyle = css4(r.col);
       const txt = last ? s.text.trimEnd() : s.text;
-      if (extra) { let x = cx; for (const w of txt.split(/(?<= )/)) { ctx.fillText(w, x, y); x += ctx.measureText(w).width + (w.endsWith(' ') ? extra : 0); } }
+      if (extra) { let x = cx; for (const w of txt.replace(/ /g, ' \u0000').split('\u0000')) { ctx.fillText(w, x, y); x += ctx.measureText(w).width + (w.endsWith(' ') ? extra : 0); } }
       else ctx.fillText(txt, cx, y);
       const lw = Math.max(.5, r.size / 18);
       if (r.u) ctx.fillRect(cx, y + r.size * .12, width, lw);
@@ -3381,12 +3406,17 @@ async function readPdf(buf, name){
     if (R < cv.width - 1 && R > cv.width * 0.88) ctx.fillRect(R - 2, 0, cv.width - R + 2, cv.height);
     if (T > 0 && T < cv.height * 0.06) ctx.fillRect(0, 0, cv.width, T + 2);
     if (B < cv.height - 1 && B > cv.height * 0.94) ctx.fillRect(0, B - 2, cv.width, cv.height - B + 2);
-    // slide numbers: a lone number near the bottom (or top) corner area is painted out
+    // slide numbers are painted out: a number alone on its line, in the top or bottom margin, in a corner or the middle,
+    // that counts along with the pages (slide 7 is numbered 4 to 10). Any other number is part of the slide and stays.
     const tc = await page.getTextContent();
+    const yOf = i => v.convertToViewportPoint(i.transform[4], i.transform[5])[1];
     const isSlideNo = i => {
-      if (!/^\s*\d{1,3}\s*$/.test(i.str || '')) return false;
-      const t = i.transform, y = v.convertToViewportPoint(t[4], t[5])[1];
-      return y / S > H * 0.85 || y / S < H * 0.08;
+      const m = /^\s*(\d{1,4})\s*$/.exec(i.str || ''); if (!m || Math.abs(+m[1] - p) > 3) return false;
+      const [x, y] = v.convertToViewportPoint(i.transform[4], i.transform[5]), l = x / S, w = i.width || 0;
+      if (!(y / S > H * 0.88 || y / S < H * 0.07)) return false;
+      if (!(l < W * 0.2 || l + w > W * 0.8 || Math.abs(l + w / 2 - W / 2) < W * 0.08)) return false;
+      const band = (Math.hypot(i.transform[2], i.transform[3]) || i.height || 10) * S * 0.8;
+      return !tc.items.some(o => o !== i && (o.str || '').trim() && Math.abs(yOf(o) - y) < band);
     };
     for (const i of tc.items.filter(isSlideNo)) {
       const t = i.transform, size = Math.hypot(t[2], t[3]) || i.height || 10;
@@ -4806,6 +4836,7 @@ async function openFormula(existing){
   }
   fInput.value = existing ? existing.dataset.src || '' : '';
   $('#fInsert').textContent = existing ? 'Update' : 'Insert';
+  $('#fDelete').hidden = !existing;
   fPanel.hidden = false; fInput.focus();
   fPreview.textContent = 'Loading…';
   try { await loadKatex(); updatePreview(); } catch { fPreview.textContent = 'Formulas need an internet connection the first time.'; }
@@ -4849,6 +4880,15 @@ $('#fInsert').onclick = () => {
   formulaNote = null; closeFormula(); saveSoon();
 };
 $('#fBtn').onclick = () => openFormula(null);
+// delete the formula being edited (and the space after it); a note left empty goes too
+$('#fDelete').onclick = () => {
+  const f = editingFormula; if (!f?.isConnected) { closeFormula(); return; }
+  const note = f.closest('.mine'), next = f.nextSibling;
+  if (next?.nodeType === 3 && /^[ \u00a0]/.test(next.data)) next.data = next.data.slice(1);
+  f.remove(); closeFormula();
+  if (note && !note.textContent.trim() && !note.querySelector('img, .media, .formula, .wtable, .jrnl')) dropIfEmpty(note); else if (note && !reading) focusNote(note, {preventScroll: true});
+  saveSoon(); toast('Formula deleted. Back (Ctrl+Z) brings it back.');
+};
 
 // ================= pictures, videos and sound =================
 function readAsUrl(file){ return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(file); }); }
@@ -8004,10 +8044,15 @@ async function driveDownload(d){
 async function driveParent(id){
   try { return (await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?fields=parents&supportsAllDrives=true`)).json()).parents?.[0] || ''; } catch { return ''; }
 }
+// which content a Drive file has: its head revision (a new one only when the content changes), else its checksum.
+// (Drive's "version" also goes up when Drive itself works on the file after an upload, which looked like someone else's change.)
+const DRIVE_REV = 'headRevisionId,md5Checksum';
+const driveRev = j => j?.headRevisionId ? 'r:' + j.headRevisionId : j?.md5Checksum ? 'm:' + j.md5Checksum : '';
+const driveRevKnown = v => /^[rm]:/.test(v || '');           // one remembered the old way (a plain version number) can't be compared
 // can this person change the file? (a notebook shared with them to view only can't be saved back over)
 async function driveCanEdit(id){
   drive.ver = '';
-  try { const j = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?fields=capabilities(canEdit),version&supportsAllDrives=true`)).json(); drive.ver = j.version || ''; return j.capabilities?.canEdit !== false; } catch { return true; }
+  try { const j = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?fields=capabilities(canEdit),${DRIVE_REV}&supportsAllDrives=true`)).json(); drive.ver = driveRev(j); return j.capabilities?.canEdit !== false; } catch { return true; }
 }
 async function driveOpen(){
   if (!driveSetUp()) return;
@@ -8059,7 +8104,18 @@ function driveSend(method, url, meta, blob, progress, again){
 }
 // kind: 'notebook' or 'pdf'. The first save makes a file (next to the source, if it came from Drive); after that the same file is updated.
 // A notebook you can't edit (shared with you to view only) is saved as a copy in your own Drive instead. Gives back {id, name, copy}.
-async function driveStore(kind, quiet, auto){
+// a save to the cloud holds the background checks off until it is done and its new revision is remembered
+async function syncHold(fn){
+  if (sync.busy) return fn();                   // already held (a save by syncNow)
+  sync.busy = true; clearTimeout(sync.timer); syncShow();
+  try { return await fn(); }
+  finally {
+    sync.busy = false; sync.checked = Date.now(); syncShow();
+    if (sync.again || curDoc()?.driveDirty) { sync.again = false; setTimeout(syncSoon); }      // changes made while it was saving go up next
+  }
+}
+function driveStore(kind, quiet, auto){ return kind === 'notebook' ? syncHold(() => driveStore0(kind, quiet, auto)) : driveStore0(kind, quiet, auto); }
+async function driveStore0(kind, quiet, auto){
   const key = kind === 'pdf' ? 'drivePdf' : 'driveNb';
   await flushSave();
   const gen = sync.gen;
@@ -8067,7 +8123,7 @@ async function driveStore(kind, quiet, auto){
   let last = -1;
   const progress = quiet || file.blob.size < 1.5e6 ? null : f => { const n = Math.round(f * 100); if (n !== last) { last = n; toast(`Uploading “${file.name}” to Google Drive: ${n}%`); } };
   if (!quiet) toast(progress ? `Uploading “${file.name}” to Google Drive…` : 'Saving to Google Drive…');
-  const fields = '&fields=id,name,parents,version&supportsAllDrives=true';
+  const fields = `&fields=id,name,parents,${DRIVE_REV}&supportsAllDrives=true`;
   const create = (meta, blob = file.blob) => driveSend('POST', `${DRIVE_UPLOAD}/files?uploadType=multipart${fields}`, {mimeType: blob.type, ...meta}, blob, progress);
   const copy = () => create({name: notebookName() + ' (my copy).html'});          // into your own Drive, not the shared folder
   let out, mine = false, from = '';
@@ -8085,7 +8141,7 @@ async function driveStore(kind, quiet, auto){
     doc[key] = out.id;
     if (mine) { delete doc.driveNbRO; doc.driveFolder = out.parents?.[0] || ''; }
     else if (!doc.driveFolder && out.parents?.[0]) doc.driveFolder = out.parents[0];
-    if (kind === 'notebook') { from = relink(doc, 'google'); doc.driveVer = out.version || ''; delete doc.driveStop; if (sync.gen === gen) delete doc.driveDirty; if (doc === curDoc()) syncShow(); }
+    if (kind === 'notebook') { from = relink(doc, 'google'); doc.driveVer = driveRev(out); delete doc.driveStop; if (sync.gen === gen) delete doc.driveDirty; if (doc === curDoc()) syncShow(); }
     putAll({docs});
   }
   return {id: out.id, name: out.name || file.name, copy: mine, from};
@@ -8109,7 +8165,8 @@ async function driveSave(kind){
 const CLOUD = {google: {
   key: 'google', name: 'Google Drive', short: 'Drive', account: 'Google', ico: 'drive', bin: 'bin', ver: 'driveVer', lock: 'You can no longer change this file in Google Drive.',
   hasLink: d => !!d.driveNb, linkOf: d => d.driveNb, tokenOk: driveTokenOk, quiet: async () => driveTokenOk(), token: driveToken, say: driveSay, setUp: driveSetUp,
-  async meta(d){ const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=version,trashed&supportsAllDrives=true`)).json(); return {ver: r.version, gone: !!r.trashed}; },
+  async meta(d){ const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=${DRIVE_REV},trashed&supportsAllDrives=true`)).json(); return {ver: driveRev(r), gone: !!r.trashed}; },
+  known: driveRevKnown,
   upload: d => driveStore('notebook', true, true),
   download: d => driveDownload({id: d.driveNb, name: d.name + '.html', mime: 'text/html'}),
   save: () => driveSave('notebook'),
@@ -8152,7 +8209,7 @@ async function syncNow(){
     if (await P.quiet()) {
       const r = await P.meta(d, true);
       if (r.gone) d.driveStop = 'gone';
-      else if (d[P.ver] && r.ver && String(r.ver) !== String(d[P.ver])) d.driveStop = 'changed';
+      else if (P.known(d[P.ver]) && r.ver && String(r.ver) !== String(d[P.ver])) d.driveStop = 'changed';
       else if (curDoc() === d) await P.upload(d);
     }
   } catch (err) {
@@ -8208,7 +8265,7 @@ async function syncCheck(){
     if (curDoc() !== d || sync.busy) return;
     if (r.gone) { d.driveStop = 'gone'; putAll({docs}); return syncShow(); }
     if (!r.ver || String(r.ver) === String(d[P.ver] || '')) return;
-    if (!d[P.ver]) { d[P.ver] = String(r.ver); putAll({docs}); return; }       // nothing to compare with yet
+    if (!P.known(d[P.ver])) { d[P.ver] = String(r.ver); putAll({docs}); return; }       // nothing to compare with yet
     if (d.driveDirty) { d.driveStop = 'changed'; putAll({docs}); return syncShow(); }
     await syncPull(d, r.ver);
     toast(`Updated with the latest changes from ${P.name}.`);
@@ -8719,7 +8776,7 @@ CLOUD.onedrive = {
   key: 'onedrive', name: 'OneDrive', short: 'OneDrive', account: 'Microsoft', ico: 'onedrive', bin: 'recycle bin', ver: 'odVer', lock: 'You can’t change this file in OneDrive.',
   hasLink: d => !!d.odNb, linkOf: d => d.odNb, setUp: odSetUp, token: odToken, say: odSay, quiet: odQuiet,
   tokenOk: () => odTokenOk() || od.silent !== false,          // a quiet renewal is still worth trying
-  meta: (d, quiet) => odMeta(d.odDrive, d.odNb, quiet),
+  meta: (d, quiet) => odMeta(d.odDrive, d.odNb, quiet), known: v => !!v,
   upload: d => odStore(true, true),
   download: d => odDownload({id: d.odNb, drive: d.odDrive, name: d.name + '.html'}, false, true),
   save: odSave,
@@ -8998,7 +9055,8 @@ async function odUpload(t, blob, progress, quiet){
 // The first save makes "<name> (notes).html" in the Between the Lines folder; after that the same file is updated.
 // A notebook you can't change (shared with you to view only) is saved as a copy in your own OneDrive instead. Gives back {id, drive, name, url, copy}.
 // auto: syncing by itself (no sign-in window, no new files or copies; it stops and says so instead)
-async function odStore(quiet, auto){
+function odStore(quiet, auto){ return syncHold(() => odStore0(quiet, auto)); }
+async function odStore0(quiet, auto){
   await flushSave();
   const gen = sync.gen;
   const doc = curDoc(), file = await notebookFile();
