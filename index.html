@@ -894,6 +894,112 @@ body.bresizing .beside{pointer-events:none}
   .bhead select{flex-basis:110px}
   .bhead .bro{display:none}
 }
+
+/* ================= writing tools: a temporary writing guide, tables and journal entries ================= */
+:root{
+  --wg-ink:#6d84b4;
+  --wt-ink:#2f5fd6;
+  --j-dim-l:#5d6877; --j-acct-l:#2b62b5; --j-amt-l:#8a5a14;
+  --j-dim-d:#dcdbd5; --j-acct-d:#8fc4ff; --j-amt-d:#f3e8b4;
+  --j-dim:var(--j-dim-l); --j-acct:var(--j-acct-l); --j-amt:var(--j-amt-l); --j-bg:transparent; --j-pad:0px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--wg-ink:#8da3d1;--j-dim:var(--j-dim-d);--j-acct:var(--j-acct-d);--j-amt:var(--j-amt-d);--j-bg:#1f2623;--j-pad:.6em}}
+:root[data-theme="dark"]{--wg-ink:#8da3d1;--j-dim:var(--j-dim-d);--j-acct:var(--j-acct-d);--j-amt:var(--j-amt-d);--j-bg:#1f2623;--j-pad:.6em}
+
+/* the writing guide: a grid, ruled lines or dots over the pages, to write straight with a pen. It sits in the page (not in the notebook) and lets everything through except its bar and handles. */
+.wguide{position:absolute;z-index:17;box-sizing:border-box;pointer-events:none;outline:1px dashed color-mix(in srgb,var(--wg-ink) 65%,transparent);outline-offset:-1px;--wg-gap:28px;--wg-op:.55;--wg-hs:18px}
+.wguide .wg-pat{position:absolute;inset:0;opacity:var(--wg-op);pointer-events:none}
+.wguide[data-pat="grid"] .wg-pat{background-image:linear-gradient(var(--wg-ink) 1px,transparent 1px),linear-gradient(90deg,var(--wg-ink) 1px,transparent 1px);background-size:var(--wg-gap) var(--wg-gap)}
+.wguide[data-pat="lines"] .wg-pat{background-image:linear-gradient(transparent calc(var(--wg-gap) - 1px),var(--wg-ink) calc(var(--wg-gap) - 1px));background-size:100% var(--wg-gap)}
+.wguide[data-pat="dots"] .wg-pat{background-image:radial-gradient(circle,var(--wg-ink) 1.4px,transparent 1.9px);background-size:var(--wg-gap) var(--wg-gap);background-position:calc(var(--wg-gap) / 2) calc(var(--wg-gap) / 2)}
+.wg-bar{position:sticky;top:calc(var(--appbar-h,0px) + 8px);display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;width:max-content;max-width:calc(100% - 16px);box-sizing:border-box;margin:8px;padding:4px 6px;
+  background:var(--surface);color:var(--ink);border:1.5px solid var(--pencil);border-radius:10px;box-shadow:2px 3px 0 rgba(47,43,36,.22);pointer-events:auto;font:13px var(--ui)} /* taste-skill-ignore: a small bar floats over the page */
+.wg-bar .btn{height:30px;min-width:30px;padding:0 8px}
+.wg-bar .seg .btn{height:26px}
+.wg-bar .wg-move{cursor:grab;touch-action:none;padding:0 4px;color:var(--muted)}
+.wg-bar .wg-move:active{cursor:grabbing}
+.wg-bar .wg-grp{display:inline-flex;align-items:center;gap:3px}
+.wg-bar output{min-width:2.6em;text-align:center;font-size:12px;color:var(--muted)}
+.wg-bar input[type=range]{width:84px;accent-color:var(--accent);margin:0}
+.wg-bar .wg-ico{color:var(--muted);display:inline-flex}
+.wg-h{position:absolute;pointer-events:auto;touch-action:none;width:var(--wg-hs);height:var(--wg-hs)}
+.wg-h::after{content:"";position:absolute;left:50%;top:50%;translate:-50% -50%;width:10px;height:10px;box-sizing:border-box;background:var(--surface);border:1.5px solid var(--wg-ink);border-radius:3px}
+.wg-h:hover::after,.wg-h.on::after{background:var(--wg-ink)}
+.wg-n,.wg-s{left:50%;translate:-50% 0;width:max(64px,calc(var(--wg-hs) * 2.5));cursor:ns-resize}
+.wg-e,.wg-w{top:50%;translate:0 -50%;height:max(64px,calc(var(--wg-hs) * 2.5));cursor:ew-resize}
+.wg-n{top:calc(var(--wg-hs) / -2)} .wg-s{bottom:calc(var(--wg-hs) / -2)} .wg-e{right:calc(var(--wg-hs) / -2)} .wg-w{left:calc(var(--wg-hs) / -2)}
+.wg-n::after,.wg-s::after{width:26px;height:7px;border-radius:5px} .wg-e::after,.wg-w::after{width:7px;height:26px;border-radius:5px}
+.wg-nw{left:calc(var(--wg-hs) / -2);top:calc(var(--wg-hs) / -2);cursor:nwse-resize} .wg-se{right:calc(var(--wg-hs) / -2);bottom:calc(var(--wg-hs) / -2);cursor:nwse-resize}
+.wg-ne{right:calc(var(--wg-hs) / -2);top:calc(var(--wg-hs) / -2);cursor:nesw-resize} .wg-sw{left:calc(var(--wg-hs) / -2);bottom:calc(var(--wg-hs) / -2);cursor:nesw-resize}
+@media (pointer:coarse){.wguide{--wg-hs:40px}.wg-bar .btn{height:40px;min-width:40px}.wg-bar .seg .btn{height:36px}.wg-bar input[type=range]{width:96px;height:40px}}
+.wguide.wg-touch{--wg-hs:40px}
+.wguide.wg-touch .wg-bar .btn{height:40px;min-width:40px}
+.wguide.wg-touch .wg-bar .seg .btn{height:36px}
+body.wg-drag{user-select:none;-webkit-user-select:none}
+
+/* tables in a note: borders are the note's own text colour, faded */
+.mine table.wtable{display:table;table-layout:fixed;border-collapse:collapse;width:100%;max-width:100%;margin:.3em 0;font:inherit;color:inherit;overflow:visible}
+.mine table.wtable td{border:1px solid color-mix(in srgb,currentColor 38%,transparent);padding:.1em .4em;vertical-align:top;min-width:1.5em;overflow-wrap:anywhere;line-height:1.25;background:transparent}
+body.wt-select{user-select:none;-webkit-user-select:none;cursor:cell}
+#wtui{position:absolute;left:0;top:0;width:0;height:0;z-index:16;pointer-events:none}
+#wtui > *{position:absolute;pointer-events:auto;touch-action:none;box-sizing:border-box}
+.wt-col{width:12px;cursor:col-resize}
+.wt-col::after{content:"";position:absolute;left:5px;top:0;bottom:0;width:2px;background:var(--wt-ink);opacity:0;transition:opacity .12s}
+.wt-col:hover::after,.wt-col.on::after{opacity:.9}
+.wt-r{width:12px;cursor:ew-resize}
+.wt-r::after{content:"";position:absolute;left:2px;top:50%;translate:0 -50%;width:7px;height:30px;box-sizing:border-box;background:#fff;border:1.5px solid #8f8d86;border-radius:9px}
+.wt-r:hover::after,.wt-r.on::after{background:var(--wt-ink);border-color:var(--wt-ink)}
+.wt-c{width:14px;height:14px;cursor:nwse-resize;background:#fff;border:1.5px solid #8f8d86;border-radius:4px}
+.wt-c:hover,.wt-c.on{background:var(--wt-ink);border-color:var(--wt-ink)}
+.wt-more{width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer;font:700 15px/1 var(--ui);opacity:.92}
+.wt-more:hover{background:var(--hover)}
+.wt-selbox{pointer-events:none!important;border:2px solid var(--wt-ink);background:color-mix(in srgb,var(--wt-ink) 20%,transparent);border-radius:2px}
+@media (pointer:coarse){.wt-col{width:28px}.wt-col::after{left:13px}.wt-r{width:28px}.wt-r::after{left:10px}.wt-c{width:26px;height:26px}.wt-more{width:34px;height:34px}}
+.wtmenu{position:fixed;z-index:47;min-width:210px}
+.wtmenu button{display:flex;align-items:center;gap:8px}
+.wtmenu button[disabled]{opacity:.4;cursor:default}
+.wtmenu button.danger{color:var(--danger)}
+.wtmenu hr{border:none;border-top:1px solid var(--line);margin:3px 6px;height:0}
+/* the size picker under Insert › Table */
+.tblpick{z-index:48;padding:10px;width:max-content;max-width:calc(100vw - 16px);font:14px var(--ui)}
+.tblpick .tp-l{font-weight:600;margin:0 0 6px;min-height:1.3em}
+.tblpick .tp-g{display:grid;grid-template-columns:repeat(10,20px);gap:2px;outline:none;touch-action:none}
+.tblpick .tp-g > i{display:block;width:20px;height:20px;box-sizing:border-box;border:1px solid var(--line-strong);border-radius:2px;background:var(--surface-2)}
+.tblpick .tp-g > i.on{background:color-mix(in srgb,var(--accent) 32%,var(--surface));border-color:var(--accent)}
+.tblpick .tp-g:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.tblpick .tp-cust{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tblpick .tp-cust label{display:inline-flex;align-items:center;gap:4px}
+.tblpick input[type=number]{width:52px;height:28px;box-sizing:border-box;font:inherit;color:var(--ink);background:var(--surface-2);border:1px solid var(--line-strong);border-radius:6px;padding:0 4px}
+@media (pointer:coarse){.tblpick .tp-g{grid-template-columns:repeat(10,32px)}.tblpick .tp-g > i{width:32px;height:32px}}
+
+/* journal entries: an invisible four-column layout (indicator, account, debit, credit) with no borders */
+.mine .jrnl{display:grid;grid-template-columns:max-content minmax(7em,1fr) minmax(5.5em,max-content) minmax(5.5em,max-content);column-gap:.9em;row-gap:.08em;width:min(100%,26em);margin:.25em 0;box-sizing:border-box;padding:.15em var(--j-pad);background:var(--j-bg);border-radius:10px;line-height:1.25;font-variant-numeric:tabular-nums;cursor:text;-webkit-user-select:text;user-select:text}
+.sidepage.dark .jrnl{--j-dim:var(--j-dim-d);--j-acct:var(--j-acct-d);--j-amt:var(--j-amt-d);--j-bg:transparent;--j-pad:0px}
+main.pdfpaper .jrnl{--j-dim:var(--j-dim-l);--j-acct:var(--j-acct-l);--j-amt:var(--j-amt-l);--j-bg:transparent;--j-pad:0px}
+.jrnl .j-row{display:contents}
+.jrnl [contenteditable]{min-width:0;outline:none;white-space:pre-wrap;overflow-wrap:anywhere;border-radius:3px;caret-color:currentColor}
+.jrnl [contenteditable="true"]:focus{background:color-mix(in srgb,currentColor 11%,transparent)}
+.jrnl [data-ph]:empty::before{content:attr(data-ph);opacity:.38}
+.jrnl .j-date,.jrnl .j-foot{grid-column:1 / -1}
+.jrnl .j-date,.jrnl .j-desc{color:var(--j-dim)}
+.jrnl .j-ind,.jrnl .j-acct{color:var(--j-acct)}
+.jrnl .j-amt{color:var(--j-amt);text-align:right;white-space:nowrap}
+.jrnl .j-ind{cursor:pointer;font-weight:700;letter-spacing:.04em;min-width:1.6em}
+.jrnl .j-row[data-s="cr"] .j-ind{margin-left:1.15em}
+.jrnl .j-row[data-s="cr"] .j-acct{padding-left:1.15em}
+.jrnl .j-amt.off{pointer-events:none}
+.jrnl .j-foot{display:flex;align-items:baseline;gap:.7em;margin-top:.22em}
+.jrnl .j-desc{flex:0 1 auto;min-width:6em}
+.jrnl .j-foot[data-diff]::after{content:attr(data-diff);flex:none;font-size:.62em;letter-spacing:.02em;color:var(--j-amt);opacity:.75;border:1px solid color-mix(in srgb,currentColor 45%,transparent);border-radius:99px;padding:0 .55em;white-space:nowrap}
+main.reading .jrnl .j-ind{cursor:default}
+/* the little pictures in the add menu */
+.pv .tbv{display:grid;grid-template-columns:repeat(3,1fr);flex:1;border:1px solid #9aa3b2;border-right:0;border-bottom:0}
+.pv .tbv > s{border-right:1px solid #9aa3b2;border-bottom:1px solid #9aa3b2}
+.pv .jnv{flex:1;display:grid;grid-template-columns:auto 1fr auto auto;column-gap:7px;align-content:center;row-gap:1px;font:15px/1.1 Caveat,cursive;color:#2b62b5;white-space:nowrap}
+.pv .jnv .d{grid-column:1 / -1;color:#5d6877}
+.pv .jnv em{font-style:normal;color:#8a5a14;text-align:right}
+.pv .jnv .c{margin-left:8px}
+.iitem .ico.k-table,.iitem .ico.k-journal{color:var(--accent)}
 </style>
 <script>
 // a saved Light or Dark theme is set before the page paints, so it doesn't flash the other one first
@@ -977,6 +1083,9 @@ try {
 <symbol id="i-sync" viewBox="0 0 24 24"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></symbol>
 <symbol id="i-palette" viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></symbol>
 <symbol id="i-spline" viewBox="0 0 24 24"><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M5 17A12 12 0 0 1 17 5"/></symbol>
+<symbol id="i-wguide" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></symbol>
+<symbol id="i-table" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M12 3v18"/></symbol>
+<symbol id="i-journal" viewBox="0 0 24 24"><path d="M5 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5Z"/><path d="M5 3v18"/><path d="M9 8h6"/><path d="M9 12h3"/><path d="M14 12h2"/><path d="M9 16h3"/><path d="M14 16h2"/></symbol>
 </defs></svg>
 
 <header class="appbar" id="appbar">
@@ -1121,6 +1230,12 @@ try {
         <button class="btn" id="mediaBtn" title="Insert a picture, video or sound into the note (you can also paste or drop them)"><svg class="i"><use href="#i-image"/></svg>Picture, video or sound</button>
         <input id="mediaFile" type="file" accept="image/*,video/*,audio/*" multiple hidden>
       </div><span class="cap">Into the note</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row">
+        <button class="btn" id="wgBtn" aria-pressed="false" data-tip="Writing guide: a grid, ruled lines or dots over the pages, to help you write in straight lines with a pen. It is only for now: it isn't saved with your notes (Esc)"><svg class="i"><use href="#i-wguide"/></svg>Writing guide</button>
+        <button class="btn" id="tblBtn" aria-haspopup="dialog" aria-expanded="false" data-tip="Table: choose how many columns and rows. It goes into the note you're in, or a new note between the lines"><svg class="i"><use href="#i-table"/></svg>Table</button>
+        <button class="btn" id="jeBtn" data-tip="Journal entry: an accounting entry with date, DR and CR lines, debit and credit amounts and a description, all lined up. It goes into the note you're in, or a new note between the lines"><svg class="i"><use href="#i-journal"/></svg>Journal entry</button>
+      </div><span class="cap">Writing tools</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row">
         <button class="btn" id="drawBtn" data-edit aria-pressed="false" title="Draw: write or highlight on PDF pages with a pen (Esc to stop)"><svg class="i"><use href="#i-pen-line"/></svg>Draw</button>
@@ -1281,6 +1396,7 @@ try {
         <li>PowerPoint files are rebuilt as text here, so layouts, formulas and fonts can differ. For an exact copy, save the slides as a PDF (File › Save as › PDF) and open that.</li>
         <li>Some pictures inside PowerPoint and Word files may not come through. For an exact copy, save the file as a PDF and open that; you can also add a missing picture with Insert › Picture, video or sound.</li>
         <li>On a PDF page, point at a spot and press <b>+ Add here</b> to add a note there (the page opens up between the lines). <b>Right-click</b> the button (press and hold on a touch screen) to pick <b>Note</b>, <b>Sticky note</b> or <b>Equation</b>. On other pages, click where you want to write. In a note, type <b>/</b> for the same choices.</li>
+        <li><b>Writing tools</b> (Insert tab): <b>Writing guide</b> puts a grid, ruled lines or dots over the pages so you can write straight with a pen or Apple Pencil. Drag it by its handle, pull its edges to resize it, and press Esc or × to take it away; it is never saved in your notebook. <b>Table</b> opens a grid to choose the size, then drop it in a note: Tab moves between cells, drag the borders to size it, and right-click (or ⋯) for rows, columns and merging. <b>Journal entry</b> is an accounting entry, lined up in columns (also under + Add here and by typing /journal): click DR or CR to switch a row, Enter adds a row, Tab moves along.</li>
         <li><b>Sticky notes</b> sit on top of the page: drag one by its tape to move it, even onto another page. In the <b>Notes</b> panel, type a note and press <b>Add note</b>, or drag <b>Sticky</b> onto any page.</li>
         <li><b>Draw</b> (Insert tab) writes or highlights on PDF pages with a pen, and the eraser rubs strokes out. Select words on any page to highlight them, or press <b>Comment</b>; open comments are listed in the <b>Notes</b> panel until you resolve them.</li>
         <li>The <b>Home</b> tab styles your notes: the font, size and colour are used for new notes, or click in a note (or select words) to change just that.</li>
@@ -1298,7 +1414,7 @@ try {
       <dl class="keys">
         <dt><kbd>Ctrl</kbd> <kbd>Z</kbd> / <kbd>Ctrl</kbd> <kbd>Y</kbd></dt><dd>Back and Forward (undo and redo)</dd>
         <dt><kbd>Ctrl</kbd> <kbd>B</kbd> <kbd>I</kbd> <kbd>U</kbd></dt><dd>Bold, italic, underline</dd>
-        <dt><kbd>Tab</kbd> / <kbd>Shift</kbd> <kbd>Tab</kbd></dt><dd>Indent or outdent a list</dd>
+        <dt><kbd>Tab</kbd> / <kbd>Shift</kbd> <kbd>Tab</kbd></dt><dd>Indent or outdent a list; move between table cells and journal entry fields</dd>
         <dt><kbd>Ctrl</kbd> <kbd>A</kbd></dt><dd>In a note: its text. Elsewhere: every note on the page</dd>
         <dt>Arrow keys</dt><dd>Move selected notes (with <kbd>Shift</kbd>: 10 px)</dd>
         <dt><kbd>Delete</kbd></dt><dd>Delete the selected notes, picture or video</dd>
@@ -1306,7 +1422,7 @@ try {
         <dt><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>L</kbd></dt><dd>Change the theme: System, Light or Dark</dd>
         <dt><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>F</kbd></dt><dd>Focus mode on or off</dd>
         <dt><kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>Ctrl</kbd> <kbd>P</kbd></dt><dd>Search notebooks, pages and notes, and run actions</dd>
-        <dt><kbd>/</kbd></dt><dd>In a note: add an equation, or turn it into a sticky note</dd>
+        <dt><kbd>/</kbd></dt><dd>In a note: add an equation, table or journal entry, or turn it into a sticky note</dd>
         <dt><kbd>Esc</kbd></dt><dd>Close a menu or end a selection</dd>
       </dl>
     </section>
@@ -1828,12 +1944,13 @@ function upgradeNotes(){
     if (b.style.height) { b.style.minHeight = b.style.height; b.style.height = ''; }
     addGrips(b);
   }
+  wtUpgrade();
   sideRead();
 }
 // a note with something in it (an empty one is removed when you leave it)
 function hasContent(box){
   const m = box.querySelector(':scope > .mine');
-  return !!(m && (m.textContent.trim() || m.querySelector('img, .media, .formula')));
+  return !!(m && (m.textContent.trim() || m.querySelector('img, .media, .formula, .wtable, .jrnl')));
 }
 // a note's words as one line of plain text (formulas as typed; pictures, videos and sound named)
 function noteSummary(m){
@@ -1954,7 +2071,7 @@ main.addEventListener('focusin', e => raise(e.target.closest?.('.notebox')));
 // a note left empty is removed (not while a formula or an option is being picked for it)
 function dropIfEmpty(el){
   if (!el?.isConnected || document.activeElement === el) return;
-  if (el.textContent.trim() || el.querySelector('img, .media, .formula')) return;
+  if (el.textContent.trim() || el.querySelector('img, .media, .formula, .wtable, .jrnl')) return;
   const t = el.closest('.notebox') || el, p = t.parentNode; t.remove(); p && p.normalize(); mergeStrips(p); if (active === el) active = null; saveSoon();
 }
 document.addEventListener('focusout', e => {
@@ -2957,7 +3074,8 @@ async function paintCard(card, scale, side){
     }
   }
   ctx.strokeStyle = '#c9d0db';
-  for (const td of qa('td, th')) { const tr = td.getBoundingClientRect(); ctx.strokeRect(tr.left - ox, tr.top - oy, tr.width, tr.height); }
+  for (const td of qa('td:not(.wtable td), th')) { const tr = td.getBoundingClientRect(); ctx.strokeRect(tr.left - ox, tr.top - oy, tr.width, tr.height); }
+  wtPaint(ctx, qa, ox, oy);
   // highlighted words inside notes
   for (const h of qa('.mine span, .mine font, .mine mark, .slide mark.anno')) {
     const bg = getComputedStyle(h).backgroundColor;
@@ -3064,6 +3182,7 @@ async function pdfFile(){
   const wasCollapsed = boxes.map(b => b.classList.contains('collapsed'));
   if (mode === 'page') boxes.forEach(b => b.classList.remove('collapsed'));
   else main.classList.add('clean');            // notes take no room, so the pages look like the originals
+  main.classList.add('pdfpaper');              // (writing tools) journal entries in their colours for paper
   try {
     const size = LAYOUTS[layout];
     sideForce = true;              // side pages sit beside their slides while the PDF is made
@@ -3091,7 +3210,7 @@ async function pdfFile(){
     return {name: notebookName() + ` (notes${extra ? ', ' + extra : ''}).pdf`, blob: makePdf(pages)};
   } finally {
     sideForce = false;
-    main.classList.remove('clean');
+    main.classList.remove('clean', 'pdfpaper');
     boxes.forEach((b, i) => b.classList.toggle('collapsed', wasCollapsed[i]));
     paginateView();
   }
@@ -3436,7 +3555,7 @@ function closeFormula(){
   fPanel.hidden = true; editingFormula = null; formulaRange = null;
   const n = formulaNote; formulaNote = null;
   if (!n?.isConnected) return;
-  if (n.textContent.trim() || n.querySelector('img, .media, .formula')) { if (!reading) focusNote(n, {preventScroll: true}); }
+  if (n.textContent.trim() || n.querySelector('img, .media, .formula, .wtable, .jrnl')) { if (!reading) focusNote(n, {preventScroll: true}); }
   else dropIfEmpty(n);
 }
 fInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#fInsert').click(); } if (e.key === 'Escape') closeFormula(); });
@@ -3577,6 +3696,7 @@ function applyReadMode(){
   if (reading) { setDrawing(false); hideAnnoBar(); }
   if (annoCur) showAnnoPop();                    // an open comment becomes read only (or editable again)
   main.querySelectorAll('.mine').forEach(el => { el.contentEditable = reading ? 'false' : 'true'; });
+  wtUpgrade();
   const b = $('#readBtn'); b.setAttribute('aria-pressed', reading);
   b.innerHTML = icon(reading ? 'pen' : 'book') + `<span class="lbl">${reading ? 'Back to editing' : 'Study mode'}</span>`;
   updateTab();
@@ -3662,7 +3782,7 @@ function noteText(note){
     for (const c of n.childNodes) {
       if (c.nodeType === 3) { parts.push([text.length, c]); text += c.data; }
       else if (c.nodeType === 1) {
-        if (c.matches('.formula, .media, .katex, br, img, video, audio')) { text += ' '; continue; }
+        if (c.matches('.formula, .media, .katex, .jrnl, br, img, video, audio')) { text += ' '; continue; }
         const block = /^(DIV|P|LI|UL|OL|BLOCKQUOTE|H\d|TABLE|TR|TD)$/.test(c.tagName);
         if (block) text += ' ';
         walk(c);
@@ -5581,12 +5701,16 @@ const INS_ITEMS = {
   note:   {ico: 'pen',    label: 'Note',        hint: '/note',   words: 'note text write regular words between lines'},
   sticky: {ico: 'sticky', label: 'Sticky note', hint: '/sticky', words: 'sticky post-it postit yellow paper on top float'},
   eq:     {ico: 'sigma',  label: 'Equation',    hint: '/eq',     words: 'equation formula math maths latex fraction sum power'},
+  table:  {ico: 'table',  label: 'Table',       hint: '/table',  words: 'table grid rows columns cells'},
+  journal: {ico: 'journal', label: 'Journal entry', hint: '/journal', words: 'journal entry accounting debit credit dr cr ledger je'},
 };
 // a little picture of each, for the tip beside the menu
 const INS_PV = {
   note: '<i></i><i></i><b>flat demand, so MR = P</b><i></i>',
   sticky: '<i></i><i></i><i></i><i></i><span class="sn">on the exam!</span>',
   eq: '<i></i><span class="fx">w<sub>i</sub> = P<sub>i</sub> / ΣP</span><i></i>',
+  table: '<i></i><div class="tbv"><s></s><s></s><s></s><s></s><s></s><s></s><s></s><s></s><s></s></div>',
+  journal: '<div class="jnv"><span class="d">17 Oct 2026</span><span>DR</span><span>Cash</span><em>1,200</em><span></span><span class="c">CR</span><span>Sales</span><span></span><em>1,200</em></div>',
 };
 const EQ_TIP = 'Type a formula plainly, like (a+b)/2 or x^2, and watch it drawn as you type.';
 function insChoices(c){
@@ -5596,12 +5720,17 @@ function insChoices(c){
       {k: 'note', sec, sub: 'Write in the gap', tip: 'The page opens up between these two lines, and you write in the gap.'},
       {k: 'sticky', sec, sub: 'On top of the page, here', tip: 'A sticky note on top of the page. Drag its tape to move it, even onto another page.'},
       {k: 'eq', sec, sub: 'A formula in the gap', tip: EQ_TIP},
+      {k: 'table', sec, sub: 'A table in the gap', tip: 'A 3 × 3 table in the gap. Drag its borders to size it, Tab moves between cells, and right-click for rows and columns.'},
+      {k: 'journal', sec, sub: 'An accounting entry in the gap', tip: 'A journal entry: date, DR and CR lines lined up in columns, and a description. Enter adds a row, Tab moves between fields.'},
     ];
   }
   const box = c.note.closest('.notebox'), out = [{k: 'eq', sec: 'Insert', sub: 'A formula where you’re typing', tip: EQ_TIP}];
   if (box && !box.classList.contains('inline')) out.push(box.classList.contains('sticky')
     ? {k: 'note', sec: 'Turn into', sub: 'Back between the lines', tip: 'This sticky note goes back into the page as a note between the lines.'}
     : {k: 'sticky', sec: 'Turn into', sub: 'Lift it on top of the page', tip: 'This note becomes a sticky note on top of the page. Drag its tape to put it anywhere.'});
+  if (c.note.tagName !== 'SPAN' && !c.note.querySelector('.wtable, .jrnl') && !c.range.startContainer.parentElement?.closest('.wtable, .jrnl')) out.push(
+    {k: 'table', sec: 'Insert', sub: 'A table where you’re typing', tip: 'A 3 × 3 table at the cursor. Drag its borders to size it, Tab moves between cells, and right-click for rows and columns.'},
+    {k: 'journal', sec: 'Insert', sub: 'An accounting entry where you’re typing', tip: 'A journal entry: date, DR and CR lines lined up in columns, and a description. Enter adds a row, Tab moves between fields.'});
   return out;
 }
 const insMenu = document.createElement('div'); insMenu.className = 'pop imenu'; insMenu.hidden = true;
@@ -5706,6 +5835,7 @@ function chooseIns(k){
     } else {
       insertAt(c.strip, c.y);
       if (k === 'eq') openFormula(null);
+      else if (k === 'table' || k === 'journal') wtAdd(k);
     }
     return;
   }
@@ -5718,6 +5848,7 @@ function chooseIns(k){
   const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
   active = note; savedRange = r.cloneRange();
   if (k === 'eq') openFormula(null);
+  else if (k === 'table' || k === 'journal') wtAdd(k);
   else if (k === 'sticky' && box) { toSticky(box); focusNote(note, {preventScroll: true}); }
   else if (k === 'note' && box) { toNote(box); focusNote(note, {preventScroll: true}); }
   saveSoon();
@@ -5750,7 +5881,7 @@ main.addEventListener('input', e => {
   if (e.inputType !== 'insertText' || e.data !== '/') return;
   const sel = getSelection(); if (!sel.rangeCount || !sel.isCollapsed) return;
   const n = sel.anchorNode, o = sel.anchorOffset;
-  if (!n || n.nodeType !== 3 || o < 1 || n.data[o - 1] !== '/' || n.parentElement.closest('.formula')) return;
+  if (!n || n.nodeType !== 3 || o < 1 || n.data[o - 1] !== '/' || n.parentElement.closest('.formula, .jrnl')) return;
   let start;
   if (o >= 2) start = /[\s ]/.test(n.data[o - 2]);
   else { const p = n.previousSibling; start = !p || (p.nodeType === 3 ? !p.data || /[\s ]$/.test(p.data) : /^(BR|DIV|P|UL|OL|LI)$/.test(p.nodeName)); }
@@ -6859,6 +6990,9 @@ const CK_ACTIONS = [
   {id: 'beside', label: 'Open beside…', ico: 'panel-right', words: 'split view side by side second notebook compare read', ok: () => liveDocs().some(d => d.id !== curId), run: () => openCmdk(true)},
   {id: 'swap', label: 'Swap the notebook beside', ico: 'sync', words: 'split view switch exchange', ok: () => !!bs.id, run: () => besideSwap()},
   {id: 'unbeside', label: 'Close the notebook beside', ico: 'x', words: 'split view side by side', ok: () => !!bs.id, run: () => besideClose()},
+  {id: 'guide', label: 'Writing guide', ico: 'wguide', words: 'grid lines dots ruled squared graph paper pen pencil straight overlay', run: () => wgOpen()},
+  {id: 'table', label: 'Insert table', ico: 'table', words: 'grid rows columns cells', ok: () => !reading, run: () => wtAdd('table')},
+  {id: 'journal', label: 'Insert journal entry', ico: 'journal', words: 'accounting debit credit dr cr ledger je', ok: () => !reading, run: () => wtAdd('journal')},
 ];
 const ck = {open: false, beside: false, k: 0, items: [], key: null, prev: null, pages: null, cache: new Map(), loading: false, load: Promise.resolve(), mx: 0, my: 0};
 const ckScrim = Object.assign(document.createElement('div'), {className: 'ckscrim', hidden: true});
@@ -7043,6 +7177,8 @@ function noteMarkdown(m){
         const k = c.matches('img, video, audio') ? c : c.querySelector('img, video, audio');
         s += k ? `(${{IMG: 'picture', VIDEO: 'video', AUDIO: 'sound'}[k.tagName]})` : ''; continue;
       }
+      if (c.classList.contains('wtable')) { s += '\n\n' + wtMarkdown(c) + '\n\n'; continue; }
+      if (c.classList.contains('jrnl')) { s += '\n\n' + jMarkdown(c) + '\n\n'; continue; }
       if (t === 'BR') { s += '\n'; continue; }
       if (t === 'UL' || t === 'OL') { s += '\n' + list(c, depth) + '\n'; continue; }
       let x = inline(c, depth);
@@ -7592,6 +7728,729 @@ $('#installBtn').onclick = async () => {
 };
 // installed: PDFs, PowerPoints and Word files can be opened with it from your computer
 if ('launchQueue' in window) launchQueue.setConsumer(async p => { if (p.files?.length) openFiles(await Promise.all(p.files.map(h => h.getFile()))); });
+
+
+// ================= writing tools: a temporary writing guide, tables and journal entries =================
+// Insert › Writing guide, Table and Journal entry (also in the add menu, the / menu and Ctrl+K). Kept apart from the rest: the
+// few places that reach in are marked "writing tools".
+
+/* ---------- writing guide: a grid, ruled lines or dots over the pages, to write straight with a pen ---------- */
+// It lives on the page (in the document, not in the notebook), so it is never saved, undone, printed or sent to Drive.
+const WG_PATS = [['grid', 'Grid', 'Squares, like squared paper'], ['lines', 'Lines', 'Ruled lines, like lined paper'], ['dots', 'Dots', 'A grid of dots']];
+const WG_MIN = {w: 160, h: 100};
+const wgClamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const wg = {el: null, r: null, pat: pref.get('wg-pat', 'grid'), gap: wgClamp(Math.round(+pref.get('wg-gap', 28)) || 28, 12, 48), op: wgClamp(Math.round(+pref.get('wg-op', 55)) || 55, 10, 100)};
+if (!WG_PATS.some(p => p[0] === wg.pat)) wg.pat = 'grid';
+const wgBtn = $('#wgBtn');
+function wgSet(l, t, w, h){
+  if (l < 0) { w += l; l = 0; }
+  if (t < 0) { h += t; t = 0; }
+  wg.r = {l, t, w: Math.max(WG_MIN.w, w), h: Math.max(WG_MIN.h, h)};
+  Object.assign(wg.el.style, {left: wg.r.l + 'px', top: wg.r.t + 'px', width: wg.r.w + 'px', height: wg.r.h + 'px'});
+}
+function wgPaint(){
+  const el = wg.el; if (!el) return;
+  el.dataset.pat = wg.pat; el.style.setProperty('--wg-gap', wg.gap + 'px'); el.style.setProperty('--wg-op', (wg.op / 100).toFixed(2));
+  el.querySelectorAll('[data-pick]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pick === wg.pat));
+  el.querySelector('output').textContent = wg.gap + 'px';
+  el.querySelector('[data-k="gap"]').value = wg.gap; el.querySelector('[data-k="op"]').value = wg.op;
+}
+function wgBuild(){
+  const el = document.createElement('div'); el.className = 'wguide'; el.id = 'wguide';
+  el.setAttribute('role', 'group'); el.setAttribute('aria-label', 'Writing guide');
+  el.innerHTML = '<div class="wg-pat" aria-hidden="true"></div>' +
+    '<div class="wg-bar" role="toolbar" aria-label="Writing guide controls">' +
+    `<button type="button" class="btn wg-move" aria-label="Move the writing guide" data-tip="Move: drag to put the guide anywhere, even on another page. The arrow keys nudge it; with Shift they resize it.">${icon('grip')}</button>` +
+    '<span class="seg" role="group" aria-label="Pattern">' + WG_PATS.map(([k, name, tip]) => `<button type="button" class="btn" data-pick="${k}" aria-pressed="false" data-tip="${name}: ${tip}">${name}</button>`).join('') + '</span>' +
+    '<span class="wg-grp" role="group" aria-label="Spacing">' +
+    '<button type="button" class="btn" data-step="-2" aria-label="Closer together" data-tip="Closer together">−</button>' +
+    '<input type="range" data-k="gap" min="12" max="48" step="2" aria-label="Spacing" data-tip="Spacing: how far apart the lines are">' +
+    '<button type="button" class="btn" data-step="2" aria-label="Further apart" data-tip="Further apart">+</button><output aria-live="polite"></output></span>' +
+    `<span class="wg-grp"><span class="wg-ico" aria-hidden="true">${icon('eye')}</span><input type="range" data-k="op" min="10" max="100" step="5" aria-label="Opacity" data-tip="Opacity: how strong the lines are"></span>` +
+    `<button type="button" class="btn" data-close aria-label="Remove the writing guide" data-tip="Remove the writing guide (Esc)">${icon('x')}</button></div>` +
+    ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'].map(d => `<span class="wg-h wg-${d}" data-d="${d}" aria-hidden="true"></span>`).join('');
+  return el;
+}
+// a drag that follows the pointer in page coordinates, so the guide keeps up as the page scrolls under it
+function wgDrag(e, h, step){
+  e.preventDefault(); e.stopPropagation();
+  try { h.setPointerCapture(e.pointerId); } catch {}
+  const sx = e.clientX + scrollX, sy = e.clientY + scrollY, r0 = {...wg.r};
+  let cx = e.clientX, cy = e.clientY, raf = 0;
+  document.body.classList.add('wg-drag'); h.classList.add('on');
+  const frame = () => {
+    const top = Math.max(0, appbar.getBoundingClientRect().bottom) + 14, bot = innerHeight - 40;
+    if (cy < top && scrollY > 0) scrollBy(0, -Math.min(26, 4 + (top - cy) / 3)); else if (cy > bot) scrollBy(0, Math.min(26, 4 + (cy - bot) / 3));
+    if (wg.el) step(r0, cx + scrollX - sx, cy + scrollY - sy);
+    raf = requestAnimationFrame(frame);
+  };
+  frame();
+  const move = ev => { cx = ev.clientX; cy = ev.clientY; };
+  const up = () => {
+    cancelAnimationFrame(raf); document.body.classList.remove('wg-drag'); h.classList.remove('on');
+    for (const [t, f] of [['pointermove', move], ['pointerup', up], ['pointercancel', up], ['lostpointercapture', up]]) h.removeEventListener(t, f);
+  };
+  for (const [t, f] of [['pointermove', move], ['pointerup', up], ['pointercancel', up], ['lostpointercapture', up]]) h.addEventListener(t, f);
+}
+const wgMove = (r, dx, dy) => wgSet(r.l + dx, r.t + dy, r.w, r.h);
+const wgSize = dir => (r, dx, dy) => {
+  let {l, t, w, h} = r;
+  if (dir.includes('e')) w = r.w + dx;
+  if (dir.includes('s')) h = r.h + dy;
+  if (dir.includes('w')) { w = r.w - dx; l = r.l + dx; if (w < WG_MIN.w) l -= WG_MIN.w - w; }
+  if (dir.includes('n')) { h = r.h - dy; t = r.t + dy; if (h < WG_MIN.h) t -= WG_MIN.h - h; }
+  wgSet(l, t, w, h);
+};
+function wgOpen(){
+  if (wg.el) { wgClose(); return; }
+  const el = wg.el = wgBuild();
+  document.body.append(el);
+  const card = currentCard(), cr = (card || main).getBoundingClientRect();
+  const left = Math.max(0, cr.left), right = Math.min(innerWidth, cr.right), top = Math.max(0, cr.top, Math.max(0, appbar.getBoundingClientRect().bottom) + 8);
+  wgSet(left + scrollX, top + scrollY, right - left > WG_MIN.w ? right - left : innerWidth - left, Math.round(innerHeight * 0.6));
+  wgPaint(); wgBtn.setAttribute('aria-pressed', 'true');
+  el.addEventListener('pointerdown', e => {
+    const h = e.target.closest('.wg-h, .wg-move'); if (!h) return;
+    wgDrag(e, h, h.classList.contains('wg-move') ? wgMove : wgSize(h.dataset.d));
+  });
+  el.addEventListener('keydown', e => {
+    const k = {ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1]}[e.key];
+    if (!k || !e.target.closest('.wg-move')) return;
+    e.preventDefault(); const n = 10, r = wg.r;
+    if (e.shiftKey) wgSet(r.l, r.t, r.w + k[0] * n, r.h + k[1] * n); else wgSet(r.l + k[0] * n, r.t + k[1] * n, r.w, r.h);
+  });
+  el.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.pick) wg.pat = b.dataset.pick;
+    else if (b.dataset.step) wg.gap = wgClamp(wg.gap + +b.dataset.step, 12, 48);
+    else if (b.hasAttribute('data-close')) { wgClose(); return; }
+    else return;
+    wgPaint(); wgRemember();
+  });
+  el.addEventListener('input', e => { const r = e.target.closest('input[type=range]'); if (r) { wg[r.dataset.k] = +r.value; wgPaint(); wgRemember(); } });
+  el.addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });      // the cursor stays in the note
+}
+const wgRemember = () => { pref.set('wg-pat', wg.pat); pref.set('wg-gap', wg.gap); pref.set('wg-op', wg.op); };
+function wgClose(){
+  if (!wg.el) return;
+  wg.el.remove(); wg.el = null; wgBtn.setAttribute('aria-pressed', 'false'); document.body.classList.remove('wg-drag');
+}
+wgBtn.onclick = wgOpen;
+addEventListener('keydown', e => { if (e.key === 'Escape' && wg.el && !e.defaultPrevented && !focusMode) wgClose(); });
+// a finger gets bigger handles, whatever the browser says about the screen
+document.addEventListener('pointerdown', e => { if (wg.el && e.pointerType === 'touch') wg.el.classList.add('wg-touch'); }, true);
+
+/* ---------- where a table or journal entry goes: in the note you're writing in, at the cursor, or in a new note in the nearest gap ---------- */
+function wtCtx(){
+  if (reading) { toast('Study mode is on. Switch back to editing to add this.'); return null; }
+  const n = noteActive();
+  if (n && n.tagName !== 'SPAN' && n.isConnected) return {note: n, range: savedRange && n.contains(savedRange.startContainer) ? savedRange.cloneRange() : null};
+  return {};
+}
+// a new note in the nearest gap of the page you're on (the middle of what's on screen), the way + Add here does
+function wtNewBox(){
+  const card = currentCard() || firstPage();
+  const cr = card.getBoundingClientRect(), vt = Math.max(cr.top, appbar.getBoundingClientRect().bottom, 0), vb = Math.min(cr.bottom, innerHeight - ($('#statusbar')?.offsetHeight || 0));
+  const mid = (vt + Math.max(vt, vb)) / 2;
+  const strips = [...card.querySelectorAll(':scope > .strip')];
+  if (strips.length) {
+    let best = null;
+    for (const s of strips) { const r = s.getBoundingClientRect(), d = mid < r.top ? r.top - mid : mid > r.bottom ? mid - r.bottom : 0; if (!best || d < best.d) best = {s, d, r}; }
+    const {el} = insertAt(best.s, gapY(best.s, wgClamp(mid, best.r.top + 1, best.r.bottom - 1)));
+    return el;
+  }
+  const bare = m => !m.textContent.trim() && !m.querySelector('img, .media, .formula, .wtable, .jrnl');
+  const spare = [...card.querySelectorAll('.notebox:not(.sticky) > .mine')].find(m => m.tagName === 'DIV' && bare(m));
+  if (spare) { focusNote(spare); return spare; }
+  let blk = [...card.querySelectorAll('.blk')].filter(b => b.getBoundingClientRect().top < mid).pop() || null;
+  while (blk && (blk.nextElementSibling?.classList.contains('mine') || blk.nextElementSibling?.classList.contains('notebox'))) blk = blk.nextElementSibling;
+  addBlockNote(blk, card);
+  return active;
+}
+// puts a table or journal entry in, leaving a line below it to carry on typing on; the note it went into
+function wtPlace(node, ctx){
+  const note = ctx.note || wtNewBox();
+  let r = ctx.range;
+  if (r) {
+    const h = r.startContainer.nodeType === 1 ? r.startContainer : r.startContainer.parentElement, blk = h?.closest('.wtable, .jrnl');
+    if (blk && note.contains(blk)) { r = document.createRange(); r.setStartAfter(blk); r.collapse(true); }       // not inside another one
+  }
+  if (!r || !note.contains(r.startContainer)) { r = document.createRange(); r.selectNodeContents(note); r.collapse(false); }
+  r.deleteContents(); r.insertNode(node);
+  const nx = node.nextSibling;
+  if (!nx || (nx.nodeType === 3 && !nx.data.replace(/[\s​]/g, ''))) node.after(document.createElement('br'));
+  return note;
+}
+function wtAdd(kind, size, ctx = wtCtx()){
+  if (!ctx) return;
+  const node = kind === 'table' ? wtMake(size?.r || 3, size?.c || 3) : jMake();
+  const note = wtPlace(node, ctx);
+  if (kind === 'table') wtFocus(node.querySelector('td'));
+  else jFocus(node.querySelector('.j-acct'));
+  const box = note.closest('.notebox'); if (box) { raise(box); box.scrollIntoView({block: 'nearest', behavior: smoothScroll()}); }
+  saveSoon();
+}
+// after a notebook loads, a step back or forward, or Study mode: fields are editable again (or not), amounts are checked
+function wtUpgrade(){
+  main.querySelectorAll('.jrnl').forEach(b => {
+    b.contentEditable = 'false'; b.spellcheck = false;
+    b.querySelectorAll('.j-date, .j-ind, .j-acct, .j-desc, .j-amt').forEach(f => { f.contentEditable = reading || f.classList.contains('off') ? 'false' : 'true'; });
+    jCheck(b);
+  });
+  wtLayoutSoon();
+}
+
+/* ---------- tables ---------- */
+// a table is plain HTML in the note: <table class="wtable"> with a <colgroup> of widths in % (of the table) and a width in % (of the note)
+const T_MAX = {c: 10, r: 8};
+const wtTd = () => { const td = document.createElement('td'); td.innerHTML = '<br>'; return td; };
+function wtMake(rows, cols){
+  const t = document.createElement('table'); t.className = 'wtable'; t.style.width = '100%';
+  const cg = t.appendChild(document.createElement('colgroup'));
+  for (let i = 0; i < cols; i++) cg.append(Object.assign(document.createElement('col'), {style: `width:${(100 / cols).toFixed(4)}%`}));
+  const tb = t.createTBody();
+  for (let r = 0; r < rows; r++) { const tr = tb.insertRow(); for (let c = 0; c < cols; c++) tr.append(wtTd()); }
+  return t;
+}
+// the grid as cells with a place and a size, so rows and columns can be added, removed and merged in one way
+function wtModel(t){
+  const cells = [], occ = [];
+  [...t.rows].forEach((tr, r) => {
+    occ[r] ||= []; let c = 0;
+    for (const el of tr.cells) {
+      while (occ[r][c]) c++;
+      const rs = Math.max(1, el.rowSpan), cs = Math.max(1, el.colSpan);
+      cells.push({el, r, c, rs, cs});
+      for (let i = 0; i < rs; i++) for (let j = 0; j < cs; j++) (occ[r + i] ||= [])[c + j] = el;
+      c += cs;
+    }
+  });
+  return {cells, nr: Math.max(t.rows.length, occ.length), nc: Math.max(0, ...occ.map(o => o.length)), at: (r, c) => occ[r]?.[c]};
+}
+function wtBuild(t, m){
+  const rows = Array.from({length: m.nr}, () => document.createElement('tr'));
+  for (const c of m.cells.sort((a, b) => a.r - b.r || a.c - b.c)) {
+    c.el.rowSpan = c.rs; c.el.colSpan = c.cs;
+    if (c.rs === 1) c.el.removeAttribute('rowspan'); if (c.cs === 1) c.el.removeAttribute('colspan');
+    rows[c.r].append(c.el);
+  }
+  const tb = t.tBodies[0] || t.createTBody();
+  tb.replaceChildren(...rows);
+}
+const wtColEls = t => [...t.querySelectorAll(':scope > colgroup > col')];
+function wtPcts(t, nc){
+  const p = wtColEls(t).map(c => parseFloat(c.style.width));
+  return p.length === nc && p.every(x => x > 0) ? p : Array(nc).fill(100 / nc);
+}
+function wtSetCols(t, p){
+  const sum = p.reduce((a, b) => a + b, 0) || 1;
+  t.querySelector(':scope > colgroup')?.remove();
+  const cg = document.createElement('colgroup');
+  p.forEach(x => cg.append(Object.assign(document.createElement('col'), {style: `width:${(x * 100 / sum).toFixed(4)}%`})));
+  t.prepend(cg);
+}
+const wtEmpty = el => !el.textContent.trim() && !el.querySelector('img, .media, .formula');
+function wtInsRow(t, m, at, col){
+  for (const c of m.cells) { if (c.r >= at) c.r++; else if (c.r + c.rs > at) c.rs++; }
+  const cover = new Set();
+  for (const c of m.cells) if (c.r <= at && at < c.r + c.rs) for (let j = 0; j < c.cs; j++) cover.add(c.c + j);
+  let pick = null;
+  for (let j = 0; j < m.nc; j++) if (!cover.has(j)) { const el = wtTd(); m.cells.push({el, r: at, c: j, rs: 1, cs: 1}); if (!pick || j === col) pick = el; }
+  m.nr++; wtBuild(t, m); return pick;
+}
+function wtInsCol(t, m, at, row){
+  const p = wtPcts(t, m.nc), w = 100 / (m.nc + 1);
+  wtSetCols(t, [...p.slice(0, at).map(x => x * (100 - w) / 100), w, ...p.slice(at).map(x => x * (100 - w) / 100)]);
+  for (const c of m.cells) { if (c.c >= at) c.c++; else if (c.c + c.cs > at) c.cs++; }
+  const cover = new Set();
+  for (const c of m.cells) if (c.c <= at && at < c.c + c.cs) for (let i = 0; i < c.rs; i++) cover.add(c.r + i);
+  let pick = null;
+  for (let i = 0; i < m.nr; i++) if (!cover.has(i)) { const el = wtTd(); m.cells.push({el, r: i, c: at, rs: 1, cs: 1}); if (!pick || i === row) pick = el; }
+  m.nc++; wtBuild(t, m); return pick;
+}
+// takes lines r1..r2 out (rows when by is 'r', columns when 'c'); cells that cross them shrink
+function wtCut(t, m, by, a1, a2){
+  const [p, s] = by === 'r' ? ['r', 'rs'] : ['c', 'cs'], n = a2 - a1 + 1, keep = [];
+  for (const c of m.cells) {
+    const a = c[p], o = Math.max(0, Math.min(a + c[s], a2 + 1) - Math.max(a, a1));
+    if (o >= c[s]) continue;
+    c[s] -= o; if (a > a2) c[p] -= n; else if (a >= a1) c[p] = a1;
+    keep.push(c);
+  }
+  m.cells = keep;
+  if (by === 'r') m.nr -= n;
+  else { const pc = wtPcts(t, m.nc); pc.splice(a1, n); m.nc -= n; if (m.nc > 0) wtSetCols(t, pc); }
+  if (m.nr <= 0 || m.nc <= 0) return null;
+  wtBuild(t, m);
+  return (by === 'r' ? m.cells.find(c => c.r === Math.min(a1, m.nr - 1)) : m.cells.find(c => c.c === Math.min(a1, m.nc - 1)))?.el || null;
+}
+function wtMerge(t, m, g){
+  const inside = m.cells.filter(c => c.r >= g.r1 && c.c >= g.c1 && c.r + c.rs - 1 <= g.r2 && c.c + c.cs - 1 <= g.c2).sort((a, b) => a.r - b.r || a.c - b.c);
+  const head = inside.find(c => c.r === g.r1 && c.c === g.c1); if (!head || inside.length < 2) return null;
+  for (const o of inside) {
+    if (o === head) continue;
+    if (!wtEmpty(o.el)) { if (wtEmpty(head.el)) head.el.innerHTML = ''; else head.el.append(document.createElement('br')); while (o.el.firstChild) head.el.append(o.el.firstChild); }
+    m.cells.splice(m.cells.indexOf(o), 1);
+  }
+  head.rs = g.r2 - g.r1 + 1; head.cs = g.c2 - g.c1 + 1;
+  wtBuild(t, m); return head.el;
+}
+function wtSplit(t, m, cell){
+  const c = m.cells.find(x => x.el === cell); if (!c || (c.rs < 2 && c.cs < 2)) return null;
+  for (let i = 0; i < c.rs; i++) for (let j = 0; j < c.cs; j++) if (i || j) m.cells.push({el: wtTd(), r: c.r + i, c: c.c + j, rs: 1, cs: 1});
+  c.rs = c.cs = 1; wtBuild(t, m); return cell;
+}
+// the block of cells from a to b, made bigger to take in any merged cell it cuts through
+function wtRect(m, a, b){
+  const ca = m.cells.find(x => x.el === a), cb = m.cells.find(x => x.el === b); if (!ca || !cb) return null;
+  let r1 = Math.min(ca.r, cb.r), r2 = Math.max(ca.r + ca.rs - 1, cb.r + cb.rs - 1), c1 = Math.min(ca.c, cb.c), c2 = Math.max(ca.c + ca.cs - 1, cb.c + cb.cs - 1);
+  for (let again = true; again;) {
+    again = false;
+    for (const x of m.cells) {
+      const xr = x.r + x.rs - 1, xc = x.c + x.cs - 1;
+      if (x.r > r2 || xr < r1 || x.c > c2 || xc < c1) continue;
+      if (x.r < r1) { r1 = x.r; again = true; } if (xr > r2) { r2 = xr; again = true; }
+      if (x.c < c1) { c1 = x.c; again = true; } if (xc > c2) { c2 = xc; again = true; }
+    }
+  }
+  return {r1, c1, r2, c2};
+}
+const wtCellOf = n => { const e = n && (n.nodeType === 1 ? n : n.parentElement), c = e?.closest?.('.wtable td'); return c && c.closest('.mine') ? c : null; };
+const wtSelCell = () => { const s = getSelection(); return s.rangeCount ? wtCellOf(s.anchorNode) : null; };
+function wtFocus(cell, all){
+  const host = cell.closest('.mine'); host.focus({preventScroll: true});
+  const r = document.createRange();
+  if (!cell.textContent) { r.setStart(cell, 0); r.collapse(true); }
+  else { r.selectNodeContents(cell); if (!all) r.collapse(false); }
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  active = host; savedRange = r.cloneRange(); wt.anchor = cell;
+  cell.scrollIntoView({block: 'nearest'});
+}
+
+// the handles and the selection are drawn on a layer of their own over the page, so nothing of them is ever saved with the notes
+const wt = {t: null, cell: null, anchor: null, sel: null, hover: false, busy: false, menu: null, ui: null, raf: 0};
+function wtUi(){
+  if (wt.ui) return wt.ui;
+  const ui = wt.ui = document.createElement('div'); ui.id = 'wtui'; ui.hidden = true;
+  ui.innerHTML = '<div class="wt-selbox" hidden></div>' +
+    '<span class="wt-r" data-tip="Drag to change the width of the table"></span>' +
+    '<span class="wt-c" data-tip="Drag to change the size of the table"></span>' +
+    `<button type="button" class="wt-more" aria-label="Table options" aria-haspopup="menu" data-tip="Table options: add or remove rows and columns, merge cells (right-click works too)">⋯</button>`;
+  document.body.append(ui);
+  ui.addEventListener('pointerdown', wtHandleDown);
+  ui.addEventListener('mousedown', e => { if (e.target.closest('.wt-more')) e.preventDefault(); });
+  ui.querySelector('.wt-more').onclick = e => {
+    const c = wt.cell; if (!c?.isConnected) return;
+    const r = e.currentTarget.getBoundingClientRect(); wtMenuOpen(c, r.left, r.bottom + 4);
+  };
+  new ResizeObserver(() => wtLayoutSoon()).observe(main);
+  return ui;
+}
+const wtRo = new ResizeObserver(() => wtLayoutSoon());
+function wtLayoutSoon(){ cancelAnimationFrame(wt.raf); wt.raf = requestAnimationFrame(wtLayout); }
+function wtLayout(){
+  const t = wt.t;
+  if (!wt.ui && !t) return;
+  const ui = wtUi();
+  if (!t || !t.isConnected || reading || !t.getClientRects().length) { ui.hidden = true; return; }
+  const r = t.getBoundingClientRect(), ox = scrollX, oy = scrollY, m = wtModel(t), p = wtPcts(t, m.nc);
+  ui.hidden = false;
+  const put = (el, l, tp, w, h) => { el.style.left = Math.round(l + ox) + 'px'; el.style.top = Math.round(tp + oy) + 'px'; if (w != null) el.style.width = w + 'px'; if (h != null) el.style.height = Math.round(h) + 'px'; };
+  const handles = [...ui.querySelectorAll('.wt-col')], need = Math.max(0, m.nc - 1);
+  while (handles.length > need) handles.pop().remove();
+  while (handles.length < need) { const h = Object.assign(document.createElement('span'), {className: 'wt-col'}); h.dataset.tip = 'Drag to change the column width'; ui.append(h); handles.push(h); }
+  let acc = 0; const cw = ui.querySelector('.wt-col') ? ui.querySelector('.wt-col').offsetWidth : 12;
+  handles.forEach((h, k) => { acc += p[k]; h.dataset.k = k; put(h, r.left + r.width * acc / 100 - cw / 2, r.top, null, r.height); });
+  const hr = ui.querySelector('.wt-r'), hc = ui.querySelector('.wt-c'), rw = hr.offsetWidth || 12, cs = hc.offsetWidth || 14;
+  put(hr, r.right - rw / 2, r.top, null, r.height); put(hc, r.right - cs / 2, r.bottom - cs / 2);
+  const more = ui.querySelector('.wt-more'), cell = wt.cell?.isConnected && wt.cell.closest('table') === t ? wt.cell : null;
+  more.hidden = !cell;
+  if (cell) { const cr = cell.getBoundingClientRect(); put(more, cr.right - more.offsetWidth - 3, cr.top + 3); }
+  const box = ui.querySelector('.wt-selbox'), s = wt.sel;
+  box.hidden = !(s && s.t === t);
+  if (!box.hidden) {
+    let u = null;
+    for (const c of m.cells) if (c.r >= s.r1 && c.r + c.rs - 1 <= s.r2 && c.c >= s.c1 && c.c + c.cs - 1 <= s.c2) { const q = c.el.getBoundingClientRect(); u = u ? {l: Math.min(u.l, q.left), t: Math.min(u.t, q.top), r: Math.max(u.r, q.right), b: Math.max(u.b, q.bottom)} : {l: q.left, t: q.top, r: q.right, b: q.bottom}; }
+    if (u) put(box, u.l, u.t, u.r - u.l, u.b - u.t); else box.hidden = true;
+  }
+  wtRo.disconnect(); wtRo.observe(t);
+}
+function wtSelSet(t, g){ wt.sel = g ? {t, ...g} : null; wtLayoutSoon(); }
+const wtSelClear = () => { if (wt.sel) wtSelSet(null, null); };
+function wtSelRange(a, b){
+  const t = a.closest('table'), g = wtRect(wtModel(t), a, b);
+  wtSelSet(t, g && (g.r1 !== g.r2 || g.c1 !== g.c2) ? g : null);
+}
+// drag a column border, the right edge or the corner
+function wtHandleDown(e){
+  const h = e.target.closest('.wt-col, .wt-r, .wt-c'), t = wt.t; if (!h || !t || e.button) return;
+  e.preventDefault(); e.stopPropagation();
+  try { h.setPointerCapture(e.pointerId); } catch {}
+  const r0 = t.getBoundingClientRect(), x0 = e.clientX, y0 = e.clientY, pct0 = parseFloat(t.style.width) || 100, host = r0.width / (pct0 / 100), z = zoomOf(t) || 1;
+  const cols = wtColEls(t), p0 = wtPcts(t, cols.length || wtModel(t).nc), k = +h.dataset.k;
+  if (h.classList.contains('wt-col') && cols.length !== p0.length) wtSetCols(t, p0);
+  const colEls = wtColEls(t);
+  h.classList.add('on'); document.body.classList.add('wt-select'); wt.busy = true;
+  const move = ev => {
+    const dx = ev.clientX - x0, dy = ev.clientY - y0;
+    if (h.classList.contains('wt-col')) {
+      const min = Math.max(2, 24 / r0.width * 100), tot = p0[k] + p0[k + 1], a = wgClamp(p0[k] + dx / r0.width * 100, min, tot - min);
+      colEls[k].style.width = a.toFixed(4) + '%'; colEls[k + 1].style.width = (tot - a).toFixed(4) + '%';
+    } else {
+      t.style.width = wgClamp((r0.width + dx) / host * 100, 12, 100).toFixed(2) + '%';
+      if (h.classList.contains('wt-c')) t.style.height = Math.max(20, (r0.height + dy) / z).toFixed(0) + 'px';
+    }
+    wtLayout();
+  };
+  const up = () => {
+    for (const [n, f] of [['pointermove', move], ['pointerup', up], ['pointercancel', up], ['lostpointercapture', up]]) h.removeEventListener(n, f);
+    h.classList.remove('on'); document.body.classList.remove('wt-select'); wt.busy = false; saveSoon(); wtLayoutSoon();
+  };
+  for (const [n, f] of [['pointermove', move], ['pointerup', up], ['pointercancel', up], ['lostpointercapture', up]]) h.addEventListener(n, f);
+}
+// the handles show for the table you point at, or the one the cursor is in
+document.addEventListener('pointermove', e => {
+  if (reading || wt.busy || !(e.target instanceof Element)) return;
+  const cell = wtCellOf(e.target);
+  if (cell) { wt.hover = true; if (wt.cell !== cell) { wt.t = cell.closest('table'); wt.cell = cell; wtLayoutSoon(); } return; }
+  if (e.target.closest('#wtui, .wtmenu')) { wt.hover = true; return; }
+  if (!wt.hover) return;
+  wt.hover = false;
+  const c = wtSelCell(); wt.t = c ? c.closest('table') : null; wt.cell = c; wtLayoutSoon();
+}, {passive: true});
+document.addEventListener('selectionchange', () => {
+  if (wt.drag?.on || wt.busy) return;
+  const c = wtSelCell();
+  if (c) { wt.anchor = c; if (wt.cell !== c) { wt.t = c.closest('table'); wt.cell = c; wtLayoutSoon(); } }
+  else if (!wt.hover && wt.t) { wt.t = null; wt.cell = null; wtLayoutSoon(); }
+});
+addEventListener('scroll', () => { if (wt.t) wtLayoutSoon(); }, {capture: true, passive: true});
+addEventListener('resize', () => { if (wt.t) wtLayoutSoon(); });
+main.addEventListener('input', () => { if (wt.t) wtLayoutSoon(); });
+// select several cells: drag across them, or Shift+click
+main.addEventListener('mousedown', e => {
+  if (e.button || reading) return;
+  const cell = wtCellOf(e.target);
+  if (!cell) { wtSelClear(); return; }
+  if (e.shiftKey && wt.anchor?.isConnected && wt.anchor.closest('table') === cell.closest('table')) { e.preventDefault(); wtSelRange(wt.anchor, cell); getSelection().removeAllRanges(); return; }
+  wt.anchor = cell; wtSelClear(); wt.drag = {a: cell, on: false};
+});
+document.addEventListener('mousemove', e => {
+  const d = wt.drag; if (!d) return;
+  if (!(e.buttons & 1)) { wt.drag = null; return; }
+  const c = e.target instanceof Element ? wtCellOf(e.target) : null;
+  if (!c || c.closest('table') !== d.a.closest('table')) return;
+  if (!d.on) { if (c === d.a) return; d.on = true; document.body.classList.add('wt-select'); }
+  getSelection().removeAllRanges(); wtSelRange(d.a, c);
+});
+document.addEventListener('mouseup', () => {
+  const d = wt.drag; wt.drag = null; document.body.classList.remove('wt-select');
+  if (d?.on && d.a.isConnected) { const host = d.a.closest('.mine'); host.focus({preventScroll: true}); const r = document.createRange(); r.setStart(d.a, 0); r.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r); active = host; savedRange = r.cloneRange(); }
+});
+document.addEventListener('selectstart', e => { if (wt.drag?.on) e.preventDefault(); });
+// Tab and Shift+Tab move between cells (Tab in the last cell adds a row); Delete empties the selected cells
+const MODKEYS = new Set(['Shift', 'Control', 'Alt', 'Meta']);
+main.addEventListener('keydown', e => {
+  if (e.isComposing || reading) return;
+  if (e.target.closest?.('.jrnl')) { jKey(e); return; }
+  if (!e.target.closest?.('.mine')) return;
+  if (wt.sel && !MODKEYS.has(e.key)) {
+    const s = wt.sel;
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault(); e.stopPropagation();
+      for (const c of wtModel(s.t).cells) if (c.r >= s.r1 && c.r + c.rs - 1 <= s.r2 && c.c >= s.c1 && c.c + c.cs - 1 <= s.c2) c.el.innerHTML = '<br>';
+      saveSoon(); return;
+    }
+    wtSelClear();
+  }
+  if (e.key === 'Escape' && wt.menu) return;
+  const cell = wtSelCell(); if (!cell) return;
+  if (e.key === 'Tab') {
+    e.preventDefault(); e.stopPropagation();
+    const t = cell.closest('table'), list = [...t.querySelectorAll('td')], i = list.indexOf(cell) + (e.shiftKey ? -1 : 1);
+    if (i < 0) return;
+    if (i >= list.length) { const m = wtModel(t); wtFocus(wtInsRow(t, m, m.nr, 0)); saveSoon(); return; }
+    wtFocus(list[i], true);
+  }
+}, true);
+// the row and column menu: right-click, the ⋯ button, or press and hold on a touch screen
+const WT_ACTS = [['rowUp', 'Insert row above'], ['rowDown', 'Insert row below'], ['colLeft', 'Insert column left'], ['colRight', 'Insert column right'], ['-'],
+  ['delRow', 'Delete row'], ['delCol', 'Delete column'], ['-'], ['merge', 'Merge cells'], ['split', 'Split cell'], ['-'], ['delTable', 'Delete table', 'danger']];
+function wtMenuClose(back){
+  if (!wt.menu) return;
+  const {el, cell} = wt.menu; wt.menu = null; el.remove();
+  if (back && cell.isConnected) wtFocus(cell);
+}
+function wtMenuOpen(cell, x, y){
+  if (reading) return;
+  wtMenuClose();
+  const t = cell.closest('table'), m = wtModel(t), me = m.cells.find(c => c.el === cell); if (!me) return;
+  const inSel = wt.sel && wt.sel.t === t && me.r >= wt.sel.r1 && me.r + me.rs - 1 <= wt.sel.r2 && me.c >= wt.sel.c1 && me.c + me.cs - 1 <= wt.sel.c2;
+  if (!inSel) wtSelClear();
+  const many = !!(inSel && wt.sel);
+  const el = document.createElement('div'); el.className = 'pop spellmenu wtmenu'; el.setAttribute('role', 'menu'); el.setAttribute('aria-label', 'Table');
+  for (const [act, label, kind] of WT_ACTS) {
+    if (act === '-') { el.append(document.createElement('hr')); continue; }
+    const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.dataset.act = act; b.textContent = label;
+    if (kind) b.classList.add(kind);
+    if ((act === 'merge' && !many) || (act === 'split' && !(me.rs > 1 || me.cs > 1))) b.disabled = true;
+    el.append(b);
+  }
+  document.body.append(el);
+  el.style.left = Math.max(8, Math.min(innerWidth - el.offsetWidth - 8, x)) + 'px'; el.style.top = Math.max(8, Math.min(innerHeight - el.offsetHeight - 8, y)) + 'px';
+  wt.menu = {el, cell, at: performance.now()};
+  el.addEventListener('mousedown', e => e.preventDefault());
+  el.addEventListener('click', e => { const b = e.target.closest('button[data-act]'); if (b && !b.disabled) { wtMenuClose(); wtDo(b.dataset.act, cell); } });
+  el.addEventListener('keydown', e => {
+    const bs = [...el.querySelectorAll('button:not(:disabled)')], i = bs.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); bs[(i + (e.key === 'ArrowDown' ? 1 : bs.length - 1)) % bs.length]?.focus(); }
+    else if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); bs[e.key === 'Home' ? 0 : bs.length - 1]?.focus(); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); wtMenuClose(true); }
+    else if (e.key === 'Tab') { e.preventDefault(); wtMenuClose(true); }
+  });
+  el.querySelector('button:not(:disabled)')?.focus({preventScroll: true});
+}
+document.addEventListener('mousedown', e => { if (wt.menu && !e.target.closest('.wtmenu') && performance.now() - wt.menu.at > 350) wtMenuClose(); }, true);       // (a finger lifting after press and hold can still send a mouse press)
+addEventListener('scroll', e => { if (wt.menu && performance.now() - wt.menu.at > 200 && (e.target === document || e.target.contains?.(wt.menu.cell))) wtMenuClose(); }, {capture: true, passive: true});     // (a side panel scrolling does not move the table)
+main.addEventListener('contextmenu', e => {
+  if (reading || e.defaultPrevented) return;
+  let cell = e.target instanceof Element ? wtCellOf(e.target) : null, x = e.clientX, y = e.clientY;
+  if (!cell && e.target.closest?.('.mine')) { cell = wtSelCell(); if (cell && !x && !y) { const r = cell.getBoundingClientRect(); x = r.left + 8; y = r.bottom; } }
+  if (!cell) return;
+  e.preventDefault(); wtMenuOpen(cell, x, y);
+});
+// press and hold on a touch screen
+main.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'touch' || reading) return;
+  const cell = wtCellOf(e.target); if (!cell) return;
+  const x = e.clientX, y = e.clientY;
+  const stop = () => { clearTimeout(tm); removeEventListener('pointerup', stop); removeEventListener('pointercancel', stop); removeEventListener('pointermove', far); };
+  const far = ev => { if (Math.hypot(ev.clientX - x, ev.clientY - y) > 10) stop(); };
+  const tm = setTimeout(() => { stop(); wtMenuOpen(cell, x, y); }, 550);
+  addEventListener('pointerup', stop); addEventListener('pointercancel', stop); addEventListener('pointermove', far);
+});
+function wtDo(act, cell){
+  const t = cell.closest('table'); if (!t) return;
+  const m = wtModel(t), me = m.cells.find(c => c.el === cell); if (!me) return;
+  const s = wt.sel && wt.sel.t === t && me.r >= wt.sel.r1 && me.r + me.rs - 1 <= wt.sel.r2 && me.c >= wt.sel.c1 && me.c + me.cs - 1 <= wt.sel.c2 ? wt.sel : null;
+  const g = s || {r1: me.r, c1: me.c, r2: me.r + me.rs - 1, c2: me.c + me.cs - 1};
+  let go = cell;
+  if (act === 'rowUp') go = wtInsRow(t, m, g.r1, me.c);
+  else if (act === 'rowDown') go = wtInsRow(t, m, g.r2 + 1, me.c);
+  else if (act === 'colLeft') go = wtInsCol(t, m, g.c1, me.r);
+  else if (act === 'colRight') go = wtInsCol(t, m, g.c2 + 1, me.r);
+  else if (act === 'delRow') go = wtCut(t, m, 'r', g.r1, g.r2);
+  else if (act === 'delCol') go = wtCut(t, m, 'c', g.c1, g.c2);
+  else if (act === 'merge') go = wtMerge(t, m, g);
+  else if (act === 'split') go = wtSplit(t, m, cell);
+  else if (act === 'delTable') go = null;
+  wtSelClear();
+  const note = t.closest('.mine');
+  if (!go && (act === 'delRow' || act === 'delCol' || act === 'delTable')) {
+    const at = t.nextSibling; t.remove(); wt.t = wt.cell = null;
+    if (note) { note.focus({preventScroll: true}); const r = document.createRange(); if (at?.parentNode) r.setStartBefore(at); else r.selectNodeContents(note); r.collapse(true); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); active = note; savedRange = r.cloneRange(); }
+  } else if (go) wtFocus(go);
+  saveSoon(); wtLayoutSoon();
+}
+// the size picker under Insert › Table: point or drag over the squares (or use the arrow keys), click or press Enter
+const tp = {el: null, c: 0, r: 0, ctx: null, btn: null, kb: false};
+function tpMark(c, r){
+  tp.c = c; tp.r = r;
+  tp.el.querySelectorAll('.tp-g > i').forEach((i, n) => i.classList.toggle('on', n % T_MAX.c < c && Math.floor(n / T_MAX.c) < r));
+  tp.el.querySelector('.tp-l').textContent = c && r ? `${c} × ${r}` : 'Insert table';
+}
+function tpClose(back){
+  if (!tp.el) return;
+  tp.el.remove(); const b = tp.btn; tp.el = null; tp.btn = null; b?.setAttribute('aria-expanded', 'false');
+  if (back && b) b.focus();
+}
+function tpInsert(c, r){
+  const ctx = tp.ctx; tpClose();
+  if (c >= 1 && r >= 1) wtAdd('table', {c: Math.min(c, 30), r: Math.min(r, 200)}, ctx);
+}
+function tpOpen(btn, byKey){
+  if (tp.el) { tpClose(); return; }
+  const ctx = wtCtx(); if (!ctx) return;
+  tp.ctx = ctx; tp.btn = btn; btn.setAttribute('aria-expanded', 'true');
+  const el = tp.el = document.createElement('div'); el.className = 'pop tblpick'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Insert table');
+  el.innerHTML = '<p class="tp-l" id="tpLbl" aria-live="polite">Insert table</p>' +
+    `<div class="tp-g" role="grid" tabindex="0" aria-labelledby="tpLbl" aria-describedby="tpHelp">${'<i></i>'.repeat(T_MAX.c * T_MAX.r)}</div>` +
+    '<p id="tpHelp" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Columns by rows. Arrow keys change the size, Enter inserts the table, Esc closes.</p>' +
+    '<button type="button" class="btn" id="tpMore" aria-expanded="false" style="margin-top:8px">Custom size…</button>' +
+    '<div class="tp-cust" hidden><label>Columns <input type="number" min="1" max="30" value="3" id="tpC" aria-label="Columns"></label><label>Rows <input type="number" min="1" max="200" value="3" id="tpR" aria-label="Rows"></label><button type="button" class="btn primary" id="tpGo">Insert</button></div>';
+  document.body.append(el);
+  const r = btn.getBoundingClientRect();
+  el.style.left = Math.max(8, Math.min(innerWidth - el.offsetWidth - 8, r.left)) + 'px'; el.style.top = Math.min(innerHeight - el.offsetHeight - 8, r.bottom + 6) + 'px';
+  const g = el.querySelector('.tp-g'), cellAt = ev => { const i = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.tp-g > i'); if (!i) return null; const n = [...g.children].indexOf(i); return {c: n % T_MAX.c + 1, r: Math.floor(n / T_MAX.c) + 1}; };
+  let down = false;
+  g.addEventListener('pointermove', ev => { const p = cellAt(ev); if (p) tpMark(p.c, p.r); });
+  g.addEventListener('pointerdown', ev => { down = true; const p = cellAt(ev); if (p) tpMark(p.c, p.r); });
+  g.addEventListener('pointerup', ev => { if (!down) return; down = false; const p = cellAt(ev); if (p) tpInsert(p.c, p.r); });
+  g.addEventListener('pointerleave', ev => { if (ev.pointerType === 'mouse' && !down) tpMark(0, 0); });
+  el.addEventListener('mousedown', e => { if (!e.target.closest('input')) e.preventDefault(); });            // the cursor stays in the note
+  el.querySelector('#tpMore').onclick = e => {
+    const box = el.querySelector('.tp-cust'); box.hidden = !box.hidden; e.currentTarget.setAttribute('aria-expanded', !box.hidden);
+    if (!box.hidden) el.querySelector('#tpC').focus();
+  };
+  const go = () => tpInsert(+el.querySelector('#tpC').value, +el.querySelector('#tpR').value);
+  el.querySelector('#tpGo').onclick = go;
+  el.querySelector('.tp-cust').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); go(); } });
+  tp.kb = !!byKey;
+  tpMark(0, 0);
+  if (byKey) { g.focus(); tpMark(1, 1); }
+}
+$('#tblBtn').addEventListener('click', e => tpOpen(e.currentTarget, e.detail === 0));
+addEventListener('keydown', e => {
+  if (!tp.el) return;
+  if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); tpClose(tp.kb || tp.el.contains(document.activeElement)); return; }
+  if (e.target.closest?.('.tblpick input')) return;             // typing a custom size: it has its own Enter
+  const d = {ArrowRight: [1, 0], ArrowLeft: [-1, 0], ArrowDown: [0, 1], ArrowUp: [0, -1]}[e.key];
+  if (d) { e.preventDefault(); e.stopPropagation(); tpMark(wgClamp(tp.c + d[0], 1, T_MAX.c), wgClamp(tp.r + d[1], 1, T_MAX.r)); }
+  else if (e.key === 'Enter' && tp.c && !e.target.closest?.('.tblpick button')) { e.preventDefault(); e.stopPropagation(); tpInsert(tp.c, tp.r); }
+}, true);
+document.addEventListener('mousedown', e => { if (tp.el && !e.target.closest('.tblpick, #tblBtn')) tpClose(); }, true);
+// PDF: the cell borders, in the note's own colour, faded
+function wtPaint(ctx, qa, ox, oy){
+  ctx.save(); ctx.globalAlpha = 0.38; ctx.lineWidth = 1;
+  for (const td of qa('.wtable td')) {
+    const r = td.getBoundingClientRect(); if (!r.width) continue;
+    ctx.strokeStyle = getComputedStyle(td).color; ctx.strokeRect(r.left - ox + 0.5, r.top - oy + 0.5, r.width - 1, r.height - 1);
+  }
+  ctx.restore();
+}
+function wtMarkdown(t){
+  const m = wtModel(t), rows = [];
+  for (let r = 0; r < m.nr; r++) rows.push(Array.from({length: m.nc}, (_, c) => { const cl = m.cells.find(x => x.r === r && x.c === c); return cl ? cl.el.textContent.replace(/\s+/g, ' ').replace(/\|/g, '\\|').trim() : ''; }));
+  if (!rows.length) return '';
+  const line = a => '| ' + a.join(' | ') + ' |';
+  return [line(rows[0]), line(rows[0].map(() => '---')), ...rows.slice(1).map(line)].join('\n');
+}
+
+/* ---------- journal entries: an accounting entry, in an invisible four-column layout ---------- */
+// date · DR / CR rows (indicator, account, debit amount, credit amount) · description. All fields are editable text.
+const J_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const jDate = d => `${d.getDate()} ${J_MON[d.getMonth()]} ${d.getFullYear()}`;
+const jRowHtml = s => `<div class="j-row" data-s="${s}"><div class="j-ind" contenteditable="true" role="textbox" aria-label="Debit or credit" data-tip="DR or CR: click to switch (or type dr or cr)">${s.toUpperCase()}</div>` +
+  '<div class="j-acct" contenteditable="true" role="textbox" data-ph="Account" aria-label="Account"></div>' +
+  `<div class="j-amt j-d${s === 'dr' ? '' : ' off'}" contenteditable="${s === 'dr'}" role="textbox" aria-label="Debit amount"></div>` +
+  `<div class="j-amt j-c${s === 'cr' ? '' : ' off'}" contenteditable="${s === 'cr'}" role="textbox" aria-label="Credit amount"></div></div>`;
+function jMake(){
+  const b = document.createElement('div'); b.className = 'jrnl'; b.contentEditable = 'false'; b.spellcheck = false;
+  b.setAttribute('role', 'group'); b.setAttribute('aria-label', 'Journal entry');
+  b.innerHTML = `<div class="j-date" contenteditable="true" role="textbox" data-ph="Date" aria-label="Date">${jDate(new Date())}</div>` + jRowHtml('dr') + jRowHtml('cr') +
+    '<div class="j-foot"><div class="j-desc" contenteditable="true" role="textbox" data-ph="Description" aria-label="Description"></div></div>';
+  return b;
+}
+const jFields = b => [...b.querySelectorAll('[contenteditable="true"]')];
+function jFocus(f, all){
+  f.focus({preventScroll: true});
+  const r = document.createRange(); r.selectNodeContents(f); if (!all) r.collapse(false);
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  const host = f.closest('.mine'); if (host) { active = host; savedRange = r.cloneRange(); }
+}
+// an amount as a number: digits, a decimal point, and a minus or brackets for negative
+function jNum(s){
+  s = String(s).replace(/\s/g, ''); if (!/\d/.test(s)) return null;
+  const n = parseFloat(s.replace(/[^\d.]/g, ''));
+  return isNaN(n) ? null : /^[-(]/.test(s) ? -n : n;
+}
+// 1200.5 becomes 1,200.5 (whatever decimals were typed stay)
+function jFmt(s){
+  const t = s.replace(/\s/g, ''), m = t.match(/^([-(]?)([\d,]*)(\.\d*)?(\)?)$/);
+  if (!m || !/\d/.test(t)) return t ? s.trim() : '';
+  let [, pre, int, dec = '', post] = m;
+  int = (int.replace(/,/g, '').replace(/^0+(?=\d)/, '') || '0').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  if (dec === '.') dec = '';
+  if (pre === '(') post = ')'; else post = '';
+  return pre + int + dec + post;
+}
+// debits and credits that don't match show a tiny "≠ 1,200" beside the description (once every amount is filled in)
+function jCheck(b){
+  let d = 0, c = 0, full = true;
+  for (const row of b.querySelectorAll('.j-row')) {
+    const n = jNum(row.querySelector('.j-amt:not(.off)')?.textContent || '');
+    if (n === null) { full = false; continue; }
+    if (row.dataset.s === 'cr') c += n; else d += n;
+  }
+  const diff = Math.abs(Math.round((d - c) * 100) / 100), foot = b.querySelector('.j-foot'), desc = b.querySelector('.j-desc');
+  if (!foot) return;
+  if (full && diff) { const t = jFmt(String(+diff.toFixed(2))); foot.dataset.diff = '≠ ' + t; desc?.setAttribute('aria-description', `Debits and credits differ by ${t}`); }
+  else { delete foot.dataset.diff; desc?.removeAttribute('aria-description'); }
+}
+function jSide(row, s){
+  if (row.dataset.s === s) return;
+  const v = row.querySelector('.j-amt:not(.off)')?.textContent || '';
+  row.dataset.s = s;
+  row.querySelector('.j-ind').textContent = s.toUpperCase();
+  for (const [x, on] of [[row.querySelector('.j-d'), s === 'dr'], [row.querySelector('.j-c'), s === 'cr']]) { x.classList.toggle('off', !on); x.contentEditable = on ? 'true' : 'false'; x.textContent = on ? v : ''; }
+  jCheck(row.closest('.jrnl'));
+}
+function jExit(b){
+  if (!b.nextSibling) return;
+  const note = b.closest('.mine'); note.focus({preventScroll: true});
+  const r = document.createRange(); r.setStartAfter(b); r.collapse(true);
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r); active = note; savedRange = r.cloneRange();
+}
+// Tab and Shift+Tab walk the fields; Enter in a row adds the next row (same side); Backspace in an empty row takes it away
+function jKey(e){
+  const f = e.target.closest('.jrnl [contenteditable="true"]'); if (!f) return;
+  const b = f.closest('.jrnl'), row = f.closest('.j-row'), fields = jFields(b), i = fields.indexOf(f);
+  const stop = () => { e.preventDefault(); e.stopPropagation(); };
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'a') { stop(); jFocus(f, true); return; }      // Select all: this field's text, not the whole entry
+  if (e.key === 'Tab') {
+    stop(); const n = fields[i + (e.shiftKey ? -1 : 1)];
+    if (n) jFocus(n, true); else if (!e.shiftKey) jExit(b);
+  } else if (e.key === 'Enter') {
+    stop();
+    if (f.classList.contains('j-date')) jFocus(b.querySelector('.j-acct'));
+    else if (f.classList.contains('j-desc')) jExit(b);
+    else { row.insertAdjacentHTML('afterend', jRowHtml(row.dataset.s)); jFocus(row.nextElementSibling.querySelector('.j-acct')); jCheck(b); saveSoon(); }
+  } else if (e.key === 'Backspace' && f.matches('.j-acct, .j-amt') && !f.textContent && row && !row.querySelector('.j-acct').textContent && !row.querySelector('.j-amt:not(.off)').textContent && b.querySelectorAll('.j-row').length > 1) {
+    stop();
+    const prev = row.previousElementSibling, to = prev?.classList.contains('j-row') ? prev.querySelector('.j-acct') : b.querySelector('.j-date');
+    row.remove(); jFocus(to); jCheck(b); saveSoon();
+  }
+}
+// amounts take digits, commas, a point, a minus and brackets; pasted text is plain
+main.addEventListener('beforeinput', e => {
+  const f = e.target.closest?.('.jrnl [contenteditable="true"]'); if (!f) return;
+  if (e.inputType === 'insertParagraph' || e.inputType === 'insertLineBreak' || (e.inputType === 'insertText' && f.classList.contains('j-amt') && /[^\d,.\-()]/.test(e.data || ''))) e.preventDefault();
+}, true);
+main.addEventListener('paste', e => {
+  const f = e.target.closest?.('.jrnl [contenteditable="true"]'); if (!f) return;
+  e.preventDefault(); e.stopPropagation();
+  let t = (e.clipboardData?.getData('text/plain') || '').replace(/\s+/g, ' ').trim();
+  if (f.classList.contains('j-amt')) t = t.replace(/[^\d,.\-()]/g, ''); else if (f.classList.contains('j-ind')) t = t.slice(0, 2);
+  if (t) document.execCommand('insertText', false, t);
+}, true);
+main.addEventListener('input', e => {
+  const f = e.target.closest?.('.jrnl [contenteditable="true"]'); if (!f) return;
+  if (f.innerHTML === '<br>') f.innerHTML = '';
+  if (f.classList.contains('j-ind')) {
+    const row = f.closest('.j-row'), c = f.textContent.trim().toLowerCase()[0], s = c === 'c' ? 'cr' : c === 'd' ? 'dr' : null;
+    if (s) { jSide(row, s); if (f.textContent !== s.toUpperCase()) f.textContent = s.toUpperCase(); jFocus(f); }
+  }
+  jCheck(f.closest('.jrnl'));
+});
+main.addEventListener('focusout', e => {
+  const f = e.target.closest?.('.jrnl [contenteditable="true"]'); if (!f) return;
+  if (f.classList.contains('j-amt')) { const t = jFmt(f.textContent); if (t !== f.textContent) { f.textContent = t; saveSoon(); } jCheck(f.closest('.jrnl')); }
+  else if (f.classList.contains('j-ind')) { const s = f.closest('.j-row').dataset.s.toUpperCase(); if (f.textContent !== s) f.textContent = s; }
+});
+main.addEventListener('click', e => {
+  const f = e.target.closest?.('.jrnl .j-ind'); if (!f || reading || !e.detail) return;
+  const row = f.closest('.j-row'); jSide(row, row.dataset.s === 'dr' ? 'cr' : 'dr'); jFocus(f, true); saveSoon();
+});
+$('#jeBtn').onclick = () => wtAdd('journal');
+function jMarkdown(b){
+  const lines = [b.querySelector('.j-date')?.textContent.trim()];
+  for (const row of b.querySelectorAll('.j-row')) {
+    const s = row.dataset.s.toUpperCase(), a = row.querySelector('.j-acct').textContent.trim(), n = row.querySelector('.j-amt:not(.off)').textContent.trim();
+    lines.push(`${s} ${a}${n ? ': ' + n : ''}`.trim());
+  }
+  lines.push(b.querySelector('.j-desc')?.textContent.trim());
+  return lines.filter(Boolean).join('\n');
+}
 
 // ================= when something goes wrong: say so (once in a while), instead of failing silently =================
 let lastErrorAt = 0;
