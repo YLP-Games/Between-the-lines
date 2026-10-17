@@ -2116,7 +2116,6 @@ async function readPptx(buf, name, mode = pptxMode()){
   }
 }
 
-/*PPT-BEGIN*/
 // ---------- PowerPoint as it looks: each slide drawn on a canvas (sizes in points), then shown like a PDF page ----------
 const PPT = (() => {
 const xk = (n, ln) => n ? [...n.children].filter(c => c.localName === ln) : [];
@@ -2902,7 +2901,6 @@ async function ppChart(X, ctx, node, xfm, m, set){
 }
 return {deck: ppDeck, render: ppRender};
 })();
-/*PPT-END*/
 
 // ---------- PDF: the real page, background graphics removed, opened up where you add notes ----------
 async function readPdf(buf, name){
