@@ -232,7 +232,7 @@ main.fit > .sidepage{width:var(--sidew)}
 .tl{position:absolute;white-space:pre;line-height:1;transform-origin:0 0;color:transparent;font-family:Arial,Helvetica,sans-serif;cursor:text}
 .tl::selection{background:rgba(39,71,201,.3);color:transparent}
 .gapline{position:absolute;left:0;right:0;border-top:2px dashed var(--accent);pointer-events:none;z-index:2}
-.gappill{position:absolute;left:12px;transform:translateY(-50%);z-index:3;font:600 12.5px var(--ui);height:28px;padding:0 13px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);user-select:none;-webkit-user-select:none} /* taste-skill-ignore: a floating button on the page */
+.gappill{position:absolute;left:12px;transform:translateY(-50%);z-index:3;font:600 12px var(--ui);height:22px;padding:0 11px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);user-select:none;-webkit-user-select:none} /* taste-skill-ignore: a floating button on the page */
 
 /* ================= your notes ================= */
 .mine{outline:none;border-radius:3px;font-family:Caveat,cursive;font-size:24px;color:#1f4fd1;cursor:text;line-height:1.3}
@@ -519,7 +519,7 @@ select{font-size:16px}
 .sheet{border:1.5px solid var(--pencil)}
 .sheet > .slide{border:none}
 .file-head{font:700 30px/1.15 var(--display);letter-spacing:-.01em}
-.gappill{font:16px var(--ui);height:30px;border:1.5px solid var(--pencil);border-radius:var(--wob-pill);box-shadow:2px 2px 0 var(--pencil)} /* taste-skill-ignore: a floating button on the page */
+.gappill{font:15px/1 var(--ui);height:24px;border:1.5px solid var(--pencil);border-radius:var(--wob-pill);box-shadow:2px 2px 0 var(--pencil)} /* taste-skill-ignore: a floating button on the page */
 .kinds span{border-radius:var(--wob)}
 .steps b{font:700 17px var(--display)}
 .steps li::before{border:1.5px solid var(--pencil);border-radius:var(--wob)}
@@ -3497,12 +3497,23 @@ let pending = null, ins = null;          // ins: the add menu, while it is open
 function showGap(strip, clientY, clientX){
   const y = gapY(strip, clientY), y0 = +strip.dataset.y0, y1 = +strip.dataset.y1;
   const pct = ((y - y0) / (y1 - y0) * 100).toFixed(3) + '%';
-  gapLine.style.top = pct; gapPill.style.top = `clamp(14px, ${pct}, calc(100% - 14px))`;
+  gapLine.style.top = pct; gapPill.style.top = `clamp(12px, ${pct}, calc(100% - 12px))`;
   if (gapLine.parentElement !== strip) strip.append(gapLine, gapPill);
   pending = {strip, y, x: clientX ?? pending?.x ?? null};
 }
 function hideGap(){ if (ins?.mode === 'gap') closeInsMenu(); gapLine.remove(); gapPill.remove(); pending = null; }
-gapPill.addEventListener('mousedown', e => e.preventDefault());
+// pressing on the button and dragging selects the words under it, as if it weren't there
+let pillPress = false;
+gapPill.addEventListener('mousedown', e => {
+  e.preventDefault(); if (e.button) return;
+  const x0 = e.clientX, y0 = e.clientY; let from = null; pillPress = true;
+  const move = m => {
+    if (!from) { if (Math.hypot(m.clientX - x0, m.clientY - y0) < 4) return; hideGap(); from = caretAt(x0, y0); if (!from) return done(); }
+    const to = caretAt(m.clientX, m.clientY); if (to) try { getSelection().setBaseAndExtent(from.node, from.offset, to.node, to.offset); } catch {}
+  };
+  const done = () => { pillPress = false; removeEventListener('mousemove', move, true); removeEventListener('mouseup', done, true); };
+  addEventListener('mousemove', move, true); addEventListener('mouseup', done, true);
+});
 // a click adds a note at once; right-click (or press and hold on a touch screen) opens the menu for a sticky note or an equation
 let pillHeld = false;
 gapPill.addEventListener('click', e => {
@@ -3515,7 +3526,9 @@ gapPill.addEventListener('click', e => {
 });
 let moveQueued = false;
 const gapHover = e => {
-  if (moveQueued || e.buttons || ins?.mode === 'gap') return; moveQueued = true;
+  if (ins?.mode === 'gap') return;
+  if (e.buttons) { if (pending && !pillPress) hideGap(); return; }       // selecting words (or moving something): out of the way at once
+  if (moveQueued) return; moveQueued = true;
   requestAnimationFrame(() => {
     moveQueued = false;
     if (e.target.closest('.gappill')) return;
