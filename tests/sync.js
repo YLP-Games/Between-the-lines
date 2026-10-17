@@ -25,18 +25,20 @@ async function device(name, size){
     const upload = () => { const ct = rq.headers()['content-type'], edge = ct.split('boundary=')[1], raw = rq.postDataBuffer().toString('utf8'); const parts = raw.split('--' + edge); const meta = JSON.parse(parts[1].split('\r\n\r\n')[1].trim()); const body = parts[2].slice(parts[2].indexOf('\r\n\r\n') + 4).replace(/\r\n$/, ''); return {meta, body}; };
     if (/\/upload\/drive\/v3\/files\?/.test(url) && method === 'POST') {
       const {meta, body} = upload(); const id = 'nb' + (++drive.n);
-      drive.files[id] = {id, name: meta.name, body, version: 1, modifiedTime: new Date().toISOString()};
-      return json(route, {id, name: meta.name, parents: ['root'], version: '1'});
+      drive.files[id] = {id, name: meta.name, body, version: 1, rev: 1, modifiedTime: new Date().toISOString()};
+      setTimeout(() => drive.files[id].version++, 300);          // like the real Drive: it works on the file after an upload, and its version goes up again
+      return json(route, {id, name: meta.name, parents: ['root'], version: '1', headRevisionId: 'rev1'});
     }
     if ((m = url.match(/\/upload\/drive\/v3\/files\/([^/?]+)\?/)) && method === 'PATCH') {
       const f = drive.files[m[1]]; if (!f) return json(route, {error: {message: 'File not found'}}, 404);
-      f.body = upload().body; f.version++; f.modifiedTime = new Date().toISOString(); f.by = name;
-      return json(route, {id: f.id, name: f.name, parents: ['root'], version: String(f.version)});
+      f.body = upload().body; f.version++; f.rev++; f.modifiedTime = new Date().toISOString(); f.by = name;
+      setTimeout(() => f.version++, 300);
+      return json(route, {id: f.id, name: f.name, parents: ['root'], version: String(f.version), headRevisionId: 'rev' + f.rev});
     }
     if ((m = url.match(/\/drive\/v3\/files\/([^/?]+)\?alt=media/))) return route.fulfill({status: 200, contentType: 'text/html', headers: CORS, body: drive.files[m[1]].body});
     if ((m = url.match(/\/drive\/v3\/files\/([^/?]+)\?fields=/))) {
       const f = drive.files[m[1]]; if (!f) return json(route, {error: {message: 'File not found'}}, 404);
-      return json(route, {version: String(f.version), trashed: !!f.trashed, parents: ['root'], capabilities: {canEdit: true}});
+      return json(route, {version: String(f.version), headRevisionId: 'rev' + f.rev, trashed: !!f.trashed, parents: ['root'], capabilities: {canEdit: true}});
     }
     if (/\/drive\/v3\/files\?q=/.test(url)) return json(route, {files: Object.values(drive.files).filter(f => !f.trashed).map(f => ({id: f.id, name: f.name, modifiedTime: f.modifiedTime}))});
     return json(route, {error: {message: 'unexpected ' + url}}, 400);
@@ -71,7 +73,7 @@ async function addNote(page, words){
   await waitState(lp, 'waiting', 3000);
   ok(patches('laptop') === 0, 'not straight away while you are still writing');
   await waitState(lp, 'synced', 15000);
-  ok(patches('laptop') === 1 && drive.files.nb1.body.includes('More from the laptop') && drive.files.nb1.version === 2, 'a few seconds later the change is in Drive, in one upload');
+  ok(patches('laptop') === 1 && drive.files.nb1.body.includes('More from the laptop') && drive.files.nb1.rev === 2, 'a few seconds later the change is in Drive, in one upload');
   await lp.waitForTimeout(7000);
   ok(patches('laptop') === 1, 'nothing changed, nothing uploaded');
   await lp.screenshot({path: path.join(__dirname, 'shots', 'sync-1-laptop.png'), clip: {x: 0, y: 0, width: 900, height: 60}});
@@ -90,7 +92,7 @@ async function addNote(page, words){
   await addNote(ip, 'Carried on on the iPad');
   await ip.waitForFunction(() => ['waiting', 'syncing'].includes(document.querySelector('#driveSync').dataset.s), null, {timeout: 5000});
   await waitState(ip, 'synced', 15000); await ip.waitForTimeout(300);
-  ok(patches('ipad') === 1 && drive.files.nb1.version === 3 && drive.files.nb1.body.includes('Carried on on the iPad'), 'the iPad’s writing goes to Drive by itself');
+  ok(patches('ipad') === 1 && drive.files.nb1.rev === 3 && drive.files.nb1.body.includes('Carried on on the iPad'), 'the iPad’s writing goes to Drive by itself');
   // picking it again doesn't make a second copy
   await ip.click('#sideDriveNbs').catch(async () => { await ip.evaluate(() => driveNotebooks()); });
   await ip.waitForSelector('.nbsrow'); ok(/On this device/.test(await ip.textContent('.nbsrow')), 'the list says which notebooks are already on this device');
@@ -124,6 +126,32 @@ async function addNote(page, words){
   ok(both === 2, 'Keep both: this version becomes a separate notebook…');
   ok(!(await text(lp)).includes('Laptop edit at the same time') && await state(lp) === 'synced', '…and this one has Drive’s version, in sync again');
   ok(await lp.evaluate(async () => { const c = docs.find(d => d.id !== curId && !d.trashed); return !c.driveNb && (await get('doc:' + c.id)).includes('Laptop edit at the same time'); }), 'the kept copy has the laptop edit and is not tied to the Drive file');
+
+  // ---- "This version" settles it for good: no false "Changed in two places" afterwards ----
+  await addNote(ip, 'iPad edit again');
+  await ip.waitForFunction(() => ['waiting', 'syncing'].includes(document.querySelector('#driveSync').dataset.s), null, {timeout: 5000});
+  await waitState(ip, 'synced', 15000);
+  await lp.evaluate(() => { sync.checked = Date.now(); });
+  await addNote(lp, 'Laptop keeps this');
+  await waitState(lp, 'changed', 15000);
+  await lp.click('#driveSync'); await lp.waitForSelector('.syncpop:not([hidden])');
+  await lp.click('.syncpop [data-k=mine]');
+  await lp.waitForFunction(() => document.querySelector('#driveSync').dataset.s === 'synced', null, {timeout: 15000});
+  ok(drive.files.nb1.body.includes('Laptop keeps this'), 'This version: what you see here is saved over the copy in Drive');
+  // keep writing and let the background checks run several times; Drive bumps its own version after each upload
+  for (let i = 0; i < 3; i++) {
+    await addNote(lp, 'Still typing ' + i);
+    await lp.waitForFunction(() => ['waiting', 'syncing'].includes(document.querySelector('#driveSync').dataset.s), null, {timeout: 5000});
+    await lp.evaluate(() => { sync.checked = 0; document.dispatchEvent(new Event('visibilitychange')); });      // a check while the upload is waiting or running
+    await waitState(lp, 'synced', 15000); await lp.waitForTimeout(600);
+    await lp.evaluate(() => { sync.checked = 0; document.dispatchEvent(new Event('visibilitychange')); }); await lp.waitForTimeout(600);
+    ok(await state(lp) === 'synced', `after "This version", writing and checking (${i + 1}) stays in sync, no false conflict`);
+  }
+  ok(drive.files.nb1.body.includes('Still typing 2'), 'and every change still reaches Drive');
+  // a genuine change on the other device is still caught
+  await ip.evaluate(() => { sync.checked = 0; document.dispatchEvent(new Event('visibilitychange')); });
+  await ip.waitForFunction(() => document.querySelector('main').innerText.includes('Still typing 2'), null, {timeout: 15000});
+  ok(true, 'the iPad picks up the laptop\u2019s version');
 
   // ---- offline, and sign-in running out ----
   await I.context.setOffline(true); await ip.evaluate(() => dispatchEvent(new Event('offline')));

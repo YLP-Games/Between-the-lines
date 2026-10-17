@@ -11,8 +11,10 @@ const ALL = ['assets', 'e2e', 'nb', 'menu', 'hover', 'tips', 'anno', 'trash', 'c
 // these use Chrome DevTools features (touch/pen emulation, CPU throttling) that only Chromium has
 const CHROMIUM_ONLY = new Set(['blankshape', 'guide', 'guides', 'hover', 'table', 'tablet', 'sideink', 'organise']);
 const pick = args.filter(a => !a.startsWith('--'));
-const list = (pick.length ? pick : ALL).filter(t => browser === 'chromium' || pick.length || !CHROMIUM_ONLY.has(t));
+let list = (pick.length ? pick : ALL).filter(t => browser === 'chromium' || pick.length || !CHROMIUM_ONLY.has(t));
 const rows = [];
+// several tests read nbfile.html, a notebook file that assets.js downloads: make it first if it isn't there
+if (!require('fs').existsSync(path.join(__dirname, 'nbfile.html')) && !list.includes('assets')) list.unshift('assets');
 for (const t of list) {
   const r = spawnSync(process.execPath, [path.join(__dirname, t + '.js')], {encoding: 'utf8', env: {...process.env, BROWSER: browser}, timeout: 400000});
   const out = (r.stdout || '') + (r.stderr || ''), oks = (out.match(/^ok /gm) || []).length;

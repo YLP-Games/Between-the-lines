@@ -7984,10 +7984,15 @@ async function driveDownload(d){
 async function driveParent(id){
   try { return (await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?fields=parents&supportsAllDrives=true`)).json()).parents?.[0] || ''; } catch { return ''; }
 }
+// which content a Drive file has: its head revision (a new one only when the content changes), else its checksum.
+// (Drive's "version" also goes up when Drive itself works on the file after an upload, which looked like someone else's change.)
+const DRIVE_REV = 'headRevisionId,md5Checksum';
+const driveRev = j => j?.headRevisionId ? 'r:' + j.headRevisionId : j?.md5Checksum ? 'm:' + j.md5Checksum : '';
+const driveRevKnown = v => /^[rm]:/.test(v || '');           // one remembered the old way (a plain version number) can't be compared
 // can this person change the file? (a notebook shared with them to view only can't be saved back over)
 async function driveCanEdit(id){
   drive.ver = '';
-  try { const j = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?fields=capabilities(canEdit),version&supportsAllDrives=true`)).json(); drive.ver = j.version || ''; return j.capabilities?.canEdit !== false; } catch { return true; }
+  try { const j = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(id)}?fields=capabilities(canEdit),${DRIVE_REV}&supportsAllDrives=true`)).json(); drive.ver = driveRev(j); return j.capabilities?.canEdit !== false; } catch { return true; }
 }
 async function driveOpen(){
   if (!driveSetUp()) return;
@@ -8039,7 +8044,18 @@ function driveSend(method, url, meta, blob, progress, again){
 }
 // kind: 'notebook' or 'pdf'. The first save makes a file (next to the source, if it came from Drive); after that the same file is updated.
 // A notebook you can't edit (shared with you to view only) is saved as a copy in your own Drive instead. Gives back {id, name, copy}.
-async function driveStore(kind, quiet, auto){
+// a save to the cloud holds the background checks off until it is done and its new revision is remembered
+async function syncHold(fn){
+  if (sync.busy) return fn();                   // already held (a save by syncNow)
+  sync.busy = true; clearTimeout(sync.timer); syncShow();
+  try { return await fn(); }
+  finally {
+    sync.busy = false; sync.checked = Date.now(); syncShow();
+    if (sync.again || curDoc()?.driveDirty) { sync.again = false; setTimeout(syncSoon); }      // changes made while it was saving go up next
+  }
+}
+function driveStore(kind, quiet, auto){ return kind === 'notebook' ? syncHold(() => driveStore0(kind, quiet, auto)) : driveStore0(kind, quiet, auto); }
+async function driveStore0(kind, quiet, auto){
   const key = kind === 'pdf' ? 'drivePdf' : 'driveNb';
   await flushSave();
   const gen = sync.gen;
@@ -8047,7 +8063,7 @@ async function driveStore(kind, quiet, auto){
   let last = -1;
   const progress = quiet || file.blob.size < 1.5e6 ? null : f => { const n = Math.round(f * 100); if (n !== last) { last = n; toast(`Uploading “${file.name}” to Google Drive: ${n}%`); } };
   if (!quiet) toast(progress ? `Uploading “${file.name}” to Google Drive…` : 'Saving to Google Drive…');
-  const fields = '&fields=id,name,parents,version&supportsAllDrives=true';
+  const fields = `&fields=id,name,parents,${DRIVE_REV}&supportsAllDrives=true`;
   const create = (meta, blob = file.blob) => driveSend('POST', `${DRIVE_UPLOAD}/files?uploadType=multipart${fields}`, {mimeType: blob.type, ...meta}, blob, progress);
   const copy = () => create({name: notebookName() + ' (my copy).html'});          // into your own Drive, not the shared folder
   let out, mine = false, from = '';
@@ -8065,7 +8081,7 @@ async function driveStore(kind, quiet, auto){
     doc[key] = out.id;
     if (mine) { delete doc.driveNbRO; doc.driveFolder = out.parents?.[0] || ''; }
     else if (!doc.driveFolder && out.parents?.[0]) doc.driveFolder = out.parents[0];
-    if (kind === 'notebook') { from = relink(doc, 'google'); doc.driveVer = out.version || ''; delete doc.driveStop; if (sync.gen === gen) delete doc.driveDirty; if (doc === curDoc()) syncShow(); }
+    if (kind === 'notebook') { from = relink(doc, 'google'); doc.driveVer = driveRev(out); delete doc.driveStop; if (sync.gen === gen) delete doc.driveDirty; if (doc === curDoc()) syncShow(); }
     putAll({docs});
   }
   return {id: out.id, name: out.name || file.name, copy: mine, from};
@@ -8089,7 +8105,8 @@ async function driveSave(kind){
 const CLOUD = {google: {
   key: 'google', name: 'Google Drive', short: 'Drive', account: 'Google', ico: 'drive', bin: 'bin', ver: 'driveVer', lock: 'You can no longer change this file in Google Drive.',
   hasLink: d => !!d.driveNb, linkOf: d => d.driveNb, tokenOk: driveTokenOk, quiet: async () => driveTokenOk(), token: driveToken, say: driveSay, setUp: driveSetUp,
-  async meta(d){ const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=version,trashed&supportsAllDrives=true`)).json(); return {ver: r.version, gone: !!r.trashed}; },
+  async meta(d){ const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=${DRIVE_REV},trashed&supportsAllDrives=true`)).json(); return {ver: driveRev(r), gone: !!r.trashed}; },
+  known: driveRevKnown,
   upload: d => driveStore('notebook', true, true),
   download: d => driveDownload({id: d.driveNb, name: d.name + '.html', mime: 'text/html'}),
   save: () => driveSave('notebook'),
@@ -8132,7 +8149,7 @@ async function syncNow(){
     if (await P.quiet()) {
       const r = await P.meta(d, true);
       if (r.gone) d.driveStop = 'gone';
-      else if (d[P.ver] && r.ver && String(r.ver) !== String(d[P.ver])) d.driveStop = 'changed';
+      else if (P.known(d[P.ver]) && r.ver && String(r.ver) !== String(d[P.ver])) d.driveStop = 'changed';
       else if (curDoc() === d) await P.upload(d);
     }
   } catch (err) {
@@ -8188,7 +8205,7 @@ async function syncCheck(){
     if (curDoc() !== d || sync.busy) return;
     if (r.gone) { d.driveStop = 'gone'; putAll({docs}); return syncShow(); }
     if (!r.ver || String(r.ver) === String(d[P.ver] || '')) return;
-    if (!d[P.ver]) { d[P.ver] = String(r.ver); putAll({docs}); return; }       // nothing to compare with yet
+    if (!P.known(d[P.ver])) { d[P.ver] = String(r.ver); putAll({docs}); return; }       // nothing to compare with yet
     if (d.driveDirty) { d.driveStop = 'changed'; putAll({docs}); return syncShow(); }
     await syncPull(d, r.ver);
     toast(`Updated with the latest changes from ${P.name}.`);
@@ -8699,7 +8716,7 @@ CLOUD.onedrive = {
   key: 'onedrive', name: 'OneDrive', short: 'OneDrive', account: 'Microsoft', ico: 'onedrive', bin: 'recycle bin', ver: 'odVer', lock: 'You can’t change this file in OneDrive.',
   hasLink: d => !!d.odNb, linkOf: d => d.odNb, setUp: odSetUp, token: odToken, say: odSay, quiet: odQuiet,
   tokenOk: () => odTokenOk() || od.silent !== false,          // a quiet renewal is still worth trying
-  meta: (d, quiet) => odMeta(d.odDrive, d.odNb, quiet),
+  meta: (d, quiet) => odMeta(d.odDrive, d.odNb, quiet), known: v => !!v,
   upload: d => odStore(true, true),
   download: d => odDownload({id: d.odNb, drive: d.odDrive, name: d.name + '.html'}, false, true),
   save: odSave,
@@ -8978,7 +8995,8 @@ async function odUpload(t, blob, progress, quiet){
 // The first save makes "<name> (notes).html" in the Between the Lines folder; after that the same file is updated.
 // A notebook you can't change (shared with you to view only) is saved as a copy in your own OneDrive instead. Gives back {id, drive, name, url, copy}.
 // auto: syncing by itself (no sign-in window, no new files or copies; it stops and says so instead)
-async function odStore(quiet, auto){
+function odStore(quiet, auto){ return syncHold(() => odStore0(quiet, auto)); }
+async function odStore0(quiet, auto){
   await flushSave();
   const gen = sync.gen;
   const doc = curDoc(), file = await notebookFile();

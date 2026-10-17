@@ -69,17 +69,17 @@ async function device(name, size){
     if (/\/drive\/v3\/about/.test(url)) return json(route, {user: {displayName: 'Ada', emailAddress: 'ada@example.com'}});
     const upload = () => { const ct = rq.headers()['content-type'], edge = ct.split('boundary=')[1], parts = rq.postDataBuffer().toString('utf8').split('--' + edge); return {meta: JSON.parse(parts[1].split('\r\n\r\n')[1].trim()), body: parts[2].slice(parts[2].indexOf('\r\n\r\n') + 4).replace(/\r\n$/, '')}; };
     if (/\/upload\/drive\/v3\/files\?/.test(url) && method === 'POST') {
-      const {meta, body} = upload(), id = 'g' + (++gdrive.n); gdrive.files[id] = {id, name: meta.name, body, version: 1};
-      return json(route, {id, name: meta.name, parents: ['root'], version: '1'});
+      const {meta, body} = upload(), id = 'g' + (++gdrive.n); gdrive.files[id] = {id, name: meta.name, body, version: 1, rev: 1};
+      return json(route, {id, name: meta.name, parents: ['root'], version: '1', headRevisionId: 'rev1'});
     }
     if ((m = url.match(/\/upload\/drive\/v3\/files\/([^/?]+)\?/)) && method === 'PATCH') {
       const f = gdrive.files[m[1]]; if (!f) return json(route, {error: {message: 'File not found'}}, 404);
-      f.body = upload().body; f.version++;
-      return json(route, {id: f.id, name: f.name, parents: ['root'], version: String(f.version)});
+      f.body = upload().body; f.version++; f.rev++;
+      return json(route, {id: f.id, name: f.name, parents: ['root'], version: String(f.version), headRevisionId: 'rev' + f.rev});
     }
     if ((m = url.match(/\/drive\/v3\/files\/([^/?]+)\?fields=/))) {
       const f = gdrive.files[m[1]]; if (!f) return json(route, {error: {message: 'File not found'}}, 404);
-      return json(route, {version: String(f.version), trashed: false, parents: ['root'], capabilities: {canEdit: true}});
+      return json(route, {version: String(f.version), headRevisionId: 'rev' + f.rev, trashed: false, parents: ['root'], capabilities: {canEdit: true}});
     }
     return json(route, {error: {message: 'unexpected ' + url}}, 400);
   });
