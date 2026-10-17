@@ -15,7 +15,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   ok((await page.title()).startsWith('Not saved · lecture') && await page.evaluate(() => decodeURIComponent(document.querySelector('#favicon').href).includes('#d93025')), 'save problem: "' + await page.title() + '" and a red dot');
   await page.evaluate(() => setSaveState('saved'));
   ok(await page.evaluate(() => !decodeURIComponent(document.querySelector('#favicon').href).includes('#d93025')), 'red dot goes away once saved');
-  await page.screenshot({path: '../fav/app.png', clip: {x: 0, y: 140, width: 260, height: 60}});
+  await page.screenshot({path: path.join(__dirname, 'shots', 'app.png'), clip: {x: 0, y: 140, width: 260, height: 60}});
   await browser.close();
   console.log(errors.length ? errors.join('\n') : 'no page errors');
 })().catch(e => { console.error(e.message); process.exit(1); });
