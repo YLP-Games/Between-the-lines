@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const OUT = path.join(__dirname, 'shots');
 fs.mkdirSync(OUT, {recursive: true});
-const TMP = fs.mkdtempSync(path.join(__dirname, '..', 'work', 'md-'));
+const TMP = fs.mkdtempSync(path.join(require('os').tmpdir(), 'md-'));
 const APP = process.env.APP || require('path').resolve(__dirname, '..', 'index.html');
 const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok  ' + m); };
 

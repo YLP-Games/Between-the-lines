@@ -1376,8 +1376,8 @@ try {
       </div><span class="cap">Text</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row">
-        <button class="btn" data-cmd="insertUnorderedList" aria-label="Bullet list" title="Bullet list"><svg class="i"><use href="#i-list"/></svg></button>
-        <button class="btn" data-cmd="insertOrderedList" aria-label="Numbered list" title="Numbered list"><svg class="i"><use href="#i-list-num"/></svg></button>
+        <button class="btn" data-cmd="insertUnorderedList" aria-label="Bullet list" title="Bullet list (or type - and a space at the start of a line)"><svg class="i"><use href="#i-list"/></svg></button>
+        <button class="btn" data-cmd="insertOrderedList" aria-label="Numbered list" title="Numbered list (or type 1. and a space at the start of a line)"><svg class="i"><use href="#i-list-num"/></svg></button>
         <button class="btn" data-cmd="outdent" aria-label="Decrease indent" title="Decrease indent (Shift+Tab)"><svg class="i"><use href="#i-outdent"/></svg></button>
         <button class="btn" data-cmd="indent" aria-label="Increase indent" title="Increase indent (Tab)"><svg class="i"><use href="#i-indent"/></svg></button>
         <select id="listStyle" aria-label="Bullet style" title="Bullet style for the list you are in (each sub-level has its own style)" style="margin-left:4px;width:90px">
@@ -2345,6 +2345,30 @@ main.addEventListener('keydown', e => {
   const sel = getSelection(), n = sel.anchorNode, inLi = n && (n.nodeType === 1 ? n : n.parentElement).closest('li') && note.contains(n);
   if (e.key === 'Tab' && (inLi || note.tagName === 'DIV')) { e.preventDefault(); document.execCommand('styleWithCSS', false, false); document.execCommand(e.shiftKey ? 'outdent' : 'indent'); saveSoon(); return; }
   if (e.key === 'Enter' && !inLi) { e.preventDefault(); document.execCommand('insertLineBreak'); }
+});
+// "1. ", "- " or "* " at the start of a line makes it a numbered or bulleted list; Back gives the typed characters back
+const INLINE_TAGS = /^(B|I|U|S|EM|STRONG|SPAN|FONT|MARK|SUB|SUP|CODE)$/;
+main.addEventListener('input', e => {
+  if (e.inputType !== 'insertText' || !/^[  ]$/.test(e.data || '') || e.isComposing || reading) return;
+  const note = e.target.closest?.('.mine'), sel = getSelection(); if (!note || note.tagName === 'SPAN' || !sel.isCollapsed) return;
+  const n = sel.anchorNode, o = sel.anchorOffset;
+  if (n?.nodeType !== 3 || !note.contains(n) || n.parentElement.closest('li, .jrnl, .wtable, .formula, a, .media')) return;
+  const m = /^(?:(\d{1,3})\.|[-*])[  ]$/.exec(n.data.slice(0, o)); if (!m) return;
+  const before = x => { let p = x.previousSibling; while (p?.nodeType === 3 && !p.data) p = p.previousSibling; return p; };
+  let at = n; while (at.parentNode !== note && !before(at) && INLINE_TAGS.test(at.parentNode.nodeName)) at = at.parentNode;
+  const p = before(at); if (p && !/^(BR|DIV|P|UL|OL|BLOCKQUOTE|H\d)$/.test(p.nodeName)) return;      // only at the start of a line
+  snapshot(currentDoc());
+  n.deleteData(0, o); sel.collapse(n, 0);
+  if (!n.data) {                  // an empty line needs its line break to hold the cursor, or the list would take the line above
+    let nx = n.nextSibling; while (nx?.nodeType === 3 && !nx.data) nx = nx.nextSibling;
+    if (nx?.nodeName !== 'BR') { nx = document.createElement('br'); n.after(nx); }
+    const par = n.parentNode; n.remove(); sel.collapse(par, [...par.childNodes].indexOf(nx));
+  }
+  document.execCommand('styleWithCSS', false, false);
+  document.execCommand(m[1] ? 'insertOrderedList' : 'insertUnorderedList');
+  const a = sel.anchorNode, list = a && (a.nodeType === 1 ? a : a.parentElement).closest('ol');
+  if (m[1] && list && note.contains(list) && +m[1] > 1) list.start = +m[1];
+  saveSoon();
 });
 main.addEventListener('input', e => { const m = e.target.closest?.('.mine'); if (m) { wrapMedia(m); spellSoon(m); } saveSoon(); });
 main.addEventListener('pointerdown', e => { const b = e.target.closest('.notebox'); if (b && !b.classList.contains('collapsed')) raise(b); }, true);
