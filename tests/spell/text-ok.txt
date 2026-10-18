@@ -6,13 +6,15 @@ Analysts' price targets were cut: Tesco was downgraded to underweight while Nasd
 Heteroskedasticity makes the OLS standard errors unreliable, although the coefficient estimates stay unbiased and consistent.
 The central bank's quantitative easing lifted asset prices; critics said it widened inequality and distorted the yield curve.
 A monopolist sets marginal revenue equal to marginal cost, which gives a deadweight loss compared with perfect competition.
-IFRS 9 requires an expected-credit-loss model, so provisions are recognised earlier than under the incurred-loss approach.
+gb: IFRS 9 requires an expected-credit-loss model, so provisions are recognised earlier than under the incurred-loss approach.
+us: IFRS 9 requires an expected-credit-loss model, so provisions are recognized earlier than under the incurred-loss approach.
 Capex of R2.5bn was funded by a rights issue; EBITDA margins widened by 120bps year-on-year to 18.4%.
 Keynes argued that aggregate demand, not supply, drives output in the short run, and that fiscal stimulus can close an output gap.
 The Phillips curve implies a trade-off between inflation and unemployment, but stagflation in the 1970s undermined it.
 Hedging with futures and swaptions reduces exposure to interest-rate risk; basis risk and counterparty risk remain.
 Mitochondria generate ATP through oxidative phosphorylation, and mutations in mtDNA cause several inherited disorders.
-In a double-blind randomised trial, neither the clinicians nor the patients know who received the placebo.
+gb: In a double-blind randomised trial, neither the clinicians nor the patients know who received the placebo.
+us: In a double-blind randomized trial, neither the clinicians nor the patients know who received the placebo.
 The p-value is the probability, under the null hypothesis, of a result at least as extreme as the one observed; it is not P(H0 | data).
 Newton's second law states F = ma; for a rotating body the analogue is torque equals moment of inertia times angular acceleration.
 Entropy never decreases in an isolated system, and the Carnot efficiency depends only on the two reservoir temperatures.
@@ -25,9 +27,11 @@ Milgram's obedience experiments showed that ordinary people comply with authorit
 Apartheid ended in 1994 when Mandela became president; load-shedding by Eskom remains a drag on growth.
 The Bildungsroman follows a protagonist's moral and psychological growth, as in Dickens's Great Expectations.
 A hash table gives O(1) average lookup, but collisions and rehashing mean the worst case is O(n).
-Don't forget that we've covered recursion, memoisation and dynamic programming; they'll be on the midterm.
+gb: Don't forget that we've covered recursion, memoisation and dynamic programming; they'll be on the midterm.
+us: Don't forget that we've covered recursion, memoization and dynamic programming; they'll be on the midterm.
 The TCP handshake is SYN, SYN-ACK, ACK; UDP has no handshake, so it's faster but unreliable.
-Backpropagation computes gradients layer by layer, and overfitting is reduced by regularisation, dropout and early stopping.
+gb: Backpropagation computes gradients layer by layer, and overfitting is reduced by regularisation, dropout and early stopping.
+us: Backpropagation computes gradients layer by layer, and overfitting is reduced by regularization, dropout and early stopping.
 Patients with atrial fibrillation are given anticoagulants such as warfarin to reduce the risk of stroke.
 Photosynthesis converts carbon dioxide and water into glucose and oxygen using light energy captured by chlorophyll.
 Email me at student123@wits.ac.za or see https://www.example.com/notes?week=3 and www.example.org for the slides.
