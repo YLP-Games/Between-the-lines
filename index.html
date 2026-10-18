@@ -236,7 +236,7 @@ main.fit > .sidepage{width:var(--sidew)}
 .pagecard > .strip:first-child{border-top-left-radius:inherit;border-top-right-radius:inherit}
 .pagecard > .strip:not(:has(~ .strip, ~ .notebox:not(.floating))){border-bottom-left-radius:inherit;border-bottom-right-radius:inherit}
 .strip{position:relative;overflow:hidden;width:100%;max-width:100%;background-image:var(--pg);background-size:100% auto;background-repeat:no-repeat;cursor:text;font-size:0;color:transparent;container-type:inline-size}
-.tl{position:absolute;white-space:pre;line-height:1;transform-origin:0 0;color:transparent;font-family:Arial,Helvetica,sans-serif;cursor:text}
+.tl{position:absolute;white-space:pre;line-height:1;transform-origin:0 0;color:transparent;background:transparent;font-family:Arial,Helvetica,sans-serif;cursor:text;forced-color-adjust:none} /* never painted: a high-contrast theme would otherwise show it as text on solid blocks over the page */
 .tl::selection{background:rgba(39,71,201,.3);color:transparent}
 .gapline{position:absolute;left:0;right:0;border-top:2px dashed var(--accent);pointer-events:none;z-index:2}
 .gappill{position:absolute;left:12px;transform:translateY(-50%);z-index:3;font:600 12px var(--ui);height:22px;padding:0 11px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);user-select:none;-webkit-user-select:none} /* taste-skill-ignore: a floating button on the page */
@@ -3723,11 +3723,14 @@ return {deck: ppDeck, render: ppRender};
 
 // ---------- PDF: the real page, background graphics removed, opened up where you add notes ----------
 async function readPdf(buf, name){
-  const pdf = await pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false}).promise;
+  // fonts a PDF leaves out (Symbol, Times…) and the character maps of Chinese, Japanese and Korean text come from the pdf.js package
+  const lib = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/';
+  const pdf = await pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false, cMapUrl: lib + 'cmaps/', cMapPacked: true, standardFontDataUrl: lib + 'standard_fonts/'}).promise;
   const OPS = pdfjsLib.OPS, mul = pdfjsLib.Util.transform, n = pdf.numPages;
 
-  // first look: pictures that sit in the same place on many pages are template artwork
-  const placed = [], count = {};
+  // first look: the same picture (as many pixels across and down) in the same place on many pages, at the edge of the page,
+  // is template artwork (a logo, a footer). A picture in the body of the page is content, even when it comes back slide after slide.
+  const placed = [], seen = {};
   for (let p = 1; p <= n; p++) {
     toast(`Reading ${name}: checking page ${p} of ${n}`);
     const page = await pdf.getPage(p), vp = page.getViewport({scale: 1}), ops = await page.getOperatorList();
@@ -3742,14 +3745,16 @@ async function readPdf(buf, name){
       else if (fn === OPS.paintImageXObject || fn === OPS.paintInlineImageXObject || fn === OPS.paintImageMaskXObject) {
         const pts = [[0,0],[1,0],[0,1],[1,1]].map(([x, y]) => vp.convertToViewportPoint(ctm[0]*x + ctm[2]*y + ctm[4], ctm[1]*x + ctm[3]*y + ctm[5]));
         const b = {l: Math.min(...pts.map(q => q[0])), r: Math.max(...pts.map(q => q[0])), t: Math.min(...pts.map(q => q[1])), b: Math.max(...pts.map(q => q[1]))};
-        keys.add(boxKey(b));
+        const px = fn === OPS.paintImageXObject ? a.slice(1, 3) : [a[0].width, a[0].height];
+        if (b.r < vp.width * 0.2 || b.l > vp.width * 0.8 || b.b < vp.height * 0.2 || b.t > vp.height * 0.8) keys.add(boxKey(b) + ',' + px.join('x'));
       }
     }
-    keys.forEach(k => count[k] = (count[k] || 0) + 1);
+    keys.forEach(k => (seen[k] ||= []).push(p));
     placed.push(keys);
   }
+  // on many pages, and not only on a run of slides in a row (a calculation built up step by step) unless that is half the document
   const limit = n >= 3 ? Math.max(2, Math.ceil(n * 0.3)) : Infinity;
-  const repeated = Object.keys(count).filter(k => count[k] >= limit).map(k => k.split(',').map(Number));
+  const template = k => { const s = seen[k]; return s.length >= limit && (s.length >= n / 2 || s[s.length - 1] - s[0] >= s.length); };
 
   for (let p = 1; p <= n; p++) {
     toast(`Reading ${name}: page ${p} of ${n}`);
@@ -3758,7 +3763,7 @@ async function readPdf(buf, name){
     const cv = document.createElement('canvas'); cv.width = v.width; cv.height = v.height;
     const ctx = cv.getContext('2d', {willReadFrequently: true});
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
-    skipBackgrounds(ctx, S, W, H, repeated);
+    skipBackgrounds(ctx, S, W, H, [...placed[p - 1]].filter(template).map(k => k.split(',').slice(0, 4).map(Number)));
     await page.render({canvasContext: ctx, viewport: v, background: 'rgba(0,0,0,0)'}).promise;
     // page colour = the most common colour
     let px = ctx.getImageData(0, 0, cv.width, cv.height).data;
@@ -3831,12 +3836,14 @@ function skipBackgrounds(ctx, S, W, H, repeated){
     return {l: Math.min(...q.map(a => a[0])), r: Math.max(...q.map(a => a[0])), t: Math.min(...q.map(a => a[1])), b: Math.max(...q.map(a => a[1]))}; };
   const isRepeat = b => repeated.some(r => Math.abs(r[0] - b.l) < 6 && Math.abs(r[1] - b.t) < 6 && Math.abs(r[2] - b.r) < 6 && Math.abs(r[3] - b.b) < 6);
   const drawImage = ctx.drawImage.bind(ctx);
+  // pdf.js draws a transparency group, or drawing under a soft mask, on a canvas of its own and brings it back whole at 0,0:
+  // that holds the page itself, text and all, so it is only left out when it is a template picture
   ctx.drawImage = function(img, ...a){
     try {
       let dx, dy, dw, dh;
       if (a.length >= 8) [dx, dy, dw, dh] = a.slice(4, 8); else if (a.length >= 4) [dx, dy, dw, dh] = a; else { dx = a[0]; dy = a[1]; dw = img.width; dh = img.height; }
-      const b = devBox([[dx, dy], [dx + dw, dy], [dx, dy + dh], [dx + dw, dy + dh]]);
-      if (isBackground(b.l, b.t, b.r, b.b, W, H) || isRepeat(b)) return;
+      const b = devBox([[dx, dy], [dx + dw, dy], [dx, dy + dh], [dx + dw, dy + dh]]), layer = a.length < 3 && !dx && !dy;
+      if ((!layer && isBackground(b.l, b.t, b.r, b.b, W, H)) || isRepeat(b)) return;
     } catch {}
     return drawImage(img, ...a);
   };
@@ -3845,6 +3852,7 @@ function skipBackgrounds(ctx, S, W, H, repeated){
   const grow = (x, y) => { const b = devBox([[x, y]]); pb = pb ? {l: Math.min(pb.l, b.l), r: Math.max(pb.r, b.r), t: Math.min(pb.t, b.t), b: Math.max(pb.b, b.b)} : b; };
   for (const fnName of ['moveTo', 'lineTo']) { const f = ctx[fnName].bind(ctx); ctx[fnName] = (x, y) => { grow(x, y); return f(x, y); }; }
   const bez = ctx.bezierCurveTo.bind(ctx); ctx.bezierCurveTo = (a, b, c, d, x, y) => { grow(x, y); return bez(a, b, c, d, x, y); };
+  const quad = ctx.quadraticCurveTo.bind(ctx); ctx.quadraticCurveTo = (a, b, x, y) => { grow(a, b); grow(x, y); return quad(a, b, x, y); };     // (letters drawn as outlines)
   const rect = ctx.rect.bind(ctx); ctx.rect = (x, y, w, h) => { grow(x, y); grow(x + w, y + h); return rect(x, y, w, h); };
   const begin = ctx.beginPath.bind(ctx); ctx.beginPath = () => { pb = null; return begin(); };
   const fill = ctx.fill.bind(ctx);

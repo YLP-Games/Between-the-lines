@@ -9,6 +9,7 @@ const NM = path.join(__dirname, 'node_modules');
 const MAP = [
   [/pdf\.js\/3\.11\.174\/pdf\.min\.js(\?.*)?$/, 'pdfjs-dist/build/pdf.min.js'],
   [/pdf\.js\/3\.11\.174\/pdf\.worker\.min\.js(\?.*)?$/, 'pdfjs-dist/build/pdf.worker.min.js'],
+  [/pdfjs-dist@3\.11\.174\/((cmaps|standard_fonts)\/[\w.-]+)$/, m => 'pdfjs-dist/' + m[1]],
   [/jszip\/3\.10\.1\/jszip\.min\.js(\?.*)?$/, 'jszip/dist/jszip.min.js'],
   [/KaTeX\/0\.16\.9\/katex\.min\.js(\?.*)?$/, 'katex/dist/katex.min.js'],
   [/KaTeX\/0\.16\.9\/katex\.min\.css$/, 'katex/dist/katex.min.css'],
