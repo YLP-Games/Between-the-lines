@@ -262,6 +262,7 @@ div.mine:empty::before{content:"Type, or press / for options"}
 .mine :is(ul,ol) :is(ul,ol) ol{list-style-type:lower-roman}
 .mine :is(ul,ol) :is(ul,ol) :is(ul,ol) ol{list-style-type:decimal}
 .mine li{display:list-item}
+.mine li::marker{color:var(--mkc);font-size:var(--mks);font-family:var(--mkf)}       /* set by markLists: a bullet looks like the words after it */
 .mine blockquote{margin:0 0 0 var(--ind,1.4em)!important;padding:0!important;border:none!important}
 /* a note box with handles, like a text box in Word */
 .notebox{position:relative;display:flex;flex-direction:column;width:100%;max-width:100%;margin:.2em 0 .5em;box-sizing:border-box}
@@ -811,21 +812,86 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
 /* the ink sits over the page picture and under the invisible text, so words can still be selected */
 .ink{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden}
 .ink .hl{opacity:.35;mix-blend-mode:multiply}
+.ink .pc{opacity:.9}
 .ink .mk{opacity:.45;mix-blend-mode:multiply}
+.inkdefs{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
 body.drawing :is(.strip,.sidepage),body.drawing .tl{cursor:crosshair;user-select:none;-webkit-user-select:none}
 body.drawing :is(.strip,.sidepage){touch-action:none}
 body.penning{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 body.drawing.erasing :is(.strip,.sidepage),body.drawing.erasing .tl{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%23fff' stroke-width='3'/%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%23222' stroke-width='1.5'/%3E%3C/svg%3E") 12 12,crosshair}
 body.drawing .gappill,body.drawing .gapline{display:none}
-body.drawing .toast{bottom:calc(var(--status-h) + 74px + env(safe-area-inset-bottom,0px) + var(--kb,0px))}
+body.drawing.texting :is(.strip,.sidepage),body.drawing.texting .tl{cursor:text}
+body.drawing .toast{bottom:calc(var(--status-h) + var(--dbh,74px) + env(safe-area-inset-bottom,0px) + var(--kb,0px))}
 body.on-mark .strip,body.on-mark .tl{cursor:pointer}
-.drawbar{z-index:66;left:50%;bottom:calc(var(--status-h) + 16px + env(safe-area-inset-bottom,0px) + var(--kb,0px));transform:translateX(-50%);display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 12px;padding:8px 10px 8px 12px;border-radius:12px;font:15px var(--ui);max-width:calc(100vw - 24px);box-sizing:border-box}
-.drawbar .seg .btn{gap:5px;padding:0 10px}
-.drawbar .seg .btn .i{width:17px;height:17px}
-.dcols,.dwids{display:flex;align-items:center;gap:1px}
-.drawbar .sw:disabled,.drawbar .dw:disabled{opacity:.3;cursor:default}
-.drawbar .dw{min-width:34px;padding:0}
-.drawbar .dw span{display:block;width:18px;height:var(--t);border-radius:99px;background:currentColor}
+/* the drawing tools: a dark see-through pill above the status bar (under menus and pop-ups), the same in light and dark themes */
+.pop.drawbar{z-index:15;left:50%;bottom:calc(var(--status-h) + 12px + env(safe-area-inset-bottom,0px) + var(--kb,0px));transform:translateX(-50%);display:flex;flex-direction:column;align-items:stretch;gap:4px;width:max-content;max-width:calc(100vw - 16px);padding:5px 8px;box-sizing:border-box;border:1px solid rgba(255,255,255,.14);border-radius:24px;background:rgba(30,30,36,.8);-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:0 12px 32px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.22);color:#f3f3f6;font:15px var(--ui);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none} /* taste-skill-ignore: the drawing tools float over the page */
+.drawbar [hidden]{display:none!important}
+.drow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:2px 4px;max-width:100%}
+.drow.dset,.drow.dfavs{gap:4px 8px;padding-top:4px;border-top:1px solid rgba(255,255,255,.12)}
+.drawbar .btn{height:36px;min-width:36px;padding:0 10px;gap:6px;border:0;border-radius:18px;background:transparent;color:inherit;font-size:15px}
+.drawbar .btn:hover{background:rgba(255,255,255,.12)}
+.drawbar .btn[aria-pressed="true"]{background:rgba(255,255,255,.24);color:#fff}
+.drawbar .btn .i{width:18px;height:18px}
+.drawbar .dt{position:relative}
+.drawbar .dt[data-tool]::after{content:"";position:absolute;left:50%;bottom:3px;width:14px;height:3px;margin-left:-7px;border-radius:2px;background:var(--tc,transparent);box-shadow:0 0 0 1px rgba(255,255,255,.25)} /* taste-skill-ignore: the colour each tool has */
+.drawbar .dt[data-tool="er"]::after{display:none}
+.drawbar .btn.primary{background:#7c3aed;color:#fff;padding:0 15px;font-weight:600}
+.drawbar .btn.primary:hover{background:#8b5cf6}
+.dsep{width:1px;height:22px;margin:0 2px;background:rgba(255,255,255,.2)}
+.dsize{display:flex;align-items:center;gap:8px}
+.drawbar input[type=range]{-webkit-appearance:none;appearance:none;width:130px;height:28px;margin:0;background:transparent;cursor:pointer;--pct:50%}
+.drawbar input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(to right,#fff var(--pct),rgba(255,255,255,.25) var(--pct))}
+.drawbar input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-7px;border:0;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.45)} /* taste-skill-ignore: the slider's knob */
+.drawbar input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:rgba(255,255,255,.25)}
+.drawbar input[type=range]::-moz-range-progress{height:4px;border-radius:2px;background:#fff}
+.drawbar input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.45)} /* taste-skill-ignore: the slider's knob */
+.dsize output{min-width:48px;font-variant-numeric:tabular-nums;text-align:right}
+.dprev{flex:none;display:flex;align-items:center;justify-content:center;width:30px;height:30px}
+.dprev i{display:block;border-radius:50%;background:var(--tc,#fff);box-shadow:0 0 0 1px rgba(255,255,255,.35)} /* taste-skill-ignore: the size it draws */
+.dcols{display:flex;align-items:center;gap:1px}
+.drawbar .sw::before{box-shadow:0 0 0 1.5px rgba(255,255,255,.4)} /* taste-skill-ignore: a ring so dark colours show on the dark bar */
+.drawbar .sw[aria-pressed="true"]::before{box-shadow:0 0 0 2px #1e1e24,0 0 0 4px #fff} /* taste-skill-ignore: a ring marking the colour picked */
+.drawbar .sw:disabled{opacity:.3;cursor:default}
+.drawbar input[type=color]{width:28px;height:28px;margin-left:3px;border:1.5px solid rgba(255,255,255,.45);border-radius:50%;overflow:hidden}
+.drawbar input[type=color]::-webkit-color-swatch-wrapper{padding:2px}
+.drawbar input[type=color]::-webkit-color-swatch{border:0;border-radius:50%}
+.drawbar input[type=color]::-moz-color-swatch{border:0;border-radius:50%}
+.drawbar input[type=color]:not(.on)::-webkit-color-swatch{background:conic-gradient(#e53935,#fdd835,#43a047,#1e88e5,#8e24aa,#e53935)!important}
+.drawbar input[type=color]:not(.on)::-moz-color-swatch{background:conic-gradient(#e53935,#fdd835,#43a047,#1e88e5,#8e24aa,#e53935)!important}
+.drawbar input[type=color].on{border-color:#fff;box-shadow:0 0 0 2px #1e1e24,0 0 0 4px #fff} /* taste-skill-ignore: a ring marking the colour picked */
+.drawbar select{height:32px;max-width:150px;border:1px solid rgba(255,255,255,.28);border-radius:16px;padding:0 10px;background:rgba(255,255,255,.1);color:#f3f3f6;font-size:15px}
+.drawbar select option{background:#26262c;color:#f3f3f6}
+.dmode{display:flex;gap:2px;padding:2px;border-radius:20px;background:rgba(255,255,255,.08)}
+.drawbar .dmode .btn{height:32px;font-size:14px}
+.drawbar .dfavadd .i{width:17px;height:17px}
+.drawbar .dfav{position:relative;width:46px;height:34px;padding:0;border-radius:12px;background:#f4f1e8;color:#1b2330;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)} /* taste-skill-ignore: a favourite is a little piece of paper */
+.drawbar .dfav:hover{background:#fffdf6}
+.drawbar .dfav[aria-pressed="true"]{background:#f4f1e8;box-shadow:0 0 0 2px #1e1e24,0 0 0 4px #c4b5fd} /* taste-skill-ignore: a ring marking the favourite in use */
+.dfav svg{width:34px;height:22px;overflow:visible}
+.dfav .dfa{font-size:19px;line-height:1}
+.dfx{position:absolute;right:-6px;top:-6px;display:none;width:18px;height:18px;border-radius:50%;background:#e5484d;color:#fff;font:700 13px/18px var(--ui);text-align:center}
+@media (hover:hover){.dfav:hover .dfx{display:block}}
+.dfav.del{background:#e5484d!important}
+.dfav.del > :not(.dfx){visibility:hidden}
+.dfav.del .dfx{display:block;inset:0;width:auto;height:auto;border-radius:12px;background:none;font-size:20px;line-height:34px}
+/* folded away: a round purple button with the pencil, bottom right (drawing stays on) */
+.drawfab{position:fixed;z-index:15;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(var(--status-h) + 14px + env(safe-area-inset-bottom,0px) + var(--kb,0px));display:flex;align-items:center;justify-content:center;width:52px;height:52px;padding:0;border:0;border-radius:50%;background:#7c3aed;color:#fff;cursor:pointer;box-shadow:0 8px 22px rgba(124,58,237,.42),0 2px 6px rgba(0,0,0,.25)} /* taste-skill-ignore: a floating button */
+.drawfab:hover{background:#8b5cf6}
+.drawfab[hidden]{display:none}
+.drawfab .i{width:24px;height:24px;stroke-width:2}
+.drawfab::after{content:"";position:absolute;right:4px;bottom:4px;width:12px;height:12px;border-radius:50%;background:var(--tc,transparent);box-shadow:0 0 0 2px #7c3aed}
+.erring{position:fixed;left:0;top:0;z-index:14;box-sizing:border-box;border-radius:50%;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.55),inset 0 0 0 1px rgba(0,0,0,.55);transform:translate(-50%,-50%);pointer-events:none} /* taste-skill-ignore: the eraser's outline */
+.erring[hidden]{display:none}
+@media (pointer:coarse){
+  .drawbar .btn,.drawbar .dmode .btn{height:44px;min-width:44px}
+  .drawbar .dfav{width:54px;height:44px}
+  .drawbar input[type=range]{height:44px}
+  .drawbar select{height:44px;font-size:16px}
+  .drow.dtools{gap:2px}
+  .drawbar input[type=color]{width:40px;height:40px}
+  .drawfab{width:56px;height:56px}
+}
+@media (max-width:640px){.drawbar input[type=range]{width:110px}}
 /* selecting words on a page: the bar with highlight colours and Comment */
 .annobar{z-index:52;display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:12px;font:15px var(--ui);box-sizing:border-box;max-width:calc(100vw - 16px)}
 .hdot{flex:none;width:26px;height:26px;padding:0;border-radius:50%;border:1.5px solid var(--pencil);background:var(--c);cursor:pointer}
@@ -1596,6 +1662,8 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
 <symbol id="i-sticky" viewBox="0 0 24 24"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/></symbol>
 <symbol id="i-pen-line" viewBox="0 0 24 24"><path d="M13 21h8"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></symbol>
 <symbol id="i-highlighter" viewBox="0 0 24 24"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></symbol>
+<symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></symbol>
+<symbol id="i-type" viewBox="0 0 24 24"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></symbol>
 <symbol id="i-comment" viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/></symbol>
 <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
 <symbol id="i-reopen" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
@@ -1967,7 +2035,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
         <li>On a PDF page, point at a spot and press <b>+ Add here</b> to add a note there (the page opens up between the lines). <b>Right-click</b> the button (press and hold on a touch screen) to pick <b>Note</b>, <b>Sticky note</b> or <b>Equation</b>. On other pages, click where you want to write. In a note, type <b>/</b> for the same choices.</li>
         <li><b>Writing tools</b> (Insert tab): <b>Writing guide</b> puts a grid, ruled lines or dots over the pages so you can write straight with a pen or Apple Pencil. Drag it by its handle, pull its edges to resize it, and press Esc or × to take it away; it is never saved in your notebook. Its bar goes when you click elsewhere: point at the faint icon in its top left corner to bring it back, or point at the Insert button for its settings. <b>Table</b> opens a grid to choose the size, then drop it in a note: Tab moves between cells, drag the borders to size it, and right-click (or ⋯) for rows, columns and merging. <b>Journal entry</b> is an accounting entry, lined up in columns (also under + Add here and by typing /journal): click DR or CR to switch a row, Enter adds a row, Tab and the arrow keys move around like a table, and right-click (or the × when you point at it) deletes the entry.</li>
         <li><b>Sticky notes</b> sit on top of the page: drag one by its tape to move it, even onto another page. In the <b>Notes</b> panel, type a note and press <b>Add note</b>, or drag <b>Sticky</b> onto any page.</li>
-        <li><b>Draw</b> (Insert tab) writes or highlights on PDF pages with a pen, and the eraser rubs strokes out. Select words on any page to highlight them, or press <b>Comment</b>; open comments are listed in the <b>Notes</b> panel until you resolve them.</li>
+        <li><b>Draw</b> (Insert tab) writes, sketches or highlights on PDF pages and side pages with a pen, pencil or highlighter, <b>Text</b> types where you tap, and the eraser rubs out whole strokes or (<b>Partial</b>) only where it goes. Each tool keeps its own colour and thickness in millimetres; <b>Save as favourite</b> keeps one a tap away, and <b>Minimise</b> folds the tools into a small purple button while you draw. Select words on any page to highlight them, or press <b>Comment</b>; open comments are listed in the <b>Notes</b> panel until you resolve them.</li>
         <li>The <b>Home</b> tab styles your notes: the font, size and colour are used for new notes, or click in a note (or select words) to change just that.</li>
         <li>Point at a note (or tap it) and drag any edge or corner to resize it: the opposite side stays where it is. Drag its move handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
         <li>New notes line up with the note above or below them when they are close (<b>Box › Auto-align notes</b>). To tidy up, <b>Select all</b> on the Box tab, then use <b>Align</b>: left, centre or right, <b>Same width</b>, <b>Distribute</b> (floating and sticky notes, evenly spaced) or <b>Tidy page</b>. Each is one step you can take Back.</li>
@@ -1992,7 +2060,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <h3>On iPad and tablets</h3>
       <ul class="howto">
         <li><b>Add to Home Screen:</b> in Safari tap Share, then <b>Add to Home Screen</b>. Between the Lines then opens full screen like an app, and keeps working offline (<b>How to install</b> below shows the steps).</li>
-        <li><b>Apple Pencil</b> (and other pens) draws on a PDF page or a side page with the tool from <b>Draw</b>, even when Draw is off. Pressing harder makes the line thicker, and the Pencil’s eraser end (where it has one) rubs strokes out. Your fingers still scroll, tap and select, and a hand resting on the screen while you write is ignored. A quick tap with the Pencil works like a tap: it shows <b>+ Add here</b>. To draw with a finger, turn on <b>Draw</b>.</li>
+        <li><b>Apple Pencil</b> (and other pens) draws on a PDF page or a side page with the tool from <b>Draw</b>, even when Draw is off. Pressing harder makes the pen and pencil lines thicker, and the Pencil’s eraser end (where it has one) rubs strokes out. Your fingers still scroll, tap and select, and a hand resting on the screen while you write is ignored. A quick tap with the Pencil works like a tap: it shows <b>+ Add here</b>. To draw with a finger, turn on <b>Draw</b>.</li>
         <li><b>Scribble:</b> tap inside a note and write with the Pencil; iPadOS turns your handwriting into text (switch it on in Settings › Apple Pencil). The Pencil never draws on top of a note, so you can always write in one.</li>
         <li><b>Press and hold</b> does what right-click does: on <b>+ Add here</b> (sticky note or equation), on a pencil icon’s colours, on a misspelt word (suggestions) and on a notebook in the sidebar. Tap a note to show its handles for moving and resizing.</li>
         <li><b>Tap with two fingers</b> on the page to go <b>Back</b> one step (undo).</li>
@@ -2279,9 +2347,18 @@ function styleWhole(el, kind, value){
   el.style[prop] = kind === 'font' ? fontCss(value) : kind === 'size' ? value + 'px' : value;
   el.querySelectorAll('*').forEach(x => { x.style[prop] = ''; if (x.tagName === 'FONT') x.removeAttribute({font:'face',color:'color',size:'size'}[kind]); });
 }
+// a bullet or number takes the colour, size and font of the words right after it (colour a whole line green and its bullet goes green too)
+function markLists(note){
+  for (const li of note.querySelectorAll('li')) {
+    const t = document.createTreeWalker(li, NodeFilter.SHOW_TEXT, {acceptNode: x => x.data.trim() && x.parentElement.closest('li') === li ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP}).nextNode();
+    const el = t?.parentElement, a = el && el !== li ? getComputedStyle(el) : null, b = a && getComputedStyle(li);
+    for (const [v, p] of [['--mkc', 'color'], ['--mks', 'fontSize'], ['--mkf', 'fontFamily']]) { if (a && a[p] !== b[p]) li.style.setProperty(v, a[p]); else li.style.removeProperty(v); }
+    if (!li.getAttribute('style')) li.removeAttribute('style');
+  }
+}
 function apply(kind, value){
   if (multi.size) {               // several notes selected: style each of them
-    multi.forEach(b => { const m = b.querySelector(':scope > .mine'); if (m) styleWhole(m, kind, value); });
+    multi.forEach(b => { const m = b.querySelector(':scope > .mine'); if (m) { styleWhole(m, kind, value); markLists(m); } });
     showStyle({...noteStyle([...multi][0].querySelector('.mine')), [kind]: value}); saveSoon(); return;
   }
   if (!noteActive()) { active = null; style[kind] = value; showStyle(style); saveSoon(); return; }
@@ -2302,6 +2379,7 @@ function apply(kind, value){
       }
     }
   } else styleWhole(active, kind, value);
+  markLists(active);
   const s = getSelection(); savedRange = s.rangeCount ? s.getRangeAt(0).cloneRange() : null;
   showStyle({...noteStyle(active), [kind]: value});
   saveSoon();
@@ -2798,7 +2876,7 @@ main.addEventListener('input', e => {
   if (m[1] && list && note.contains(list) && +m[1] > 1) list.start = +m[1];
   saveSoon();
 });
-main.addEventListener('input', e => { const m = e.target.closest?.('.mine'); if (m) { wrapMedia(m); spellSoon(m); } saveSoon(); });
+main.addEventListener('input', e => { const m = e.target.closest?.('.mine'); if (m) { wrapMedia(m); spellSoon(m); if (m.querySelector('li')) markLists(m); } saveSoon(); });
 main.addEventListener('pointerdown', e => { const b = e.target.closest('.notebox'); if (b && !b.classList.contains('collapsed')) raise(b); }, true);
 // a finger can't point at a note: tapping one shows its handles until you tap somewhere else
 document.addEventListener('pointerdown', e => {
@@ -4791,14 +4869,14 @@ async function paintCard(card, scale, side){
   }
   // list bullets and numbers
   for (const li of qa('li')) {
-    const ls = getComputedStyle(li); if (ls.display !== 'list-item' || ls.listStyleType === 'none') continue;
+    const ls = getComputedStyle(li), ms = getComputedStyle(li, '::marker'); if (ls.display !== 'list-item' || ls.listStyleType === 'none') continue;
     const first = document.createTreeWalker(li, NodeFilter.SHOW_TEXT, {acceptNode: t => t.data.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP}).nextNode();
     const lr = li.getBoundingClientRect(); if (!lr.width) continue;
-    const fs = parseFloat(ls.fontSize) * zoomOf(li);
+    const fs = (parseFloat(ms.fontSize) || parseFloat(ls.fontSize)) * zoomOf(li);
     const mark = listMark(li, ls.listStyleType);
     let top = lr.top, h = fs * 1.2;
     if (first) { const rr = document.createRange(); rr.selectNodeContents(first); const fr = rr.getClientRects()[0]; if (fr) { top = fr.top; h = fr.height; } }
-    ctx.font = `${ls.fontStyle} ${ls.fontWeight} ${fs.toFixed(2)}px ${ls.fontFamily}`; ctx.fillStyle = ls.color;
+    ctx.font = `${ls.fontStyle} ${ls.fontWeight} ${fs.toFixed(2)}px ${ms.fontFamily || ls.fontFamily}`; ctx.fillStyle = ms.color || ls.color;
     const w = ctx.measureText(mark).width;
     ctx.fillText(mark, lr.left - ox - w - fs * 0.35, top - oy + h * 0.78);
   }
@@ -6727,10 +6805,39 @@ function inkOutline(p, w){
   return `M${L[0][0]} ${L[0][1]}${edge(L)}A${r[n - 1]} ${r[n - 1]} 0 0 0 ${R[0][0]} ${R[0][1]}${edge(R)}A${r[0]} ${r[0]} 0 0 0 ${L[0][0]} ${L[0][1]}z`;
 }
 // how a stroke is painted: a line of one width, or (with pressure) a filled shape whose width follows the pressure
-const inkAttrs = (k, p, c, w) => k === 'pen' && hasPr(p)
+const inkAttrs = (k, p, c, w) => (k === 'pen' || k === 'pc') && hasPr(p)
   ? {d: inkOutline(p, w), fill: inkHex(c), stroke: 'none'}
   : {d: inkPath(p), fill: 'none', stroke: inkHex(c), 'stroke-width': w, 'stroke-linecap': 'round', 'stroke-linejoin': 'round'};
 const penW = it => (inkNum(it.w) || 2) * (it.k === 'hl' ? 4 : 1);          // the highlighter is four times as wide
+const isStroke = it => it.k === 'pen' || it.k === 'pc' || it.k === 'hl';
+// the pencil's grain: speckles of its colour in a tiny tile that repeats (one pattern per colour, shared by every page; cheap to paint)
+const GRAIN = [[.6, .7, .6, 1], [2.4, .4, .45, .8], [4.1, 1.2, .55, 1], [1.4, 2.3, .5, .9], [3.1, 2.9, .65, 1], [4.4, 4.3, .45, .8], [1.8, 4.2, .55, 1], [.5, 3.6, .4, .7], [2.8, 1.7, .4, .7], [3.6, .5, .3, .6], [.3, 1.6, .3, .6], [2.4, 3.6, .3, .6], [4.6, 2.6, .35, .7]];
+let inkDefs = null;
+function grain(c){
+  c = inkHex(c).toLowerCase(); const id = 'pcg' + c.slice(1);
+  if (!inkDefs) { inkDefs = svgEl('svg', {class: 'inkdefs', width: 0, height: 0, 'aria-hidden': 'true'}, [svgEl('defs', {})]); document.body.append(inkDefs); }
+  if (!document.getElementById(id)) inkDefs.firstChild.append(svgEl('pattern', {id, width: 5, height: 5, patternUnits: 'userSpaceOnUse'},
+    [svgEl('rect', {width: 5, height: 5, fill: c, 'fill-opacity': .55}), ...GRAIN.map(([x, y, r, a]) => svgEl('circle', {cx: x, cy: y, r, fill: c, 'fill-opacity': a}))]));
+  return `url(#${id})`;
+}
+const grainTiles = {};
+function grainFill(ctx, c){                         // the same grain for the PDF: a tile 5 page units wide
+  c = inkHex(c).toLowerCase();
+  let t = grainTiles[c];
+  if (!t) {
+    t = grainTiles[c] = document.createElement('canvas'); t.width = t.height = 20;
+    const g = t.getContext('2d'); g.fillStyle = c; g.globalAlpha = .55; g.fillRect(0, 0, 20, 20);
+    for (const [x, y, r, a] of GRAIN) { g.globalAlpha = a; g.beginPath(); g.arc(x * 4, y * 4, r * 4, 0, 7); g.fill(); }
+  }
+  const p = ctx.createPattern(t, 'repeat'); p?.setTransform?.(new DOMMatrix([.25, 0, 0, .25, 0, 0]));
+  return p || c;
+}
+// a stroke's svg attributes: the pencil paints with its grain
+function strokeAttrs(k, p, c, w){
+  const a = inkAttrs(k, p, c, w);
+  if (k === 'pc') a[a.stroke === 'none' ? 'fill' : 'stroke'] = grain(c);
+  return a;
+}
 const rectsOf = it => Array.isArray(it.r) ? it.r.filter(Array.isArray) : [];
 const hasCm = it => !!(it.cm && it.cm.text && !it.cm.done);
 const BUBBLE = 'M2 .4h9a1.6 1.6 0 0 1 1.6 1.6v5a1.6 1.6 0 0 1-1.6 1.6H6.5l-3 3V8.6H2A1.6 1.6 0 0 1 .4 7V2A1.6 1.6 0 0 1 2 .4z';
@@ -6749,8 +6856,7 @@ function inkSpan(it){
   return [lo - pad, hi + pad];
 }
 function inkNodes(it, W){
-  if (it.k === 'pen' || it.k === 'hl')
-    return [svgEl('path', {class: it.k, ...inkAttrs(it.k, strokePts(it), it.c, penW(it))})];
+  if (isStroke(it)) return [svgEl('path', {class: it.k, ...strokeAttrs(it.k, strokePts(it), it.c, penW(it))})];
   if (it.k !== 'mark') return [];
   const out = [svgEl('g', {class: 'mk', fill: inkHex(it.c, '#ffe066')}, rectsOf(it).map(r => svgEl('rect', {x: inkNum(r[0]), y: inkNum(r[1]), width: inkNum(r[2]), height: inkNum(r[3]), rx: 1.5})))];
   const b = hasCm(it) && badgeAt(it, W);
@@ -6804,11 +6910,11 @@ function paintInk(ctx, card, s, dx, dy){
   ctx.restore();
 }
 function paintStroke(ctx, it){
-  if (it.k !== 'pen' && it.k !== 'hl') return;
-  const a = inkAttrs(it.k, strokePts(it), it.c, penW(it)), path = new Path2D(a.d);
-  ctx.globalAlpha = it.k === 'hl' ? .35 : 1; ctx.globalCompositeOperation = it.k === 'hl' ? 'multiply' : 'source-over';
-  if (a.stroke === 'none') { ctx.fillStyle = a.fill; ctx.fill(path); return; }
-  ctx.strokeStyle = a.stroke; ctx.lineWidth = a['stroke-width']; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(path);
+  if (!isStroke(it)) return;
+  const a = inkAttrs(it.k, strokePts(it), it.c, penW(it)), path = new Path2D(a.d), pc = it.k === 'pc' && grainFill(ctx, it.c);
+  ctx.globalAlpha = it.k === 'hl' ? .35 : pc ? .9 : 1; ctx.globalCompositeOperation = it.k === 'hl' ? 'multiply' : 'source-over';      // (one path each: where a highlighter stroke crosses itself it is no darker)
+  if (a.stroke === 'none') { ctx.fillStyle = pc || a.fill; ctx.fill(path); return; }
+  ctx.strokeStyle = pc || a.stroke; ctx.lineWidth = a['stroke-width']; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(path);
 }
 // the ink on a side page, painted for the downloaded PDF (dx, dy: where the page is on the canvas)
 function paintSideInk(ctx, sp, dx, dy){
@@ -6821,32 +6927,116 @@ function paintSideInk(ctx, sp, dx, dy){
   ctx.restore();
 }
 
-// ---------- drawing: pen, highlighter and eraser ----------
+// ---------- drawing: pen, pencil, highlighter, text and eraser ----------
 const DRAW_COLORS = [['#1f4fd1', 'Blue'], ['#c62828', 'Red'], ['#2e7d32', 'Green'], ['#1d1d1d', 'Black'], ['#ffd54a', 'Yellow']];
-const PEN_W = [2, 3.5, 6];
+// Thickness is in millimetres of the page as it is laid out: a CSS millimetre (96/25.4 px) on a slide 960px wide, before any zoom, so a pen looks the
+// same on every page and side page (a real millimetre on a 10-inch 4:3 slide). Strokes still keep their width in page units.
+const MM = 96 / 25.4;
+const mmUnits = card => card.classList.contains('sidepage') ? MM : MM * (inkNum(card.dataset.w) || CARD_W) / CARD_W;     // page units in a millimetre: PDF points on a PDF page, pixels on a side page
+const DTOOLS = {pen: ['pen-line', 'Pen', 'Pen: draw or write on the page in the colour you pick'], pc: ['pencil', 'Pencil', 'Pencil: a soft, grainy line; with a pen, pressing harder makes it thicker'],
+  hl: ['highlighter', 'Highlighter', 'Highlighter: a wide see-through stripe over words and pictures'], tx: ['type', 'Text', 'Text: click the page to type there'],
+  er: ['eraser', 'Eraser', 'Eraser: press and drag over a stroke to rub it out']};
+const DSIZE = {pen: [.1, 5], pc: [.1, 3], hl: [1, 15], er: [1, 20], tx: [8, 96]};           // the slider: millimetres (for text, the size in px)
+const DFONTS = ['Caveat', 'Patrick Hand', 'Kalam', 'Arial', 'Calibri', 'Verdana', 'Georgia', 'Times New Roman', 'Courier New'];
+const FAV_MAX = 12;
+const dClamp = (v, [a, b], d) => typeof v === 'number' && isFinite(v) ? Math.min(b, Math.max(a, Math.round(v * 10) / 10)) : d;
+// a favourite, checked: {id, toolType, color, thickness}, or for text {id, toolType, color, fontSize, fontFamily}
+function favOk(f){
+  if (!f || typeof f.id !== 'string' || !DTOOLS[f.toolType] || f.toolType === 'er') return null;
+  const o = {id: f.id.slice(0, 40), toolType: f.toolType, color: inkHex(f.color, '#1d1d1d').toLowerCase()};
+  if (f.toolType === 'tx') { o.fontSize = dClamp(f.fontSize, DSIZE.tx, 24); o.fontFamily = DFONTS.includes(f.fontFamily) ? f.fontFamily : 'Caveat'; }
+  else o.thickness = dClamp(f.thickness, DSIZE[f.toolType], 1);
+  return o;
+}
+// the drawing settings, kept together in 'draw-settings': the tool, each tool's colour and thickness, the text size and font, the eraser, favourites
+function dsLoad(){
+  const d = {activeTool: 'pen', colors: {pen: '#1f4fd1', pc: '#1d1d1d', hl: '#ffd54a', tx: '#1d1d1d'}, thickness: {pen: .5, pc: .4, hl: 5, er: 4}, fontSize: 24, fontFamily: 'Caveat',
+    eraserMode: 'stroke', favorites: [], activePresetId: null, minimised: false};
+  const o = pref.json('draw-settings', null);
+  if (!o || typeof o !== 'object') {                 // from before: the tool, the pen's and highlighter's colours and one of three thicknesses
+    const t = pref.get('draw-tool'), w = pref.get('draw-w');
+    if (['pen', 'hl', 'er'].includes(t)) d.activeTool = t;
+    d.colors.pen = inkHex(pref.get('draw-c-pen'), d.colors.pen).toLowerCase(); d.colors.hl = inkHex(pref.get('draw-c-hl'), d.colors.hl).toLowerCase();
+    if (w !== null) { const i = Math.max(0, Math.min(2, parseInt(w) || 0)); d.thickness.pen = [.7, 1.2, 2.1][i]; d.thickness.hl = [2.8, 4.9, 8.5][i]; }
+    return d;
+  }
+  if (DTOOLS[o.activeTool]) d.activeTool = o.activeTool;
+  for (const t in d.colors) d.colors[t] = inkHex(o.colors?.[t], d.colors[t]).toLowerCase();
+  for (const t in d.thickness) d.thickness[t] = dClamp(o.thickness?.[t], DSIZE[t], d.thickness[t]);
+  d.fontSize = dClamp(o.fontSize, DSIZE.tx, d.fontSize); if (DFONTS.includes(o.fontFamily)) d.fontFamily = o.fontFamily;
+  if (o.eraserMode === 'part') d.eraserMode = 'part';
+  if (Array.isArray(o.favorites)) d.favorites = o.favorites.map(favOk).filter(Boolean).slice(0, FAV_MAX);
+  if (d.favorites.some(f => f.id === o.activePresetId)) d.activePresetId = o.activePresetId;
+  d.minimised = o.minimised === true;
+  return d;
+}
+const ds = dsLoad();
 let drawing = false;
-const draw = {
-  tool: ['pen', 'hl', 'er'].includes(pref.get('draw-tool')) ? pref.get('draw-tool') : 'pen',
-  col: {pen: inkHex(pref.get('draw-c-pen'), '#1f4fd1'), hl: inkHex(pref.get('draw-c-hl'), '#ffd54a')},
-  w: Math.max(0, Math.min(2, parseInt(pref.get('draw-w', '1')) || 0)),
-};
+const dSize = t => t === 'tx' ? ds.fontSize : ds.thickness[t];
+const dFmt = (t, v) => t === 'tx' ? Math.round(v) + 'px' : v.toFixed(1) + 'mm';
+const colName = c => (DRAW_COLORS.find(x => x[0] === c) || [0, c])[1];
+const favName = f => `${DTOOLS[f.toolType][1]}, ${colName(f.color)}, ${f.toolType === 'tx' ? f.fontSize + 'px ' + f.fontFamily : dFmt(f.toolType, f.thickness)}`;
+// is this favourite what the tools are set to now?
+const favNow = f => f.toolType === ds.activeTool && f.color === ds.colors[f.toolType] && (f.toolType === 'tx' ? f.fontSize === ds.fontSize && f.fontFamily === ds.fontFamily : f.thickness === ds.thickness[f.toolType]);
+// a favourite's picture: a squiggle in its colour and thickness on a little piece of paper (for text, "Aa" in its font)
+const favPic = f => f.toolType === 'tx' ? `<span class="dfa" style="color:${f.color};font-family:${esc(fontCss(f.fontFamily))}">Aa</span>`
+  : `<svg viewBox="0 0 34 22" aria-hidden="true"><path d="M4 15c4-9 8-10 11-5s7 7 15-4" fill="none" stroke="${f.toolType === 'pc' ? grain(f.color) : f.color}"${f.toolType === 'hl' ? ' stroke-opacity=".5"' : ''} stroke-width="${Math.min(f.toolType === 'hl' ? 10 : 6, Math.max(1.4, f.thickness * (f.toolType === 'hl' ? 1.4 : 2.4))).toFixed(1)}" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const drawBtn = $('#drawBtn');
 const drawBar = document.createElement('div');
 drawBar.id = 'drawBar'; drawBar.className = 'pop drawbar'; drawBar.hidden = true; drawBar.setAttribute('role', 'toolbar'); drawBar.setAttribute('aria-label', 'Drawing tools');
-drawBar.innerHTML = '<div class="seg" role="group" aria-label="Tool">' +
-  `<button type="button" class="btn" data-tool="pen" title="Pen: draw or write on the page in the colour you pick">${icon('pen-line')}Pen</button>` +
-  `<button type="button" class="btn" data-tool="hl" title="Highlighter: a wide see-through stripe over words and pictures">${icon('highlighter')}Highlighter</button>` +
-  `<button type="button" class="btn" data-tool="er" title="Eraser: press and drag over a stroke to rub it out">${icon('eraser')}Eraser</button></div>` +
-  '<span class="dcols" role="group" aria-label="Colour">' + DRAW_COLORS.map(([c, n]) => `<button type="button" class="sw" data-c="${c}" style="--c:${c}" title="${n}" aria-label="${n}"></button>`).join('') + '</span>' +
-  '<span class="dwids" role="group" aria-label="Thickness">' + ['Thin', 'Medium', 'Thick'].map((n, i) => `<button type="button" class="btn dw" data-w="${i}" title="${n}: how thick the line is" aria-label="${n}"><span style="--t:${[2, 4, 7][i]}px"></span></button>`).join('') + '</span>' +
-  '<button type="button" class="btn primary" data-done title="Done: stop drawing (Esc)">Done</button>';
+drawBar.innerHTML = '<div class="drow dtools" role="group" aria-label="Tool">' +
+  Object.entries(DTOOLS).map(([k, [ic, n, t]]) => `<button type="button" class="btn dt" data-tool="${k}" title="${t}" aria-label="${n}">${icon(ic)}<span class="lbl">${n}</span></button>`).join('') +
+  `<span class="dsep" aria-hidden="true"></span><button type="button" class="btn dt" data-min title="Minimise: fold the tools into a small button and keep drawing" aria-label="Minimise">${icon('minimize')}</button>` +
+  `<button type="button" class="btn primary" data-done title="Done: stop drawing (Esc)" aria-label="Done">${icon('check')}<span class="lbl">Done</span></button></div>` +
+  '<div class="drow dset"><span class="dsize"><span class="dprev" aria-hidden="true"><i></i></span><input type="range" id="drawSize" aria-label="Thickness"><output id="drawSizeOut" for="drawSize"></output></span>' +
+  '<span class="dcols" role="group" aria-label="Colour">' + DRAW_COLORS.map(([c, n]) => `<button type="button" class="sw" data-c="${c}" style="--c:${c}" title="${n}" aria-label="${n}"></button>`).join('') +
+  '<input type="color" id="drawColor" title="Any colour you like" aria-label="Pick any colour"></span>' +
+  `<select id="drawFont" title="Font for text" aria-label="Font">${DFONTS.map(f => `<option>${f}</option>`).join('')}</select>` +
+  '<span class="dmode" role="group" aria-label="Eraser"><button type="button" class="btn" data-em="stroke" title="Whole strokes: rub out every stroke the eraser touches">Whole strokes</button>' +
+  '<button type="button" class="btn" data-em="part" title="Partial: rub out only where the eraser goes, like a real eraser">Partial</button></span>' +
+  `<button type="button" class="btn dfavadd" data-fav title="Save as favourite: keep this tool, colour and thickness one tap away" aria-label="Save as favourite">${icon('star')}<span class="lbl">Save as favourite</span></button></div>` +
+  '<div class="drow dfavs" role="group" aria-label="Favourites"></div>';
 document.body.append(drawBar);
+// minimised, the tools are a round purple button with the pencil (and drawing stays on)
+const drawFab = document.createElement('button');
+drawFab.type = 'button'; drawFab.id = 'drawFab'; drawFab.className = 'drawfab'; drawFab.hidden = true; drawFab.title = 'Drawing tools: show them again'; drawFab.setAttribute('aria-label', 'Show the drawing tools'); drawFab.innerHTML = icon('pencil');
+document.body.append(drawFab);
+const erRing = document.createElement('div'); erRing.className = 'erring'; erRing.hidden = true; document.body.append(erRing);       // the eraser's outline, at its real size
+let dfDel = null, dfHeld = false, dfTimer = 0, dfDown = null;          // dfDel: the favourite showing its × (press and hold, or right-click)
+function drawFavs(){
+  const row = drawBar.querySelector('.dfavs');
+  row.innerHTML = ds.favorites.map(f => `<button type="button" class="btn dfav${f.id === dfDel ? ' del' : ''}" data-id="${esc(f.id)}" aria-pressed="${f.id === ds.activePresetId}" title="${esc(favName(f))} (right-click, or press and hold, to remove)" aria-label="Favourite: ${esc(favName(f))}">${favPic(f)}<span class="dfx" aria-hidden="true">×</span></button>`).join('');
+  row.hidden = !ds.favorites.length;
+}
+// the room the tools take, so messages show above them
+const dbh = () => document.body.style.setProperty('--dbh', (drawBar.hidden ? 80 : drawBar.offsetHeight + 24) + 'px');
+if (window.ResizeObserver) new ResizeObserver(dbh).observe(drawBar);
 function updateDrawBar(){
-  drawBar.querySelectorAll('[data-tool]').forEach(b => b.setAttribute('aria-pressed', b.dataset.tool === draw.tool));
-  const er = draw.tool === 'er';
-  drawBar.querySelectorAll('.sw').forEach(b => { b.setAttribute('aria-pressed', !er && b.dataset.c === draw.col[draw.tool]); b.disabled = er; });
-  drawBar.querySelectorAll('.dw').forEach(b => { b.setAttribute('aria-pressed', !er && +b.dataset.w === draw.w); b.disabled = er; });
-  document.body.classList.toggle('erasing', er);
+  const t = ds.activeTool, er = t === 'er', tx = t === 'tx', c = ds.colors[t], v = dSize(t), [lo, hi] = DSIZE[t], r = $('#drawSize');
+  drawBar.querySelectorAll('[data-tool]').forEach(b => { b.setAttribute('aria-pressed', b.dataset.tool === t); b.style.setProperty('--tc', ds.colors[b.dataset.tool] || 'transparent'); });
+  r.min = lo; r.max = hi; r.step = tx ? 1 : .1; r.value = v;
+  r.setAttribute('aria-label', tx ? 'Text size' : er ? 'Eraser size' : 'Thickness'); r.setAttribute('aria-valuetext', dFmt(t, v));
+  r.style.setProperty('--pct', (v - lo) / (hi - lo) * 100 + '%');
+  $('#drawSizeOut').textContent = dFmt(t, v);
+  const d = drawBar.querySelector('.dprev i'), px = Math.max(2, Math.min(28, v * MM * (viewZoom || 1))).toFixed(1) + 'px';
+  Object.assign(d.style, {width: px, height: px, opacity: t === 'hl' ? .55 : 1}); d.style.setProperty('--tc', er ? 'transparent' : c);
+  drawBar.querySelectorAll('.sw').forEach(b => { b.setAttribute('aria-pressed', !er && b.dataset.c === c); b.disabled = er; });
+  const cc = $('#drawColor'); cc.disabled = er; if (!er) cc.value = c; cc.classList.toggle('on', !er && !DRAW_COLORS.some(x => x[0] === c));
+  drawBar.querySelector('.dcols').hidden = er; drawBar.querySelector('.dprev').hidden = tx;
+  const f = $('#drawFont'); f.hidden = !tx; f.value = ds.fontFamily;
+  drawBar.querySelector('.dmode').hidden = !er; drawBar.querySelectorAll('[data-em]').forEach(b => b.setAttribute('aria-pressed', b.dataset.em === ds.eraserMode));
+  drawBar.querySelector('[data-fav]').hidden = er;
+  drawFavs();
+  document.body.classList.toggle('erasing', er); document.body.classList.toggle('texting', tx);
+  if (!er) erRing.hidden = true;
+  drawBar.hidden = !drawing || ds.minimised; drawFab.hidden = !drawing || !ds.minimised;
+  drawFab.style.setProperty('--tc', er ? 'transparent' : c);
+  dbh();
+}
+// remember a change, and let go of the favourite if the tools no longer match it
+function dsChanged(){
+  if (ds.activePresetId && !ds.favorites.some(f => f.id === ds.activePresetId && favNow(f))) ds.activePresetId = null;
+  pref.setJson('draw-settings', ds); updateDrawBar();
 }
 function setDrawing(on){
   on = !!on;
@@ -6854,40 +7044,116 @@ function setDrawing(on){
   if (on && (reading || !inkSurface())) { toast(reading ? 'Drawing is off in Study mode.' : 'Drawing works on PDF pages and side pages. Open a PDF first.'); return; }
   drawing = on;
   document.body.classList.toggle('drawing', on);
-  drawBar.hidden = !on; drawBtn.setAttribute('aria-pressed', on);
+  drawBtn.setAttribute('aria-pressed', on);
   if (on) {
     hideGap(); closeInsMenu(); hideAnnoBar(); closeAnnoPop(); clearMulti(); ribbon.classList.remove('peek');
     if (document.activeElement?.closest?.('.mine')) document.activeElement.blur();
-    getSelection().removeAllRanges(); updateDrawBar();
-  }
+    getSelection().removeAllRanges();
+  } else { dfDel = null; erRing.hidden = true; }
+  updateDrawBar();
 }
 drawBtn.onclick = () => setDrawing(!drawing);
-drawBar.addEventListener('mousedown', e => e.preventDefault());
+drawBar.addEventListener('mousedown', e => { if (!e.target.closest('input, select')) e.preventDefault(); });
+drawFab.addEventListener('mousedown', e => e.preventDefault());
+drawFab.onclick = () => { ds.minimised = false; dsChanged(); };
 drawBar.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || b.disabled) return;
-  if (b.dataset.tool) { draw.tool = b.dataset.tool; pref.set('draw-tool', draw.tool); }
-  else if (b.dataset.c) { draw.col[draw.tool] = b.dataset.c; pref.set('draw-c-' + draw.tool, b.dataset.c); }
-  else if (b.dataset.w) { draw.w = +b.dataset.w; pref.set('draw-w', draw.w); }
+  if (dfHeld) { dfHeld = false; return; }          // (the click after pressing and holding a favourite)
+  const t = ds.activeTool;
+  if (b.classList.contains('dfav')) { if (b.classList.contains('del') || e.target.closest('.dfx')) favDrop(b.dataset.id); else favUse(b.dataset.id); return; }
+  dfDel = null;
+  if (b.dataset.tool) ds.activeTool = b.dataset.tool;
+  else if (b.dataset.c) ds.colors[t] = b.dataset.c;
+  else if (b.dataset.em) ds.eraserMode = b.dataset.em;
+  else if ('fav' in b.dataset) return favAdd();
+  else if ('min' in b.dataset) { ds.minimised = true; if (drawBar.contains(document.activeElement)) setTimeout(() => drawFab.focus()); }
   else if ('done' in b.dataset) { setDrawing(false); return; }
-  updateDrawBar();
+  dsChanged();
 });
+$('#drawSize').addEventListener('input', e => { const t = ds.activeTool, v = +e.target.value; if (t === 'tx') ds.fontSize = Math.round(v); else ds.thickness[t] = dClamp(v, DSIZE[t], ds.thickness[t]); dsChanged(); });
+$('#drawColor').addEventListener('input', e => { const t = ds.activeTool; if (t !== 'er') { ds.colors[t] = inkHex(e.target.value, ds.colors[t]).toLowerCase(); dsChanged(); } });
+$('#drawFont').addEventListener('change', e => { if (DFONTS.includes(e.target.value)) { ds.fontFamily = e.target.value; dsChanged(); } });
+// favourites: the tool, colour and thickness (for text, size and font) saved together, picked again with one tap
+function favAdd(){
+  const t = ds.activeTool; if (t === 'er') return;
+  const have = ds.favorites.find(favNow);
+  if (have) { ds.activePresetId = have.id; dsChanged(); toast('That is already one of your favourites.'); return; }
+  if (ds.favorites.length >= FAV_MAX) { toast(`You have ${FAV_MAX} favourites. Remove one first: right-click it, or press and hold it.`); return; }
+  const f = {id: 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), toolType: t, color: ds.colors[t]};
+  if (t === 'tx') Object.assign(f, {fontSize: ds.fontSize, fontFamily: ds.fontFamily}); else f.thickness = ds.thickness[t];
+  ds.favorites.push(f); ds.activePresetId = f.id; dsChanged();
+  hint('Saved as a favourite: tap it to pick this tool, colour and thickness again. Right-click it, or press and hold it, to remove it.');
+}
+function favUse(id){
+  const f = ds.favorites.find(x => x.id === id); if (!f) return;
+  ds.activeTool = f.toolType; ds.colors[f.toolType] = f.color;
+  if (f.toolType === 'tx') { ds.fontSize = f.fontSize; ds.fontFamily = f.fontFamily; } else ds.thickness[f.toolType] = f.thickness;
+  ds.activePresetId = f.id; dfDel = null; dsChanged();
+}
+function favDrop(id){
+  ds.favorites = ds.favorites.filter(f => f.id !== id); if (ds.activePresetId === id) ds.activePresetId = null;
+  dfDel = null; dsChanged();
+}
+drawBar.addEventListener('contextmenu', e => {
+  const b = e.target.closest('.dfav'); if (!b) return;
+  e.preventDefault(); if (dfHeld) return;
+  if (dfDown) { clearTimeout(dfTimer); dfHeld = true; dfDel = b.dataset.id; } else dfDel = dfDel === b.dataset.id ? null : b.dataset.id;       // (a long press that a browser reports as a right-click)
+  drawFavs();
+});
+drawBar.addEventListener('pointerdown', e => {
+  dfHeld = false; clearTimeout(dfTimer);
+  const b = e.target.closest('.dfav'); if (!b || e.pointerType === 'mouse') return;
+  dfDown = [e.clientX, e.clientY];
+  dfTimer = setTimeout(() => { dfHeld = true; holdGuard(); dfDel = b.dataset.id; drawFavs(); }, 500);
+});
+drawBar.addEventListener('pointermove', e => { if (dfDown && Math.hypot(e.clientX - dfDown[0], e.clientY - dfDown[1]) > 10) clearTimeout(dfTimer); });
+for (const t of ['pointerup', 'pointercancel']) drawBar.addEventListener(t, () => { clearTimeout(dfTimer); dfDown = null; });
+document.addEventListener('pointerdown', e => { if (dfDel && !e.target.closest?.('.dfav')) { dfDel = null; drawFavs(); } }, true);
 // how far a point is from a line segment
 function segDist(p, a, b){
   const dx = b[0] - a[0], dy = b[1] - a[1], l = dx * dx + dy * dy;
   const t = l ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l)) : 0;
   return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
 }
-// does the eraser, at pt, touch this stroke?
-function strokeHit(it, pt){
-  if (it.k !== 'pen' && it.k !== 'hl') return false;
-  const p = strokePts(it), reach = penW(it) * (hasPr(p) ? .85 : .5) + 4;
-  if (p.length === 1) return Math.hypot(p[0][0] - pt[0], p[0][1] - pt[1]) <= reach;
-  for (let i = 1; i < p.length; i++) if (segDist(pt, p[i - 1], p[i]) <= reach) return true;
+// how far apart two line segments are (0 where they cross)
+const crs = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+const segSeg = (a, b, c, d) => crs(a, b, c) * crs(a, b, d) < 0 && crs(c, d, a) * crs(c, d, b) < 0 ? 0 : Math.min(segDist(a, c, d), segDist(b, c, d), segDist(c, a, b), segDist(d, a, b));
+// how near the eraser's middle (radius r) comes to a stroke's middle line when it touches the stroke
+const reachOf = (it, p, r) => penW(it) * (hasPr(p) ? .85 : .5) + r;
+// does the eraser, going from a to b, touch this stroke?
+function strokeHit(it, a, b, r){
+  if (!isStroke(it)) return false;
+  const p = strokePts(it), reach = reachOf(it, p, r);
+  if (p.length === 1) return segDist(p[0], a, b) <= reach;
+  for (let i = 1; i < p.length; i++) if (segSeg(p[i - 1], p[i], a, b) <= reach) return true;
   return false;
 }
+// the partial eraser: the parts of a stroke under the eraser go, and what is left stays as separate strokes
+// (a long straight piece first gets more points where the eraser passes, so it can be cut in the middle)
+function eraseBits(it, a, b, r){
+  const p = strokePts(it), reach = reachOf(it, p, r), step = Math.max(.5, Math.min(r, reach - r + .5)), q = [];
+  const proj = (x, s, e, l2) => ((x[0] - s[0]) * (e[0] - s[0]) + (x[1] - s[1]) * (e[1] - s[1])) / l2;
+  for (let i = 0; i < p.length; i++) {
+    const s = p[i - 1], e = p[i], l = s ? Math.hypot(e[0] - s[0], e[1] - s[1]) : 0;
+    if (l > step && segSeg(s, e, a, b) <= reach + step) {
+      const n = Math.ceil(l / step), m = (reach + step) / l, ta = proj(a, s, e, l * l), tb = proj(b, s, e, l * l);
+      for (let k = Math.max(1, Math.ceil((Math.min(ta, tb) - m) * n)), k1 = Math.min(n - 1, Math.floor((Math.max(ta, tb) + m) * n)); k <= k1; k++) {
+        const t = k / n, pt = [inkR1(s[0] + (e[0] - s[0]) * t), inkR1(s[1] + (e[1] - s[1]) * t)];
+        if (s.length > 2) pt.push(Math.round((s[2] + ((e[2] ?? s[2]) - s[2]) * t) * 100) / 100);
+        q.push(pt);
+      }
+    }
+    q.push(e);
+  }
+  const out = []; let run = [];
+  for (const pt of q) if (segDist(pt, a, b) <= reach) { if (run.length) out.push(run); run = []; } else run.push(pt);
+  if (run.length) out.push(run);
+  if (out.length === 1 && out[0].length === q.length) return [it];
+  return out.filter(x => x.length > 1).map(x => ({...it, p: x}));
+}
 // the stroke being drawn shows as it goes, in every strip it passes through
-function liveInk(card, tool, pts){
-  const a = inkAttrs(tool, pts, draw.col[tool], PEN_W[draw.w] * (tool === 'hl' ? 4 : 1));
+function liveInk(card, tool, pts, w){
+  const a = strokeAttrs(tool, pts, ds.colors[tool], penW({k: tool, w}));
   for (const s of card.classList.contains('sidepage') ? [card] : card.querySelectorAll(':scope > .strip')) {
     const svg = s.querySelector(':scope > svg.ink') || inkSvg(card, s);
     let p = svg.querySelector(':scope > path.live');
@@ -6895,6 +7161,34 @@ function liveInk(card, tool, pts){
     for (const k in a) p.setAttribute(k, a[k]);
     if (a.stroke === 'none') for (const k of ['stroke-width', 'stroke-linecap', 'stroke-linejoin']) p.removeAttribute(k);
   }
+}
+// how many screen pixels a page unit is, on a strip of a PDF page or on a side page
+const unitPx = (card, strip) => strip ? strip.getBoundingClientRect().width / (+card.dataset.w || 1) : card.getBoundingClientRect().width / (card.offsetWidth || 1);
+function ringAt(ev, card, strip){
+  erRing.style.width = erRing.style.height = (ds.thickness.er * mmUnits(card) * unitPx(card, strip)).toFixed(1) + 'px';
+  erRing.style.translate = `${ev.clientX}px ${ev.clientY}px`; erRing.hidden = false;
+}
+// the Text tool: a tap on the page starts a note there, in the colour, size and font picked, floating where you tapped
+function textDown(e, card){
+  e.preventDefault(); hideGap();
+  const x = e.clientX, y = e.clientY, id = e.pointerId;
+  const up = ev => {
+    if (ev.pointerId !== id) return;
+    removeEventListener('pointerup', up, true); removeEventListener('pointercancel', up, true);
+    if (ev.type === 'pointerup' && Math.hypot(ev.clientX - x, ev.clientY - y) < 12) { swallow(400); textNote(card, x, y); }
+  };
+  addEventListener('pointerup', up, true); addEventListener('pointercancel', up, true);
+}
+function textNote(card, x, y){
+  const z = zoomOf(card) || 1, cr = card.getBoundingClientRect(), fs = ds.fontSize, w = Math.round(Math.max(140, Math.min(360, (cr.right - x) / z - 12)));
+  const {box, el} = makeBox();
+  box.classList.add('floating', 'no-outline'); box.style.width = w + 'px';
+  el.style.fontFamily = fontCss(ds.fontFamily); el.style.fontSize = fs + 'px'; el.style.color = ds.colors.tx;
+  card.append(box);
+  setFloatPos(box, Math.max(cr.left, Math.min(cr.right - w * z, x - 10 * z)), Math.max(cr.top, y - (fs * .65 + 5) * z));
+  gripTitles(box); placeFloats(card); raise(box); focusNote(el, {preventScroll: true}); updateNotesBtn();
+  if (card.classList.contains('sidepage')) sideSoon();
+  return box;
 }
 // Apple Pencil (or any pen) draws by itself with the tool picked, while fingers scroll and tap: "Apple Pencil draws automatically" in Settings
 const penAuto = () => pref.get('pen-auto', '1') !== '0';
@@ -6913,9 +7207,12 @@ main.addEventListener('pointerdown', e => {
   if (e.button !== 0 && !eraser) return;             // (the pen's side button is left alone)
   const hit = inkTarget(e.target); if (!hit) return;
   const {surf, card, strip} = hit, auto = !drawing;
+  let tool = eraser ? 'er' : ds.activeTool;
+  if (tool === 'tx') { if (!auto) return textDown(e, card); tool = 'pen'; }        // (with Draw off, the Pencil by itself writes with the pen)
   e.preventDefault(); hideGap();
   if (pen) { penLive++; document.body.classList.add('penning'); fingerInk?.stop(); }
-  const W = +card.dataset.w, tool = eraser ? 'er' : draw.tool, pts = [], t0 = Date.now(), x0 = e.clientX, y0 = e.clientY;
+  const W = +card.dataset.w, u = mmUnits(card), pts = [], t0 = Date.now(), x0 = e.clientX, y0 = e.clientY;
+  const col = ds.colors[tool], w = Math.round(ds.thickness[tool] * u / (tool === 'hl' ? 4 : 1) * 100) / 100, er = tool === 'er' ? ds.thickness.er * u / 2 : 0, part = ds.eraserMode === 'part';
   let far = false, pr = null, dead = false;
   // the point on the page under the pointer: the strip it is over decides (over a note in between, the last point stays)
   const at = strip ? ev => {
@@ -6930,13 +7227,17 @@ main.addEventListener('pointerdown', e => {
     const r = card.getBoundingClientRect(), k = r.width / (card.offsetWidth || 1);
     return [inkR1(Math.max(0, (ev.clientX - r.left) / k - card.clientLeft)), inkR1(Math.max(0, (ev.clientY - r.top) / k - card.clientTop))];
   };
-  let items = inkItems(card), erased = false, raf = 0;
-  const erase = pt => {
-    const keep = items.filter(it => !strokeHit(it, pt));
-    if (keep.length !== items.length) { items = keep; erased = true; }
+  let items = inkItems(card), erased = false, raf = 0, last = null;
+  const erase = pt => {                              // whole strokes the eraser touches, or (partial) only the bits under it
+    const a = last || pt, out = []; let got = false; last = pt;
+    for (const it of items) {
+      if (!strokeHit(it, a, pt, er)) { out.push(it); continue; }
+      got = true; if (part) out.push(...eraseBits(it, a, pt, er));
+    }
+    if (got) { items = out; erased = true; }
   };
   const add = (pt, ev) => {
-    if (pen && tool === 'pen') {                     // the pen's pressure, smoothed, goes in as a third number
+    if (pen && (tool === 'pen' || tool === 'pc')) {                     // the pen's pressure, smoothed, goes in as a third number
       const raw = ev.pressure > 0 ? ev.pressure : .5;
       pr = pr == null ? raw : pr + (raw - pr) * .45; pt.push(Math.round(pr * 100) / 100);
     }
@@ -6944,13 +7245,15 @@ main.addEventListener('pointerdown', e => {
     if (!l || Math.hypot(pt[0] - l[0], pt[1] - l[1]) >= 1) pts.push(pt);
   };
   const take = ev => { if (dead) return; const pt = at(ev); if (pt) { if (tool === 'er') erase(pt); else add(pt, ev); } };
-  const paint = () => { raf = 0; if (tool === 'er') { if (erased) setInk(card, items); } else liveInk(card, tool, pts); };
+  const paint = () => { raf = 0; if (tool === 'er') { if (erased) setInk(card, items); } else liveInk(card, tool, pts, w); };
   take(e); paint();
+  if (er) ringAt(e, card, strip);
   try { surf.setPointerCapture(e.pointerId); } catch {}
   const move = ev => {
     if (ev.pointerId !== e.pointerId) return;
     if (Math.hypot(ev.clientX - x0, ev.clientY - y0) > 3) far = true;
     for (const q of (ev.getCoalescedEvents?.() || []).length ? ev.getCoalescedEvents() : [ev]) take(q);
+    if (er) ringAt(ev, card, strip);
     if (!raf) raf = requestAnimationFrame(paint);
   };
   const end = save => {
@@ -6958,12 +7261,12 @@ main.addEventListener('pointerdown', e => {
     cancelAnimationFrame(raf);
     if (pen && !--penLive) setTimeout(() => { if (!penLive) document.body.classList.remove('penning'); }, 300);
     if (fingerInk === me) fingerInk = null;
-    if (tool === 'er') { if (erased) { setInk(card, items); saveSoon(); } return; }
+    if (tool === 'er') { if (e.pointerType !== 'mouse') erRing.hidden = true; if (erased) { setInk(card, items); saveSoon(); } return; }
     if (!save || dead) { renderInk(card); return; }
     if (auto && !far && Date.now() - t0 < 500) { renderInk(card); return; }          // a tap with the pen: not a dot (it can show "+ Add here")
     if (auto) swallow(300);                           // (the click that follows a stroke is not a tap)
     if (!pts.length) { renderInk(card); return; }
-    setInk(card, [...inkItems(card), {k: tool, c: draw.col[tool], w: PEN_W[draw.w], p: pts}]);
+    setInk(card, [...inkItems(card), {k: tool, c: col, w, p: pts}]);
     if (card.classList.contains('sidepage')) sideSoon();
     saveSoon();
   };
@@ -6972,6 +7275,13 @@ main.addEventListener('pointerdown', e => {
   if (!pen) fingerInk = me;
   surf.addEventListener('pointermove', move); surf.addEventListener('pointerup', up); surf.addEventListener('pointercancel', up);
 });
+// with a mouse, the eraser's outline follows the pointer over the page
+main.addEventListener('pointermove', e => {
+  if (!drawing || ds.activeTool !== 'er' || e.pointerType !== 'mouse' || e.buttons) return;
+  const hit = inkTarget(e.target);
+  if (hit) ringAt(e, hit.card, hit.strip); else erRing.hidden = true;
+});
+main.addEventListener('pointerleave', () => { erRing.hidden = true; });
 // a pen on the page must not scroll it (nor a palm beside it): the browser decides that when the touch starts
 main.addEventListener('touchstart', e => {
   if (!e.cancelable || reading) return;

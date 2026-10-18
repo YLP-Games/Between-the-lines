@@ -293,7 +293,7 @@ const measure = page => page.evaluate(() => {
   await page.mouse.click(8, 700); await page.waitForTimeout(100);
   await page.click('#tab-insert'); await page.click('#jeBtn'); await page.waitForTimeout(300);
   ok(await page.locator('.jrnl').count() === 2, 'a second journal entry (in its own note)');
-  const j2 = page.locator('.jrnl').nth(1);
+  const j2 = page.locator('.jrnl').nth(await page.evaluate(() => [...document.querySelectorAll('.jrnl')].findIndex(j => j.querySelectorAll('.j-row').length === 2)));     // the new one (it can land on an earlier page than the first)
   ok(await page.locator('.notebox').count() === 2 && await j2.evaluate(j => !!j.closest('.notebox') && j.closest('.mine').children.length >= 1), 'in a note of its own');
   await j2.locator('.j-date').click(); await page.keyboard.press('Tab');
   const order = [await act(page)];

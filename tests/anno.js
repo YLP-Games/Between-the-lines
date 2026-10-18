@@ -36,8 +36,8 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   await page.click('#drawBtn'); await page.waitForTimeout(150);
   ok(await page.isVisible('#drawBar') && await page.evaluate(() => document.body.classList.contains('drawing')) && await page.getAttribute('#drawBtn', 'aria-pressed') === 'true', 'Draw shows the toolbar');
   const tools = await page.$$eval('#drawBar [data-tool]', bs => bs.map(b => b.textContent.trim() + ':' + b.getAttribute('aria-pressed')));
-  ok(tools.join() === 'Pen:true,Highlighter:false,Eraser:false', 'Pen, Highlighter, Eraser (pen picked)');
-  ok(await page.locator('#drawBar .sw').count() === 5 && await page.locator('#drawBar .dw').count() === 3, 'five colours and three thicknesses');
+  ok(tools.join() === 'Pen:true,Pencil:false,Highlighter:false,Text:false,Eraser:false', 'Pen, Pencil, Highlighter, Text, Eraser (pen picked)');
+  ok(await page.locator('#drawBar .sw').count() === 5 && await page.isVisible('#drawBar #drawColor') && await page.isVisible('#drawBar input[type=range]#drawSize') && (await page.textContent('#drawSizeOut')) === '0.5mm', 'five colours, any colour, and a thickness slider in millimetres (0.5mm)');
   ok(await card(1).locator('.strip').first().evaluate(s => getComputedStyle(s).cursor) === 'crosshair', 'the pointer is a crosshair over the page');
   ok(await page.evaluate(() => { const b = document.getElementById('drawBar').getBoundingClientRect(), s = document.getElementById('statusbar').getBoundingClientRect(); return b.bottom <= s.top && Math.abs(b.left + b.width / 2 - innerWidth / 2) < 4; }), 'the toolbar floats bottom centre above the status bar');
   // the add-note pill stays away while drawing
@@ -59,7 +59,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   ok(await page.locator('.gappill').count() === 0 && await page.locator('.notebox').count() === 0, 'drawing adds no note');
 
   // a second stroke, thicker, black
-  await page.click('#drawBar .dw[data-w="2"]'); await page.click('#drawBar .sw[data-c="#1d1d1d"]');
+  await page.fill('#drawSize', '2'); await page.click('#drawBar .sw[data-c="#1d1d1d"]');
   await stroke(1, [[0.1, 0.3], [0.6, 0.35]]);
   items = await ink(1);
   ok(items.length === 2 && items[1].w > items[0].w, 'a thicker stroke is stored too');
@@ -78,7 +78,10 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   await page.waitForTimeout(900);
   await page.reload(); await page.waitForTimeout(1500);
   await page.click('#tab-insert'); await page.click('#drawBtn');
-  ok(await page.getAttribute('#drawBar [data-tool="hl"]', 'aria-pressed') === 'true' && await page.getAttribute('#drawBar .dw[data-w="2"]', 'aria-pressed') === 'true', 'the tool and thickness are remembered');
+  ok(await page.getAttribute('#drawBar [data-tool="hl"]', 'aria-pressed') === 'true' && (await page.textContent('#drawSizeOut')) === '5.0mm', 'the tool and its thickness are remembered');
+  await page.click('#drawBar [data-tool="pen"]');
+  ok(await page.inputValue('#drawSize') === '2' && (await page.textContent('#drawSizeOut')) === '2.0mm' && await page.getAttribute('#drawBar .sw[data-c="#1d1d1d"]', 'aria-pressed') === 'true', 'and so are the pen\'s thickness and colour');
+  await page.click('#drawBar [data-tool="hl"]');
   ok((await ink(1)).length === 3 && await card(1).locator('.strip svg.ink path').count() === 3, 'strokes are still there after a reload');
   await show(1);
 
@@ -110,7 +113,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
 
   // ---- a note between the lines keeps the ink in both pieces ----
   await page.click('#drawBtn');
-  await page.click('#drawBar [data-tool="pen"]'); await page.click('#drawBar .dw[data-w="1"]'); await page.click('#drawBar .sw[data-c="#2e7d32"]');
+  await page.click('#drawBar [data-tool="pen"]'); await page.fill('#drawSize', '1.2'); await page.click('#drawBar .sw[data-c="#2e7d32"]');
   await stroke(1, [[0.1, 0.7], [0.3, 0.9], [0.5, 0.7], [0.7, 0.9]]);     // a zigzag low on the page
   await stroke(1, [[0.8, 0.2], [0.8, 0.9]]);                              // a line across where the note will go
   await page.click('#drawBar [data-done]'); await page.waitForTimeout(150);
