@@ -5800,7 +5800,8 @@ function trackPage(){
   const top = appbar.offsetHeight, y = top + (innerHeight - top) * 0.3;
   let i = 0;
   for (; i < slides.length - 1; i++) if (slides[i].getBoundingClientRect().bottom > y) break;
-  info.innerHTML = `Page <b>${i + 1}</b> of ${slides.length}`;
+  const t = `Page ${i + 1} of ${slides.length}`;
+  if (info.textContent !== t) info.innerHTML = `Page <b>${i + 1}</b> of ${slides.length}`;       // (not written again at every scroll)
   if (i === pageMark) return;
   pageMark = i;
   const list = pageList;
@@ -7136,8 +7137,10 @@ function sideNear(on){ sideCorner.classList.toggle('near', on); }
 function sideCornerPlace(){
   const b = side.on && sideShown() ? sideCornerBox(sideCornerSp?.isConnected ? sideCornerSp : sideLook()) : null;
   if (!b) { sideCorner.hidden = true; sideNear(false); return; }
-  sideCorner.hidden = false;
-  sideCorner.style.top = b.top + 'px'; sideCorner.style.left = (b.right - sideCorner.offsetWidth) + 'px';
+  if (sideCorner.hidden) sideCorner.hidden = false;
+  const t = b.top + 'px', l = (b.right - sideCorner.offsetWidth) + 'px';          // (read its width before writing, and write only what changed: it is moved at every scroll)
+  if (sideCorner.style.top !== t) sideCorner.style.top = t;
+  if (sideCorner.style.left !== l) sideCorner.style.left = l;
 }
 function sideCornerHide(){ sideCornerSp = null; sideTouch = false; clearTimeout(sideTouchT); if (sideBgPop.hidden || sideBgFrom !== sideCorner) sideNear(false); sideCornerPlace(); }
 let sideCornerRaf = 0;
