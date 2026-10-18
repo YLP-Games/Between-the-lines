@@ -1,7 +1,7 @@
 // The drawing tools: the dark pill toolbar, Pen, Pencil, Highlighter, Text and Eraser (whole strokes or partial), the thickness slider in millimetres,
 // colours, favourites, minimising to the purple button, the settings kept in 'draw-settings' (and the old ones moved over), saving, Back and the PDF
 const {open} = require('./harness');
-const {pen} = require('./ipad');
+const {pen, touch} = require('./ipad');
 const path = require('path');
 const fs = require('fs');
 const OUT = path.join(__dirname, 'shots');
@@ -289,6 +289,30 @@ const near = (a, b, d = .02) => Math.abs(a - b) <= d;
   await tool('pen');
   ok(await page.getAttribute('#drawBar .sw[data-c="#c62828"]', 'aria-pressed') === 'true' && await out() === '2.1mm' && (await settings()).activeTool === 'pen', 'and the pen\'s (red, 2.1mm), now kept in draw-settings');
   await page.keyboard.press('Escape');
+
+  // ---- side pages: the pencil, the partial eraser and Text work there too ----
+  await page.click('#tab-view'); await page.click('#sideBtn'); await page.waitForTimeout(500);
+  await top(1);
+  await page.click('#tab-insert'); await page.click('#drawBtn'); await page.waitForTimeout(150);
+  {
+    const sp = page.locator('.sidepage').nth(1), sb = await sp.boundingBox(), sink = () => sp.evaluate(s => JSON.parse(s.dataset.ink || '[]'));
+    const sline = async (pts, steps = 10) => { await page.mouse.move(sb.x + sb.width * pts[0][0], sb.y + sb.height * pts[0][1]); await page.mouse.down(); for (const [fx, fy] of pts.slice(1)) await page.mouse.move(sb.x + sb.width * fx, sb.y + sb.height * fy, {steps}); await page.mouse.up(); await page.waitForTimeout(150); };
+    await tool('pc'); await size(1);
+    await sline([[.15, .2], [.85, .2]], 20);
+    let si = await sink();
+    ok(si.length === 1 && si[0].k === 'pc' && near(si[0].w, 96 / 25.4, .01) && await sp.locator(':scope > svg.ink path.pc').count() === 1, 'the pencil draws on a side page, 1mm = ' + si[0].w + 'px of the side page');
+    await tool('er'); await page.click('#drawBar [data-em="part"]');
+    await sline([[.5, .1], [.5, .3]]);
+    si = await sink();
+    ok(si.length === 2 && si.every(x => x.k === 'pc'), 'the partial eraser cuts it in two');
+    await page.click('#drawBar [data-em="stroke"]');
+    await tool('tx'); await size(20); await page.click('#drawBar .sw[data-c="#1f4fd1"]');
+    await page.mouse.click(sb.x + sb.width * .3, sb.y + sb.height * .5); await page.waitForTimeout(300);
+    const sn = sp.locator(':scope > .notebox.floating');
+    ok(await sn.count() === 1 && await sn.evaluate(b => { const m = b.querySelector('.mine'); return m.style.fontSize === '20px' && getComputedStyle(m).color === 'rgb(31, 79, 209)' && document.activeElement === m; }), 'Text makes a note on a side page where you tap, 20px and blue');
+    await page.keyboard.type('Side text'); await page.waitForTimeout(700);
+  }
+  await page.keyboard.press('Escape');
   await browser.close();
 
   // ---- a phone, and the dark theme ----
@@ -310,6 +334,13 @@ const near = (a, b, d = .02) => Math.abs(a - b) <= d;
     ok(m.small.length === 0, `${w}px wide: every control is 40px or more for a finger` + (m.small.length ? ': ' + m.small.join(', ') : ''));
     ok(/rgba\(30, 30, 36, 0\.8\)/.test(m.bg), `the pill is dark in the ${scheme} theme too`);
     await d.page.screenshot({path: path.join(OUT, `drawtools-7-${w}-${scheme}.png`)});
+    if (w < 500) {                                   // press and hold a favourite to remove it
+      const dc = await d.context.newCDPSession(d.page), fv = await d.page.locator('#drawBar .dfav >> nth=0').boundingBox(), cx = fv.x + fv.width / 2, cy = fv.y + fv.height / 2;
+      await touch(dc, 'touchStart', [[cx, cy]]); await d.page.waitForTimeout(700); await touch(dc, 'touchEnd', []); await d.page.waitForTimeout(300);
+      ok(await d.page.locator('#drawBar .dfav.del').count() === 1 && await d.page.locator('#drawBar .dfav').count() === 3, 'pressing and holding a favourite shows its ×');
+      await d.page.touchscreen.tap(cx, cy); await d.page.waitForTimeout(300);
+      ok(await d.page.locator('#drawBar .dfav').count() === 2 && !(await d.page.evaluate(() => JSON.parse(localStorage.getItem('draw-settings')).favorites.some(f => f.id === 'a'))), 'and a tap on it removes it');
+    }
     await d.page.click('#drawBar [data-min]'); await d.page.waitForTimeout(150);
     const fb = await d.page.locator('#drawFab').boundingBox();
     ok(fb.width >= 44 && fb.x + fb.width <= w, `${w}px wide: the minimised button is a fingertip size (${fb.width}px)`);

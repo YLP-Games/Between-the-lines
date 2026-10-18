@@ -6483,7 +6483,7 @@ const drawBtn = $('#drawBtn');
 const drawBar = document.createElement('div');
 drawBar.id = 'drawBar'; drawBar.className = 'pop drawbar'; drawBar.hidden = true; drawBar.setAttribute('role', 'toolbar'); drawBar.setAttribute('aria-label', 'Drawing tools');
 drawBar.innerHTML = '<div class="drow dtools" role="group" aria-label="Tool">' +
-  Object.entries(DTOOLS).map(([k, [ic, n, t]]) => `<button type="button" class="btn dt" data-tool="${k}" title="${t}">${icon(ic)}<span class="lbl">${n}</span></button>`).join('') +
+  Object.entries(DTOOLS).map(([k, [ic, n, t]]) => `<button type="button" class="btn dt" data-tool="${k}" title="${t}" aria-label="${n}">${icon(ic)}<span class="lbl">${n}</span></button>`).join('') +
   `<span class="dsep" aria-hidden="true"></span><button type="button" class="btn dt" data-min title="Minimise: fold the tools into a small button and keep drawing" aria-label="Minimise">${icon('minimize')}</button>` +
   `<button type="button" class="btn primary" data-done title="Done: stop drawing (Esc)" aria-label="Done">${icon('check')}<span class="lbl">Done</span></button></div>` +
   '<div class="drow dset"><span class="dsize"><span class="dprev" aria-hidden="true"><i></i></span><input type="range" id="drawSize" aria-label="Thickness"><output id="drawSizeOut" for="drawSize"></output></span>' +
@@ -6592,7 +6592,12 @@ function favDrop(id){
   ds.favorites = ds.favorites.filter(f => f.id !== id); if (ds.activePresetId === id) ds.activePresetId = null;
   dfDel = null; dsChanged();
 }
-drawBar.addEventListener('contextmenu', e => { const b = e.target.closest('.dfav'); if (!b) return; e.preventDefault(); dfDel = dfDel === b.dataset.id ? null : b.dataset.id; drawFavs(); });
+drawBar.addEventListener('contextmenu', e => {
+  const b = e.target.closest('.dfav'); if (!b) return;
+  e.preventDefault(); if (dfHeld) return;
+  if (dfDown) { clearTimeout(dfTimer); dfHeld = true; dfDel = b.dataset.id; } else dfDel = dfDel === b.dataset.id ? null : b.dataset.id;       // (a long press that a browser reports as a right-click)
+  drawFavs();
+});
 drawBar.addEventListener('pointerdown', e => {
   dfHeld = false; clearTimeout(dfTimer);
   const b = e.target.closest('.dfav'); if (!b || e.pointerType === 'mouse') return;
