@@ -102,6 +102,14 @@ const near = (p, n, rgb) => p.evaluate(async ([n, rgb]) => {
   ok(!warn.some(w => /drawn as text/.test(w)) && await page.locator('#main .slide:not(.pagecard)').count() === 0, 'no slide had to be rebuilt as text' + (warn.length ? ' (' + warn.join(' | ').slice(0, 200) + ')' : ''));
   ok(cut > 3000 && cut < full * .7, `the picture shows through its triangle outline only (${cut} of ${full} yellow pixels)`);
 
+  // ---- one very long word breaks into lines in a moment (it used to take time with the square of its length) ----
+  const LONG = Array.from({length: 4000}, (_, i) => 'abcdefghijklmnopqrstuvwxyz'[(i * 7) % 26]).join('');
+  const lw = await craft('fid-rich.pptx', 'longword.pptx', z => edit(z, 'ppt/slides/slide1.xml', x => x.replace('Small caption text at eighteen points', LONG)));
+  const t0 = Date.now(), fast = await opens(lw, 4, '#main .pagecard'), took = Date.now() - t0;
+  ok(fast, `a 4000-letter word lays out in ${took} ms (not tens of seconds)`);
+  const bits = await page.evaluate(() => JSON.parse(document.querySelector('.pagecard').dataset.text).filter(i => /^[a-z]{12,}$/.test(i[0])));
+  ok(bits.length > 40 && bits.map(i => i[0]).join('') === LONG && bits.every(i => i[4] <= 418), `…in ${bits.length} pieces that together are the whole word and each fit the box`);
+
   // ---- the same for a Word file: a link that runs script is made plain text ----
   const dx = await craft('reading.docx', 'xssdoc.docx', async z => {
     await edit(z, 'word/document.xml', x => x.replace('<w:body>', '<w:body><w:p><w:hyperlink r:id="rId98"><w:r><w:t>evil link</w:t></w:r></w:hyperlink><w:r><w:t xml:space="preserve"> and </w:t></w:r><w:hyperlink r:id="rId99"><w:r><w:t>good link</w:t></w:r></w:hyperlink></w:p>'));

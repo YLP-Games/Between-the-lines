@@ -2895,7 +2895,7 @@ function ppLayout(X, body, o){
       const toks = [];
       for (const r of runs) {
         if (r.br) { toks.push({br: true, r: r.size ? r : lead}); continue; }
-        for (const t of r.text.match(TOKENS) || []) { const tt = t.trimEnd(), w = mw(r, tt); toks.push({t, tt, w, sw: mw(r, t) - w, r}); }
+        for (const t of r.text.match(TOKENS) || []) { const tt = t.trimEnd(), w = mw(r, tt); toks.push({t, tt, w, sw: tt.length === t.length ? 0 : mw(r, t) - w, r}); }
       }
       const pl = []; let cur;
       const start = () => { cur = {toks: [], w: 0, hard: false}; pl.push(cur); };
@@ -2906,8 +2906,13 @@ function ppLayout(X, body, o){
         if (tk.tt && cur.toks.some(t => t.tt) && cur.w + tk.w > lim() + .5) start();
         if (tk.tt && tk.w > lim() && !CJK.test(tk.tt)) {              // a word wider than the line is broken
           let rest = tk.tt;
+          const cw = tk.w / tk.tt.length;
           while (rest) {
-            let n = rest.length; while (n > 1 && mw(tk.r, rest.slice(0, n)) > lim() - cur.w) n--;
+            // the most characters that fit (at least one): start from the average width, double until too wide, then halve in
+            const av = lim() - cur.w, fits = k => mw(tk.r, rest.slice(0, k)) <= av;
+            let n = 1, hi = Math.min(rest.length, Math.max(1, Math.ceil(av / cw * 1.2)));
+            while (hi < rest.length && fits(hi)) { n = hi; hi = Math.min(rest.length, hi * 2); }
+            while (n < hi) { const m = (n + hi + 1) >> 1; if (fits(m)) n = m; else hi = m - 1; }
             const piece = rest.slice(0, n), w = mw(tk.r, piece); rest = rest.slice(n);
             cur.toks.push({t: piece + (rest ? '' : tk.t.slice(tk.tt.length)), tt: piece, w, sw: rest ? 0 : tk.sw, r: tk.r}); cur.w += w + (rest ? 0 : tk.sw);
             if (rest) start();
