@@ -232,7 +232,7 @@ main.fit > .sidepage{width:var(--sidew)}
 /* PDF pages: the real page as a picture, opened up in strips where notes go */
 .pagecard{padding:0;overflow:hidden;background:#fff}
 .strip{position:relative;overflow:hidden;width:100%;max-width:100%;background-image:var(--pg);background-size:100% auto;background-repeat:no-repeat;cursor:text;font-size:0;color:transparent;container-type:inline-size}
-.tl{position:absolute;white-space:pre;line-height:1;transform-origin:0 0;color:transparent;font-family:Arial,Helvetica,sans-serif;cursor:text}
+.tl{position:absolute;white-space:pre;line-height:1;transform-origin:0 0;color:transparent;background:transparent;font-family:Arial,Helvetica,sans-serif;cursor:text;forced-color-adjust:none} /* never painted: a high-contrast theme would otherwise show it as text on solid blocks over the page */
 .tl::selection{background:rgba(39,71,201,.3);color:transparent}
 .gapline{position:absolute;left:0;right:0;border-top:2px dashed var(--accent);pointer-events:none;z-index:2}
 .gappill{position:absolute;left:12px;transform:translateY(-50%);z-index:3;font:600 12px var(--ui);height:22px;padding:0 11px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:999px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);user-select:none;-webkit-user-select:none} /* taste-skill-ignore: a floating button on the page */
@@ -3333,7 +3333,9 @@ return {deck: ppDeck, render: ppRender};
 
 // ---------- PDF: the real page, background graphics removed, opened up where you add notes ----------
 async function readPdf(buf, name){
-  const pdf = await pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false}).promise;
+  // fonts a PDF leaves out (Symbol, Times…) and the character maps of Chinese, Japanese and Korean text come from the pdf.js package
+  const lib = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/';
+  const pdf = await pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false, cMapUrl: lib + 'cmaps/', cMapPacked: true, standardFontDataUrl: lib + 'standard_fonts/'}).promise;
   const OPS = pdfjsLib.OPS, mul = pdfjsLib.Util.transform, n = pdf.numPages;
 
   // first look: pictures that sit in the same place on many pages are template artwork
