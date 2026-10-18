@@ -48,11 +48,14 @@ A simple web page for taking notes on lecture slides.
 
 ## On iPad and tablets
 
-- **Add to Home Screen** (in Safari: Share, then Add to Home Screen) and it opens full screen like an app, and keeps working offline.
+- **Add to Home Screen** (in Safari: Share, then Add to Home Screen) and it opens full screen like an app, and keeps working offline. Safari on an iPad or iPhone shows a small card with these steps once (again two weeks later if you close it, and never after you close it twice; not at all with Show tips off). **Install as an app** in Help & settings shows them any time.
 - **Apple Pencil** (and other pens, such as a Surface pen) draws on a PDF page or a side page with the tool from **Draw**, even when Draw is off, while your fingers scroll, tap and select as usual. A hand resting on the screen while you write is ignored. Pressing harder makes the line thicker (the highlighter stays flat), and the Pencil's eraser end rubs strokes out where the browser reports it. A quick tap with the Pencil is a tap, not a dot: it shows **+ Add here**. Turn this off with **Apple Pencil draws automatically** in Help & settings, and the Pencil then draws only while **Draw** is on. To draw with a finger, turn on **Draw**.
 - **Scribble**: tap inside a note and write with the Pencil, and iPadOS turns it into text (switch Scribble on in Settings › Apple Pencil). The Pencil never draws over a note, so you can always write in one.
 - **Press and hold** is the touch version of right-click: on **+ Add here** (sticky note or equation), on a pencil icon (its colours), on a misspelt word (suggestions; a tap works too) and on a notebook in the sidebar (its menu). Tap a note to show its handles for moving and resizing.
-- Buttons grow to fingertip size on touch screens, and the page keeps your place when you turn the iPad round. The keyboard never covers the note you are typing in.
+- **Tap with two fingers** on the page to go **Back** one step (undo), as in GoodNotes. A pinch, a two-finger scroll or two fingers held down are left alone.
+- Held upright, the sidebar and the Notes list open over the pages as drawers (tap outside to close them), so the pages keep their size; turned sideways they sit beside the pages again.
+- Buttons, tabs and menu entries grow to fingertip size (44 px) on touch screens, and the page keeps your place when you turn the iPad round. The keyboard never covers the note you are typing in, and Safari does not zoom in when you tap into a note or a box.
+- Made light for Safari: no paper-grain layer over the screen, no grey flash or double-tap zoom on what you tap, no buttons left lit after a tap, nothing on the page that holds up scrolling, and each PDF page's drawing is let go of as soon as it is stored (a long PDF no longer runs Safari out of canvas memory). It is made to run on Safari 15 and later (iPadOS and iOS 15).
 
 ## Saving
 
@@ -118,6 +121,12 @@ Some school and work organisations don't let their members use apps they haven't
 
 Open it at **https://ylp-games.github.io/Between-the-lines/**, or open `index.html` in a browser. The app is a single file with no build step.
 
-**Install it as a desktop app**: in Chrome or Edge, press **Install as an app** at the bottom of the sidebar (or the install icon in the address bar). It then opens in its own window, works offline, and appears in "Open with" for PDF, PowerPoint and Word files. `manifest.webmanifest`, `sw.js` (the offline cache) and `icons/` make this work; they are only used when the site is served from the web.
+**Install it as an app**: press **Install as an app** in Help & settings (or at the bottom of the sidebar) for the steps in the browser you are using.
+
+- **iPad and iPhone**: in Safari, tap **Share** (at the top right on an iPad, at the bottom on an iPhone), choose **Add to Home Screen**, then **Add**. It opens full screen from its icon and works offline.
+- **Chrome or Edge** (computer or Android): **Install as an app** opens the browser's own install prompt (or use the install icon in the address bar). It then opens in its own window, works offline, and appears in "Open with" for PDF, PowerPoint and Word files.
+- **Safari on a Mac** (17 or later): File › Add to Dock.
+
+`manifest.webmanifest`, `sw.js` (the offline cache) and `icons/` (with `apple-touch-icon.png`, the Home Screen icon for iOS) make this work; they are only used when the site is served from the web.
 
 Pushing to `main` publishes the site to GitHub Pages automatically (`.github/workflows/static.yml`).
