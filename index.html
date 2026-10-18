@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Between the Lines">
 <link rel="icon" id="favicon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cg%20transform%3D%22rotate%28-4%2016%2016%29%22%3E%3Cpath%20d%3D%22M3.6%203.3C10.5%202.4%2021.6%202.2%2028.6%203.1c1.4%206.3%201.6%2019.5.6%2026.3-7%201.1-18.7%201.2-25.3.3C2.3%2023.7%202.2%2010.1%203.6%203.3Z%22%20fill%3D%22%233552c4%22%20stroke%3D%22%231d2752%22%20stroke-width%3D%221.4%22%2F%3E%3Cpath%20d%3D%22M8%209.2c5.2-.7%2010.9-.6%2016%20.2M8.2%2023.2c5.3-.6%2010.8-.5%2015.6.1%22%20stroke%3D%22%23fbfbf8%22%20stroke-width%3D%222.9%22%20stroke-linecap%3D%22round%22%20fill%3D%22none%22%2F%3E%3Cpath%20d%3D%22M8.2%2016.6c2.3-3.4%204%202.9%206.4-.3s4%202.9%206.6.1%22%20stroke%3D%22%23ffd54a%22%20stroke-width%3D%223.3%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20fill%3D%22none%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Patrick+Hand&family=Kalam:wght@400;700&family=Nunito:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,700;1,400&family=Courier+Prime:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600&display=swap" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" crossorigin="anonymous">
 <style>
@@ -46,12 +46,12 @@ img{max-width:100%}
 .i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:34px;height:34px;padding:0 9px;border:1px solid transparent;border-radius:var(--radius);
   background:transparent;color:var(--ink);font:inherit;font-size:13px;cursor:pointer;box-sizing:border-box;white-space:nowrap;flex:none;text-decoration:none}
-.btn:hover{background:var(--hover)}
+@media (any-hover:hover){.btn:hover{background:var(--hover)}}      /* (hover colours only where something can hover: on an iPad a tapped button would keep them) */
 .btn:disabled{opacity:.4;cursor:default;background:transparent}
 .btn.outline{border-color:var(--line-strong);background:var(--surface)}
-.btn.outline:hover{background:var(--hover)}
+@media (any-hover:hover){.btn.outline:hover{background:var(--hover)}}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.btn.primary:hover{background:var(--accent-strong);border-color:var(--accent-strong)}
+@media (any-hover:hover){.btn.primary:hover{background:var(--accent-strong);border-color:var(--accent-strong)}}
 .btn[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
 .btn.danger{color:var(--danger)}
 .btn.sure{background:var(--danger);border-color:var(--danger);color:#fff}
@@ -151,7 +151,7 @@ body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
 .pagelist{list-style:none;margin:0;padding:0 8px 16px;display:flex;flex-direction:column;gap:2px}
 .pagelist .group{font-size:11.5px;font-weight:600;color:var(--muted);padding:10px 8px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pg{display:flex;flex-direction:column;gap:6px;width:100%;padding:8px;border:none;border-radius:10px;background:transparent;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
-.pg:hover{background:var(--hover)}
+@media (any-hover:hover){.pg:hover{background:var(--hover)}}
 .pg[aria-current="true"]{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)} /* taste-skill-ignore: a ring marking the current page */
 .thumb{position:relative;display:block;width:100%;aspect-ratio:16/9;background:#fff;border-radius:4px;box-shadow:0 0 0 1px var(--line-strong);overflow:hidden;box-sizing:border-box; /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
   padding:7px 9px;color:#33415c;font:9px/1.35 var(--ui);overflow-wrap:anywhere}
@@ -174,14 +174,15 @@ body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
 .notelist{list-style:none;margin:0;padding:0 12px 16px;display:flex;flex-direction:column;gap:8px}
 .notelist .group{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:6px 2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ncard{display:flex;gap:10px;width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);text-align:left;font:inherit;color:var(--ink);cursor:pointer;box-sizing:border-box}
-.ncard:hover{border-color:var(--line-strong);background:var(--surface-2)} /* taste-skill-ignore: hover feedback, not at rest */
+@media (any-hover:hover){.ncard:hover{border-color:var(--line-strong);background:var(--surface-2)}} /* taste-skill-ignore: hover feedback, not at rest */
 .ncard .dot{margin-top:5px}
 .ncard .body{display:flex;flex-direction:column;gap:4px;min-width:0}
 .ncard .txt{font-size:13.5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .ncard .meta{font-size:11.5px;color:var(--muted)}
 .ncard mark{background:#fff176;color:#1b2330;border-radius:2px}
 .scrim{display:none}
-@media (max-width:900px){
+/* phones, and a tablet held upright: the side panels are drawers over the pages, closed by a tap outside (the pages keep their width) */
+@media (max-width:900px),(pointer:coarse) and (orientation:portrait) and (max-width:1100px){
   .side{position:fixed;top:var(--appbar-h);bottom:calc(var(--status-h) + env(safe-area-inset-bottom,0px));height:auto;z-index:16;box-shadow:var(--pop-shadow)} /* taste-skill-ignore: the drawer floats over the page on phones */
   .side.pages{left:0;width:min(240px,85vw)}
   .side.notes{right:0;width:min(340px,92vw)}
@@ -503,7 +504,7 @@ select{font-size:16px}
 .sidehead h2{font:700 18px var(--display);text-transform:none;letter-spacing:0;color:var(--ink)}
 .notelist .group,.pagelist .group{font:700 15px var(--display);text-transform:none;letter-spacing:0;color:var(--muted)}
 .ncard{border:1.5px solid var(--pencil);border-radius:var(--wob);transition:transform .1s,box-shadow .1s}
-.ncard:hover{background:var(--surface);box-shadow:var(--sketch);transform:translate(-1px,-1px)} /* taste-skill-ignore: hover feedback, not at rest */
+@media (any-hover:hover){.ncard:hover{background:var(--surface);box-shadow:var(--sketch);transform:translate(-1px,-1px)}} /* taste-skill-ignore: hover feedback, not at rest */
 .ncard .txt{font-size:16.5px}
 .ncard .meta{font-size:13px}
 .fchip{border:1.5px solid var(--pencil);border-radius:var(--wob);font-size:14px}
@@ -540,7 +541,7 @@ kbd{border-color:var(--pencil)}
 .ws .brand b{font:700 18px var(--display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sideacts{display:flex;flex-direction:column;padding:2px 6px 6px}
 .srow{display:flex;align-items:center;gap:9px;width:100%;min-height:34px;padding:0 8px;border:none;background:none;border-radius:var(--wob);font:inherit;font-size:16.5px;color:var(--ink);cursor:pointer;text-align:left}
-.srow:hover{background:var(--hover)}
+@media (any-hover:hover){.srow:hover{background:var(--hover)}}
 /* the cloud rows sit together under one small heading */
 #sideDrive{margin-top:26px;position:relative}
 #sideDrive::before{content:"Open from the cloud";position:absolute;left:8px;top:-22px;font-size:12px;letter-spacing:.04em;color:var(--muted)}
@@ -551,7 +552,7 @@ kbd{border-color:var(--pencil)}
 .sidesec .count{font:13px var(--ui)}
 .doclist{list-style:none;margin:0;padding:0 6px 10px}
 .docrow{display:flex;align-items:center;gap:1px;border-radius:var(--wob)}
-.docrow:hover{background:var(--hover)}
+@media (any-hover:hover){.docrow:hover{background:var(--hover)}}
 .nb[aria-current="true"] > .docrow{background:color-mix(in srgb,var(--accent) 15%,transparent)}
 .docrow .caret,.docrow .more{flex:none;width:26px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;color:var(--muted);cursor:pointer;border-radius:6px}
 .docrow .caret:hover,.docrow .more:hover{color:var(--ink)}
@@ -589,7 +590,7 @@ body.focus .peekzone{display:none}
 .nbsempty{font-size:14.5px;color:var(--muted);margin:8px 2px}
 .docmenu .danger{color:var(--danger)}
 .docmenu .danger.sure{background:var(--danger);color:#fff}
-@media (max-width:900px){.peekzone{display:none}.side.pages{width:min(270px,86vw)}}
+@media (max-width:900px),(pointer:coarse) and (orientation:portrait) and (max-width:1100px){.peekzone{display:none}.side.pages{width:min(270px,86vw)}}
 
 /* ================= the add menu: a note, sticky note or equation, Notion style ================= */
 .imenu{z-index:50;width:304px;max-width:calc(100vw - 24px);display:flex;flex-direction:column;padding-top:8px;font:16px var(--ui);overflow:hidden}
@@ -630,7 +631,8 @@ body.focus .peekzone{display:none}
 /* a favourite swatch shows a × badge in its corner while you point at it or tab to it */
 .fvw{position:relative;display:inline-flex;flex:none}
 .favx{position:absolute;top:-2px;right:-2px;z-index:1;width:15px;height:15px;padding:0;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--pencil);border-radius:50%;background:var(--surface);color:var(--ink);font:700 12px/1 var(--ui);cursor:pointer;opacity:0;pointer-events:none;transition:opacity .12s}
-.fvw:hover .favx,.fvw:focus-within .favx{opacity:1;pointer-events:auto}
+.fvw:focus-within .favx{opacity:1;pointer-events:auto}
+@media (any-hover:hover){.fvw:hover .favx{opacity:1;pointer-events:auto}}      /* (a finger presses and holds a favourite to remove it instead) */
 .favx:hover{background:var(--danger);border-color:var(--danger);color:var(--surface)}
 .chippop .favx{top:-6px;right:-6px}
 /* New notes (in Help & settings) */
@@ -667,7 +669,7 @@ main.reading .notebox.sticky > .g-move{display:none!important}
 .stickyghost::before{content:"";position:absolute;left:50%;top:-1px;width:64px;height:16px;translate:-50% 0;background:rgba(206,190,138,.72)}
 .stickyghost.off{opacity:.55}
 body.dragging-sticky,body.dragging-sticky *{cursor:grabbing!important}
-@media (max-width:900px){body.dragging-sticky .side.notes,body.dragging-sticky .scrim{opacity:.12;pointer-events:none}}
+@media (max-width:900px),(pointer:coarse) and (orientation:portrait) and (max-width:1100px){body.dragging-sticky .side.notes,body.dragging-sticky .scrim{opacity:.12;pointer-events:none}}
 
 /* ================= command search (Ctrl+K), Markdown pages and the offline badge ================= */
 .ckscrim{position:fixed;inset:0;z-index:68;background:rgba(16,24,40,.28)}
@@ -1135,23 +1137,23 @@ main.reading .jrnl .j-ind{cursor:default}
 @media (pointer:coarse){
   :root{--status-h:44px}
   .btn,.tab,.tbtn,.srow,.pg,.docrow .caret,.docrow .more{touch-action:manipulation}
-  :is(.btn,.sidehead .btn,.statusbar .btn,.seg .btn,.chippop .btn,.drawbar .dw,.multibar .btn){min-width:40px;height:40px}
+  :is(.btn,.sidehead .btn,.statusbar .btn,.seg .btn,.chippop .btn,.drawbar .dw,.multibar .btn){min-width:44px;height:44px}
   .btn.big{height:48px}
-  #bNoFill,#favChipBtn{height:40px!important}
-  :is(.mediabar,.annobar,.annopop,.pptx-tip,.bhead) .btn,.bhead select,.fkeys button,.fhead .btn{min-width:40px;height:40px}
-  .fkeys button{min-width:40px}
-  .tab{height:42px;padding-inline:16px}
-  :is(select,#size,.newrow input[type=number],.tbtn){height:40px}
-  .sw,.chippop .cc,input[type=color],.chippop input[type=color]{width:40px;height:40px}
+  #bNoFill,#favChipBtn{height:44px!important}
+  :is(.mediabar,.annobar,.annopop,.pptx-tip,.bhead) .btn,.bhead select,.fkeys button,.fhead .btn{min-width:44px;height:44px}
+  .fkeys button{min-width:44px}
+  .tab{height:44px;padding-inline:16px}
+  :is(select,#size,.newrow input[type=number],.tbtn){height:44px}
+  .sw,.chippop .cc,input[type=color],.chippop input[type=color]{width:44px;height:44px}
   .sw::before{width:22px;height:22px}
-  .chippop .cc,.hdot{width:40px;height:40px;padding:7px;border:none;background-clip:content-box!important}
+  .chippop .cc,.hdot{width:44px;height:44px;padding:9px;border:none;background-clip:content-box!important}
   .chippop .cc[aria-pressed="true"],.hdot[aria-pressed="true"]{box-shadow:none;outline:2px solid var(--accent);outline-offset:-5px}
   .chippop .row{max-width:240px}
   .note-chip::before{content:"";position:absolute;inset:-10px;border-radius:50%}      /* a small icon with a fingertip-sized catching area */
   .imenu input{height:40px}
   .srow{min-height:44px}
-  .docbtn{height:40px}
-  .docrow .caret,.docrow .more{width:40px;height:40px}
+  .docbtn{height:44px}
+  .docrow .caret,.docrow .more{width:44px;height:44px}
   .docrow .more{opacity:1}
   #sizePick{width:40px}
   .gappill{height:44px;padding:0 20px;font-size:19px}
@@ -1175,6 +1177,58 @@ main.reading .jrnl .j-ind{cursor:default}
 /* a press-and-hold is for menus and dragging, not for the iPad's text magnifier or callout */
 :is(.btn,.tab,.tbtn,.srow,.docrow,.pg,.gappill,.note-chip,.sw,.fav,.favx,.grip,.nbar,.stickytape,.cardbar,.imenu,.menu,.docmenu,.chippop,.spellmenu){-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 :is(input,textarea,[contenteditable=true],[contenteditable=true] *){-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+/* ================= iPad and iPhone: Safari, a finger and the Pencil ================= */
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;text-size-adjust:100%}      /* no grey flash over whatever you tap, and no text grown bigger in landscape */
+:where(button,a,label,select,summary,input,[role=button],[role=tab],.appbar,.statusbar,.side,.pop,.scrim){touch-action:manipulation}      /* a quick second tap is a tap, not a zoom (pinching still zooms) */
+.side.pages{padding-left:env(safe-area-inset-left,0px)}
+.side.notes{padding-right:env(safe-area-inset-right,0px)}
+.side{padding-bottom:env(safe-area-inset-bottom,0px)}
+/* how to install: a small card near Safari's Share button (top right on an iPad, at the bottom on an iPhone) */
+.a2hs{z-index:75;top:calc(var(--appbar-h) + 10px);right:var(--gutter-r);width:min(360px,calc(100vw - 24px));box-sizing:border-box;padding:12px 14px;font:16px/1.35 var(--ui)}
+.a2hs.low{top:auto;right:auto;left:50%;translate:-50% 0;bottom:calc(var(--status-h) + 12px + env(safe-area-inset-bottom,0px))}
+.a2-head{display:flex;align-items:flex-start;gap:10px}
+.a2-head > svg{flex:none;width:40px;height:40px}
+.a2-head h2{margin:2px 0 0;font:700 19px/1.15 var(--display)}
+.a2-head p{margin:3px 0 0;font-size:14.5px;color:var(--muted)}
+.a2-head .btn{flex:none;margin:-6px -8px 0 auto}
+.a2-steps{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;counter-reset:a2}
+.a2-steps li{display:flex;align-items:center;gap:10px;counter-increment:a2}
+.a2-steps li::before{content:counter(a2);flex:none;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--pencil);border-radius:var(--wob);background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:14px}
+.a2-ico{width:20px;height:20px;vertical-align:-4px;color:var(--accent)}
+.a2-k{white-space:nowrap}
+.a2-note{margin:10px 0 0;font-size:14.5px;color:var(--muted)}
+.a2-act{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+@media (pointer:coarse){
+  body::after{display:none}            /* the paper grain: a layer over the whole screen that a tablet redraws as you scroll */
+  :is(.btn:not(.primary),.pg,.side .srow,.docrow,.ncard,.tbtn):active:not(:disabled){background:var(--hover)}      /* a tap shows while you press, and nothing stays lit after it */
+  #size,#fInput,.dictadd input,.newrow input[type=number],.docrow input,.shadd input,.shlinkrow input,.odq,.sharebox textarea,:is(.shwhat,.shadd,.shgen) select,.tblpick input[type=number]{font-size:16px}      /* Safari zooms in on a box with smaller text */
+  .cmdk .iitem,.syncpop button{min-height:44px}
+  #sizePick{width:44px}
+  .odtabs button{height:44px}
+}
+@media (pointer:coarse) and (min-width:641px){.panel{height:calc(74px + var(--sbh))}}      /* room for the ribbon's 44px buttons (and the View tab's button pairs) with their captions */
+@media (pointer:coarse) and (max-width:640px){.titlebar .btn{min-width:40px;height:40px}}      /* (a phone's title bar has no room for more) */
+/* Safari before 15.4 has no dvh: the window's height instead */
+@supports not (height:100dvh){
+  .workspace{min-height:calc(100vh - var(--appbar-h) - var(--status-h))}
+  .side,.beside{height:calc(100vh - var(--appbar-h) - var(--status-h))}
+  @media (max-width:900px),(pointer:coarse) and (orientation:portrait) and (max-width:1100px){.side{height:auto}}
+  @media (max-width:900px){.beside{height:auto}}
+  .sidecol{height:calc((100vh - var(--appbar-h) - var(--status-h)) / var(--z,1))}
+  .settings{max-height:calc(100vh - var(--appbar-h) - var(--status-h) - 24px)}
+  #saveMenu{max-height:calc(100vh - 76px)}
+  .sharebox{max-height:calc(100vh - max(16px,7vh) - 12px)}
+  .odbox{height:min(640px,calc(100vh - max(16px,6vh) - 12px))}
+}
+/* Safari before 16.2 has no color-mix(): plain colours where it would otherwise leave nothing */
+@supports not (color:color-mix(in srgb,red,blue)){
+  .notebox.collapsed > .note-chip{border:1px solid rgba(0,0,0,.3)}
+  .tab[aria-selected="true"]::after,.nb[aria-current="true"] > .docrow,.docrow.droptarget,.tblpick .tp-g > i.on{background:var(--accent-soft)}
+  .mine table.wtable td{border:1px solid}
+  .wt-selbox{background:rgba(47,95,214,.2)}
+  .foldkids{border-left:1px solid var(--line)}
+  .wguide{outline:1px dashed var(--wg-ink)}
+}
 </style>
 <script>
 // a saved Light or Dark theme is set before the page paints, so it doesn't flash the other one first
@@ -1182,6 +1236,27 @@ try {
   var t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
   if (localStorage.getItem('ui-font') === 'clean') document.documentElement.dataset.uiFont = 'clean';
 } catch (e) {}
+// iPads and iPhones on Safari 15.0 to 15.3 lack two things the app and its PDF reader use: .at() and structuredClone
+[Array, String, Object.getPrototypeOf(Int8Array)].forEach(function (C) {
+  if (!C.prototype.at) Object.defineProperty(C.prototype, 'at', {configurable: true, writable: true, value: function (i) { i = Math.trunc(i) || 0; return this[i < 0 ? i + this.length : i]; }});
+});
+if (!window.structuredClone) window.structuredClone = function (v, o) {
+  var tr = (o && o.transfer) || [], seen = new Map();
+  function c(v){
+    if (typeof v !== 'object' || v === null) return v;
+    if (seen.has(v)) return seen.get(v);
+    var r, p = Object.getPrototypeOf(v);
+    if (v instanceof ArrayBuffer) r = tr.indexOf(v) >= 0 ? v : v.slice(0);
+    else if (ArrayBuffer.isView(v)) r = tr.indexOf(v.buffer) >= 0 ? v : new v.constructor(v.buffer.slice(v.byteOffset, v.byteOffset + v.byteLength));
+    else if (v instanceof Date) r = new Date(+v);
+    else if (v instanceof Map) { r = new Map(); seen.set(v, r); v.forEach(function (x, k) { r.set(c(k), c(x)); }); return r; }
+    else if (v instanceof Set) { r = new Set(); seen.set(v, r); v.forEach(function (x) { r.add(c(x)); }); return r; }
+    else if (Array.isArray(v) || p === Object.prototype || p === null) { r = Array.isArray(v) ? [] : {}; seen.set(v, r); Object.keys(v).forEach(function (k) { r[k] = c(v[k]); }); return r; }
+    else r = v;                    // anything else (a picture, an error) is handed over as it is
+    seen.set(v, r); return r;
+  }
+  return c(v);
+};
 </script>
 </head>
 <body>
@@ -1268,6 +1343,8 @@ try {
 <symbol id="i-distribute" viewBox="0 0 24 24"><path d="M3 3h18"/><path d="M3 21h18"/><rect x="7" y="9" width="10" height="6" rx="1"/></symbol>
 <symbol id="i-tidy" viewBox="0 0 24 24"><path d="M4 4v16"/><path d="M8 7h12"/><path d="M8 12h8"/><path d="M8 17h11"/></symbol>
 <symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M8 10H6.5A1.5 1.5 0 0 0 5 11.5v8A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-8a1.5 1.5 0 0 0-1.5-1.5H16"/></symbol>
+<symbol id="i-add-square" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M12 8v8"/><path d="M8 12h8"/></symbol>
 </defs></svg>
 
 <header class="appbar" id="appbar">
@@ -1616,7 +1693,7 @@ try {
         <li>On each note: the arrows float it on top of the page, the minus minimises it to a pencil icon (drag the icon aside, right-click it to colour it), and the pin keeps it open.</li>
         <li>The <b>sidebar</b> (left) lists your notebooks: click one to switch, and the one you're in shows its pages. Use its <b>⋯</b> to rename or delete it. Hide it with <b>«</b> (Ctrl+\) and point at the left edge to peek at it. A notebook’s <b>⋯</b> menu can also star it as a <b>Favourite</b>, <b>Duplicate</b> it, or move it to the <b>Trash</b>, where it waits 30 days (and can be restored) before it is gone for ever. Group notebooks in <b>folders</b> (<b>New folder</b>): drag a notebook or a folder onto a folder to move it, or use <b>Move to…</b> in its <b>⋯</b> menu.</li>
         <li><b>Notes</b> (right) lists every note in the notebook to search, filter by icon colour and jump to.</li>
-        <li>In Chrome or Edge, <b>Install as an app</b> (at the bottom of the sidebar) gives Between the Lines its own window that works offline.</li>
+        <li><b>Install as an app</b> (below, or at the bottom of the sidebar) gives Between the Lines its own window, or a Home Screen icon on an iPad or iPhone, and it works offline.</li>
         <li><b>Focus</b> hides the toolbar, side panels and status bar so only your pages and notes are left (Esc brings them back). Each panel also closes with its ×, and View › Toolbar can shrink the toolbar to tabs only.</li>
         <li><b>Study mode</b> stops accidental changes while you revise. Everything is saved in this browser; <b>Download</b> a PDF, or a notebook file to keep editing on another device.</li>
       </ul>
@@ -1624,12 +1701,19 @@ try {
     <section id="tabletSec">
       <h3>On iPad and tablets</h3>
       <ul class="howto">
-        <li><b>Add to Home Screen:</b> in Safari tap Share, then <b>Add to Home Screen</b>. Between the Lines then opens full screen like an app, and keeps working offline.</li>
+        <li><b>Add to Home Screen:</b> in Safari tap Share, then <b>Add to Home Screen</b>. Between the Lines then opens full screen like an app, and keeps working offline (<b>How to install</b> below shows the steps).</li>
         <li><b>Apple Pencil</b> (and other pens) draws on a PDF page or a side page with the tool from <b>Draw</b>, even when Draw is off. Pressing harder makes the line thicker, and the Pencil’s eraser end (where it has one) rubs strokes out. Your fingers still scroll, tap and select, and a hand resting on the screen while you write is ignored. A quick tap with the Pencil works like a tap: it shows <b>+ Add here</b>. To draw with a finger, turn on <b>Draw</b>.</li>
         <li><b>Scribble:</b> tap inside a note and write with the Pencil; iPadOS turns your handwriting into text (switch it on in Settings › Apple Pencil). The Pencil never draws on top of a note, so you can always write in one.</li>
         <li><b>Press and hold</b> does what right-click does: on <b>+ Add here</b> (sticky note or equation), on a pencil icon’s colours, on a misspelt word (suggestions) and on a notebook in the sidebar. Tap a note to show its handles for moving and resizing.</li>
+        <li><b>Tap with two fingers</b> on the page to go <b>Back</b> one step (undo).</li>
+        <li>Held upright, the sidebar and the Notes list open over the pages, so the pages keep their size: tap outside to close them.</li>
       </ul>
       <label class="chk penrow" for="penAuto" title="On: the Pencil draws on the page with the tool you picked, even when Draw is off. Off: the Pencil acts like a finger, and only draws while Draw is on."><input type="checkbox" id="penAuto"> Apple Pencil draws automatically</label>
+    </section>
+    <section id="installSec">
+      <h3>Install as an app</h3>
+      <p class="sethint">Between the Lines then opens like an app, in its own window or full screen from your Home Screen, and works offline.</p>
+      <button type="button" class="btn outline" id="installHow"><svg class="i"><use href="#i-download"/></svg>How to install</button>
     </section>
     <section>
       <h3>Keyboard shortcuts</h3>
@@ -3407,6 +3491,7 @@ async function readPdf(buf, name){
       const t = i.transform, [x, y] = v.convertToViewportPoint(t[4], t[5]);
       return [i.str, +(x / S).toFixed(1), +(y / S).toFixed(1), +(Math.hypot(t[2], t[3]) || i.height || 10).toFixed(1), +(i.width).toFixed(1), i.hasEOL ? 1 : 0];
     }));
+    cv.width = cv.height = 0; page.cleanup();          // let go of the drawing at once: Safari on an iPad has little room for canvases, and a long PDF would run out
   }
 }
 // a page picture (stored once, as an asset) with its words and the gaps between lines, as a card at the end of the notebook
@@ -4411,6 +4496,7 @@ async function pdfFile(){
       const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
       // a printed page with its side page beside it is wider than A4: the sheet keeps its true size, and the page grows to hold both
       pages.push({w: canvas.width, h: canvas.height, pw: size && (withSide ? canvas.width * .375 : size[0]), ph: size && (withSide ? canvas.height * .375 : size[1]), annots, jpeg: new Uint8Array(await blob.arrayBuffer())});
+      canvas.width = canvas.height = 0;            // (each page's drawing goes as soon as it is saved: an iPad has little room for canvases)
     }
     const extra = [size ? layout.replace('-', ' ') : '', mode === 'comments' ? 'comments' : mode === 'none' ? 'no notes' : ''].filter(Boolean).join(', ');
     return {name: notebookName() + ` (notes${extra ? ', ' + extra : ''}).pdf`, blob: makePdf(pages)};
@@ -4556,7 +4642,8 @@ function paginateSoon(){ if (LAYOUTS[layout]) { clearTimeout(pageTimer); pageTim
 // the page column changed width (window resized, a side panel opened or closed)
 function relayout(){ if (LAYOUTS[layout]) paginateView(); else { sideLayout(); placeFloats(); spreadChips(); } }
 let resizeTimer = null;
-window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(relayout, 250); });
+let resizeW = innerWidth;
+window.addEventListener('resize', () => { if (innerWidth === resizeW) return; resizeW = innerWidth; clearTimeout(resizeTimer); resizeTimer = setTimeout(relayout, 250); });      // (only a new width: on a phone the height changes as Safari's bars come and go)
 // the column changed width (a panel opened, the divider was dragged): scale it again, now
 const fitRuns = [];
 new ResizeObserver(() => {
@@ -5646,7 +5733,7 @@ $('#showBar').onclick = () => setBar(pref.get('bar-last') === 'compact' ? 'compa
 new ResizeObserver(() => document.documentElement.style.setProperty('--appbar-h', appbar.offsetHeight + 'px')).observe(appbar);
 
 // ================= side panels: Pages (left) and Notes (right) =================
-const narrow = matchMedia('(max-width: 900px)');
+const narrow = matchMedia('(max-width: 900px), (pointer: coarse) and (orientation: portrait) and (max-width: 1100px)');      // drawers: a phone, or a tablet held upright
 const panelOpen = {pages: false, notes: false};
 const panelEl = {pages: $('#pagesPanel'), notes: $('#notesPanel')};
 function setPanel(name, on, quiet){
@@ -5670,7 +5757,7 @@ document.addEventListener('click', e => {
 });
 $('#scrim').onclick = () => { setPanel('pages', false); setPanel('notes', false); };
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && narrow.matches && (panelOpen.pages || panelOpen.notes)) { setPanel('pages', false); setPanel('notes', false); }
+  if (e.key === 'Escape' && narrow.matches && (panelOpen.pages || panelOpen.notes) && !e.defaultPrevented && !$('.docmenu:not([hidden])')) { setPanel('pages', false); setPanel('notes', false); }      // (a notebook's menu in the drawer closes first)
 });
 function restorePanels(){
   const wide = !narrow.matches;
@@ -5738,7 +5825,7 @@ function trackPage(){
   const top = appbar.offsetHeight, y = top + (innerHeight - top) * 0.3;
   let i = 0;
   for (; i < slides.length - 1; i++) if (slides[i].getBoundingClientRect().bottom > y) break;
-  info.innerHTML = `Page <b>${i + 1}</b> of ${slides.length}`;
+  const t = `Page <b>${i + 1}</b> of ${slides.length}`; if (info.innerHTML !== t) info.innerHTML = t;      // (it runs as you scroll: no change, no redraw)
   if (i === pageMark) return;
   pageMark = i;
   const list = pageList;
@@ -7120,6 +7207,7 @@ sidePaintUi();
 // The notebook on the left stays the only one you edit (all the editing code works on #main). The one beside it is shown in #beside from its
 // saved copy with editing taken out; Swap trades places. Nothing in the pane is ever saved: currentDoc() copies #main only.
 const bEl = $('#beside'), bBody = $('#bBody'), bView = $('#bView'), bPage = $('#bPage'), bInfo = $('#besideInfo'), bDiv = $('#bDiv'), bName = $('#bName'), bDrop = $('#bDrop'), bSpace = $('.workspace');
+const bNarrow = matchMedia('(max-width: 900px)');                   // (on a phone the notebook beside covers the page; an upright tablet still has room for both)
 const bs = {id: null, token: 0, busy: false, ratio: Math.min(.8, Math.max(.2, parseFloat(pref.get('beside-ratio', '0.45')) || .45))};
 // the room the two notebooks share: the workspace less the sidebar and the notes list when they are docked
 function besideAvail(){
@@ -7127,7 +7215,7 @@ function besideAvail(){
   return bSpace.clientWidth - w(panelEl.pages) - w(panelEl.notes);
 }
 function besideApply(){
-  if (bEl.hidden || narrow.matches) { bEl.style.width = ''; return; }
+  if (bEl.hidden || bNarrow.matches) { bEl.style.width = ''; return; }
   const avail = besideAvail(), min = 320;
   const w = avail < min * 2 ? avail / 2 : Math.min(avail - min, Math.max(min, bs.ratio * avail));
   bEl.style.width = Math.round(w) + 'px';
@@ -7138,7 +7226,7 @@ let besideTimer = 0;
 function besideRelayout(){ clearTimeout(besideTimer); besideTimer = setTimeout(() => { relayout(); besideLayout(); }, 120); }
 new ResizeObserver(() => besideApply()).observe(main);
 new ResizeObserver(() => { if (!bEl.hidden) besideRelayout(); }).observe(bBody);
-narrow.addEventListener('change', () => { besideApply(); besideRelayout(); });
+bNarrow.addEventListener('change', () => { besideApply(); besideRelayout(); });
 function besideLayout(){
   if (bEl.hidden || !bView.firstElementChild) return;
   placeFloats(bView);
@@ -7220,7 +7308,7 @@ async function besideShow(id, scroll = 0){
     besideLayout(); bBody.scrollTop = scroll || 0;
   });
   relayout();
-  if (first && narrow.matches) bBody.focus({preventScroll: true});
+  if (first && bNarrow.matches) bBody.focus({preventScroll: true});
   return true;
 }
 function besideClose(){
@@ -7265,7 +7353,7 @@ $('#bSwap').onclick = besideSwap;
 $('#bClose').onclick = besideClose;
 function restoreBeside(){
   const id = pref.get('beside', '');
-  if (id && !narrow.matches && id !== curId && docs.some(d => d.id === id && !d.trashed)) besideShow(id);
+  if (id && !bNarrow.matches && id !== curId && docs.some(d => d.id === id && !d.trashed)) besideShow(id);
 }
 // a pencil icon opens its note, right where it is
 bView.addEventListener('click', e => {
@@ -7282,7 +7370,7 @@ document.addEventListener('keydown', e => {
 });
 // the divider: drag it (or use the arrow keys) to share the room; where you leave it is remembered
 bDiv.addEventListener('pointerdown', e => {
-  if (e.button !== 0 || narrow.matches) return;
+  if (e.button !== 0 || bNarrow.matches) return;
   e.preventDefault();
   try { bDiv.setPointerCapture(e.pointerId); } catch {}
   document.body.classList.add('bresizing');
@@ -7301,7 +7389,7 @@ bDiv.addEventListener('keydown', e => {
 bDiv.addEventListener('dblclick', () => { bs.ratio = .45; pref.set('beside-ratio', '0.45'); besideApply(); besideRelayout(); });
 // dragging a notebook from the sidebar onto the right half of the page opens it beside
 function besideAim(x, y){
-  const on = !!drag && drag.kind === 'doc' && !narrow.matches && drag.id !== curId && x != null && x > innerWidth / 2 && y > (appbar.getBoundingClientRect().bottom || 0);
+  const on = !!drag && drag.kind === 'doc' && !bNarrow.matches && drag.id !== curId && x != null && x > innerWidth / 2 && y > (appbar.getBoundingClientRect().bottom || 0);
   bDrop.hidden = !on;
   return on;
 }
@@ -9252,6 +9340,7 @@ const CK_ACTIONS = [
   {id: 'focus', label: 'Focus mode', ico: 'focus', hint: 'Ctrl+Shift+F', words: 'hide toolbar panels distraction', run: ckClick('#focusBtn')},
   {id: 'study', label: 'Study mode', ico: 'book', words: 'read only revise', run: ckClick('#readBtn')},
   {id: 'sidebg', label: 'Side page background', ico: 'palette', words: 'side notes paper colour pattern lined grid dots cream dark', run: () => openSideBg($('#sideBgBtn'))},
+  {id: 'install', label: 'Install as an app', ico: 'download', words: 'add to home screen ipad iphone android dock offline app pwa', run: () => installNow()},
   {id: 'tips', label: 'Show tips on or off', ico: 'lightbulb', words: 'help hints coach teaching messages', run: () => setTips(!tipsOn())},
   {id: 'tooltips', label: 'Button tooltips on or off', ico: 'help', words: 'hover pop up labels help', run: () => setTooltips(!qtipsOn())},
   {id: 'autoalign', label: 'Auto-align notes on or off', ico: 'nalign-left', words: 'align line up box left edge tidy', run: () => setAutoAlign(!autoAlignOn())},
@@ -9916,7 +10005,7 @@ document.addEventListener('pointerup', e => { if (drag && e.pointerId === drag.p
 document.addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.pid) endDrag(false); });
 window.addEventListener('blur', () => endDrag(false));
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && drag?.on) { e.preventDefault(); e.stopPropagation(); endDrag(false); } }, true);
-document.addEventListener('touchmove', e => { if (drag?.on) e.preventDefault(); }, {passive: false});
+panelEl.pages.addEventListener('touchmove', e => { if (drag?.on) e.preventDefault(); }, {passive: false});      // (only the sidebar: a listener on the whole page would make every scroll wait for it)
 document.addEventListener('contextmenu', e => { if (drag) e.preventDefault(); });
 function startDrag(){
   if (!drag || drag.on) return;
@@ -9998,14 +10087,84 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
     if (!document.querySelector('link[rel=manifest]')) document.head.append(Object.assign(document.createElement('link'), {rel: 'manifest', href: 'manifest.webmanifest'}));
   }).catch(() => {});               // e.g. a preview with no sw.js: it just isn't installable there
 }
-addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('#installBtn').hidden = false; });
-addEventListener('appinstalled', () => { installEvt = null; $('#installBtn').hidden = true; toast('Installed. Between the Lines now opens in its own window, even offline.'); });
-$('#installBtn').onclick = async () => {
-  if (!installEvt) return;
-  installEvt.prompt();
-  try { await installEvt.userChoice; } catch {}
-  installEvt = null; $('#installBtn').hidden = true;
-};
+// iPadOS says it is a Mac: a Mac with a touch screen is an iPad. Safari there has no install button, so a card shows how (other browsers on iOS share Safari's Share sheet)
+const ua = navigator.userAgent, isIOS = /iP(hone|ad|od)/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1), iPadish = isIOS && !/iPhone|iPod/.test(ua);
+const iosSafari = isIOS && /Safari\//.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|FBAN|FBAV|Instagram|Line\//.test(ua);
+const onWeb = /^https?:$/.test(location.protocol), standalone = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+// focusing a note or a box with small text makes Safari zoom in (and a slide shrunk to fit makes notes small): the page stays put, and pinching still zooms
+if (isIOS) { const vp = $('meta[name=viewport]'); if (vp && !/maximum-scale/.test(vp.content)) vp.content += ',maximum-scale=1'; }
+function paintInstall(){ $('#installBtn').hidden = !installEvt && !(iosSafari && onWeb && !standalone()); }
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; paintInstall(); });
+addEventListener('appinstalled', () => { installEvt = null; paintInstall(); hideInstall(); toast('Installed. Between the Lines now opens in its own window, even offline.'); });
+async function installNow(){
+  if (installEvt) { const e = installEvt; e.prompt(); try { await e.userChoice; } catch {} installEvt = null; paintInstall(); return; }
+  if (onWeb && standalone()) { toast('Between the Lines is already open as an app.'); return; }
+  showInstall(false);
+}
+$('#installBtn').onclick = installNow;
+$('#installHow').onclick = installNow;
+paintInstall();
+// the steps for this browser
+function installSteps(){
+  const share = '<span class="a2-k"><b>Share</b> <svg class="i a2-ico" aria-hidden="true"><use href="#i-share"/></svg></span>', add = '<span class="a2-k"><b>Add to Home Screen</b> <svg class="i a2-ico" aria-hidden="true"><use href="#i-add-square"/></svg></span>';
+  if (!onWeb) return {lead: 'This copy was opened from a file on your device. Open Between the Lines from its web address instead, then choose Install as an app there.', steps: []};
+  if (isIOS && !iosSafari) return {steps: [`Tap ${share} (in Chrome it is in the address bar)`, `Choose ${add}`, 'Tap <b>Add</b>'], foot: 'Not in the list? Open this page in Safari and do it there.'};
+  if (isIOS) return {steps: [`Tap ${share} ${iPadish ? 'at the top right of Safari' : 'at the bottom of Safari'}`, `Scroll down a little and choose ${add}`, 'Tap <b>Add</b>. Between the Lines is now on your Home Screen']};
+  if (/Android/.test(ua)) return {steps: ['Open the browser’s menu <b>⋮</b>', 'Choose <b>Install app</b> or <b>Add to Home screen</b>']};
+  if (/Edg\//.test(ua)) return {steps: ['Open Edge’s menu <b>…</b>', 'Choose <b>Apps</b>, then <b>Install this site as an app</b>']};
+  if (/Chrome\//.test(ua)) return {steps: ['Click the install icon at the right of the address bar, or open Chrome’s menu <b>⋮</b>', 'Choose <b>Install Between the Lines</b> (in newer Chrome it is under <b>Cast, save and share</b>)']};
+  if (/Firefox\//.test(ua)) return {lead: 'Firefox on a computer can’t install a site as an app. Open this page in Chrome, Edge or Safari to install it, or bookmark it: once visited, it works offline in any browser.', steps: []};
+  if (/Safari\//.test(ua)) return {steps: ['In the menu bar, choose <b>File</b>, then <b>Add to Dock</b> (Safari 17 or later)']};
+  return {steps: ['Look in your browser’s menu for <b>Install</b> or <b>Add to Home screen</b>']};
+}
+// the card: by itself once in a while on an iPad or iPhone in Safari (with Show tips on, and never again once closed twice), or any time from Help & settings
+let a2El = null;
+const a2Due = () => { const k = pref.json('a2hs', {}); return iosSafari && onWeb && !standalone() && tipsOn() && (k.no || 0) < 2 && Date.now() - (k.at || 0) >= 14 * 864e5; };
+function showInstall(auto){
+  if (!auto) closeSettings();
+  const st = installSteps(), home = isIOS && onWeb;
+  if (!a2El) {
+    a2El = Object.assign(document.createElement('div'), {className: 'pop a2hs', id: 'a2hs', hidden: true});
+    a2El.setAttribute('role', 'dialog'); a2El.setAttribute('aria-labelledby', 'a2hsT');
+    a2El.addEventListener('click', e => { if (e.target.closest('[data-a2]')) hideInstall(); });
+    document.body.append(a2El);
+  }
+  a2El.classList.toggle('low', isIOS && !iPadish);          // (on an iPhone, Safari's Share button is at the bottom)
+  a2El.innerHTML = `<div class="a2-head">${$('#pagesPanel .brand svg')?.outerHTML || ''}<div><h2 id="a2hsT">${home ? 'Add it to your Home Screen' : 'Install Between the Lines'}</h2>`
+    + `<p>${home ? 'It opens full screen like an app, and works offline.' : 'It opens in its own window like an app, and works offline.'}</p></div><button type="button" class="btn" data-a2 aria-label="Close">${icon('x')}</button></div>`
+    + (st.lead ? `<p class="a2-note">${st.lead}</p>` : '') + (st.steps.length ? `<ol class="a2-steps">${st.steps.map(t => `<li><span>${t}</span></li>`).join('')}</ol>` : '') + (st.foot ? `<p class="a2-note">${st.foot}</p>` : '')
+    + `<div class="a2-act">${auto ? '<button type="button" class="btn outline" data-a2>Not now</button>' : ''}<button type="button" class="btn primary" data-a2>Got it</button></div>`;
+  a2El.dataset.auto = auto ? '1' : '';
+  a2El.hidden = false;
+  if (auto) { const k = pref.json('a2hs', {}); pref.setJson('a2hs', {no: k.no || 0, at: Date.now()}); }
+  else a2El.querySelector('.a2-act .primary').focus();
+}
+function hideInstall(){
+  if (!a2El || a2El.hidden) return;
+  a2El.hidden = true;
+  if (a2El.dataset.auto) { const k = pref.json('a2hs', {}); pref.setJson('a2hs', {no: (k.no || 0) + 1, at: Date.now()}); }
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && a2El && !a2El.hidden) hideInstall(); });
+addEventListener('load', () => setTimeout(() => { if (a2Due() && settingsBox.hidden) showInstall(true); }, 2500));
+// two fingers tapped on the page together, as in GoodNotes: Back one step. A pinch or a two-finger scroll moves, and a press lasts: neither is a tap
+let tap2 = null;
+document.addEventListener('touchstart', e => {
+  const n = e.touches.length, now = performance.now(), page = !!e.target.closest?.('#main');
+  if (n === 1 || (n === 2 && e.changedTouches.length === 2)) tap2 = page ? {t: now, two: n === 2, at: {}} : null;
+  else if (n === 2 && tap2 && !tap2.two && page && now - tap2.t < 150) tap2.two = true;
+  else tap2 = null;
+  if (tap2?.two) { if (penLive) tap2 = null; else fingerInk?.stop(); }       // (two fingers don't draw, and a hand resting by the Pencil is no tap)
+  if (tap2) for (const t of e.changedTouches) { if (t.touchType === 'stylus') { tap2 = null; return; } tap2.at[t.identifier] = [t.clientX, t.clientY]; }
+}, {passive: true});
+document.addEventListener('touchmove', e => {
+  if (tap2) for (const t of e.changedTouches) { const p = tap2.at[t.identifier]; if (!p || Math.hypot(t.clientX - p[0], t.clientY - p[1]) > 12) { tap2 = null; return; } }
+}, {passive: true});
+document.addEventListener('touchend', e => {
+  if (!tap2 || e.touches.length) return;
+  const yes = tap2.two && performance.now() - tap2.t < 300; tap2 = null;
+  if (yes && !reading && hist.i > 0) { stepHistory(-1); toast('Back one step.'); }
+}, {passive: true});
+document.addEventListener('touchcancel', () => { tap2 = null; }, {passive: true});
 // installed: PDFs, PowerPoints and Word files can be opened with it from your computer
 if ('launchQueue' in window) launchQueue.setConsumer(async p => { if (p.files?.length) openFiles(await Promise.all(p.files.map(h => h.getFile()))); });
 
