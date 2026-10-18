@@ -2743,7 +2743,8 @@ main.addEventListener('click', e => {
   focusNote(el);
 });
 main.addEventListener('keydown', e => {
-  const note = e.target.closest?.('.mine'); if (!note) return;
+  const note = e.target.closest?.('.mine'); if (!note || e.isComposing || e.keyCode === 229) return;       // Enter that confirms an IME word is not a line break
+  if (e.key === 'Escape' && !e.defaultPrevented && !focusMode && spellMenu.hidden && !mediaSel) { note.blur(); return; }     // Tab indents here, so Esc is the way out of a note
   const sel = getSelection(), n = sel.anchorNode, inLi = n && (n.nodeType === 1 ? n : n.parentElement).closest('li') && note.contains(n);
   if (e.key === 'Tab' && (inLi || note.tagName === 'DIV')) { e.preventDefault(); document.execCommand('styleWithCSS', false, false); document.execCommand(e.shiftKey ? 'outdent' : 'indent'); saveSoon(); return; }
   if (e.key === 'Enter' && !inLi) { e.preventDefault(); document.execCommand('insertLineBreak'); }
@@ -2804,23 +2805,28 @@ function slideCard(){
 }
 const isLight = hex => { const n = parseInt(hex, 16); const r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (0.299*r + 0.587*g + 0.114*b) > 215; };
 const px = pt => Math.round(Math.max(12, Math.min(44, pt)));
+// what a file says (a colour, a font name, a link) goes into HTML only once it is known to be harmless
+// a file is opened into the notebook that was open when it began: if you switch to another meanwhile, the rest of it is dropped, not added there
+const away = home => { if (home !== curId) throw Object.assign(new Error('you switched to another notebook'), {moved: true}); };
+const hex6 = v => /^[0-9a-f]{6}$/i.test(v || '');
+const fontName = v => (v || '').replace(/[^\p{L}\p{N} _.-]/gu, '').trim();
+const safeLinks = box => box.querySelectorAll('a[href]').forEach(a => { if (!/^(https?:|mailto:|tel:|#)/i.test(a.getAttribute('href').replace(/[\0-\x20]+/g, ''))) a.removeAttribute('href'); });
 
 // ---------- PowerPoint ----------
 // how PowerPoint files open: as the slides look (a picture of each slide, like a PDF page), or rebuilt as editable text
 const pptxMode = () => pref.get('pptx-mode') === 'text' ? 'text' : 'look';
-async function lookSlide(D, path, n){
+async function lookSlide(D, path, n, home){
   const r = await PPT.render(D, path, n + 1);
-  await addPageCard(r.cv, r.S, r.W, r.H, r.gaps, r.items, 0.92);
-  r.cv.width = 0;
+  try { await addPageCard(r.cv, r.S, r.W, r.H, r.gaps, r.items, 0.92, home); } finally { r.cv.width = 0; }
 }
 async function readPptx(buf, name, mode = pptxMode()){
-  const zip = await JSZip.loadAsync(buf);
+  const home = curId, zip = await JSZip.loadAsync(buf);
   const xml = async p => { const f = zip.file(p); return f ? new DOMParser().parseFromString(await f.async('string'), 'application/xml') : null; };
   const kids = (n, ln) => n ? [...n.children].filter(c => c.localName === ln) : [];
   const kid = (n, ln) => kids(n, ln)[0] || null;
   const find = (n, ln) => n ? n.getElementsByTagNameNS('*', ln)[0] || null : null;
   const rels = d => Object.fromEntries(d ? [...d.getElementsByTagName('Relationship')].map(r => [r.getAttribute('Id'), r.getAttribute('Target')]) : []);
-  const resolve = (base, t) => { const parts = base.split('/'); parts.pop(); for (const seg of t.split('/')) { if (seg === '..') parts.pop(); else if (seg !== '.') parts.push(seg); } return parts.join('/'); };
+  const resolve = (base, t) => { if (t[0] === '/') return t.slice(1); const parts = base.split('/'); parts.pop(); for (const seg of t.split('/')) { if (seg === '..') parts.pop(); else if (seg !== '.') parts.push(seg); } return parts.join('/'); };
 
   const pres = await xml('ppt/presentation.xml');
   const prel = rels(await xml('ppt/_rels/presentation.xml.rels'));
@@ -2830,13 +2836,15 @@ async function readPptx(buf, name, mode = pptxMode()){
   const ids = [...pres.getElementsByTagNameNS('*', 'sldId')].map(s => s.getAttribute('r:id'));
   const deck = mode === 'look' ? await PPT.deck(zip).catch(err => console.warn(err)) : null;
   for (let n = 0; n < ids.length; n++) {
+    away(home);
     toast(`Reading ${name}: slide ${n + 1} of ${ids.length}`);
+    if (!prel[ids[n]]) continue;
     const path = resolve('ppt/presentation.xml', prel[ids[n]]);
     if (deck) {                                   // a slide that can't be drawn is rebuilt as text instead
-      try { await lookSlide(deck, path, n); await new Promise(r => setTimeout(r)); continue; } catch (err) { console.warn(`slide ${n + 1} drawn as text:`, err); }
+      try { await lookSlide(deck, path, n, home); await new Promise(r => setTimeout(r)); continue; } catch (err) { if (err.moved) throw err; console.warn(`slide ${n + 1} drawn as text:`, err); }
     }
     const doc = await xml(path); if (!doc) continue;
-    const srel = rels(await xml(path.replace(/slides\/(slide\d+\.xml)$/, 'slides/_rels/$1.rels')));
+    const srel = rels(await xml(path.replace(/([^/]+)$/, '_rels/$1.rels')));
     const items = [];
     let order = 0;
     const walk = node => {
@@ -2865,6 +2873,7 @@ async function readPptx(buf, name, mode = pptxMode()){
     walk(find(doc, 'spTree'));
     items.sort((a, b) => (Math.abs(a.y - b.y) < 200000 ? a.x - b.x : a.y - b.y) || a.order - b.order);
 
+    away(home);
     const card = slideCard();
     const box = card.querySelector('.content');
     for (const it of items) {
@@ -2894,6 +2903,7 @@ async function readPptx(buf, name, mode = pptxMode()){
     }
     if (!box.children.length) box.innerHTML = '<div class="blk" style="color:#8a94a3">(No text on this slide)</div>';
   }
+  away(home);
   dropRepeats([...main.children].slice(firstCard));
 
   function paras(body, phType, tag){
@@ -2915,9 +2925,9 @@ async function readPptx(buf, name, mode = pptxMode()){
         if (pr?.getAttribute('i') === '1') st.push('font-style:italic');
         if (pr?.getAttribute('u') && pr.getAttribute('u') !== 'none') st.push('text-decoration:underline');
         const clr = find(kid(pr, 'solidFill'), 'srgbClr')?.getAttribute('val');
-        if (clr && !isLight(clr)) st.push('color:#' + clr);
+        if (hex6(clr) && !isLight(clr)) st.push('color:#' + clr);
         const face = kid(pr, 'latin')?.getAttribute('typeface');
-        if (face && !face.startsWith('+')) st.push(`font-family:'${face.replace(/'/g, '')}',system-ui,sans-serif`);
+        if (face && !face.startsWith('+') && fontName(face)) st.push(`font-family:'${fontName(face)}',system-ui,sans-serif`);
         html += `<span style="${st.join(';')}">${esc(t)}</span>`;
       }
       if (!html.replace(/<br>/g, '')) continue;
@@ -3045,6 +3055,7 @@ function ppImage(X, id){
     const url = URL.createObjectURL(blob);
     try { const im = new Image(); im.src = url; await im.decode(); return im; } catch { return null; } finally { setTimeout(() => URL.revokeObjectURL(url), 5000); }
   })();
+  if (X.D.imgs.size >= 24) X.D.imgs.delete(X.D.imgs.keys().next().value);        // a deck of photos doesn't keep them all decoded
   X.D.imgs.set(rel.path, pr); return pr;
 }
 
@@ -3135,6 +3146,7 @@ function ppCust(cg, w, h){
     const pt = n => [xn(n, 'x') * sx, xn(n, 'y') * sy];
     for (const c of pa.children) {
       const k = c.localName, ps = xk(c, 'pt').map(pt);
+      if (ps.length < ({moveTo: 1, lnTo: 1, cubicBezTo: 3, quadBezTo: 2}[k] || 0)) continue;       // a command without its points is skipped
       if (k === 'moveTo') { p.moveTo(...ps[0]); [cx, cy] = ps[0]; }
       else if (k === 'lnTo') { p.lineTo(...ps[0]); [cx, cy] = ps[0]; }
       else if (k === 'cubicBezTo') { p.bezierCurveTo(...ps[0], ...ps[1], ...ps[2]); [cx, cy] = ps[2]; }
@@ -3284,7 +3296,7 @@ function ppLayout(X, body, o){
       const toks = [];
       for (const r of runs) {
         if (r.br) { toks.push({br: true, r: r.size ? r : lead}); continue; }
-        for (const t of r.text.match(TOKENS) || []) { const tt = t.trimEnd(), w = mw(r, tt); toks.push({t, tt, w, sw: mw(r, t) - w, r}); }
+        for (const t of r.text.match(TOKENS) || []) { const tt = t.trimEnd(), w = mw(r, tt); toks.push({t, tt, w, sw: tt.length === t.length ? 0 : mw(r, t) - w, r}); }
       }
       const pl = []; let cur;
       const start = () => { cur = {toks: [], w: 0, hard: false}; pl.push(cur); };
@@ -3295,8 +3307,13 @@ function ppLayout(X, body, o){
         if (tk.tt && cur.toks.some(t => t.tt) && cur.w + tk.w > lim() + .5) start();
         if (tk.tt && tk.w > lim() && !CJK.test(tk.tt)) {              // a word wider than the line is broken
           let rest = tk.tt;
+          const cw = tk.w / tk.tt.length;
           while (rest) {
-            let n = rest.length; while (n > 1 && mw(tk.r, rest.slice(0, n)) > lim() - cur.w) n--;
+            // the most characters that fit (at least one): start from the average width, double until too wide, then halve in
+            const av = lim() - cur.w, fits = k => mw(tk.r, rest.slice(0, k)) <= av;
+            let n = 1, hi = Math.min(rest.length, Math.max(1, Math.ceil(av / cw * 1.2)));
+            while (hi < rest.length && fits(hi)) { n = hi; hi = Math.min(rest.length, hi * 2); }
+            while (n < hi) { const m = (n + hi + 1) >> 1; if (fits(m)) n = m; else hi = m - 1; }
             const piece = rest.slice(0, n), w = mw(tk.r, piece); rest = rest.slice(n);
             cur.toks.push({t: piece + (rest ? '' : tk.t.slice(tk.tt.length)), tt: piece, w, sw: rest ? 0 : tk.sw, r: tk.r}); cur.w += w + (rest ? 0 : tk.sw);
             if (rest) start();
@@ -3434,8 +3451,9 @@ async function ppNode(X, ctx, node, G){
   const eff = x1(spPr, 'effectLst') || (er?.i ? th.effects[er.i - 1] : null);
   ctx.save(); set(m);
   if (ln === 'pic') {
-    await ppFill(X, ctx, x1(node, 'blipFill'), sh.path, w, h, null);
-    if (L?.c) ppStroke(X, ctx, L, null, sh.path);
+    const pp = sh ? sh.path : parts.length ? parts.reduce((q, pt) => (q.addPath(pt.path), q), new Path2D()) : ppShape('rect', w, h, {}).path;      // a picture in a custom outline is shown through the outline
+    await ppFill(X, ctx, x1(node, 'blipFill'), pp, w, h, null);
+    if (L?.c) ppStroke(X, ctx, L, null, pp);
   } else {
     const has = !!fill && fill.localName !== 'noFill';
     if (has && ppShadow(X, ctx, eff, er?.ph, S)) { /* the shadow is drawn with the fill */ }
@@ -3486,7 +3504,12 @@ async function ppFrame(X, ctx, node, G, xfm, m, set){
     const dm = X.part.rels[xf(gd, 'relIds')?.getAttribute('r:dm')]?.path, dmp = dm && await X.D.part(dm);
     const id = xf(dmp?.doc, 'dataModelExt')?.getAttribute('relId'), dr = id && X.part.rels[id]?.path;
     const dd = dr && await X.D.part(dr), tree = xf(dd?.doc, 'spTree');
-    if (tree) { const G2 = {m: mmul(G.m, mT(xfm.x, xfm.y)), rot: G.rot, sx: G.sx, sy: G.sy}; for (const c of [...tree.children]) await ppNode(X, ctx, c, G2); return; }
+    if (tree) {
+      const G2 = {m: mmul(G.m, mT(xfm.x, xfm.y)), rot: G.rot, sx: G.sx, sy: G.sy}, keep = X.part;
+      X.part = {...dd, rels: {...keep.rels, ...dd.rels}};          // the drawing's pictures are named in the drawing's own relationships (the slide's fill in what it lacks)
+      try { for (const c of [...tree.children]) await ppNode(X, ctx, c, G2); } finally { X.part = keep; }
+      return;
+    }
   }
   const pic = xf(gd, 'pic') || (xf(gd, 'oleObj') && xf(xf(gd, 'oleObj'), 'pic'));
   if (pic) { await ppNode(X, ctx, pic, G); return; }
@@ -3618,6 +3641,7 @@ async function ppRender(D, path, n){
     for (const l of lines) { const y1 = l[2] - l[3] * .95; if (y1 - prev >= 3) gaps.push([+prev.toFixed(1), +y1.toFixed(1)]); prev = l[2] + l[3] * .3; }
     if (D.H - prev >= 3) gaps.push([+prev.toFixed(1), +D.H.toFixed(1)]);
   }
+  for (const r of [{path}, ...Object.values(c.slide.rels)]) if (!/^(slideLayout|slideMaster|theme)$/.test(r.type || '')) D.xml.delete(r.path);        // what only this slide used (its charts, diagrams) is let go
   return {cv, S, W: D.W, H: D.H, items: items.map(i => i.map(v => typeof v === 'number' ? +v.toFixed(1) : v)), gaps};
 }
 
@@ -3723,6 +3747,7 @@ return {deck: ppDeck, render: ppRender};
 
 // ---------- PDF: the real page, background graphics removed, opened up where you add notes ----------
 async function readPdf(buf, name){
+  const home = curId;                    // switching notebook while it reads stops it (the pages would go into the other notebook)
   // fonts a PDF leaves out (Symbol, Times…) and the character maps of Chinese, Japanese and Korean text come from the pdf.js package
   const lib = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/';
   const pdf = await pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false, cMapUrl: lib + 'cmaps/', cMapPacked: true, standardFontDataUrl: lib + 'standard_fonts/'}).promise;
@@ -3732,7 +3757,7 @@ async function readPdf(buf, name){
   // is template artwork (a logo, a footer). A picture in the body of the page is content, even when it comes back slide after slide.
   const placed = [], seen = {};
   for (let p = 1; p <= n; p++) {
-    toast(`Reading ${name}: checking page ${p} of ${n}`);
+    away(home); toast(`Reading ${name}: checking page ${p} of ${n}`);
     const page = await pdf.getPage(p), vp = page.getViewport({scale: 1}), ops = await page.getOperatorList();
     const keys = new Set(); let ctm = [1, 0, 0, 1, 0, 0]; const stack = [];
     for (let k = 0; k < ops.fnArray.length; k++) {
@@ -3757,7 +3782,7 @@ async function readPdf(buf, name){
   const template = k => { const s = seen[k]; return s.length >= limit && (s.length >= n / 2 || s[s.length - 1] - s[0] >= s.length); };
 
   for (let p = 1; p <= n; p++) {
-    toast(`Reading ${name}: page ${p} of ${n}`);
+    away(home); toast(`Reading ${name}: page ${p} of ${n}`);
     const page = await pdf.getPage(p);
     const S = 2, v = page.getViewport({scale: S}), W = v.width / S, H = v.height / S;
     const cv = document.createElement('canvas'); cv.width = v.width; cv.height = v.height;
@@ -3813,12 +3838,13 @@ async function readPdf(buf, name){
     await addPageCard(cv, S, W, H, gaps, tc.items.filter(i => i.str && i.str.trim() && !isSlideNo(i)).map(i => {
       const t = i.transform, [x, y] = v.convertToViewportPoint(t[4], t[5]);
       return [i.str, +(x / S).toFixed(1), +(y / S).toFixed(1), +(Math.hypot(t[2], t[3]) || i.height || 10).toFixed(1), +(i.width).toFixed(1), i.hasEOL ? 1 : 0];
-    }));
+    }), 0.88, home);
     cv.width = cv.height = 0; page.cleanup();          // let go of the drawing at once: Safari on an iPad has little room for canvases, and a long PDF would run out
   }
 }
 // a page picture (stored once, as an asset) with its words and the gaps between lines, as a card at the end of the notebook
-async function addPageCard(cv, S, W, H, gaps, items, quality = 0.88){
+async function addPageCard(cv, S, W, H, gaps, items, quality = 0.88, home = curId){
+  away(home);
   const card = document.createElement('section');
   card.className = 'slide pagecard';
   card.dataset.w = W.toFixed(1); card.dataset.h = H.toFixed(1); card.dataset.gaps = JSON.stringify(gaps);
@@ -3826,7 +3852,7 @@ async function addPageCard(cv, S, W, H, gaps, items, quality = 0.88){
   card.style.setProperty('--pg', `url(${pic ? await addAsset(pic) : cv.toDataURL('image/jpeg', quality)})`);
   card.dataset.text = JSON.stringify(items);
   card.append(makeStrip(card, 0, H));
-  main.append(card);
+  away(home); main.append(card);
 }
 const boxKey = b => [b.l, b.t, b.r, b.b].map(x => Math.round(x / 4) * 4).join(',');
 
@@ -4391,7 +4417,7 @@ function bakeDocx(sec){
   }
 }
 const markBlocks = box => box.querySelectorAll('p,h1,h2,h3,h4,h5,h6,li,table,img').forEach(el => { if (!el.parentElement.closest('.blk') || el.tagName === 'LI') el.classList.add('blk'); });
-async function readDocxLook(buf){
+async function readDocxLook(buf, home){
   await ensureReader('pptx');                                  // docx-preview needs JSZip
   if (!window.docx) await loadScript(DOCX_LIB);
   const host = document.createElement('div'), sheets = document.createElement('div');
@@ -4402,24 +4428,26 @@ async function readDocxLook(buf){
     await docx.renderAsync(buf, host, sheets, {className: 'dx', inWrapper: false, breakPages: true, ignoreLastRenderedPageBreak: true, renderHeaders: true, renderFooters: true, renderFootnotes: true, renderEndnotes: true});
     const pages = [...host.querySelectorAll('section.dx')];
     for (const sec of pages) {
-      bakeDocx(sec);
+      away(home); bakeDocx(sec);
       const card = slideCard(), box = card.querySelector('.content');
       for (const part of [...sec.children]) { part.removeAttribute('style'); box.append(part); }
       for (const im of box.querySelectorAll('img[src^="blob:"]')) { try { im.src = await addAsset(await (await fetch(im.src)).blob()); } catch {} }
-      markBlocks(box);
+      markBlocks(box); safeLinks(box);
       await new Promise(r => setTimeout(r));
     }
     if (!main.querySelector('.content .blk')) throw new Error('nothing to show');
-  } catch (err) { [...main.children].slice(first).forEach(c => c.remove()); throw err; }
+  } catch (err) { if (curId === home) [...main.children].slice(first).forEach(c => c.remove()); throw err; }
   finally { host.remove(); sheets.remove(); }
 }
 async function readDocx(buf, name){
-  try { await readDocxLook(buf); return; } catch (err) { console.warn('Word file opened the plain way:', err); }
+  const home = curId;
+  try { await readDocxLook(buf, home); return; } catch (err) { if (err.moved) throw err; console.warn('Word file opened the plain way:', err); }
   if (!window.mammoth) await loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js');
   const r = await mammoth.convertToHtml({arrayBuffer: buf});
+  away(home);
   const card = slideCard();
   const box = card.querySelector('.content'); box.innerHTML = r.value;
-  markBlocks(box);
+  markBlocks(box); safeLinks(box);
 }
 
 // ---------- pictures ----------
@@ -4452,15 +4480,17 @@ async function openFiles(picked, here = false){
       const d = curDoc(); if (!here && d && data.name) { d.name = data.name; d.named = !!data.named; }
       saveSoon(); continue;
     }
-    const head = document.createElement('h2'); head.className = 'file-head';
+    const head = document.createElement('h2'), home = curId; head.className = 'file-head';
     head.textContent = f.name.replace(/\.[^.]+$/, '').replace(/_+/g, ' ').trim();
     main.append(head);
     try {
-      await (read === readImage ? readImage(f) : read(await f.arrayBuffer(), f.name));
+      const buf = read === readImage ? null : await f.arrayBuffer(); away(home);
+      await (read === readImage ? readImage(f) : read(buf, f.name));
       if (ext === 'pptx' && head.nextElementSibling && pref.get('pptx-tip') !== 'off' && tipsOn()) head.after(pptxTip(pptxMode(), f));
       first ??= head;
       toast(''); saveSoon();
     } catch (err) {
+      if (err.moved) { toast(`Stopped opening “${f.name}” because you switched to another notebook.`); return; }
       console.error(err); toast(`“${f.name}” couldn't be read${err?.message ? ` (${err.message})` : ''}. Try saving it as a PDF and opening that.`);
       if (!head.nextElementSibling) head.remove();
     }

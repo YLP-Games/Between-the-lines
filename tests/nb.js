@@ -26,6 +26,7 @@ const names = p => p.$$eval('#docList .docbtn .nm', els => els.map(e => e.textCo
   // a PowerPoint opens as a second notebook
   await page.setInputFiles('#file', path.join(__dirname, 'week2.pptx'));
   await page.waitForFunction(() => document.querySelectorAll('#docList .nb').length === 2, null, {timeout: 30000});
+  await page.waitForFunction(() => document.querySelector('#docList .docbtn .nm')?.textContent === 'week2', null, {timeout: 15000}).catch(() => {});      // named once it has been read
   await page.waitForTimeout(800);
   ok((await names(page))[0] === 'week2', 'a second file becomes its own notebook');
   ok(await page.locator('.slide').count() === 2 && (await page.textContent('main')).includes('Equilibrium'), 'PowerPoint slides read');
