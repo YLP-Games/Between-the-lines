@@ -141,7 +141,7 @@ body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
 #readBtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 
 /* ================= workspace: pages | document | notes ================= */
-.workspace{display:flex;align-items:flex-start;min-height:calc(100dvh - var(--appbar-h) - var(--status-h))}
+.workspace{position:relative;display:flex;align-items:flex-start;min-height:calc(100dvh - var(--appbar-h) - var(--status-h))}
 .side{position:sticky;top:var(--appbar-h);height:calc(100dvh - var(--appbar-h) - var(--status-h));overflow:auto;flex:none;box-sizing:border-box;background:var(--surface-2);overscroll-behavior:contain}
 .side.pages{width:212px}
 .side.notes{width:320px;background:var(--surface)}
@@ -937,7 +937,8 @@ body.side-picking .sidepage,body.side-picking .sidepage .mine{cursor:crosshair}
 body.side-picking .sidepage .notebox:not(.collapsed) > .mine{box-shadow:0 0 0 2px var(--accent)} /* taste-skill-ignore: a ring marking what can be picked */
 body:not(.side-visible) #annoBar [data-side]{display:none}
 /* the lines between a highlight and its note: faint, and bold when you point at either end */
-.sidelines{position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:5;pointer-events:none}
+.sidelines{position:absolute;left:0;top:0;width:100%;height:100%;z-index:5;pointer-events:none}
+.sidelines.fixed{position:fixed;width:100vw;height:100vh}
 .sidelines .sl{fill:none;stroke-linecap:round;stroke-width:1.5px;opacity:.35}
 .sidelines .sd{opacity:.35}
 .sidelines .sa{display:none}
@@ -7325,12 +7326,21 @@ function sideSoon(){ if (!sideLayoutRaf) sideLayoutRaf = requestAnimationFrame((
 function sideDrawSoon(){ if (!sideDrawRaf) sideDrawRaf = requestAnimationFrame(sideDraw); }
 addEventListener('resize', sideSoon);
 sideSmall.addEventListener('change', sideSoon);
-addEventListener('scroll', sideDrawSoon, {passive: true, capture: true});        // (the column on the right scrolls by itself, so capture)
+// The lines scroll with the page, so scrolling it needs no drawing (but for the column on the right, which scrolls by itself, so capture: it is drawn at once)
+addEventListener('scroll', e => {
+  const t = e.target;
+  if (t.classList?.contains('sidecol') || (t === document && main.classList.contains('side-split'))) sideDraw();
+  else if (t !== document && main.contains(t)) sideDrawSoon();                      // (something inside a slide scrolled)
+}, {passive: true, capture: true});
+document.fonts?.addEventListener('loadingdone', sideDrawSoon);
+main.addEventListener('load', sideDrawSoon, true);                                   // (a picture came in)
 new ResizeObserver(sideSoon).observe(main);
 
 // ---------- the lines ----------
+// They lie on the page itself (an overlay as big as the workspace, which scrolls with it), so scrolling carries them along with the notes, never a frame behind.
+// Only beside the separate column, which stays put while the slides scroll, are they drawn on the screen (.fixed) and again at every scroll.
 const sideSvg = svgEl('svg', {class: 'sidelines', 'aria-hidden': 'true'});
-sideSvg.hidden = true; document.body.append(sideSvg);
+sideSvg.hidden = true; $('.workspace').append(sideSvg);
 // where a note's line runs: from the end of the highlight to the left edge of the note
 function sideGeom(card, box){
   const id = box.dataset.link, h = id && annoGet(card, id); if (!h) return null;
@@ -7340,25 +7350,32 @@ function sideGeom(card, box){
 }
 const sideCurve = g => { const dx = Math.max(30, (g.x2 - g.x1) * .45); return [g.x1 + dx, g.y1, g.x2 - dx, g.y2]; };
 function sideDraw(){
-  sideDrawRaf = 0;
-  sideSvg.replaceChildren();
-  if (!sideShown() || !side.links) { sideSvg.hidden = true; return; }
-  sideSvg.hidden = false;
-  const mr = main.getBoundingClientRect(), top = appbar.offsetParent ? appbar.getBoundingClientRect().bottom : 0, bar = $('.statusbar'), bottom = bar.offsetParent ? bar.getBoundingClientRect().top : innerHeight;
-  sideSvg.style.clipPath = `inset(${Math.max(0, top)}px ${Math.max(0, innerWidth - mr.right)}px ${Math.max(0, innerHeight - bottom)}px ${Math.max(0, mr.left)}px)`;
-  const col = main.querySelector(':scope > .sidewrap > .sidecol'), cr = col?.getBoundingClientRect();
-  for (const sp of main.querySelectorAll('.sidepage')) {
-    const card = sideSlide(sp); if (!card) continue;
-    for (const box of sp.querySelectorAll(':scope > .notebox[data-link]')) {
-      const g = sideGeom(card, box); if (!g) continue;
-      if (cr && (g.y2 < cr.top + 4 || g.y2 > cr.bottom - 4)) continue;          // scrolled out of its column
-      const [cx1, cy1, cx2, cy2] = sideCurve(g), hot = g.id === sideHover ? ' hot' : '';
-      sideSvg.append(
-        svgEl('path', {class: 'sl' + hot, 'data-id': g.id, d: `M${g.x1} ${g.y1}C${cx1} ${cy1} ${cx2} ${cy2} ${g.x2} ${g.y2}`, stroke: g.col}),
-        svgEl('circle', {class: 'sd' + hot, cx: g.x1, cy: g.y1, r: 3, fill: g.col}),
-        svgEl('path', {class: 'sa' + hot, d: `M${g.x2} ${g.y2}l-10 -5.5v11z`, fill: g.col}));
+  if (sideDrawRaf) { cancelAnimationFrame(sideDrawRaf); sideDrawRaf = 0; }
+  const on = sideShown() && side.links, split = main.classList.contains('side-split'), out = [];
+  let clip = '';
+  if (on) {                                                                          // (all the reading first, then the drawing: no layout in between)
+    const ref = split ? {left: 0, top: 0} : $('.workspace').getBoundingClientRect();     // (the lines are measured from the workspace, or from the screen)
+    if (split) {
+      const mr = main.getBoundingClientRect(), top = appbar.offsetParent ? appbar.getBoundingClientRect().bottom : 0, bar = $('.statusbar'), bottom = bar.offsetParent ? bar.getBoundingClientRect().top : innerHeight;
+      clip = `inset(${Math.max(0, top)}px ${Math.max(0, innerWidth - mr.right)}px ${Math.max(0, innerHeight - bottom)}px ${Math.max(0, mr.left)}px)`;
+    }
+    const col = main.querySelector(':scope > .sidewrap > .sidecol'), cr = col?.getBoundingClientRect();
+    for (const sp of main.querySelectorAll('.sidepage')) {
+      const card = sideSlide(sp); if (!card) continue;
+      for (const box of sp.querySelectorAll(':scope > .notebox[data-link]')) {
+        const g = sideGeom(card, box); if (!g) continue;
+        if (cr && (g.y2 < cr.top + 4 || g.y2 > cr.bottom - 4)) continue;          // scrolled out of its column
+        g.x1 -= ref.left; g.x2 -= ref.left; g.y1 -= ref.top; g.y2 -= ref.top;
+        const [cx1, cy1, cx2, cy2] = sideCurve(g), hot = g.id === sideHover ? ' hot' : '';
+        out.push(
+          svgEl('path', {class: 'sl' + hot, 'data-id': g.id, d: `M${g.x1} ${g.y1}C${cx1} ${cy1} ${cx2} ${cy2} ${g.x2} ${g.y2}`, stroke: g.col}),
+          svgEl('circle', {class: 'sd' + hot, cx: g.x1, cy: g.y1, r: 3, fill: g.col}),
+          svgEl('path', {class: 'sa' + hot, d: `M${g.x2} ${g.y2}l-10 -5.5v11z`, fill: g.col}));
+      }
     }
   }
+  sideSvg.hidden = !on; sideSvg.classList.toggle('fixed', split); sideSvg.style.clipPath = clip;
+  sideSvg.replaceChildren(...out);
 }
 // in the PDF the lines are drawn faintly, from the end of the highlight to the note
 function sidePaintLines(ctx, card, sp, ox, oy){
@@ -7546,8 +7563,10 @@ function sideNear(on){ sideCorner.classList.toggle('near', on); }
 function sideCornerPlace(){
   const b = side.on && sideShown() ? sideCornerBox(sideCornerSp?.isConnected ? sideCornerSp : sideLook()) : null;
   if (!b) { sideCorner.hidden = true; sideNear(false); return; }
-  sideCorner.hidden = false;
-  sideCorner.style.top = b.top + 'px'; sideCorner.style.left = (b.right - sideCorner.offsetWidth) + 'px';
+  if (sideCorner.hidden) sideCorner.hidden = false;
+  const t = b.top + 'px', l = (b.right - sideCorner.offsetWidth) + 'px';          // (read its width before writing, and write only what changed: it is moved at every scroll)
+  if (sideCorner.style.top !== t) sideCorner.style.top = t;
+  if (sideCorner.style.left !== l) sideCorner.style.left = l;
 }
 function sideCornerHide(){ sideCornerSp = null; sideTouch = false; clearTimeout(sideTouchT); if (sideBgPop.hidden || sideBgFrom !== sideCorner) sideNear(false); sideCornerPlace(); }
 let sideCornerRaf = 0;
