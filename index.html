@@ -812,7 +812,7 @@ body.drawing.texting :is(.strip,.sidepage),body.drawing.texting .tl{cursor:text}
 body.drawing .toast{bottom:calc(var(--status-h) + var(--dbh,74px) + env(safe-area-inset-bottom,0px) + var(--kb,0px))}
 body.on-mark .strip,body.on-mark .tl{cursor:pointer}
 /* the drawing tools: a dark see-through pill above the status bar (under menus and pop-ups), the same in light and dark themes */
-.pop.drawbar{z-index:15;left:50%;bottom:calc(var(--status-h) + 12px + env(safe-area-inset-bottom,0px) + var(--kb,0px));transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;width:max-content;max-width:calc(100vw - 16px);padding:5px 8px;box-sizing:border-box;border:1px solid rgba(255,255,255,.14);border-radius:24px;background:rgba(30,30,36,.8);-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:0 12px 32px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.22);color:#f3f3f6;font:15px var(--ui);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none} /* taste-skill-ignore: the drawing tools float over the page */
+.pop.drawbar{z-index:15;left:50%;bottom:calc(var(--status-h) + 12px + env(safe-area-inset-bottom,0px) + var(--kb,0px));transform:translateX(-50%);display:flex;flex-direction:column;align-items:stretch;gap:4px;width:max-content;max-width:calc(100vw - 16px);padding:5px 8px;box-sizing:border-box;border:1px solid rgba(255,255,255,.14);border-radius:24px;background:rgba(30,30,36,.8);-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);box-shadow:0 12px 32px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.22);color:#f3f3f6;font:15px var(--ui);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none} /* taste-skill-ignore: the drawing tools float over the page */
 .drawbar [hidden]{display:none!important}
 .drow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:2px 4px;max-width:100%}
 .drow.dset,.drow.dfavs{gap:4px 8px;padding-top:4px;border-top:1px solid rgba(255,255,255,.12)}
@@ -844,6 +844,8 @@ body.on-mark .strip,body.on-mark .tl{cursor:pointer}
 .drawbar input[type=color]::-webkit-color-swatch-wrapper{padding:2px}
 .drawbar input[type=color]::-webkit-color-swatch{border:0;border-radius:50%}
 .drawbar input[type=color]::-moz-color-swatch{border:0;border-radius:50%}
+.drawbar input[type=color]:not(.on)::-webkit-color-swatch{background:conic-gradient(#e53935,#fdd835,#43a047,#1e88e5,#8e24aa,#e53935)!important}
+.drawbar input[type=color]:not(.on)::-moz-color-swatch{background:conic-gradient(#e53935,#fdd835,#43a047,#1e88e5,#8e24aa,#e53935)!important}
 .drawbar input[type=color].on{border-color:#fff;box-shadow:0 0 0 2px #1e1e24,0 0 0 4px #fff} /* taste-skill-ignore: a ring marking the colour picked */
 .drawbar select{height:32px;max-width:150px;border:1px solid rgba(255,255,255,.28);border-radius:16px;padding:0 10px;background:rgba(255,255,255,.1);color:#f3f3f6;font-size:15px}
 .drawbar select option{background:#26262c;color:#f3f3f6}

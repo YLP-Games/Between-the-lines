@@ -7,9 +7,9 @@ const args = process.argv.slice(2), browser = (args.find(a => a.startsWith('--br
 // assets.js writes nbfile.html, which driveshare.js and trash.js read, so it runs first
 const ALL = ['assets', 'e2e', 'nb', 'menu', 'hover', 'tips', 'anno', 'trash', 'cmdk', 'prefs', 'folders', 'fixes', 'tab', 'side', 'beside',
   'drive', 'driveshare', 'sync', 'odsync', 'onedrive', 'guides', 'pickframe', 'fidelity', 'tablet', 'sideink', 'organise', 'layoutscale',
-  'sidecorner', 'ribbonscroll', 'pdfside', 'guide', 'table', 'journal', 'blankshape', 'formula', 'pagenum', 'mdlist', 'gapselect', 'hidenotes'];
+  'sidecorner', 'ribbonscroll', 'pdfside', 'guide', 'table', 'journal', 'blankshape', 'formula', 'pagenum', 'mdlist', 'gapselect', 'hidenotes', 'drawtools'];
 // these use Chrome DevTools features (touch/pen emulation, CPU throttling) that only Chromium has
-const CHROMIUM_ONLY = new Set(['blankshape', 'guide', 'guides', 'hover', 'table', 'tablet', 'sideink', 'organise']);
+const CHROMIUM_ONLY = new Set(['blankshape', 'guide', 'guides', 'hover', 'table', 'tablet', 'sideink', 'organise', 'drawtools']);
 const pick = args.filter(a => !a.startsWith('--'));
 let list = (pick.length ? pick : ALL).filter(t => browser === 'chromium' || pick.length || !CHROMIUM_ONLY.has(t));
 const rows = [];
