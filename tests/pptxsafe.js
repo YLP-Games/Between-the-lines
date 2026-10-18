@@ -16,6 +16,15 @@ const near = (p, n, rgb) => p.evaluate(async ([n, rgb]) => {
   for (let i = 0; i < d.length; i += 12) if (Math.abs(d[i] - rgb[0]) < 14 && Math.abs(d[i + 1] - rgb[1]) < 14 && Math.abs(d[i + 2] - rgb[2]) < 14) k++;
   return k;
 }, [n, rgb]);
+// a plain PNG of one colour
+const png = (w, h, rgb) => {
+  const crcT = Array.from({length: 256}, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  const crc = b => { let c = 0xffffffff; for (const x of b) c = crcT[(c ^ x) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+  const chunk = (t, d) => { const b = Buffer.alloc(12 + d.length); b.writeUInt32BE(d.length, 0); b.write(t, 4); d.copy(b, 8); b.writeUInt32BE(crc(b.subarray(4, 8 + d.length)), 8 + d.length); return b; };
+  const raw = Buffer.alloc((w * 3 + 1) * h); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) raw.set(rgb, y * (w * 3 + 1) + 1 + x * 3);
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2;
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', require('zlib').deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+};
 (async () => {
   const {browser, page, errors} = await open(APP, {width: 1300, height: 1000});
   await page.waitForTimeout(600);
@@ -141,6 +150,39 @@ const near = (p, n, rgb) => p.evaluate(async ([n, rgb]) => {
   await page.evaluate(() => { window.addAsset = window.__add; });
   await page.evaluate(id => switchDoc(id), idDoc); await page.waitForTimeout(600);
   ok(await page.evaluate(() => document.querySelectorAll('#main .slide').length) <= 1, 'Word: and the notebook it was being opened in is not left in pieces');
+
+  // ---- SmartArt: a picture in the diagram's drawing is found through the drawing's own relationships, not the slide's ----
+  const DGM = 'http://schemas.openxmlformats.org/drawingml/2006/diagram', A = 'http://schemas.openxmlformats.org/drawingml/2006/main', R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships', DSP = 'http://schemas.microsoft.com/office/drawing/2008/diagram';
+  const REL = (id, type, target) => `<Relationship Id="${id}" Type="${type}" Target="${target}"/>`, RELS = body => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${body}</Relationships>`;
+  const sa = await craft('fid-rich.pptx', 'smartart.pptx', async z => {
+    // slide 2: its own rId2 is the yellow picture; the diagram's drawing says rId2 is a magenta one
+    await edit(z, 'ppt/slides/slide2.xml', x => x.replace(/<p:pic>[\s\S]*<\/p:pic>/, `<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="9" name="Diagram 8"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="6400800" y="1645920"/><a:ext cx="4572000" cy="3044952"/></p:xfrm><a:graphic><a:graphicData uri="${DGM}"><dgm:relIds xmlns:dgm="${DGM}" r:dm="rId5" r:lo="rId5" r:qs="rId5" r:cs="rId5"/></a:graphicData></a:graphic></p:graphicFrame>`));
+    await edit(z, 'ppt/slides/_rels/slide2.xml.rels', x => x.replace('</Relationships>', REL('rId5', R + '/diagramData', '../diagrams/data1.xml') + REL('rId6', 'http://schemas.microsoft.com/office/2007/relationships/diagramDrawing', '../diagrams/drawing1.xml') + '</Relationships>'));
+    z.file('ppt/diagrams/data1.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><dgm:dataModel xmlns:dgm="${DGM}" xmlns:a="${A}"><dgm:ptLst/><dgm:cxnLst/><dgm:bg/><dgm:whole/><dgm:extLst><a:ext uri="${DSP}"><dsp:dataModelExt xmlns:dsp="${DSP}" relId="rId6" minVer="${DGM}"/></a:ext></dgm:extLst></dgm:dataModel>`);
+    z.file('ppt/diagrams/drawing1.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><dsp:drawing xmlns:dsp="${DSP}" xmlns:a="${A}" xmlns:r="${R}"><dsp:spTree><dsp:nvGrpSpPr><dsp:cNvPr id="0" name=""/><dsp:cNvGrpSpPr/></dsp:nvGrpSpPr><dsp:grpSpPr/><dsp:sp modelId="{1}"><dsp:nvSpPr><dsp:cNvPr id="0" name=""/><dsp:cNvSpPr/></dsp:nvSpPr><dsp:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="4572000" cy="3044952"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></a:blipFill></dsp:spPr></dsp:sp></dsp:spTree></dsp:drawing>`);
+    z.file('ppt/diagrams/_rels/drawing1.xml.rels', RELS(REL('rId2', R + '/image', '../media/magenta.png')));
+    z.file('ppt/media/magenta.png', png(32, 32, [255, 0, 255]));
+  });
+  ok(await opens(sa, 4, '#main .pagecard'), 'a deck with a SmartArt drawing opens as four slide pictures');
+  const mag = await near(page, 1, [255, 0, 255]), yel = await near(page, 1, [250, 200, 60]);
+  ok(mag > 20000 && yel < 500, `the diagram shows its own (magenta) picture, not the slide's rId2 (magenta ${mag}, yellow ${yel})`);
+
+  // ---- a deck of many pictures doesn't keep them all decoded, or every slide's parts, until it is done ----
+  const many = await craft('fid-rich.pptx', 'manypics.pptx', async z => {
+    const s2 = await z.file('ppt/slides/slide2.xml').async('string'), r2 = await z.file('ppt/slides/_rels/slide2.xml.rels').async('string');
+    let ids = '', rels = '';
+    for (let i = 0; i < 30; i++) {
+      z.file(`ppt/slides/pic${i}.xml`, s2); z.file(`ppt/slides/_rels/pic${i}.xml.rels`, r2.replace('../media/image1.png', `../media/u${i}.png`));
+      z.file(`ppt/media/u${i}.png`, png(16, 16, [(i * 8) % 256, (i * 40) % 256, 90]));
+      ids += `<p:sldId id="${300 + i}" r:id="rId${100 + i}"/>`; rels += REL(`rId${100 + i}`, R + '/slide', `slides/pic${i}.xml`);
+    }
+    await edit(z, 'ppt/presentation.xml', x => x.replace('</p:sldIdLst>', ids + '</p:sldIdLst>'));
+    await edit(z, 'ppt/_rels/presentation.xml.rels', x => x.replace('</Relationships>', rels + '</Relationships>'));
+  });
+  await page.evaluate(() => { const o = PPT.deck; PPT.deck = async zip => (window.__D = await o(zip)); });
+  ok(await opens(many, 34, '#main .pagecard'), 'a deck of 34 slides, 30 of them with a picture of their own, opens');
+  const kept = await page.evaluate(() => ({imgs: window.__D.imgs.size, slideParts: [...window.__D.xml.keys()].filter(k => /^ppt\/slides\//.test(k)).length}));
+  ok(kept.imgs <= 24 && kept.slideParts === 0, `…and kept at most 24 decoded pictures and none of the slide parts once drawn (${JSON.stringify(kept)})`);
 
   // ---- the same for a Word file: a link that runs script is made plain text ----
   const dx = await craft('reading.docx', 'xssdoc.docx', async z => {

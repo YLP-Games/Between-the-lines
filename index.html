@@ -2659,6 +2659,7 @@ function ppImage(X, id){
     const url = URL.createObjectURL(blob);
     try { const im = new Image(); im.src = url; await im.decode(); return im; } catch { return null; } finally { setTimeout(() => URL.revokeObjectURL(url), 5000); }
   })();
+  if (X.D.imgs.size >= 24) X.D.imgs.delete(X.D.imgs.keys().next().value);        // a deck of photos doesn't keep them all decoded
   X.D.imgs.set(rel.path, pr); return pr;
 }
 
@@ -3107,7 +3108,12 @@ async function ppFrame(X, ctx, node, G, xfm, m, set){
     const dm = X.part.rels[xf(gd, 'relIds')?.getAttribute('r:dm')]?.path, dmp = dm && await X.D.part(dm);
     const id = xf(dmp?.doc, 'dataModelExt')?.getAttribute('relId'), dr = id && X.part.rels[id]?.path;
     const dd = dr && await X.D.part(dr), tree = xf(dd?.doc, 'spTree');
-    if (tree) { const G2 = {m: mmul(G.m, mT(xfm.x, xfm.y)), rot: G.rot, sx: G.sx, sy: G.sy}; for (const c of [...tree.children]) await ppNode(X, ctx, c, G2); return; }
+    if (tree) {
+      const G2 = {m: mmul(G.m, mT(xfm.x, xfm.y)), rot: G.rot, sx: G.sx, sy: G.sy}, keep = X.part;
+      X.part = {...dd, rels: {...keep.rels, ...dd.rels}};          // the drawing's pictures are named in the drawing's own relationships (the slide's fill in what it lacks)
+      try { for (const c of [...tree.children]) await ppNode(X, ctx, c, G2); } finally { X.part = keep; }
+      return;
+    }
   }
   const pic = xf(gd, 'pic') || (xf(gd, 'oleObj') && xf(xf(gd, 'oleObj'), 'pic'));
   if (pic) { await ppNode(X, ctx, pic, G); return; }
@@ -3239,6 +3245,7 @@ async function ppRender(D, path, n){
     for (const l of lines) { const y1 = l[2] - l[3] * .95; if (y1 - prev >= 3) gaps.push([+prev.toFixed(1), +y1.toFixed(1)]); prev = l[2] + l[3] * .3; }
     if (D.H - prev >= 3) gaps.push([+prev.toFixed(1), +D.H.toFixed(1)]);
   }
+  for (const r of [{path}, ...Object.values(c.slide.rels)]) if (!/^(slideLayout|slideMaster|theme)$/.test(r.type || '')) D.xml.delete(r.path);        // what only this slide used (its charts, diagrams) is let go
   return {cv, S, W: D.W, H: D.H, items: items.map(i => i.map(v => typeof v === 'number' ? +v.toFixed(1) : v)), gaps};
 }
 
