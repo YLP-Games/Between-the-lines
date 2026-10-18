@@ -852,7 +852,11 @@ const clearNotes = page => page.evaluate(() => { document.querySelectorAll('.not
   await d.page.evaluate(() => { document.querySelectorAll('.notebox').forEach(b => b.remove()); active = null; savedRange = null; const t = tplById('taccount'); tplInsert({id: 't', make: () => t.make(true)}); });
   await d.page.waitForTimeout(300);
   const dc = await d.page.evaluate(() => { const c = s => getComputedStyle(document.querySelector(s)).color, t = document.querySelector('.tpl-t'); return {bg: getComputedStyle(t).backgroundColor, amt: c('.tpl-t .tr.d .la'), acct: c('.tpl-t .t-h'), fg: getComputedStyle(t).color}; });
-  ok(dc.bg !== 'rgba(0, 0, 0, 0)' && dc.amt === rgb('#f3e8b4') && dc.acct === rgb('#8fc4ff') && dc.fg === rgb('#ece6d6'), `dark theme: a block sits on a dark panel with off-white text, cream amounts and light-blue labels (${dc.bg})`);
+  ok(dc.bg === 'rgba(0, 0, 0, 0)' && dc.amt === rgb('#8a5a14') && dc.acct === rgb('#2b62b5'), `dark theme: the paper is still white, so a block has no panel and uses the colours for paper, like the journal entry (${dc.bg})`);
+  await d.page.evaluate(() => { document.querySelector('.notebox').dataset.tone = 'dark'; });
+  const dt = await d.page.evaluate(() => { const c = s => getComputedStyle(document.querySelector(s)).color; return {amt: c('.tpl-t .tr.d .la'), acct: c('.tpl-t .t-h'), dim: c('.tpl-t .th')}; });
+  ok(dt.amt === rgb('#f3e8b4') && dt.acct === rgb('#8fc4ff'), `on a note with a dark fill the light set of colours is used (${dt.amt}, ${dt.acct})`);
+  await d.page.evaluate(() => { delete document.querySelector('.notebox').dataset.tone; });
   const dpdf = await pdfPages(d.page);
   const didx = await d.page.evaluate(() => [...document.querySelectorAll('.pagecard')].indexOf(document.querySelector('.tpl-t').closest('.pagecard')));
   const dInk = await pdfInk(d.page, dpdf.jpegs[didx], didx, '.tpl-t .tr.d .la, .tpl-t .tr.d .ra');
@@ -864,7 +868,7 @@ const clearNotes = page => page.evaluate(() => { document.querySelectorAll('.not
     const p = x.getImageData(Math.round((r.left - card.left + 6) * k), Math.round((r.bottom - card.top - 6) * k), 1, 1).data; return [p[0], p[1], p[2]];
   }, {b64: dpdf.jpegs[didx].toString('base64'), idx: didx});
   ok(bgPx.every(v => v > 235), `and no dark panel behind it in the PDF (${bgPx})`);
-  ok(await d.page.evaluate(() => getComputedStyle(document.querySelector('.tpl-t .tr.d .la')).color) === rgb('#f3e8b4'), 'the screen goes back to the dark colours afterwards');
+  ok(await d.page.evaluate(() => getComputedStyle(document.querySelector('.tpl-t .tr.d .la')).color) === rgb('#8a5a14') && !(await d.page.evaluate(() => document.querySelector('#main').classList.contains('pdfpaper'))), 'and the screen is as it was afterwards (the buttons are back too)');
   ok(d.errors.length === 0, d.errors.length ? 'page errors: ' + d.errors.join('\n') : 'no page errors (dark)');
   await d.browser.close();
 

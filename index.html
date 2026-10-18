@@ -1127,12 +1127,11 @@ main.reading .jrnl .j-ind{cursor:default}
 #jx .i{width:12px;height:12px;stroke-width:2.2}
 @media (pointer:coarse){#jx{width:32px;height:32px}}
 /* ================= templates: smart blocks for every subject (laid out like the journal entry), and the gallery that holds them ================= */
+/* no panel, like the journal entry: the paper is white or cream even in the dark theme, so the colours suit paper; on a dark side page or a note with a dark fill they switch to the light set */
 :root{--t-fg:currentColor;--t-str:#2a7a47;--t-bad:#b3402f}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--t-fg:#ece6d6;--t-str:#9fd8a5;--t-bad:#ffa08c}}
-:root[data-theme="dark"]{--t-fg:#ece6d6;--t-str:#9fd8a5;--t-bad:#ffa08c}
-.sidepage.dark .tpl{--t-fg:currentColor;--t-str:#9fd8a5;--t-bad:#ffa08c;--j-dim:var(--j-dim-d);--j-acct:var(--j-acct-d);--j-amt:var(--j-amt-d);--j-bg:transparent;--j-pad:0px}
-main.pdfpaper .tpl{--t-fg:currentColor;--t-str:#2a7a47;--t-bad:#b3402f;--j-dim:var(--j-dim-l);--j-acct:var(--j-acct-l);--j-amt:var(--j-amt-l);--j-bg:transparent;--j-pad:0px}
-.tpl{position:relative;display:block;box-sizing:border-box;width:min(100%,32em);margin:.3em 0;padding:calc(.15em + var(--j-pad) * .6) var(--j-pad);background:var(--j-bg);border-radius:10px;color:var(--t-fg);line-height:1.25;font-variant-numeric:tabular-nums;cursor:text;-webkit-user-select:text;user-select:text;text-align:left;overflow-x:auto;overflow-y:hidden}
+.sidepage.dark .tpl,.notebox[data-tone="dark"] .tpl{--t-str:#9fd8a5;--t-bad:#ffa08c;--j-dim:var(--j-dim-d);--j-acct:var(--j-acct-d);--j-amt:var(--j-amt-d)}
+.sidepage.dark .notebox[data-tone="light"] .tpl,.sidepage.dark .notebox.sticky:not([data-tone="dark"]) .tpl{--t-str:#2a7a47;--t-bad:#b3402f;--j-dim:#5d6877;--j-acct:#2b62b5;--j-amt:#8a5a14}
+.tpl{position:relative;display:block;box-sizing:border-box;width:min(100%,32em);margin:.3em 0;padding:.15em 0;border-radius:10px;color:var(--t-fg);line-height:1.25;font-variant-numeric:tabular-nums;cursor:text;-webkit-user-select:text;user-select:text;text-align:left;overflow-x:auto;overflow-y:hidden}
 .tpl .tf{min-width:0;outline:none;white-space:pre-wrap;overflow-wrap:break-word;border-radius:3px;caret-color:currentColor;padding:.04em .22em}
 .tpl .tf[contenteditable="true"]:focus,.tpl .tf[contenteditable="plaintext-only"]:focus{background:color-mix(in srgb,currentColor 11%,transparent)}
 .tpl [data-ph]:empty::before{content:attr(data-ph);opacity:.38}
@@ -1194,7 +1193,7 @@ main.reading .tpl{cursor:default}
 .tpl-ca .calc.ca-res{grid-column:1 / -1;color:var(--t-fg);font-size:.85em;margin-top:.3em;line-height:1.25}
 .tpl-ca .ca-n{min-width:5em}
 /* mathematics */
-.tpl-mx{width:fit-content;max-width:100%;padding-right:max(.6em,var(--j-pad))}
+.tpl-mx{width:fit-content;max-width:100%;padding-right:.6em}
 .mx-line{display:flex;align-items:center;gap:.3em}
 .mx-name{min-width:1.2em;font-weight:700;font-style:italic}
 .mx{display:inline-flex;align-items:stretch}
@@ -1216,7 +1215,7 @@ main.reading .tpl{cursor:default}
 .br-e{flex:1 1 7em;min-width:5em}.br-c{flex:1 1 6em;min-width:5em}
 .br-if{color:var(--j-dim);flex:none}
 /* general study */
-.tpl-fc{width:min(100%,26em);border:1.5px solid color-mix(in srgb,currentColor 38%,transparent);padding-inline:max(.6em,var(--j-pad));display:flex;flex-direction:column;gap:.3em}
+.tpl-fc{width:min(100%,26em);border:1.5px solid color-mix(in srgb,currentColor 38%,transparent);padding-inline:.6em;display:flex;flex-direction:column;gap:.3em}
 .fc-q,.fc-a{display:flex;gap:.5em;align-items:baseline;position:relative}
 .fc-a{border-top:1px dashed color-mix(in srgb,currentColor 38%,transparent);padding-top:.25em}
 .fc-k{color:var(--j-acct);font-weight:700;flex:none}
@@ -1349,7 +1348,7 @@ main.reading .cd-lang::after,main.pdfpaper .cd-lang::after{content:""}
 .tmain:hover{border-color:var(--pencil);background:var(--surface-2)}
 .tmain:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .tpv{display:block;height:116px;overflow:hidden;border-radius:6px;background:#fff;border:1px solid var(--line);position:relative;margin-bottom:3px}
-.tpv-in{display:block;width:430px;transform:scale(.5);transform-origin:0 0;font:22px/1.3 Caveat,cursive;color:#1f4fd1;padding:8px 10px;box-sizing:border-box;--j-pad:.6em}
+.tpv-in{display:block;width:430px;transform:scale(.5);transform-origin:0 0;font:22px/1.3 Caveat,cursive;color:#1f4fd1;padding:8px 10px;box-sizing:border-box}
 .tpv-in.fxr{width:auto;transform:none;font-size:15px;color:#1b2330;display:flex;align-items:center;justify-content:center;height:100%;overflow:hidden;padding:4px}
 .tpv-in .tpl,.tpv-in table{width:100%}
 .tpv *{pointer-events:none}
@@ -1357,7 +1356,6 @@ main.reading .cd-lang::after,main.pdfpaper .cd-lang::after{content:""}
 .tpv .tui,.tpv .sv-ui{display:none}
 .tpv-in table.wtable{display:table;table-layout:fixed;border-collapse:collapse;width:100%;margin:.3em 0}
 .tpv-in table.wtable td{border:1px solid color-mix(in srgb,currentColor 38%,transparent);padding:.1em .4em;vertical-align:top;line-height:1.25;overflow-wrap:anywhere}
-.tpv-in .jrnl{--j-pad:0px}
 .tname{font:700 15px var(--display)}
 .tdesc{font-size:13px;color:var(--muted);line-height:1.3}
 .tchip{align-self:flex-start;margin-top:3px;font-size:11px;color:var(--accent);background:var(--accent-soft);border-radius:99px;padding:0 8px}
@@ -4687,6 +4685,7 @@ async function pdfFile(){
   const wasCollapsed = boxes.map(b => b.classList.contains('collapsed'));
   if (mode === 'page') boxes.forEach(b => b.classList.remove('collapsed'));
   else main.classList.add('clean');            // notes take no room, so the pages look like the originals
+  main.classList.add('pdfpaper');              // (templates) buttons, handles and typing lines are left out
   try {
     const size = LAYOUTS[layout];
     sideForce = true;              // side pages sit beside their slides while the PDF is made
@@ -4715,7 +4714,7 @@ async function pdfFile(){
     return {name: notebookName() + ` (notes${extra ? ', ' + extra : ''}).pdf`, blob: makePdf(pages)};
   } finally {
     sideForce = false;
-    main.classList.remove('clean');
+    main.classList.remove('clean', 'pdfpaper');
     boxes.forEach((b, i) => b.classList.toggle('collapsed', wasCollapsed[i]));
     paginateView();
   }

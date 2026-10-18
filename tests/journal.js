@@ -369,7 +369,7 @@ const measure = page => page.evaluate(() => {
   await page.mouse.move(s2.x + 250, s2.y + s2.height * 0.4, {steps: 3}); await page.waitForTimeout(200);
   await page.click('.gappill', {button: 'right'}); await page.waitForTimeout(200);
   const items = await page.$$eval('.imenu .iitem .nm span', e => e.map(x => x.textContent));
-  ok(['Note,Sticky note,Equation,Table,Journal entry', 'Note,Sticky note,Equation,Table,Journal entry,Template…'].includes(items.join()), `the + Add here menu lists them (${items.join(', ')})`);
+  ok(items.join() === 'Note,Sticky note,Equation,Table,Journal entry,Template…', `the + Add here menu lists them (${items.join(', ')})`);
   await page.keyboard.type('journ'); await page.keyboard.press('Enter'); await page.waitForTimeout(400);
   ok(await page.locator('.pagecard').nth(1).locator('.notebox .jrnl').count() === 1, '+ Add here › Journal entry adds one in the gap, as its own note');
 
