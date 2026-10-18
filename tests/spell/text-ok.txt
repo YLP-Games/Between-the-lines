@@ -1,0 +1,45 @@
+# Lines of correct text (lecture notes, patterns): nothing in any of them should get a red line. Lines starting with "gb:" or "us:" are checked in that language only.
+Rational investors process new developments (such as an investment bank rerating Clicks) quickly, so prices adjust and there is no arbitrage.
+Under the efficient market hypothesis, a stock's price already reflects all public information; anomalies like momentum are a puzzle for the theory.
+The firm's WACC rose after the deleveraging, so its NPV fell and the IRR no longer cleared the hurdle rate.
+Analysts' price targets were cut: Tesco was downgraded to underweight while Nasdaq-listed peers were rerated higher.
+Heteroskedasticity makes the OLS standard errors unreliable, although the coefficient estimates stay unbiased and consistent.
+The central bank's quantitative easing lifted asset prices; critics said it widened inequality and distorted the yield curve.
+A monopolist sets marginal revenue equal to marginal cost, which gives a deadweight loss compared with perfect competition.
+IFRS 9 requires an expected-credit-loss model, so provisions are recognised earlier than under the incurred-loss approach.
+Capex of R2.5bn was funded by a rights issue; EBITDA margins widened by 120bps year-on-year to 18.4%.
+Keynes argued that aggregate demand, not supply, drives output in the short run, and that fiscal stimulus can close an output gap.
+The Phillips curve implies a trade-off between inflation and unemployment, but stagflation in the 1970s undermined it.
+Hedging with futures and swaptions reduces exposure to interest-rate risk; basis risk and counterparty risk remain.
+Mitochondria generate ATP through oxidative phosphorylation, and mutations in mtDNA cause several inherited disorders.
+In a double-blind randomised trial, neither the clinicians nor the patients know who received the placebo.
+The p-value is the probability, under the null hypothesis, of a result at least as extreme as the one observed; it is not P(H0 | data).
+Newton's second law states F = ma; for a rotating body the analogue is torque equals moment of inertia times angular acceleration.
+Entropy never decreases in an isolated system, and the Carnot efficiency depends only on the two reservoir temperatures.
+Let f be continuous on a compact set; then f is uniformly continuous and attains its supremum.
+The eigenvalues of a symmetric matrix are real, and eigenvectors for distinct eigenvalues are orthogonal.
+Under the doctrine of precedent, lower courts follow the reasoning of higher courts, but remarks made in passing are only persuasive.
+The claimant must show duty, breach, causation and remoteness of damage for negligence to succeed.
+Utilitarians such as Bentham and Mill judge actions by their consequences; Kant's categorical imperative is deontological.
+Milgram's obedience experiments showed that ordinary people comply with authority figures even when it causes harm.
+Apartheid ended in 1994 when Mandela became president; load-shedding by Eskom remains a drag on growth.
+The Bildungsroman follows a protagonist's moral and psychological growth, as in Dickens's Great Expectations.
+A hash table gives O(1) average lookup, but collisions and rehashing mean the worst case is O(n).
+Don't forget that we've covered recursion, memoisation and dynamic programming; they'll be on the midterm.
+The TCP handshake is SYN, SYN-ACK, ACK; UDP has no handshake, so it's faster but unreliable.
+Backpropagation computes gradients layer by layer, and overfitting is reduced by regularisation, dropout and early stopping.
+Patients with atrial fibrillation are given anticoagulants such as warfarin to reduce the risk of stroke.
+Photosynthesis converts carbon dioxide and water into glucose and oxygen using light energy captured by chlorophyll.
+Email me at student123@wits.ac.za or see https://www.example.com/notes?week=3 and www.example.org for the slides.
+Follow @lecturer and #StudyTips; the file is called lecture_notes.docx and report.pdf is due on Friday.
+My iPhone, iPad and MacBook run iOS and macOS; I draft in PowerPoint and OneNote, and post on LinkedIn and YouTube.
+The CEOs of three NGOs, two MBAs and several PhDs met at 9 a.m. at UCT; the GPUs cost R12,000 each.
+H2O, CO2 and NH3 are small molecules; 5G and 4G differ in latency, and the 21st century began in 2001.
+Chapters III, IV and XIV cover the Roman numeral system; see sections ii, iii and vi of the appendix.
+Dr Smith, Prof. Jones, Mr and Mrs Brown and Ms Green attended; O'Brien and McDonald sent apologies.
+Use e.g. a ledger, i.e. a book of accounts, but cf. the cash book; etc. and viz. are best avoided in essays.
+The investors' meeting was about shareholders' rights, the companies' accounts and the firm's auditors.
+They're sure it's theirs; we'd have gone, but you'll see that she's right and I'm not.
+Let's meet at 5 o'clock; ma'am, the children's books and women's rights are on the men's table.
+gb: The organisation analysed its behaviour and recognised that colour, centre and programme names were standardised.
+us: The organization analyzed its behavior and recognized that color, center and program names were standardized.
