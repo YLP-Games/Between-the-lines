@@ -25,7 +25,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
 
   // ---- the menu between the lines ----
   await pointAt(2, 0.5);
-  ok((await page.textContent('.gappill')).trim() === '+ Add here', 'the pill says + Add here');
+  ok((await page.textContent('.gappill')).replace(/\s+/g, ' ').trim() === '+ Add here', 'the pill says + Add here');
   await page.click('.gappill', {button: 'right'}); await page.waitForTimeout(200);
   ok(await page.isVisible('.imenu') && (await shown()).join() === 'Note,Sticky note,Equation,Table,Journal entry,Template…', 'the menu lists Note, Sticky note, Equation, Table, Journal entry and Template…');
   ok(await selected() === 'Note' && await page.isVisible('.itip'), 'Note is picked first, with its tip beside it');
