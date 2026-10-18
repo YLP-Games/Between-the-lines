@@ -9677,8 +9677,8 @@ function ckBuild(raw){
       }
     }
     sec('Notes', notes);
-    if (!reading) sec('Templates', TPLS.filter(t => ckHit(t.wc, q)).map(t => ({key: 'tpl:' + t.id, kind: 'act', ico: 'library', name: ckHi(t.name, q), sub: esc(SUBJ[t.s]), hint: 'Insert', run: () => tplInsert(t)})));
     sec('Actions', acts.filter(a => ckHit(a.w ??= ckWords(a.label + ' ' + a.words), q)).map(actRow));
+    if (!reading) sec('Templates', TPLS.filter(t => ckHit(t.wc, q)).map(t => ({key: 'tpl:' + t.id, kind: 'act', ico: 'library', name: ckHi(t.name, q), sub: esc(SUBJ[t.s]), hint: 'Insert', run: () => tplInsert(t)})));
   }
   let left = 20;                                  // at most 6 in a section and 20 in all
   return secs.filter(s => { s.rows = s.rows.slice(0, Math.min(6, left)); left -= s.rows.length; return s.rows.length; });
