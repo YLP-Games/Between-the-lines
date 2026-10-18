@@ -1,4 +1,4 @@
-// Minimised notes open where their pencil is; quick tooltips on controls
+// Minimised notes open where their pencil is Shift+dragged to; quick tooltips on controls
 const {open} = require('./harness');
 const path = require('path');
 const OUT = path.join(__dirname, 'shots');
@@ -21,15 +21,15 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   await page.click('.gappill', {button: 'right'}); await page.keyboard.press('ArrowDown'); await page.keyboard.press('Enter'); await page.keyboard.type('A sticky'); await page.waitForTimeout(150);
   await page.mouse.click(5, 700); await page.waitForTimeout(500);
 
-  // ---- a minimised note opens where its pencil is ----
+  // ---- a minimised note opens where its pencil is Shift+dragged to (a plain drag moves only the pencil: notegeo.js) ----
   const box = page.locator('.notebox:not(.sticky)').first();
   const b0 = await box.boundingBox();
   await box.hover(); await page.click('.notebox:not(.sticky) >> nth=0 >> .g-min'); await page.waitForTimeout(300);
   let chip = await box.locator('.note-chip').boundingBox();
   const cardB = await card.boundingBox();
   const to = {x: cardB.x + cardB.width * 0.55, y: cardB.y + cardB.height * 0.72};
-  await page.mouse.move(chip.x + chip.width / 2, chip.y + chip.height / 2); await page.mouse.down();
-  await page.mouse.move(to.x, to.y, {steps: 12}); await page.mouse.up(); await page.waitForTimeout(300);
+  await page.mouse.move(chip.x + chip.width / 2, chip.y + chip.height / 2); await page.keyboard.down('Shift'); await page.mouse.down();
+  await page.mouse.move(to.x, to.y, {steps: 12}); await page.mouse.up(); await page.keyboard.up('Shift'); await page.waitForTimeout(300);
   chip = await box.locator('.note-chip').boundingBox();
   await page.mouse.move(5, 700); await page.waitForTimeout(100);
   await page.click('.notebox:not(.sticky) >> nth=0 >> .note-chip'); await page.waitForTimeout(400);
@@ -47,7 +47,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   const sb0 = await st.boundingBox();
   await page.mouse.move(5, 700); await st.hover(); await page.click('.notebox.sticky >> .g-min'); await page.waitForTimeout(300);
   const sc = await st.locator('.note-chip').boundingBox();
-  await page.mouse.move(sc.x + 10, sc.y + 10); await page.mouse.down(); await page.mouse.move(sc.x + 10 - 150, sc.y + 10 - 60, {steps: 10}); await page.mouse.up(); await page.waitForTimeout(200);
+  await page.mouse.move(sc.x + 10, sc.y + 10); await page.keyboard.down('Shift'); await page.mouse.down(); await page.mouse.move(sc.x + 10 - 150, sc.y + 10 - 60, {steps: 10}); await page.mouse.up(); await page.keyboard.up('Shift'); await page.waitForTimeout(200);
   await page.mouse.move(5, 700); await page.click('.notebox.sticky >> .note-chip'); await page.waitForTimeout(300);
   const sb1 = await st.boundingBox();
   ok(Math.abs((sb1.x - sb0.x) - (-150)) < 8 && Math.abs((sb1.y - sb0.y) - (-60)) < 8, 'a sticky note opens where its pencil was dragged');
