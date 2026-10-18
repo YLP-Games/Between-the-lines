@@ -19,6 +19,7 @@ const near = (p, n, rgb) => p.evaluate(async ([n, rgb]) => {
 (async () => {
   const {browser, page, errors} = await open(APP, {width: 1300, height: 1000});
   await page.waitForTimeout(600);
+  const warn = []; page.on('console', m => { if (m.type() === 'warning') warn.push(m.text()); });
   const openFile = async (f, n, sel = '#main .slide', ms = 60000) => { const head = path.basename(f).replace(/\.[^.]+$/, '').replace(/_+/g, ' '); await page.setInputFiles('#file', f.includes('/') ? f : path.join(__dirname, f)); await page.waitForFunction(([sel, n, head]) => document.querySelector('#main .file-head')?.textContent === head && document.querySelectorAll(sel).length >= n, [sel, n, head], {timeout: ms}); await page.waitForTimeout(700); };
   const opens = (...a) => openFile(...a.slice(0, 3), 12000).then(() => true, () => false);
 
@@ -87,6 +88,19 @@ const near = (p, n, rgb) => p.evaluate(async ([n, rgb]) => {
     else ok(await near(page, 1, [250, 200, 60]) > 20000, 'look mode: and the picture on slide 2 is drawn');
   }
   await page.evaluate(() => pref.set('pptx-mode', 'look'));
+
+  // ---- custom outlines: a picture cut to a shape, and a shape whose path is missing its points, still draw ----
+  await openFile('fid-rich.pptx', 4, '#main .pagecard'); const full = await near(page, 1, [250, 200, 60]);
+  const CUST = body => `<a:custGeom><a:avLst/><a:gdLst/><a:ahLst/><a:cxnLst/><a:rect l="0" t="0" r="r" b="b"/><a:pathLst>${body}</a:pathLst></a:custGeom>`;
+  const cg = await craft('fid-rich.pptx', 'custgeom.pptx', async z => {
+    await edit(z, 'ppt/slides/slide2.xml', x => x.replace('<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>', CUST('<a:path w="100" h="100"><a:moveTo><a:pt x="0" y="100"/></a:moveTo><a:lnTo><a:pt x="50" y="0"/></a:lnTo><a:lnTo><a:pt x="100" y="100"/></a:lnTo><a:close/></a:path>') + '</p:spPr></p:pic>'));
+    await edit(z, 'ppt/slides/slide1.xml', x => x.replace('</p:spTree>', `<p:sp><p:nvSpPr><p:cNvPr id="90" name="Broken"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="914400" y="5000000"/><a:ext cx="1000000" cy="500000"/></a:xfrm>${CUST('<a:path w="10" h="10"><a:moveTo/><a:lnTo/><a:cubicBezTo><a:pt x="1" y="1"/></a:cubicBezTo><a:close/></a:path>')}<a:solidFill><a:srgbClr val="FF00FF"/></a:solidFill></p:spPr></p:sp></p:spTree>`));
+  });
+  warn.length = 0;
+  ok(await opens(cg, 4, '#main .pagecard'), 'a deck with custom outlines opens as four slide pictures');
+  const cut = await near(page, 1, [250, 200, 60]);
+  ok(!warn.some(w => /drawn as text/.test(w)) && await page.locator('#main .slide:not(.pagecard)').count() === 0, 'no slide had to be rebuilt as text' + (warn.length ? ' (' + warn.join(' | ').slice(0, 200) + ')' : ''));
+  ok(cut > 3000 && cut < full * .7, `the picture shows through its triangle outline only (${cut} of ${full} yellow pixels)`);
 
   // ---- the same for a Word file: a link that runs script is made plain text ----
   const dx = await craft('reading.docx', 'xssdoc.docx', async z => {

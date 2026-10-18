@@ -2745,6 +2745,7 @@ function ppCust(cg, w, h){
     const pt = n => [xn(n, 'x') * sx, xn(n, 'y') * sy];
     for (const c of pa.children) {
       const k = c.localName, ps = xk(c, 'pt').map(pt);
+      if (ps.length < ({moveTo: 1, lnTo: 1, cubicBezTo: 3, quadBezTo: 2}[k] || 0)) continue;       // a command without its points is skipped
       if (k === 'moveTo') { p.moveTo(...ps[0]); [cx, cy] = ps[0]; }
       else if (k === 'lnTo') { p.lineTo(...ps[0]); [cx, cy] = ps[0]; }
       else if (k === 'cubicBezTo') { p.bezierCurveTo(...ps[0], ...ps[1], ...ps[2]); [cx, cy] = ps[2]; }
@@ -3044,8 +3045,9 @@ async function ppNode(X, ctx, node, G){
   const eff = x1(spPr, 'effectLst') || (er?.i ? th.effects[er.i - 1] : null);
   ctx.save(); set(m);
   if (ln === 'pic') {
-    await ppFill(X, ctx, x1(node, 'blipFill'), sh.path, w, h, null);
-    if (L?.c) ppStroke(X, ctx, L, null, sh.path);
+    const pp = sh ? sh.path : parts.length ? parts.reduce((q, pt) => (q.addPath(pt.path), q), new Path2D()) : ppShape('rect', w, h, {}).path;      // a picture in a custom outline is shown through the outline
+    await ppFill(X, ctx, x1(node, 'blipFill'), pp, w, h, null);
+    if (L?.c) ppStroke(X, ctx, L, null, pp);
   } else {
     const has = !!fill && fill.localName !== 'noFill';
     if (has && ppShadow(X, ctx, eff, er?.ph, S)) { /* the shadow is drawn with the fill */ }
