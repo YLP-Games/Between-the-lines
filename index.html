@@ -694,6 +694,12 @@ body.dragging-sticky,body.dragging-sticky *{cursor:grabbing!important}
 
 .gappill{-webkit-touch-callout:none;touch-action:manipulation}
 .gappill.ghost{pointer-events:none;opacity:.6}
+.gappill{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+.gappill b{font-size:1.3em;font-weight:700;line-height:1}
+@media (hover:hover) and (pointer:fine){          /* just a small + by the margin, so it covers no words; pointing at it shows what it does */
+  .gappill:not(:hover):not(:focus-visible):not([aria-expanded="true"]){width:24px;padding:0}
+  .gappill:not(:hover):not(:focus-visible):not([aria-expanded="true"]) .gl{display:none}
+}
 .pptx-tip{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;box-sizing:border-box;width:100%;max-width:900px;margin:0;padding:8px 12px;border:1.5px solid var(--line-strong);border-radius:var(--radius);background:var(--accent-soft);color:var(--ink);font-size:15px;line-height:1.35}
 .pptx-tip > span{flex:1 1 320px}
 .pptx-tip .btn{height:30px}
@@ -3496,7 +3502,7 @@ function gapY(strip, clientY){
 }
 // a dashed line and an "+ Add here" button follow the mouse (or appear where you tap); the button opens the add menu
 const gapLine = document.createElement('div'); gapLine.className = 'gapline';
-const gapPill = document.createElement('button'); gapPill.className = 'gappill'; gapPill.type = 'button'; gapPill.textContent = '+ Add here';
+const gapPill = document.createElement('button'); gapPill.className = 'gappill'; gapPill.type = 'button'; gapPill.innerHTML = '<b>+</b><span class="gl">&nbsp;Add here</span>';
 gapPill.title = 'Add a note here (right-click for a sticky note or an equation)';
 gapPill.setAttribute('aria-haspopup', 'listbox');
 let pending = null, ins = null;          // ins: the add menu, while it is open

@@ -16,26 +16,31 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   ok(line, 'a line of words to select (' + line?.text + ')');
   const pillAt = async () => (await page.$('.gappill')) ? page.locator('.gappill').boundingBox() : null;
 
-  // ---- the button is small and sits in the gap ----
-  await page.mouse.move(line.x + 30, line.y - 2, {steps: 4}); await page.waitForTimeout(250);
-  let pill = await pillAt();
-  ok(pill && pill.height <= 24, 'hovering shows "+ Add here", now a small button (' + pill?.height + 'px tall)');
-  ok(await page.evaluate(() => getComputedStyle(document.querySelector('.gapline')).pointerEvents === 'none'), 'the dashed line lets clicks through');
-
-  // ---- pressing on the button and dragging selects the words under it ----
-  await page.mouse.move(line.x + 6, line.y + 4, {steps: 2}); await page.waitForTimeout(250);
-  // where the button sits over the start of a line of words
-  const hit = await page.evaluate(() => {
+  // ---- the button is a small + by the margin, and covers no words ----
+  const overlap = () => page.evaluate(() => {
     const p = document.querySelector('.gappill')?.getBoundingClientRect(); if (!p) return null;
     for (const s of document.querySelectorAll('.tl')) {
       const r = s.getBoundingClientRect(), l = Math.max(r.left, p.left), rt = Math.min(r.right, p.right), t = Math.max(r.top, p.top), b = Math.min(r.bottom, p.bottom);
       if (rt - l > 4 && b - t > 4 && s.textContent.trim().length > 8) return {x: (l + rt) / 2, y: (t + b) / 2, end: r.right - 3, text: s.textContent};
     }
-    return null;
+    return false;
   });
-  ok(hit, 'the button covers the start of some words (' + hit?.text + ')');
+  await page.mouse.move(line.x + 30, line.y - 2, {steps: 4}); await page.waitForTimeout(250);
+  let pill = await pillAt();
+  ok(pill && pill.height <= 24 && pill.width <= 26 && (await page.textContent('.gappill')).trim().startsWith('+'), 'pointing at the page shows a small + (' + Math.round(pill?.width) + '×' + pill?.height + 'px)');
+  await page.mouse.move(line.x + 6, line.y + 4, {steps: 2}); await page.waitForTimeout(250);
+  ok(await overlap() === false, 'it covers none of the words');
+  ok(await page.evaluate(() => getComputedStyle(document.querySelector('.gapline')).pointerEvents === 'none'), 'the dashed line lets clicks through');
+  pill = await pillAt();
+  await page.mouse.move(pill.x + pill.width / 2, pill.y + pill.height / 2, {steps: 2}); await page.waitForTimeout(200);
+  const wide = await pillAt();
+  ok(wide.width > 60 && await page.isVisible('.gappill .gl'), 'pointing at it shows "+ Add here" (' + Math.round(wide.width) + 'px wide)');
+
+  // ---- pressing on the (opened) button and dragging still selects the words under it ----
+  const hit = await overlap();
+  ok(hit, 'opened, the button covers the start of some words (' + hit?.text + ')');
   const sx = hit.x, sy = hit.y, target = hit.text;
-  await page.mouse.move(sx, sy, {steps: 2}); await page.waitForTimeout(250);         // the mouse arrives on the words; the button follows it into the gap
+  await page.mouse.move(sx, sy, {steps: 2}); await page.waitForTimeout(200);
   ok(await page.evaluate(([x, y]) => !!document.elementFromPoint(x, y)?.closest('.gappill'), [sx, sy]), 'the button is right under the mouse, over the words');
   await page.mouse.down();
   await page.mouse.move(sx + 40, sy, {steps: 3}); await page.mouse.move(hit.end, sy, {steps: 6}); await page.waitForTimeout(100);
