@@ -1,7 +1,7 @@
 // Lets Between the Slides work offline once installed (or visited once).
 // The app itself is fetched fresh when online, so updates arrive straight away; the libraries it uses never change, so they come from the cache.
-const CACHE = 'bts-v3';          // a new name clears out the old copy (which could have kept a broken download)
-const APP = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png'];
+const CACHE = 'bts-v4';          // a new name clears out the old copy (which could have kept a broken download)
+const APP = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'];
 const LIBS = [
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',

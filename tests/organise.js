@@ -49,7 +49,9 @@ const cornerOnIn = pg => pg.evaluate(() => { const b = document.getElementById('
     const g = await nb.locator('.g-' + dir).boundingBox();
     const x = g.x + g.width / 2, y = g.y + g.height / 2;
     await page.mouse.move(x, y); await page.waitForTimeout(80);
-    await page.mouse.down(); await page.mouse.move(x + dx, y + dy, {steps: 8}); await page.waitForTimeout(60);
+    await page.mouse.down();
+    if (Math.hypot(dx, dy) < 4) await page.mouse.move(x - 12, y - 12, {steps: 3});        // (a press becomes a drag once it has moved a few pixels)
+    await page.mouse.move(x + dx, y + dy, {steps: 8}); await page.waitForTimeout(60);
     const mid = check ? await check() : null;
     await page.mouse.up(); await page.waitForTimeout(200);
     return mid;
@@ -340,7 +342,7 @@ const cornerOnIn = pg => pg.evaluate(() => { const b = document.getElementById('
     // Alt turns snapping off
     await show(b); await b.hover({position: {x: 80, y: 8}});
     const g = await b.locator('.g-w').boundingBox(), x = g.x + g.width / 2, y = g.y + g.height / 2;
-    await page.mouse.move(x, y); await page.mouse.down(); await page.keyboard.down('Alt'); await page.mouse.move(x + 1.8, y, {steps: 3});
+    await page.mouse.move(x, y); await page.mouse.down(); await page.keyboard.down('Alt'); await page.mouse.move(x + 12, y, {steps: 3}); await page.mouse.move(x + 1.8, y, {steps: 3});     // (a press becomes a drag once it has moved a few pixels)
     const free = (await rectOf(b)).l; await page.keyboard.up('Alt'); await page.mouse.up(); await page.waitForTimeout(150);
     ok(near(free, ra.l + 1.8, 1.2) || Math.abs(free - ra.l) >= 0.5, 'holding Alt does not snap');
     // the top edge, with two floating notes

@@ -25,9 +25,9 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
 
   // ---- the menu between the lines ----
   await pointAt(2, 0.5);
-  ok((await page.textContent('.gappill')).trim() === '+ Add here', 'the pill says + Add here');
+  ok((await page.textContent('.gappill')).replace(/\s+/g, ' ').trim() === '+ Add here', 'the pill says + Add here');
   await page.click('.gappill', {button: 'right'}); await page.waitForTimeout(200);
-  ok(await page.isVisible('.imenu') && (await shown()).join() === 'Note,Sticky note,Equation,Table,Journal entry', 'the menu lists Note, Sticky note, Equation, Table and Journal entry');
+  ok(await page.isVisible('.imenu') && (await shown()).join() === 'Note,Sticky note,Equation,Table,Journal entry,Template…', 'the menu lists Note, Sticky note, Equation, Table, Journal entry and Template…');
   ok(await selected() === 'Note' && await page.isVisible('.itip'), 'Note is picked first, with its tip beside it');
   ok(await page.evaluate(() => document.activeElement.matches('.imenu input')), 'the search box has the cursor');
   ok(await page.isVisible('.gappill') && await page.isVisible('.gapline'), 'the gap stays marked while the menu is open');
@@ -37,6 +37,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   await page.keyboard.press('ArrowDown'); ok(await selected() === 'Equation', 'arrow down');
   await page.keyboard.press('ArrowDown'); ok(await selected() === 'Table', 'arrow down');
   await page.keyboard.press('ArrowDown'); ok(await selected() === 'Journal entry', 'arrow down');
+  await page.keyboard.press('ArrowDown'); ok(await selected() === 'Template…', 'arrow down');
   await page.keyboard.press('ArrowDown'); ok(await selected() === 'Note', 'arrows wrap around');
   await page.keyboard.type('xyz'); await page.waitForTimeout(100);
   ok(await page.isVisible('.imenu .iempty'), 'no match says No results');
@@ -94,7 +95,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   ok(!(await page.isVisible('.imenu')), 'a slash inside a word does not open the menu');
   await page.keyboard.type('/'); await page.waitForTimeout(200);
   ok(await page.isVisible('.imenu') && !(await page.isVisible('.imenu .isearch')), 'a slash after a space opens the menu at the cursor');
-  ok((await shown()).join() === 'Equation,Table,Journal entry,Sticky note' && (await page.textContent('.imenu')).includes('Turn into'), 'in a note it offers Equation, Table, Journal entry, Template… and Turn into Sticky note');
+  ok((await shown()).join() === 'Equation,Table,Journal entry,Template…,Sticky note' && (await page.textContent('.imenu')).includes('Turn into'), 'in a note it offers Equation, Table, Journal entry, Template… and Turn into Sticky note');
   await page.screenshot({path: path.join(OUT, 'menu-3-slash.png')});
   await page.keyboard.press('Escape'); await page.waitForTimeout(100);
   ok(!(await page.isVisible('.imenu')) && (await page.locator('.pagecard').nth(1).locator('.mine').textContent()).endsWith('/'), 'Esc closes it and leaves the slash');
@@ -106,8 +107,8 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   ok(await turned.evaluate(b => b.classList.contains('sticky') && b.classList.contains('floating')), 'Turn into Sticky note lifts the note onto the page');
   ok(!(await turned.locator('.mine').textContent()).includes('/stic'), 'and the /stic you typed is taken out');
   await page.keyboard.type('/'); await page.waitForTimeout(150);
-  ok((await shown()).join() === 'Equation,Table,Journal entry,Note', 'a sticky note can turn back into a note');
-  for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowDown');
+  ok((await shown()).join() === 'Equation,Table,Journal entry,Template…,Note', 'a sticky note can turn back into a note');
+  for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter'); await page.waitForTimeout(300);
   ok(await turned.evaluate(b => !b.classList.contains('sticky') && !b.classList.contains('floating')), 'and goes back between the lines');
   await page.keyboard.type('/x'); await page.waitForTimeout(100); await page.keyboard.type('yz '); await page.waitForTimeout(150);
