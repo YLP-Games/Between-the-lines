@@ -8,10 +8,19 @@ const OUT = path.join(__dirname, 'shots'); fs.mkdirSync(OUT, {recursive: true});
 // a copy of a test file with changes made to it, saved to shots/<name>
 const edit = async (z, p, f) => z.file(p, f(await z.file(p).async('string')));
 const craft = async (src, name, fn) => { const z = await JSZip.loadAsync(fs.readFileSync(path.join(__dirname, src))); await fn(z); const out = path.join(OUT, name); fs.writeFileSync(out, await z.generateAsync({type: 'nodebuffer', compression: 'DEFLATE'})); return out; };
+// what a page picture holds around a colour: how many pixels are near it
+const near = (p, n, rgb) => p.evaluate(async ([n, rgb]) => {
+  const u = document.querySelectorAll('.pagecard')[n].style.getPropertyValue('--pg').match(/url\(["']?(.*?)["']?\)$/)[1], im = new Image(); im.src = u; await im.decode();
+  const cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = im.naturalHeight; const c = cv.getContext('2d'); c.drawImage(im, 0, 0);
+  const d = c.getImageData(0, 0, cv.width, cv.height).data; let k = 0;
+  for (let i = 0; i < d.length; i += 12) if (Math.abs(d[i] - rgb[0]) < 14 && Math.abs(d[i + 1] - rgb[1]) < 14 && Math.abs(d[i + 2] - rgb[2]) < 14) k++;
+  return k;
+}, [n, rgb]);
 (async () => {
   const {browser, page, errors} = await open(APP, {width: 1300, height: 1000});
   await page.waitForTimeout(600);
-  const openFile = async (f, n, sel = '#main .slide') => { const head = path.basename(f).replace(/\.[^.]+$/, '').replace(/_+/g, ' '); await page.setInputFiles('#file', f.includes('/') ? f : path.join(__dirname, f)); await page.waitForFunction(([sel, n, head]) => document.querySelector('#main .file-head')?.textContent === head && document.querySelectorAll(sel).length >= n, [sel, n, head], {timeout: 60000}); await page.waitForTimeout(700); };
+  const openFile = async (f, n, sel = '#main .slide', ms = 60000) => { const head = path.basename(f).replace(/\.[^.]+$/, '').replace(/_+/g, ' '); await page.setInputFiles('#file', f.includes('/') ? f : path.join(__dirname, f)); await page.waitForFunction(([sel, n, head]) => document.querySelector('#main .file-head')?.textContent === head && document.querySelectorAll(sel).length >= n, [sel, n, head], {timeout: ms}); await page.waitForTimeout(700); };
+  const opens = (...a) => openFile(...a.slice(0, 3), 12000).then(() => true, () => false);
 
   // ---- keys in a note ----
   await openFile('week2.pptx', 2);
@@ -56,6 +65,26 @@ const craft = async (src, name, fn) => { const z = await JSZip.loadAsync(fs.read
     ok(d.pwned === undefined && !d.imgs.length && d.handlers === 0, `${mode} mode: a script-laden colour and font name in the file run nothing and make no element (${JSON.stringify({p: d.pwned, i: d.imgs, h: d.handlers})})`);
     ok(await page.locator(mode === 'look' ? '.pagecard' : '#main .slide').count() === 4 && (mode === 'look' || d.text.includes('Richer test deck')), `${mode} mode: the deck still opens with its four slides`);
     if (mode === 'text') ok(d.text.includes('<img src=z onerror="window.__pwned=4">') && await page.evaluate(() => [...document.querySelectorAll('#main span')].every(s => !/color:\s*#[^;]*[^0-9a-f;\s]/i.test(s.getAttribute('style') || ''))), 'text mode: text that looks like markup stays text, and only real colours are used');
+  }
+  await page.evaluate(() => pref.set('pptx-mode', 'look'));
+
+  // ---- relationships written with absolute targets ("/ppt/slides/slide1.xml"), and slides that aren't called slideN.xml ----
+  const abs = await craft('fid-rich.pptx', 'abs.pptx', async z => {
+    z.file('ppt/slides/deckslide2.xml', await z.file('ppt/slides/slide2.xml').async('string')); z.remove('ppt/slides/slide2.xml');
+    z.file('ppt/slides/_rels/deckslide2.xml.rels', await z.file('ppt/slides/_rels/slide2.xml.rels').async('string')); z.remove('ppt/slides/_rels/slide2.xml.rels');
+    await edit(z, 'ppt/_rels/presentation.xml.rels', x => x.replace('slides/slide2.xml', 'slides/deckslide2.xml'));
+    for (const f of Object.keys(z.files).filter(f => f.endsWith('.rels'))) {
+      const dir = f.replace(/_rels\/[^/]*$/, '');
+      await edit(z, f, x => x.replace(/Target="([^"]+)"(?! TargetMode)/g, (m, t) => { if (t[0] === '/' || /^[a-z]+:/i.test(t)) return m; const parts = dir.split('/').filter(Boolean); for (const seg of t.split('/')) { if (seg === '..') parts.pop(); else if (seg !== '.') parts.push(seg); } return `Target="/${parts.join('/')}"`; }));
+    }
+  });
+  ok((await JSZip.loadAsync(fs.readFileSync(abs)).then(z => z.file('ppt/_rels/presentation.xml.rels').async('string'))).includes('Target="/ppt/slides/slide1.xml"'), 'the test file has absolute targets');
+  for (const mode of ['text', 'look']) {
+    await page.evaluate(m => pref.set('pptx-mode', m), mode);
+    const sel = mode === 'look' ? '#main .pagecard' : '#main .slide';
+    ok(await opens(abs, 4, sel), `${mode} mode: a deck with absolute relationship targets opens with its four slides`);
+    if (mode === 'text') ok(await page.evaluate(() => [...document.querySelectorAll('#main .slide')].map(c => c.querySelectorAll('img').length).join()) === '0,1,0,0', 'text mode: the picture on slide 2 (absolute target, slide not called slideN.xml) is there');
+    else ok(await near(page, 1, [250, 200, 60]) > 20000, 'look mode: and the picture on slide 2 is drawn');
   }
   await page.evaluate(() => pref.set('pptx-mode', 'look'));
 

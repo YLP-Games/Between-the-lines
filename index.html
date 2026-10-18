@@ -2429,7 +2429,7 @@ async function readPptx(buf, name, mode = pptxMode()){
   const kid = (n, ln) => kids(n, ln)[0] || null;
   const find = (n, ln) => n ? n.getElementsByTagNameNS('*', ln)[0] || null : null;
   const rels = d => Object.fromEntries(d ? [...d.getElementsByTagName('Relationship')].map(r => [r.getAttribute('Id'), r.getAttribute('Target')]) : []);
-  const resolve = (base, t) => { const parts = base.split('/'); parts.pop(); for (const seg of t.split('/')) { if (seg === '..') parts.pop(); else if (seg !== '.') parts.push(seg); } return parts.join('/'); };
+  const resolve = (base, t) => { if (t[0] === '/') return t.slice(1); const parts = base.split('/'); parts.pop(); for (const seg of t.split('/')) { if (seg === '..') parts.pop(); else if (seg !== '.') parts.push(seg); } return parts.join('/'); };
 
   const pres = await xml('ppt/presentation.xml');
   const prel = rels(await xml('ppt/_rels/presentation.xml.rels'));
@@ -2440,12 +2440,13 @@ async function readPptx(buf, name, mode = pptxMode()){
   const deck = mode === 'look' ? await PPT.deck(zip).catch(err => console.warn(err)) : null;
   for (let n = 0; n < ids.length; n++) {
     toast(`Reading ${name}: slide ${n + 1} of ${ids.length}`);
+    if (!prel[ids[n]]) continue;
     const path = resolve('ppt/presentation.xml', prel[ids[n]]);
     if (deck) {                                   // a slide that can't be drawn is rebuilt as text instead
       try { await lookSlide(deck, path, n); await new Promise(r => setTimeout(r)); continue; } catch (err) { console.warn(`slide ${n + 1} drawn as text:`, err); }
     }
     const doc = await xml(path); if (!doc) continue;
-    const srel = rels(await xml(path.replace(/slides\/(slide\d+\.xml)$/, 'slides/_rels/$1.rels')));
+    const srel = rels(await xml(path.replace(/([^/]+)$/, '_rels/$1.rels')));
     const items = [];
     let order = 0;
     const walk = node => {
