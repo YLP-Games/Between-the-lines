@@ -202,12 +202,24 @@ const PAD = 48;          // the room a page keeps below its lowest note
   ok(near((await R(bp)).h, bp0.h), 'dragged back up, it shrinks to its own size again');
   await away();
 
-  // ---- F: side notes near the bottom of a side page; the slide beside it grows with it ----
+  // ---- F: beside the slides, a slide and its side page are always as tall as each other ----
   await page.click('#tab-view'); await page.click('#sideBtn'); await page.waitForTimeout(600);
   const sp = page.locator('.sidepage').nth(5), sl = page.locator('#main .slide').nth(5);
+  const same = async () => { const a = await R(sl), b = await R(sp); return near(a.y, b.y) && near(a.h, b.h, 2); };
   await show(sp);
-  const sp0 = await R(sp), sl0 = await R(sl);
-  ok(near(sp0.y, sl0.y) && near(sp0.h, sl0.h), 'a side page starts level with its slide and as tall');
+  const sl0 = await R(sl);
+  ok(await same(), 'a side page starts level with its slide and as tall');
+  // a note between the lines opens up the slide; its side page follows
+  s = await R(sl.locator('.strip').first());
+  await page.mouse.move(s.x + 200, s.y + s.h * 0.55, {steps: 3}); await page.waitForTimeout(200);
+  await page.click('.gappill'); await page.keyboard.type('A note on the slide');
+  for (let i = 2; i <= 4; i++) { await page.keyboard.press('Enter'); await page.keyboard.type('slide line ' + i); }
+  await away();
+  const slm = await R(sl);
+  ok(slm.h > sl0.h + 60 && await same(), `a note between the lines makes the slide taller, and its side page with it (${sl0.h.toFixed(0)} to ${slm.h.toFixed(0)}px)`);
+  // long side notes near the bottom of the side page
+  await show(sp);
+  const sp0 = await R(sp);
   await page.mouse.click(sp0.x + 60, sp0.b - 50); await page.waitForTimeout(250);
   await page.keyboard.type('A side note low down');
   for (let i = 2; i <= 8; i++) { await page.keyboard.press('Enter'); await page.keyboard.type('side line ' + i); }
@@ -217,16 +229,28 @@ const PAD = 48;          // the room a page keeps below its lowest note
   ok((sp1.b - sn1.b) / sz >= 40, `the side page grows to hold its note, with room below (${((sp1.b - sn1.b) / sz).toFixed(0)}px)`);
   ok(caret2 !== null && caret2 <= sb2.y, `typing in it keeps the caret in sight (${caret2?.toFixed(0)} <= ${sb2.y.toFixed(0)})`);
   const sl1 = await R(sl);
-  ok(sp1.h > sp0.h + 100 && near(sl1.y, sp1.y) && near(sl1.h, sp1.h, 2), `when its notes make the side page taller, the slide beside it grows to match (${sl1.h.toFixed(0)} and ${sp1.h.toFixed(0)}px)`);
-  ok(await sl.evaluate(c => { const r = c.getBoundingClientRect(), x = r.left + r.width / 2, y = r.bottom - 12, e = document.elementFromPoint(x, y); return e === c && getComputedStyle(c).backgroundColor === 'rgb(255, 255, 255)'; }), 'with blank room of its own colour below it');
+  ok(sp1.h > slm.h + 60 && await same(), `when its notes make the side page taller, the slide beside it grows to match (${sl1.h.toFixed(0)} and ${sp1.h.toFixed(0)}px)`);
+  await show(sl);
+  ok(await sl.evaluate(c => { const r = c.getBoundingClientRect(), e = document.elementFromPoint(r.left + r.width / 2, r.bottom - 12); return e === c && getComputedStyle(c).backgroundColor === 'rgb(255, 255, 255)'; }), 'with blank room of its own colour below it');
   await page.screenshot({path: path.join(OUT, 'notegeo-3-side.png')});
-  await page.keyboard.press('Control+a'); await page.keyboard.type('Short side note'); await page.waitForTimeout(500);
   await away();
-  const sp2 = await R(sp), sl2 = await R(sl), want = Math.max(sl0.h, (await R(sn)).b - sp2.y + PAD * sz);
-  ok(sl2.h < sl1.h - 100 && near(sl2.h, sp2.h, 2) && near(sl2.h, want, 3), `shorter again, both shrink back together (${sl2.h.toFixed(0)} and ${sp2.h.toFixed(0)}px; the slide alone is ${sl0.h.toFixed(0)})`);
+  // the notes on the pages hidden (the side notes stay open): the slide closes up, but stays as tall as its side page
+  const hideMain = on => page.evaluate(on => { for (const b of main.querySelectorAll('.notebox')) if (!b.closest('.sidepage')) on ? setCollapsed(b, true) : openNote(b); afterNotesToggle(); }, on);
+  await hideMain(true); await page.waitForTimeout(500);
+  const sl4 = await R(sl), sp4 = await R(sp);
+  ok(await sl.locator('.notebox.collapsed').count() === 1 && await sn.evaluate(b => !b.classList.contains('collapsed')), 'hiding the notes on the pages minimises the slide\'s note, not the side note');
+  ok(await same() && near(sp4.h, sp1.h, 2), `the slide stays as tall as its side page (${sl4.h.toFixed(0)} and ${sp4.h.toFixed(0)}px)`);
+  await hideMain(false); await page.waitForTimeout(500);
+  ok(await same() && near((await R(sp)).h, sp1.h, 2), 'shown again, they still match');
+  // side notes shorter, then gone: both shrink back together, to the slide's own size
+  await sn.locator('.mine').click(); await page.keyboard.press('Control+a'); await page.keyboard.type('Short side note'); await page.waitForTimeout(500);
+  await away();
+  const sp2 = await R(sp), sl2 = await R(sl), want = Math.max(slm.h, (await R(sn)).b - sp2.y + PAD * sz);
+  ok(sl2.h < sl1.h - 60 && await same() && near(sl2.h, want, 3), `shorter again, both shrink back together (${sl2.h.toFixed(0)} and ${sp2.h.toFixed(0)}px; the slide alone is ${slm.h.toFixed(0)})`);
   await sn.locator('.mine').click(); await page.keyboard.press('Control+a'); await page.keyboard.press('Delete'); await away(); await page.waitForTimeout(300);
-  const sp3 = await R(sp), sl3 = await R(sl);
-  ok(await sp.locator('.notebox').count() === 0 && near(sl3.h, sl0.h) && near(sp3.h, sl0.h), `with the note gone, both are back to the slide's own size (${sl3.h.toFixed(0)} and ${sp3.h.toFixed(0)}px)`);
+  ok(await sp.locator('.notebox').count() === 0 && await same() && near((await R(sl)).h, slm.h), `with the side note gone, both are back to the slide's own size (${(await R(sl)).h.toFixed(0)}px)`);
+  await hideMain(true); await page.waitForTimeout(500);
+  ok(await same() && near((await R(sl)).h, sl0.h), `and with the slide's note hidden too, to the size of the slide itself (${(await R(sl)).h.toFixed(0)}px)`);
 
   await browser.close();
   const errs = errors.filter(e => !/ERR_FAILED|net::/.test(e));
