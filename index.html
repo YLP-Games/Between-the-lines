@@ -262,6 +262,7 @@ div.mine:empty::before{content:"Type, or press / for options"}
 .mine :is(ul,ol) :is(ul,ol) ol{list-style-type:lower-roman}
 .mine :is(ul,ol) :is(ul,ol) :is(ul,ol) ol{list-style-type:decimal}
 .mine li{display:list-item}
+.mine li::marker{color:var(--mkc);font-size:var(--mks);font-family:var(--mkf)}       /* set by markLists: a bullet looks like the words after it */
 .mine blockquote{margin:0 0 0 var(--ind,1.4em)!important;padding:0!important;border:none!important}
 /* a note box with handles, like a text box in Word */
 .notebox{position:relative;display:flex;flex-direction:column;width:100%;max-width:100%;margin:.2em 0 .5em;box-sizing:border-box}
@@ -2254,9 +2255,18 @@ function styleWhole(el, kind, value){
   el.style[prop] = kind === 'font' ? fontCss(value) : kind === 'size' ? value + 'px' : value;
   el.querySelectorAll('*').forEach(x => { x.style[prop] = ''; if (x.tagName === 'FONT') x.removeAttribute({font:'face',color:'color',size:'size'}[kind]); });
 }
+// a bullet or number takes the colour, size and font of the words right after it (colour a whole line green and its bullet goes green too)
+function markLists(note){
+  for (const li of note.querySelectorAll('li')) {
+    const t = document.createTreeWalker(li, NodeFilter.SHOW_TEXT, {acceptNode: x => x.data.trim() && x.parentElement.closest('li') === li ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP}).nextNode();
+    const el = t?.parentElement, a = el && el !== li ? getComputedStyle(el) : null, b = a && getComputedStyle(li);
+    for (const [v, p] of [['--mkc', 'color'], ['--mks', 'fontSize'], ['--mkf', 'fontFamily']]) { if (a && a[p] !== b[p]) li.style.setProperty(v, a[p]); else li.style.removeProperty(v); }
+    if (!li.getAttribute('style')) li.removeAttribute('style');
+  }
+}
 function apply(kind, value){
   if (multi.size) {               // several notes selected: style each of them
-    multi.forEach(b => { const m = b.querySelector(':scope > .mine'); if (m) styleWhole(m, kind, value); });
+    multi.forEach(b => { const m = b.querySelector(':scope > .mine'); if (m) { styleWhole(m, kind, value); markLists(m); } });
     showStyle({...noteStyle([...multi][0].querySelector('.mine')), [kind]: value}); saveSoon(); return;
   }
   if (!noteActive()) { active = null; style[kind] = value; showStyle(style); saveSoon(); return; }
@@ -2277,6 +2287,7 @@ function apply(kind, value){
       }
     }
   } else styleWhole(active, kind, value);
+  markLists(active);
   const s = getSelection(); savedRange = s.rangeCount ? s.getRangeAt(0).cloneRange() : null;
   showStyle({...noteStyle(active), [kind]: value});
   saveSoon();
@@ -2773,7 +2784,7 @@ main.addEventListener('input', e => {
   if (m[1] && list && note.contains(list) && +m[1] > 1) list.start = +m[1];
   saveSoon();
 });
-main.addEventListener('input', e => { const m = e.target.closest?.('.mine'); if (m) { wrapMedia(m); spellSoon(m); } saveSoon(); });
+main.addEventListener('input', e => { const m = e.target.closest?.('.mine'); if (m) { wrapMedia(m); spellSoon(m); if (m.querySelector('li')) markLists(m); } saveSoon(); });
 main.addEventListener('pointerdown', e => { const b = e.target.closest('.notebox'); if (b && !b.classList.contains('collapsed')) raise(b); }, true);
 // a finger can't point at a note: tapping one shows its handles until you tap somewhere else
 document.addEventListener('pointerdown', e => {
@@ -4766,14 +4777,14 @@ async function paintCard(card, scale, side){
   }
   // list bullets and numbers
   for (const li of qa('li')) {
-    const ls = getComputedStyle(li); if (ls.display !== 'list-item' || ls.listStyleType === 'none') continue;
+    const ls = getComputedStyle(li), ms = getComputedStyle(li, '::marker'); if (ls.display !== 'list-item' || ls.listStyleType === 'none') continue;
     const first = document.createTreeWalker(li, NodeFilter.SHOW_TEXT, {acceptNode: t => t.data.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP}).nextNode();
     const lr = li.getBoundingClientRect(); if (!lr.width) continue;
-    const fs = parseFloat(ls.fontSize) * zoomOf(li);
+    const fs = (parseFloat(ms.fontSize) || parseFloat(ls.fontSize)) * zoomOf(li);
     const mark = listMark(li, ls.listStyleType);
     let top = lr.top, h = fs * 1.2;
     if (first) { const rr = document.createRange(); rr.selectNodeContents(first); const fr = rr.getClientRects()[0]; if (fr) { top = fr.top; h = fr.height; } }
-    ctx.font = `${ls.fontStyle} ${ls.fontWeight} ${fs.toFixed(2)}px ${ls.fontFamily}`; ctx.fillStyle = ls.color;
+    ctx.font = `${ls.fontStyle} ${ls.fontWeight} ${fs.toFixed(2)}px ${ms.fontFamily || ls.fontFamily}`; ctx.fillStyle = ms.color || ls.color;
     const w = ctx.measureText(mark).width;
     ctx.fillText(mark, lr.left - ox - w - fs * 0.35, top - oy + h * 0.78);
   }
