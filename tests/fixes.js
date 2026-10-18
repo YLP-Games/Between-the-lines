@@ -87,7 +87,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   await pointAt(3, 0.5);
   await page.click('.gappill', {button: 'right'}); await page.waitForTimeout(250);
   ok(await page.isVisible('.imenu') && await page.locator('.notebox').count() === 1, 'right-click on the pill opens the menu and adds nothing');
-  ok((await page.$$eval('.imenu .iitem .nm span', e => e.map(x => x.textContent))).join() === 'Note,Sticky note,Equation,Table,Journal entry', 'with Note, Sticky note, Equation, Table, Journal entry');
+  ok((await page.$$eval('.imenu .iitem .nm span', e => e.map(x => x.textContent))).join() === 'Note,Sticky note,Equation,Table,Journal entry,Template…', 'with Note, Sticky note, Equation, Table, Journal entry, Template…');
   await page.keyboard.press('ArrowDown'); await page.keyboard.press('Enter'); await page.waitForTimeout(300);
   ok(await page.locator('.notebox.sticky').count() === 1, 'Sticky note from the menu works');
   await away();
