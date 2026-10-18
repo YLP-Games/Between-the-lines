@@ -2347,7 +2347,8 @@ main.addEventListener('click', e => {
   focusNote(el);
 });
 main.addEventListener('keydown', e => {
-  const note = e.target.closest?.('.mine'); if (!note) return;
+  const note = e.target.closest?.('.mine'); if (!note || e.isComposing || e.keyCode === 229) return;       // Enter that confirms an IME word is not a line break
+  if (e.key === 'Escape' && !e.defaultPrevented && !focusMode && spellMenu.hidden && !mediaSel) { note.blur(); return; }     // Tab indents here, so Esc is the way out of a note
   const sel = getSelection(), n = sel.anchorNode, inLi = n && (n.nodeType === 1 ? n : n.parentElement).closest('li') && note.contains(n);
   if (e.key === 'Tab' && (inLi || note.tagName === 'DIV')) { e.preventDefault(); document.execCommand('styleWithCSS', false, false); document.execCommand(e.shiftKey ? 'outdent' : 'indent'); saveSoon(); return; }
   if (e.key === 'Enter' && !inLi) { e.preventDefault(); document.execCommand('insertLineBreak'); }
