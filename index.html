@@ -227,7 +227,10 @@ main.fit > .sidepage{width:var(--sidew)}
 .slide.target-page{outline:3px solid var(--accent);outline-offset:3px}
 .slide.target-page.target-del{outline-color:var(--danger)}
 /* PDF pages: the real page as a picture, opened up in strips where notes go */
-.pagecard{padding:0;overflow:hidden;background:#fff}
+.pagecard{padding:0;background:#fff}
+/* (nothing on a page is cut off: a note can hang over its edge, and the picture's corners are rounded like the page's) */
+.pagecard > .strip:first-child{border-top-left-radius:inherit;border-top-right-radius:inherit}
+.pagecard > .strip:not(:has(~ .strip, ~ .notebox:not(.floating))){border-bottom-left-radius:inherit;border-bottom-right-radius:inherit}
 .strip{position:relative;overflow:hidden;width:100%;max-width:100%;background-image:var(--pg);background-size:100% auto;background-repeat:no-repeat;cursor:text;font-size:0;color:transparent;container-type:inline-size}
 .tl{position:absolute;white-space:pre;line-height:1;transform-origin:0 0;color:transparent;font-family:Arial,Helvetica,sans-serif;cursor:text}
 .tl::selection{background:rgba(39,71,201,.3);color:transparent}
@@ -900,11 +903,12 @@ main.side-on .sidepage{display:block}
 .sidepage::before{content:attr(data-label);display:none;position:absolute;left:12px;top:7px;font:13px var(--ui);opacity:.6;pointer-events:none}
 .sidepage .g-float{display:none}
 .sidepage > .notebox.floating.collapsed > .note-chip{left:calc(4px + var(--ci, 0) * 23px)}
-/* beside the slides: two columns, each side page in the row of its slide (the row is as tall as the taller of the two) */
+/* beside the slides: two columns, each side page in the row of its slide (the row is as tall as the taller of the two, and both fill it:
+   when the side notes run longer, the slide gets blank room below, and both shrink back together) */
 main.fit.side-on:not(.side-split):not(.side-stack){display:grid;grid-template-columns:var(--cw) var(--sidew);justify-content:center;column-gap:18px;row-gap:16px;align-items:start}
 main.fit.side-on:not(.side-split):not(.side-stack) > *{width:auto}
 main.fit.side-on:not(.side-split):not(.side-stack) > :not(.slide):not(.sidepage):not(.sidewrap){grid-column:1 / -1;justify-self:start;width:var(--cw)}
-main.fit.side-on:not(.side-split):not(.side-stack) > .slide{grid-column:1}
+main.fit.side-on:not(.side-split):not(.side-stack) > .slide{grid-column:1;align-self:stretch}
 main.fit.side-on:not(.side-split):not(.side-stack) > .sidepage{grid-column:2;align-self:stretch}
 /* the printed pages: a sheet and its side page share a row, as tall as the taller of the two */
 .srow{display:flex;align-items:stretch;gap:18px;flex:none}
@@ -992,7 +996,7 @@ body.bresizing .beside{pointer-events:none}
 .bview.side-on{max-width:1500px;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);column-gap:18px;row-gap:16px;align-items:start}
 .bview.side-on .sidepage{display:block}
 .bview.side-on > .file-head{grid-column:1 / -1}
-.bview.side-on > .slide{grid-column:1}
+.bview.side-on > .slide{grid-column:1;align-self:stretch}
 .bview.side-on > .sidepage{grid-column:2;align-self:stretch}
 @container (max-width:640px){.bview.side-on{grid-template-columns:minmax(0,1fr)}.bview.side-on > .sidepage{grid-column:1;align-self:start}}
 #besideInfo{min-width:0;max-width:38ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1613,7 +1617,7 @@ try {
         <li>Point at a note (or tap it) and drag any edge or corner to resize it: the opposite side stays where it is. Drag its move handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
         <li>New notes line up with the note above or below them when they are close (<b>Box › Auto-align notes</b>). To tidy up, <b>Select all</b> on the Box tab, then use <b>Align</b>: left, centre or right, <b>Same width</b>, <b>Distribute</b> (floating and sticky notes, evenly spaced) or <b>Tidy page</b>. Each is one step you can take Back.</li>
         <li><b>View › Side pages</b> gives each slide a page for your own notes beside it. They work in the Default, A4 and A3 layouts (each printed page gets one beside it, and both shrink together when the window is narrow). Point near the top right corner of a side page (or tap it, or press Tab) to show a palette button that changes its paper, or use <b>Side page background</b> in the View tab. Slides, side pages and notes are scaled to fit the window as one, so nothing moves when you open the sidebar.</li>
-        <li>On each note: the arrows float it on top of the page, the minus minimises it to a pencil icon (drag the icon aside, right-click it to colour it), and the pin keeps it open.</li>
+        <li>On each note: the arrows float it on top of the page, the minus minimises it to a pencil icon (drag the icon aside, or Shift+drag it to take the note along; right-click it to colour it), and the pin keeps it open.</li>
         <li>The <b>sidebar</b> (left) lists your notebooks: click one to switch, and the one you're in shows its pages. Use its <b>⋯</b> to rename or delete it. Hide it with <b>«</b> (Ctrl+\) and point at the left edge to peek at it. A notebook’s <b>⋯</b> menu can also star it as a <b>Favourite</b>, <b>Duplicate</b> it, or move it to the <b>Trash</b>, where it waits 30 days (and can be restored) before it is gone for ever. Group notebooks in <b>folders</b> (<b>New folder</b>): drag a notebook or a folder onto a folder to move it, or use <b>Move to…</b> in its <b>⋯</b> menu.</li>
         <li><b>Notes</b> (right) lists every note in the notebook to search, filter by icon colour and jump to.</li>
         <li>In Chrome or Edge, <b>Install as an app</b> (at the bottom of the sidebar) gives Between the Lines its own window that works offline.</li>
@@ -2024,7 +2028,7 @@ function setCollapsed(box, on){
   if (on && chip) {
     const m = box.querySelector(':scope > .mine'), t = (m && noteSummary(m)) || 'Note';
     const short = t.length > 300 ? t.slice(0, 300) + '…' : t;
-    chip.title = short + '\n\nClick to open · drag it anywhere and the note opens there · right-click (or press and hold) to change its colour';
+    chip.title = short + '\n\nClick to open · drag to move this icon (Shift+drag takes the note with it) · right-click (or press and hold) to change its colour';
     chip.setAttribute('aria-label', 'Show note: ' + short);
   }
 }
@@ -2064,7 +2068,7 @@ function spreadChips(root = main){
     placed.push({card, i, top: r.top, left: r.left});
   }
 }
-// drag a minimised note's icon anywhere; it stays where it is dropped, and the note opens there (openNote)
+// drag a minimised note's icon anywhere: only the icon moves (its offset is kept, also once the note is open again), and the note opens where it was
 function setChipOffset(box, x, y){
   const moved = Math.hypot(x, y) >= 6;
   box.classList.toggle('chip-moved', moved);
@@ -2072,33 +2076,37 @@ function setChipOffset(box, x, y){
   else ['--cdx', '--cdy'].forEach(v => box.style.removeProperty(v));
   ['--cl', '--ca'].forEach(v => box.style.removeProperty(v));     // no line back to the spot (older notes had one)
 }
-// open a minimised note where its pencil icon is: a floating note moves with it, a note between the lines
-// goes to the gap between lines nearest the pencil (a note inside a sentence stays in its sentence)
-function openNote(box){
-  const chip = box.querySelector(':scope > .note-chip'), moved = box.classList.contains('chip-moved') && chip && !box.classList.contains('inline');
-  const c = moved ? chip.getBoundingClientRect() : null, z = zoomOf(box) || 1;
+// open a minimised note, right where it was (wherever its icon has been dragged)
+function openNote(box){ setCollapsed(box, false); }
+// Shift+drag of the icon takes the note along: a floating note moves with it, a note between the lines
+// goes to the gap between lines nearest the pencil (a note inside a sentence stays in its sentence), and the icon stays where it was dropped
+function noteToChip(box){
+  const chip = box.querySelector(':scope > .note-chip');
+  if (!chip || !box.classList.contains('chip-moved') || box.classList.contains('inline')) return;
+  const c = chip.getBoundingClientRect(), z = zoomOf(box) || 1;
   const dx = (parseFloat(box.style.getPropertyValue('--cdx')) || 0) * z, dy = (parseFloat(box.style.getPropertyValue('--cdy')) || 0) * z;
   // what is under the pencil, while the note still takes no room
-  const under = c ? document.elementsFromPoint(c.left + c.width / 2, c.top + c.height / 2).filter(el => !box.contains(el)) : [];
+  const under = document.elementsFromPoint(c.left + c.width / 2, c.top + c.height / 2).filter(el => !box.contains(el));
   const strip = under.map(el => el.closest('.strip')).find(Boolean), pageY = strip ? gapY(strip, c.top + c.height / 2) : null, card = strip?.closest('.pagecard');
   const slide = under.map(el => el.closest('.slide')).find(Boolean);
-  setCollapsed(box, false);
-  if (!moved) return;
-  setChipOffset(box, 0, 0);
+  setCollapsed(box, false); setChipOffset(box, 0, 0);
   if (box.classList.contains('floating')) {
     const r = box.getBoundingClientRect(), cr = box.parentElement.getBoundingClientRect();
     setFloatPos(box, Math.max(cr.left, Math.min(cr.right - r.width, r.left + dx)), Math.max(cr.top, r.top + dy));
-    placeFloats(); return;
+    placeFloats();
+  } else {
+    let place = null;
+    if (card) place = () => insertBoxAt(card, pageY, box);       // (the strip itself may be joined up again when the note leaves)
+    else if (slide && !slide.classList.contains('pagecard')) {
+      let blk = [...slide.querySelectorAll('.blk')].filter(b => !box.contains(b) && b.getBoundingClientRect().top < c.top).pop() || null;
+      while (blk && blk.nextElementSibling?.classList.contains('notebox') && blk.nextElementSibling !== box) blk = blk.nextElementSibling;
+      place = () => blk ? blk.after(box) : (slide.querySelector('.content') || slide).prepend(box);
+    }
+    if (place) { const from = box.parentNode; box.remove(); mergeStrips(from); place(); }
+    const m = flowMetrics(box); setFlowLeft(box, m, c.left - m.cL);
   }
-  let place = null;
-  if (card) place = () => insertBoxAt(card, pageY, box);       // (the strip itself may be joined up again when the note leaves)
-  else if (slide && !slide.classList.contains('pagecard')) {
-    let blk = [...slide.querySelectorAll('.blk')].filter(b => !box.contains(b) && b.getBoundingClientRect().top < c.top).pop() || null;
-    while (blk && blk.nextElementSibling?.classList.contains('notebox') && blk.nextElementSibling !== box) blk = blk.nextElementSibling;
-    place = () => blk ? blk.after(box) : (slide.querySelector('.content') || slide).prepend(box);
-  }
-  if (place) { const from = box.parentNode; box.remove(); mergeStrips(from); place(); }
-  const m = flowMetrics(box); setFlowLeft(box, m, c.left - m.cL);
+  setCollapsed(box, true);
+  const c2 = chip.getBoundingClientRect(); setChipOffset(box, (c.left - c2.left) / z, (c.top - c2.top) / z);
 }
 function startChipDrag(chip, e){
   const box = chip.parentElement, z = zoomOf(box) || 1, sx = e.clientX, sy = e.clientY;
@@ -2121,6 +2129,7 @@ function startChipDrag(chip, e){
     if (!moved) return;
     swallow();
     setChipOffset(box, ox + (ev.clientX - sx) / z, oy + (ev.clientY - sy) / z);
+    if (ev.shiftKey || e.shiftKey) { noteToChip(box); spreadChips(); }
     saveSoon();
   };
   chip.addEventListener('pointermove', move); chip.addEventListener('pointerup', up); chip.addEventListener('pointercancel', up);
@@ -2266,6 +2275,7 @@ function startResize(box, g, e){
   const move = ev => {
     if (ev.type === 'pointermove' && !ev.buttons && ev.pointerType === 'mouse') return up({type: 'lost'});
     const free = noSnap(ev), dx = ev.clientX - sx, dy = ev.clientY - sy, vx = [], vy = [];
+    if (!moved && Math.hypot(dx, dy) < dragMin(e)) return;          // only a press so far: nothing changes
     let l = r.left, t = r.top, rt = r.right, b = r.bottom;
     const snap = (v, targets, hits) => { const s = free ? null : snapAxis([v], targets); if (s) hits.push(...s.hits); return s ? v + s.d : v; };
     if (E) rt = Math.max(l + minW, Math.min(hr.right, snap(r.right + dx, xs, vx)));
@@ -2298,8 +2308,27 @@ function startResize(box, g, e){
   };
   g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up); g.addEventListener('lostpointercapture', up);
 }
+// double-click an edge or corner: the box fits what is in it (as wide as its longest line, up to the edge of the page, and as tall as that makes it).
+// Its top-left corner stays where it is, and like a resize it is one step Back undoes
+function fitBox(box){
+  if (!box || box.classList.contains('collapsed')) return;
+  const z = zoomOf(box) || 1, r = box.getBoundingClientRect(), card = box.parentElement;
+  let right;
+  if (box.classList.contains('floating')) { const s = zoomOf(card) || 1; right = card.getBoundingClientRect().left + (card.clientLeft + card.clientWidth - (card.classList.contains('sidepage') ? 8 : 0)) * s; }
+  else { const m = flowMetrics(box); right = m.cL + m.contentW; }
+  box.style.height = ''; box.style.width = 'max-content';
+  box.style.width = Math.max(60, Math.min(Math.floor((right - r.left) / z), Math.ceil(box.getBoundingClientRect().width / z))) + 'px';
+  if (!box.classList.contains('inline')) { box.style.minHeight = ''; box.style.minHeight = Math.ceil(box.getBoundingClientRect().height / z) + 'px'; }
+  placeFloats(); spreadChips(); saveSoon();
+}
+main.addEventListener('dblclick', e => {
+  const g = e.target.closest('.grip'); if (!g || reading || !/^[nsew]{1,2}$/.test(g.dataset.dir)) return;
+  e.preventDefault(); fitBox(g.closest('.notebox'));
+});
 // a press that already did something: the click that ends it is ignored
 let swallowClick = false;
+// how far a press must move to be a drag (a click on a handle never moves a note)
+const dragMin = e => e.pointerType === 'mouse' ? 3 : 6;
 function swallow(ms = 600){ swallowClick = true; setTimeout(() => { swallowClick = false; }, ms); }
 // a menu opened by press-and-hold must not be closed by the mouse events some browsers send when the finger lifts
 let heldUntil = 0;
@@ -3599,33 +3628,49 @@ function placeFloats(root){
       if (over > 0) box.style.left = Math.max(20, box.offsetLeft - over) + 'px';
     }
   }
+  fitPages(root);
 }
+// a page grows to hold the floating notes that reach down past it (with room to spare below them), and shrinks back to its own size when they go
+// (a PDF page's picture keeps its shape: the page gets blank room below it, as it does for a note between the lines there)
+const PAGE_PAD = 48;
+function fitPages(root = main){
+  for (const c of root.matches('.slide') ? [root] : root.querySelectorAll('.slide')) {
+    const had = c.style.minHeight, fl = c.querySelectorAll(':scope > .notebox.floating:not(.collapsed)'); if (!fl.length && !had) continue;
+    const s = zoomOf(c) || 1, top = c.getBoundingClientRect().top;
+    let low = 0;          // how far down the page the lowest of them reaches
+    for (const b of fl) low = Math.max(low, (b.getBoundingClientRect().bottom - top) / s);
+    const need = low && Math.ceil(low + PAGE_PAD);
+    if (had && Math.abs(need - parseFloat(had)) < 1) continue;
+    if (had) c.style.minHeight = '';
+    if (need > c.getBoundingClientRect().height / s + .5) c.style.minHeight = need + 'px';
+  }
+}
+// float a note on top of the page, or put it back between the lines: either way its top-left corner stays just where it is on screen
 function toggleFloat(box){
   const card = box.closest('.slide'); if (!card) return;
   const isPage = card.classList.contains('pagecard'), s = zoomOf(card) || 1;
   const cr = card.getBoundingClientRect(), br = box.getBoundingClientRect();
-  delete box.dataset.oy; delete box.dataset.pe;
   if (!box.classList.contains('floating')) {
-    box.dataset.px = Math.max(0, floatFrac(card, br.left)).toFixed(4);
-    if (isPage) {
-      const prev = box.previousElementSibling, next = box.nextElementSibling;
-      box.dataset.py = prev?.classList.contains('strip') ? prev.dataset.y1 : next?.classList.contains('strip') ? next.dataset.y0 : 0;
-    } else box.dataset.py = ((br.top - cr.top - card.clientTop * s) / s).toFixed(1);
     if (!box.style.width || br.width > cr.width * 0.6) box.style.width = Math.round(cr.width * 0.4 / s) + 'px';
     box.style.marginLeft = ''; box.style.marginTop = '';
     box.remove(); if (isPage) mergeStrips(card);
     box.classList.add('floating'); card.append(box);
+    setFloatPos(box, Math.max(br.left, cr.left + card.clientLeft * s), br.top);
   } else {
+    const py = +box.dataset.py || 0, onStrip = isPage && !box.dataset.pe && !box.dataset.oy;
+    delete box.dataset.oy; delete box.dataset.pe;
     box.classList.remove('floating'); box.style.left = ''; box.style.top = '';
-    const py = +box.dataset.py || 0;
     box.remove();
-    if (isPage) insertBoxAt(card, py, box);
-    else {
-      const blocks = [...card.querySelectorAll('.blk')].filter(b => (b.getBoundingClientRect().top - cr.top) / s <= py);
-      const after = blocks.pop();
-      if (after) after.after(box); else (card.querySelector('.content') || card).prepend(box);
+    if (onStrip) insertBoxAt(card, py, box);
+    else {        // after whatever on the page ends above it
+      const above = [...card.querySelectorAll(isPage ? ':scope > .strip, :scope > .notebox:not(.floating)' : '.blk, .notebox:not(.floating):not(.inline)')].filter(b => !b.parentElement.closest('.notebox') && b.getBoundingClientRect().bottom <= br.top + 2).pop();
+      if (above) above.after(box); else (isPage ? card : card.querySelector('.content') || card).prepend(box);
     }
-    box.style.marginLeft = ((+box.dataset.px || 0) * 100).toFixed(2) + '%';
+    const m = flowMetrics(box); setFlowLeft(box, m, br.left - m.cL);
+    for (let k = 0; k < 3; k++) {          // and as far down as it was (margins can join up, so check where the top really is)
+      const d = br.top - box.getBoundingClientRect().top; if (Math.abs(d) < .5) break;
+      box.style.marginTop = Math.max(0, (parseFloat(getComputedStyle(box).marginTop) || 0) + d / s).toFixed(2) + 'px';
+    }
   }
   if (LAYOUTS[layout]) paginateView();
   gripTitles(box);
@@ -3723,13 +3768,15 @@ function startFloatMove(box, g, e){
   const {xs, ys} = snapTargets(box, {xs: [{v: (cr0.left + cr0.right) / 2, r: whole}]});
   const w = br0.width, h = br0.height;
   let last = e, nl = br0.left, nt = br0.top;          // where the box is shown, which is exactly where it is dropped
-  // drag it over another page and it moves onto that page straight away (pages clip what hangs off them)
-  let dest = card, dr = cr0, base = br0, z = zoomOf(box) || 1;
+  // drag it over another page and it moves onto that page straight away (it belongs to the page it is over)
+  let dest = card, dr = cr0, base = br0, z = zoomOf(box) || 1, moved = false;
   const capture = () => { try { g.setPointerCapture(e.pointerId); } catch {} };
   capture(); box.classList.add('moving');
   const move = ev => {
     if (ev.type === 'pointermove' && !ev.buttons && ev.pointerType === 'mouse') return up({type: 'lost'});      // let go outside the window: drop it where it's shown
     last = {clientX: ev.clientX ?? last.clientX, clientY: ev.clientY ?? last.clientY, altKey: ev.altKey, shiftKey: ev.shiftKey};
+    if (!moved && Math.hypot(last.clientX - sx, last.clientY - sy) < dragMin(e)) return;          // only a press so far: it stays put
+    moved = true;
     if (ev.clientX != null && !card.classList.contains('sidepage')) {      // (a side note stays on its own side page)
       const over = document.elementsFromPoint(last.clientX, last.clientY).filter(el => !box.contains(el) && !el.closest('#beside')).map(el => el.closest('.slide')).find(Boolean);
       if (over && over !== dest) {
@@ -3756,6 +3803,7 @@ function startFloatMove(box, g, e){
     removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); unkeys();
     box.classList.remove('moving'); hideGuides(); dest.classList.remove('drop-target');
     box.style.translate = '';
+    if (!moved) return;
     if (ev.type === 'pointercancel') { if (box.parentElement !== card) card.append(box); placeFloats(); return; }
     if (dest !== card) swallow();
     setFloatPos(box, nl, nt);
@@ -3773,11 +3821,13 @@ function startMove(box, g, e){
   const sx = e.clientX, sy = e.clientY, z = zoomOf(box) || 1;
   const cL = pr.left + padL, whole = {left: cL, right: cL + contentW, top: pr.top, bottom: pr.bottom};
   const {xs} = snapTargets(box, {xs: [{v: cL, r: whole}, {v: cL + contentW, r: whole}, {v: cL + contentW / 2, r: whole}]});
-  let target = null, left = startLeft, last = e;      // left: where the box is shown across the page, which is exactly where it is dropped
+  let target = null, left = startLeft, last = e, moved = false;      // left: where the box is shown across the page, which is exactly where it is dropped
   g.setPointerCapture(e.pointerId);
   box.classList.add('moving');
   const move = ev => {
     last = {clientX: ev.clientX ?? last.clientX, clientY: ev.clientY ?? last.clientY, altKey: ev.altKey, shiftKey: ev.shiftKey};
+    if (!moved && Math.hypot(last.clientX - sx, last.clientY - sy) < dragMin(e)) return;          // only a press so far: it stays put
+    moved = true;
     const dy = last.clientY - sy;
     let l = r0.left + last.clientX - sx;
     const sr = noSnap(last) ? null : snapAxis([l, l + w / 2, l + w], xs);
@@ -3812,7 +3862,7 @@ function startMove(box, g, e){
     if (ev.type === 'pointerup') move(ev);
     g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); g.removeEventListener('pointercancel', up); g.removeEventListener('lostpointercapture', up); unkeys();
     box.style.translate = ''; box.classList.remove('moving'); hideGap(); hideGuides();
-    if (ev.type === 'pointercancel') return;
+    if (ev.type === 'pointercancel' || !moved) return;
     const frac = contentW > 0 ? left / contentW : 0;
     if (target) {
       const from = box.parentNode; box.remove(); mergeStrips(from); box.style.marginTop = '';
@@ -4548,7 +4598,7 @@ document.querySelectorAll('.notes-toggle').forEach(b => b.onclick = () => {
   if (hide && document.activeElement?.closest?.('.notebox')) document.activeElement.blur();
   for (const b of main.querySelectorAll('.notebox')) {
     if (hide) setCollapsed(b, true);                  // pinned notes stay open
-    else if (b.classList.contains('collapsed')) openNote(b);     // every note opens (where its pencil is), pinned or not
+    else if (b.classList.contains('collapsed')) openNote(b);     // every note opens (where it was), pinned or not
   }
   afterNotesToggle();
 });
@@ -5865,14 +5915,18 @@ addEventListener('resize', onView);
 // ---------- tablets: the on-screen keyboard, and turning the screen round ----------
 // the keyboard covers the bottom of the screen without resizing the page, so the visual viewport tells how much: bars that float at the
 // bottom lift above it (--kb), and the caret is kept in sight as you type
-let kbOpen = false, caretQueued = false;
+// (on any screen, typing keeps it above the status bar too: the page, or the column of side pages it is in, scrolls)
+let kbOpen = false, caretQueued = false, caretTyped = null;
 function keepCaret(){
-  caretQueued = false;
-  const n = noteActive(), sel = getSelection(); if (!kbOpen || !n || !sel.rangeCount || !n.contains(sel.anchorNode)) return;
+  const typed = caretTyped?.isConnected && caretTyped; caretQueued = false; caretTyped = null;
+  const n = typed || noteActive(), sel = getSelection(); if (!(kbOpen || typed) || !n || !sel.rangeCount || !n.contains(sel.anchorNode)) return;
   const r = sel.getRangeAt(0), q = r.getClientRects()[0] || (r.startContainer.nodeType === 1 ? r.startContainer : r.startContainer.parentElement)?.getBoundingClientRect();
   if (!q || (!q.height && !q.width)) return;
-  const top = (appbar.offsetParent ? appbar.getBoundingClientRect().bottom : 0) + 12, bottom = visH() - 24;
-  if (q.bottom > bottom) scrollBy({top: q.bottom - bottom, behavior: 'instant'}); else if (q.top < top) scrollBy({top: q.top - top, behavior: 'instant'});
+  const col = n.closest('.sidecol'), cr = col?.getBoundingClientRect(), sb = $('#statusbar').getBoundingClientRect();
+  const top = Math.max(cr ? cr.top : 0, appbar.offsetParent ? appbar.getBoundingClientRect().bottom : 0) + 12;
+  const bottom = Math.min(cr ? cr.bottom : Infinity, kbOpen || !sb.height ? visH() : sb.top) - (kbOpen ? 24 : 12);
+  const by = q.bottom > bottom ? q.bottom - bottom : q.top < top ? q.top - top : 0;
+  if (by) (col || window).scrollBy({top: col ? by / (zoomOf(col) || 1) : by, behavior: 'instant'});
 }
 const caretSoon = () => { if (kbOpen && !caretQueued) { caretQueued = true; requestAnimationFrame(keepCaret); } };
 function fitKeyboard(){
@@ -5884,7 +5938,7 @@ function fitKeyboard(){
 }
 if (window.visualViewport) { visualViewport.addEventListener('resize', fitKeyboard); visualViewport.addEventListener('scroll', fitKeyboard); }
 document.addEventListener('selectionchange', caretSoon);
-main.addEventListener('input', caretSoon);
+main.addEventListener('input', e => { caretTyped = e.target.closest?.('.mine'); if (caretTyped && !caretQueued) { caretQueued = true; requestAnimationFrame(keepCaret); } });
 document.addEventListener('focusin', e => { if (e.target.closest?.('.mine, .fpanel input, .settings input')) setTimeout(() => { if (kbOpen) { caretSoon(); if (!e.target.closest('.mine')) e.target.scrollIntoView({block: 'nearest'}); } }, 350); });
 // turning the screen (or resizing the window) reflows every page: stay at the same spot on the same page
 let place = null, placeW = innerWidth, placeQueued = false;
@@ -6801,7 +6855,7 @@ function sideSizes(){
   const split = main.classList.contains('side-split');
   for (const sp of main.querySelectorAll('.sidepage')) {
     let need = 0;
-    for (const b of sp.querySelectorAll(':scope > .notebox')) need = Math.max(need, b.offsetTop + b.offsetHeight + 28);
+    for (const b of sp.querySelectorAll(':scope > .notebox')) need = Math.max(need, b.offsetTop + b.offsetHeight + PAGE_PAD);
     if (sp.dataset.ink) need = Math.max(need, Math.ceil(sideInkEnd(sp)) + 12);
     const s = split && sideSlide(sp);
     if (s) need = Math.max(need, Math.round(s.getBoundingClientRect().height / (zoomOf(s) || 1)));
@@ -7120,7 +7174,7 @@ function besideLayout(){
   placeFloats(bView);
   if (bView.classList.contains('side-on')) for (const sp of bView.querySelectorAll('.sidepage')) {
     let need = 0;
-    for (const b of sp.querySelectorAll(':scope > .notebox')) need = Math.max(need, b.offsetTop + b.offsetHeight + 28);
+    for (const b of sp.querySelectorAll(':scope > .notebox')) need = Math.max(need, b.offsetTop + b.offsetHeight + PAGE_PAD);
     if (sp.dataset.ink) need = Math.max(need, Math.ceil(sideInkEnd(sp)) + 12);
     const v = need ? need + 'px' : '';
     if (sp.style.minHeight !== v) sp.style.minHeight = v;
