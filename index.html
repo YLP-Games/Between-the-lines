@@ -2409,6 +2409,10 @@ function slideCard(){
 }
 const isLight = hex => { const n = parseInt(hex, 16); const r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (0.299*r + 0.587*g + 0.114*b) > 215; };
 const px = pt => Math.round(Math.max(12, Math.min(44, pt)));
+// what a file says (a colour, a font name, a link) goes into HTML only once it is known to be harmless
+const hex6 = v => /^[0-9a-f]{6}$/i.test(v || '');
+const fontName = v => (v || '').replace(/[^\p{L}\p{N} _.-]/gu, '').trim();
+const safeLinks = box => box.querySelectorAll('a[href]').forEach(a => { if (!/^(https?:|mailto:|tel:|#)/i.test(a.getAttribute('href').replace(/[\0-\x20]+/g, ''))) a.removeAttribute('href'); });
 
 // ---------- PowerPoint ----------
 // how PowerPoint files open: as the slides look (a picture of each slide, like a PDF page), or rebuilt as editable text
@@ -2520,9 +2524,9 @@ async function readPptx(buf, name, mode = pptxMode()){
         if (pr?.getAttribute('i') === '1') st.push('font-style:italic');
         if (pr?.getAttribute('u') && pr.getAttribute('u') !== 'none') st.push('text-decoration:underline');
         const clr = find(kid(pr, 'solidFill'), 'srgbClr')?.getAttribute('val');
-        if (clr && !isLight(clr)) st.push('color:#' + clr);
+        if (hex6(clr) && !isLight(clr)) st.push('color:#' + clr);
         const face = kid(pr, 'latin')?.getAttribute('typeface');
-        if (face && !face.startsWith('+')) st.push(`font-family:'${face.replace(/'/g, '')}',system-ui,sans-serif`);
+        if (face && !face.startsWith('+') && fontName(face)) st.push(`font-family:'${fontName(face)}',system-ui,sans-serif`);
         html += `<span style="${st.join(';')}">${esc(t)}</span>`;
       }
       if (!html.replace(/<br>/g, '')) continue;
@@ -3981,7 +3985,7 @@ async function readDocxLook(buf){
       const card = slideCard(), box = card.querySelector('.content');
       for (const part of [...sec.children]) { part.removeAttribute('style'); box.append(part); }
       for (const im of box.querySelectorAll('img[src^="blob:"]')) { try { im.src = await addAsset(await (await fetch(im.src)).blob()); } catch {} }
-      markBlocks(box);
+      markBlocks(box); safeLinks(box);
       await new Promise(r => setTimeout(r));
     }
     if (!main.querySelector('.content .blk')) throw new Error('nothing to show');
@@ -3994,7 +3998,7 @@ async function readDocx(buf, name){
   const r = await mammoth.convertToHtml({arrayBuffer: buf});
   const card = slideCard();
   const box = card.querySelector('.content'); box.innerHTML = r.value;
-  markBlocks(box);
+  markBlocks(box); safeLinks(box);
 }
 
 // ---------- pictures ----------
