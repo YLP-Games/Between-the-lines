@@ -110,6 +110,38 @@ const near = (p, n, rgb) => p.evaluate(async ([n, rgb]) => {
   const bits = await page.evaluate(() => JSON.parse(document.querySelector('.pagecard').dataset.text).filter(i => /^[a-z]{12,}$/.test(i[0])));
   ok(bits.length > 40 && bits.map(i => i[0]).join('') === LONG && bits.every(i => i[4] <= 418), `…in ${bits.length} pieces that together are the whole word and each fit the box`);
 
+  // ---- switching notebook while a file is still being read: the rest of it is not added to the notebook you went to ----
+  await openFile('week2.pptx', 2, '#main .pagecard');
+  const idOf = name => page.evaluate(n => docs.find(d => d.name === n)?.id, name), cards = () => page.evaluate(() => ({cards: document.querySelectorAll('#main .pagecard').length, slides: document.querySelectorAll('#main .slide').length, heads: [...document.querySelectorAll('#main .file-head')].map(h => h.textContent), cur: curId}));
+  const idWeek = await idOf('week2'), before = await cards();
+  ok(before.cards === 2 && before.heads.join() === 'week2', 'a notebook with the two slides of week2 to go back to');
+  await page.evaluate(() => { window.__render = PPT.render; PPT.render = async (D, path, n) => { if (n === 2 && window.__hold) await new Promise(r => { window.__go = r; }); return window.__render(D, path, n); }; window.__hold = true; });
+  await page.setInputFiles('#file', path.join(__dirname, 'fid-rich.pptx'));
+  await page.waitForFunction(() => window.__go && document.querySelectorAll('#main .pagecard').length === 1, null, {timeout: 30000});
+  const idRich = (await cards()).cur;
+  await page.evaluate(id => switchDoc(id), idWeek); await page.waitForTimeout(500);
+  await page.evaluate(() => { window.__hold = false; window.__go(); }); await page.waitForTimeout(2500);
+  let now = await cards();
+  ok(now.cur === idWeek && now.cards === 2 && now.heads.join() === 'week2', `the other notebook still has just its two slides (${JSON.stringify(now)})`);
+  ok((await page.textContent('#toast')).includes('Stopped opening'), 'and a message says the file stopped opening');
+  await page.evaluate(id => switchDoc(id), idRich); await page.waitForTimeout(600);
+  now = await cards();
+  ok(now.cur === idRich && now.cards <= 1 && now.heads.length <= 1, `the notebook the file was being opened in is not left in pieces (${JSON.stringify(now)})`);
+  await page.evaluate(() => { PPT.render = window.__render; });
+  // the same for a Word file, held while its first page's picture is stored; the other notebook's pages must not be taken away either
+  await page.evaluate(id => switchDoc(id), idWeek); await page.waitForTimeout(500);
+  await page.evaluate(() => { window.__add = addAsset; window.addAsset = async b => { if (window.__hold2) await new Promise(r => { window.__go2 = r; }); return window.__add(b); }; window.__hold2 = true; });
+  await page.setInputFiles('#file', path.join(__dirname, 'fid-rich.docx'));
+  await page.waitForFunction(() => window.__go2, null, {timeout: 30000});
+  const idDoc = (await cards()).cur;
+  await page.evaluate(id => switchDoc(id), idWeek); await page.waitForTimeout(500);
+  await page.evaluate(() => { window.__hold2 = false; window.__go2(); }); await page.waitForTimeout(2500);
+  now = await cards();
+  ok(now.cur === idWeek && now.slides === 2 && now.heads.join() === 'week2', `Word: the other notebook is left as it was (${JSON.stringify(now)})`);
+  await page.evaluate(() => { window.addAsset = window.__add; });
+  await page.evaluate(id => switchDoc(id), idDoc); await page.waitForTimeout(600);
+  ok(await page.evaluate(() => document.querySelectorAll('#main .slide').length) <= 1, 'Word: and the notebook it was being opened in is not left in pieces');
+
   // ---- the same for a Word file: a link that runs script is made plain text ----
   const dx = await craft('reading.docx', 'xssdoc.docx', async z => {
     await edit(z, 'word/document.xml', x => x.replace('<w:body>', '<w:body><w:p><w:hyperlink r:id="rId98"><w:r><w:t>evil link</w:t></w:r></w:hyperlink><w:r><w:t xml:space="preserve"> and </w:t></w:r><w:hyperlink r:id="rId99"><w:r><w:t>good link</w:t></w:r></w:hyperlink></w:p>'));

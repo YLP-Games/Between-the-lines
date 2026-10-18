@@ -2410,6 +2410,8 @@ function slideCard(){
 const isLight = hex => { const n = parseInt(hex, 16); const r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (0.299*r + 0.587*g + 0.114*b) > 215; };
 const px = pt => Math.round(Math.max(12, Math.min(44, pt)));
 // what a file says (a colour, a font name, a link) goes into HTML only once it is known to be harmless
+// a file is opened into the notebook that was open when it began: if you switch to another meanwhile, the rest of it is dropped, not added there
+const away = home => { if (home !== curId) throw Object.assign(new Error('you switched to another notebook'), {moved: true}); };
 const hex6 = v => /^[0-9a-f]{6}$/i.test(v || '');
 const fontName = v => (v || '').replace(/[^\p{L}\p{N} _.-]/gu, '').trim();
 const safeLinks = box => box.querySelectorAll('a[href]').forEach(a => { if (!/^(https?:|mailto:|tel:|#)/i.test(a.getAttribute('href').replace(/[\0-\x20]+/g, ''))) a.removeAttribute('href'); });
@@ -2417,13 +2419,12 @@ const safeLinks = box => box.querySelectorAll('a[href]').forEach(a => { if (!/^(
 // ---------- PowerPoint ----------
 // how PowerPoint files open: as the slides look (a picture of each slide, like a PDF page), or rebuilt as editable text
 const pptxMode = () => pref.get('pptx-mode') === 'text' ? 'text' : 'look';
-async function lookSlide(D, path, n){
+async function lookSlide(D, path, n, home){
   const r = await PPT.render(D, path, n + 1);
-  await addPageCard(r.cv, r.S, r.W, r.H, r.gaps, r.items, 0.92);
-  r.cv.width = 0;
+  try { await addPageCard(r.cv, r.S, r.W, r.H, r.gaps, r.items, 0.92, home); } finally { r.cv.width = 0; }
 }
 async function readPptx(buf, name, mode = pptxMode()){
-  const zip = await JSZip.loadAsync(buf);
+  const home = curId, zip = await JSZip.loadAsync(buf);
   const xml = async p => { const f = zip.file(p); return f ? new DOMParser().parseFromString(await f.async('string'), 'application/xml') : null; };
   const kids = (n, ln) => n ? [...n.children].filter(c => c.localName === ln) : [];
   const kid = (n, ln) => kids(n, ln)[0] || null;
@@ -2439,11 +2440,12 @@ async function readPptx(buf, name, mode = pptxMode()){
   const ids = [...pres.getElementsByTagNameNS('*', 'sldId')].map(s => s.getAttribute('r:id'));
   const deck = mode === 'look' ? await PPT.deck(zip).catch(err => console.warn(err)) : null;
   for (let n = 0; n < ids.length; n++) {
+    away(home);
     toast(`Reading ${name}: slide ${n + 1} of ${ids.length}`);
     if (!prel[ids[n]]) continue;
     const path = resolve('ppt/presentation.xml', prel[ids[n]]);
     if (deck) {                                   // a slide that can't be drawn is rebuilt as text instead
-      try { await lookSlide(deck, path, n); await new Promise(r => setTimeout(r)); continue; } catch (err) { console.warn(`slide ${n + 1} drawn as text:`, err); }
+      try { await lookSlide(deck, path, n, home); await new Promise(r => setTimeout(r)); continue; } catch (err) { if (err.moved) throw err; console.warn(`slide ${n + 1} drawn as text:`, err); }
     }
     const doc = await xml(path); if (!doc) continue;
     const srel = rels(await xml(path.replace(/([^/]+)$/, '_rels/$1.rels')));
@@ -2475,6 +2477,7 @@ async function readPptx(buf, name, mode = pptxMode()){
     walk(find(doc, 'spTree'));
     items.sort((a, b) => (Math.abs(a.y - b.y) < 200000 ? a.x - b.x : a.y - b.y) || a.order - b.order);
 
+    away(home);
     const card = slideCard();
     const box = card.querySelector('.content');
     for (const it of items) {
@@ -2504,6 +2507,7 @@ async function readPptx(buf, name, mode = pptxMode()){
     }
     if (!box.children.length) box.innerHTML = '<div class="blk" style="color:#8a94a3">(No text on this slide)</div>';
   }
+  away(home);
   dropRepeats([...main.children].slice(firstCard));
 
   function paras(body, phType, tag){
@@ -3429,7 +3433,8 @@ async function readPdf(buf, name){
   }
 }
 // a page picture (stored once, as an asset) with its words and the gaps between lines, as a card at the end of the notebook
-async function addPageCard(cv, S, W, H, gaps, items, quality = 0.88){
+async function addPageCard(cv, S, W, H, gaps, items, quality = 0.88, home = curId){
+  away(home);
   const card = document.createElement('section');
   card.className = 'slide pagecard';
   card.dataset.w = W.toFixed(1); card.dataset.h = H.toFixed(1); card.dataset.gaps = JSON.stringify(gaps);
@@ -3437,7 +3442,7 @@ async function addPageCard(cv, S, W, H, gaps, items, quality = 0.88){
   card.style.setProperty('--pg', `url(${pic ? await addAsset(pic) : cv.toDataURL('image/jpeg', quality)})`);
   card.dataset.text = JSON.stringify(items);
   card.append(makeStrip(card, 0, H));
-  main.append(card);
+  away(home); main.append(card);
 }
 const boxKey = b => [b.l, b.t, b.r, b.b].map(x => Math.round(x / 4) * 4).join(',');
 
@@ -3978,7 +3983,7 @@ function bakeDocx(sec){
   }
 }
 const markBlocks = box => box.querySelectorAll('p,h1,h2,h3,h4,h5,h6,li,table,img').forEach(el => { if (!el.parentElement.closest('.blk') || el.tagName === 'LI') el.classList.add('blk'); });
-async function readDocxLook(buf){
+async function readDocxLook(buf, home){
   await ensureReader('pptx');                                  // docx-preview needs JSZip
   if (!window.docx) await loadScript(DOCX_LIB);
   const host = document.createElement('div'), sheets = document.createElement('div');
@@ -3989,7 +3994,7 @@ async function readDocxLook(buf){
     await docx.renderAsync(buf, host, sheets, {className: 'dx', inWrapper: false, breakPages: true, ignoreLastRenderedPageBreak: true, renderHeaders: true, renderFooters: true, renderFootnotes: true, renderEndnotes: true});
     const pages = [...host.querySelectorAll('section.dx')];
     for (const sec of pages) {
-      bakeDocx(sec);
+      away(home); bakeDocx(sec);
       const card = slideCard(), box = card.querySelector('.content');
       for (const part of [...sec.children]) { part.removeAttribute('style'); box.append(part); }
       for (const im of box.querySelectorAll('img[src^="blob:"]')) { try { im.src = await addAsset(await (await fetch(im.src)).blob()); } catch {} }
@@ -3997,13 +4002,15 @@ async function readDocxLook(buf){
       await new Promise(r => setTimeout(r));
     }
     if (!main.querySelector('.content .blk')) throw new Error('nothing to show');
-  } catch (err) { [...main.children].slice(first).forEach(c => c.remove()); throw err; }
+  } catch (err) { if (curId === home) [...main.children].slice(first).forEach(c => c.remove()); throw err; }
   finally { host.remove(); sheets.remove(); }
 }
 async function readDocx(buf, name){
-  try { await readDocxLook(buf); return; } catch (err) { console.warn('Word file opened the plain way:', err); }
+  const home = curId;
+  try { await readDocxLook(buf, home); return; } catch (err) { if (err.moved) throw err; console.warn('Word file opened the plain way:', err); }
   if (!window.mammoth) await loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js');
   const r = await mammoth.convertToHtml({arrayBuffer: buf});
+  away(home);
   const card = slideCard();
   const box = card.querySelector('.content'); box.innerHTML = r.value;
   markBlocks(box); safeLinks(box);
@@ -4039,15 +4046,17 @@ async function openFiles(picked, here = false){
       const d = curDoc(); if (!here && d && data.name) { d.name = data.name; d.named = !!data.named; }
       saveSoon(); continue;
     }
-    const head = document.createElement('h2'); head.className = 'file-head';
+    const head = document.createElement('h2'), home = curId; head.className = 'file-head';
     head.textContent = f.name.replace(/\.[^.]+$/, '').replace(/_+/g, ' ').trim();
     main.append(head);
     try {
-      await (read === readImage ? readImage(f) : read(await f.arrayBuffer(), f.name));
+      const buf = read === readImage ? null : await f.arrayBuffer(); away(home);
+      await (read === readImage ? readImage(f) : read(buf, f.name));
       if (ext === 'pptx' && head.nextElementSibling && pref.get('pptx-tip') !== 'off' && tipsOn()) head.after(pptxTip(pptxMode(), f));
       first ??= head;
       toast(''); saveSoon();
     } catch (err) {
+      if (err.moved) { toast(`Stopped opening “${f.name}” because you switched to another notebook.`); return; }
       console.error(err); toast(`“${f.name}” couldn't be read${err?.message ? ` (${err.message})` : ''}. Try saving it as a PDF and opening that.`);
       if (!head.nextElementSibling) head.remove();
     }
