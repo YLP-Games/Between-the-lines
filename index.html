@@ -1678,7 +1678,7 @@ try {
         <li>On a PDF page, point at a spot and press <b>+ Add here</b> to add a note there (the page opens up between the lines). <b>Right-click</b> the button (press and hold on a touch screen) to pick <b>Note</b>, <b>Sticky note</b> or <b>Equation</b>. On other pages, click where you want to write. In a note, type <b>/</b> for the same choices.</li>
         <li><b>Writing tools</b> (Insert tab): <b>Writing guide</b> puts a grid, ruled lines or dots over the pages so you can write straight with a pen or Apple Pencil. Drag it by its handle, pull its edges to resize it, and press Esc or × to take it away; it is never saved in your notebook. Its bar goes when you click elsewhere: point at the faint icon in its top left corner to bring it back, or point at the Insert button for its settings. <b>Table</b> opens a grid to choose the size, then drop it in a note: Tab moves between cells, drag the borders to size it, and right-click (or ⋯) for rows, columns and merging. <b>Journal entry</b> is an accounting entry, lined up in columns (also under + Add here and by typing /journal): click DR or CR to switch a row, Enter adds a row, Tab and the arrow keys move around like a table, and right-click (or the × when you point at it) deletes the entry.</li>
         <li><b>Sticky notes</b> sit on top of the page: drag one by its tape to move it, even onto another page. In the <b>Notes</b> panel, type a note and press <b>Add note</b>, or drag <b>Sticky</b> onto any page.</li>
-        <li><b>Draw</b> (Insert tab) writes or highlights on PDF pages with a pen, and the eraser rubs strokes out. Select words on any page to highlight them, or press <b>Comment</b>; open comments are listed in the <b>Notes</b> panel until you resolve them.</li>
+        <li><b>Draw</b> (Insert tab) writes, sketches or highlights on PDF pages and side pages with a pen, pencil or highlighter, <b>Text</b> types where you tap, and the eraser rubs out whole strokes or (<b>Partial</b>) only where it goes. Each tool keeps its own colour and thickness in millimetres; <b>Save as favourite</b> keeps one a tap away, and <b>Minimise</b> folds the tools into a small purple button while you draw. Select words on any page to highlight them, or press <b>Comment</b>; open comments are listed in the <b>Notes</b> panel until you resolve them.</li>
         <li>The <b>Home</b> tab styles your notes: the font, size and colour are used for new notes, or click in a note (or select words) to change just that.</li>
         <li>Point at a note (or tap it) and drag any edge or corner to resize it: the opposite side stays where it is. Drag its move handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
         <li>New notes line up with the note above or below them when they are close (<b>Box › Auto-align notes</b>). To tidy up, <b>Select all</b> on the Box tab, then use <b>Align</b>: left, centre or right, <b>Same width</b>, <b>Distribute</b> (floating and sticky notes, evenly spaced) or <b>Tidy page</b>. Each is one step you can take Back.</li>
@@ -1695,7 +1695,7 @@ try {
       <h3>On iPad and tablets</h3>
       <ul class="howto">
         <li><b>Add to Home Screen:</b> in Safari tap Share, then <b>Add to Home Screen</b>. Between the Lines then opens full screen like an app, and keeps working offline.</li>
-        <li><b>Apple Pencil</b> (and other pens) draws on a PDF page or a side page with the tool from <b>Draw</b>, even when Draw is off. Pressing harder makes the line thicker, and the Pencil’s eraser end (where it has one) rubs strokes out. Your fingers still scroll, tap and select, and a hand resting on the screen while you write is ignored. A quick tap with the Pencil works like a tap: it shows <b>+ Add here</b>. To draw with a finger, turn on <b>Draw</b>.</li>
+        <li><b>Apple Pencil</b> (and other pens) draws on a PDF page or a side page with the tool from <b>Draw</b>, even when Draw is off. Pressing harder makes the pen and pencil lines thicker, and the Pencil’s eraser end (where it has one) rubs strokes out. Your fingers still scroll, tap and select, and a hand resting on the screen while you write is ignored. A quick tap with the Pencil works like a tap: it shows <b>+ Add here</b>. To draw with a finger, turn on <b>Draw</b>.</li>
         <li><b>Scribble:</b> tap inside a note and write with the Pencil; iPadOS turns your handwriting into text (switch it on in Settings › Apple Pencil). The Pencil never draws on top of a note, so you can always write in one.</li>
         <li><b>Press and hold</b> does what right-click does: on <b>+ Add here</b> (sticky note or equation), on a pencil icon’s colours, on a misspelt word (suggestions) and on a notebook in the sidebar. Tap a note to show its handles for moving and resizing.</li>
       </ul>
@@ -6309,23 +6309,23 @@ const inkAttrs = (k, p, c, w) => (k === 'pen' || k === 'pc') && hasPr(p)
 const penW = it => (inkNum(it.w) || 2) * (it.k === 'hl' ? 4 : 1);          // the highlighter is four times as wide
 const isStroke = it => it.k === 'pen' || it.k === 'pc' || it.k === 'hl';
 // the pencil's grain: speckles of its colour in a tiny tile that repeats (one pattern per colour, shared by every page; cheap to paint)
-const GRAIN = [[.5, .6, .5], [2.1, .3, .35], [3.3, 1.3, .45], [1.1, 2.2, .4], [2.7, 2.7, .5], [3.6, 3.5, .35], [1.5, 3.5, .45], [.4, 3.2, .3], [2.3, 1.6, .3]];
+const GRAIN = [[.6, .7, .6, 1], [2.4, .4, .45, .8], [4.1, 1.2, .55, 1], [1.4, 2.3, .5, .9], [3.1, 2.9, .65, 1], [4.4, 4.3, .45, .8], [1.8, 4.2, .55, 1], [.5, 3.6, .4, .7], [2.8, 1.7, .4, .7], [3.6, .5, .3, .6], [.3, 1.6, .3, .6], [2.4, 3.6, .3, .6], [4.6, 2.6, .35, .7]];
 let inkDefs = null;
 function grain(c){
   c = inkHex(c).toLowerCase(); const id = 'pcg' + c.slice(1);
   if (!inkDefs) { inkDefs = svgEl('svg', {class: 'inkdefs', width: 0, height: 0, 'aria-hidden': 'true'}, [svgEl('defs', {})]); document.body.append(inkDefs); }
-  if (!document.getElementById(id)) inkDefs.firstChild.append(svgEl('pattern', {id, width: 4, height: 4, patternUnits: 'userSpaceOnUse'},
-    [svgEl('rect', {width: 4, height: 4, fill: c, 'fill-opacity': .5}), ...GRAIN.map(([x, y, r]) => svgEl('circle', {cx: x, cy: y, r, fill: c}))]));
+  if (!document.getElementById(id)) inkDefs.firstChild.append(svgEl('pattern', {id, width: 5, height: 5, patternUnits: 'userSpaceOnUse'},
+    [svgEl('rect', {width: 5, height: 5, fill: c, 'fill-opacity': .55}), ...GRAIN.map(([x, y, r, a]) => svgEl('circle', {cx: x, cy: y, r, fill: c, 'fill-opacity': a}))]));
   return `url(#${id})`;
 }
 const grainTiles = {};
-function grainFill(ctx, c){                         // the same grain for the PDF: a tile 4 page units wide
+function grainFill(ctx, c){                         // the same grain for the PDF: a tile 5 page units wide
   c = inkHex(c).toLowerCase();
   let t = grainTiles[c];
   if (!t) {
-    t = grainTiles[c] = document.createElement('canvas'); t.width = t.height = 16;
-    const g = t.getContext('2d'); g.fillStyle = c; g.globalAlpha = .5; g.fillRect(0, 0, 16, 16); g.globalAlpha = 1;
-    for (const [x, y, r] of GRAIN) { g.beginPath(); g.arc(x * 4, y * 4, r * 4, 0, 7); g.fill(); }
+    t = grainTiles[c] = document.createElement('canvas'); t.width = t.height = 20;
+    const g = t.getContext('2d'); g.fillStyle = c; g.globalAlpha = .55; g.fillRect(0, 0, 20, 20);
+    for (const [x, y, r, a] of GRAIN) { g.globalAlpha = a; g.beginPath(); g.arc(x * 4, y * 4, r * 4, 0, 7); g.fill(); }
   }
   const p = ctx.createPattern(t, 'repeat'); p?.setTransform?.(new DOMMatrix([.25, 0, 0, .25, 0, 0]));
   return p || c;
