@@ -58,7 +58,7 @@ const PAD = 48;          // the room a page keeps below its lowest note
   // Shift+drag takes the note along
   const cr = await R(card), c2 = await R(box.locator('.note-chip')), to = {x: cr.x + cr.w * 0.55, y: cr.y + cr.h * 0.72};
   await page.mouse.move(c2.x + c2.w / 2, c2.y + c2.h / 2); await page.keyboard.down('Shift'); await page.mouse.down();
-  await page.mouse.move(to.x, to.y, {steps: 12}); await page.mouse.up(); await page.keyboard.up('Shift'); await page.waitForTimeout(300);
+  await page.mouse.move(to.x, to.y, {steps: 12}); await page.mouse.up(); await page.keyboard.up('Shift'); await page.waitForTimeout(700);      // (the click that ends a drag is ignored for a moment)
   const c3 = await R(box.locator('.note-chip'));
   ok(await box.evaluate(b => b.classList.contains('collapsed')) && near(c3.x + c3.w / 2, to.x, 3) && near(c3.y + c3.h / 2, to.y, 3), 'Shift+drag: the note stays minimised, its icon where it was dropped');
   await box.locator('.note-chip').click(); await page.waitForTimeout(400);
