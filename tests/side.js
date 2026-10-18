@@ -218,10 +218,11 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   await page.mouse.move(w1.x + w1.w * 0.75, w1.y + w1.h / 2, {steps: 4}); await page.waitForTimeout(250);
   ok((await lines())[0].hot, 'pointing at the highlight makes it bold too');
   await page.screenshot({path: path.join(OUT, 'side-8-hover-highlight.png')});
-  // a line follows the page when it scrolls
-  const y1 = (await lines())[0].d;
+  // a line follows the page when it scrolls (it lies on the page, so where it starts on the screen moves with the page)
+  const startY = () => page.evaluate(() => { const p = document.querySelector('svg.sidelines path.sl'), v = p.getAttribute('d').match(/-?[\d.]+/g).map(Number), q = p.ownerSVGElement.createSVGPoint(); q.x = v[0]; q.y = v[1]; return q.matrixTransform(p.getScreenCTM()).y; });
+  const y1 = await startY();
   await page.evaluate(() => scrollBy(0, 60)); await page.waitForTimeout(250);
-  ok((await lines())[0].d !== y1, 'lines follow the page as it scrolls');
+  ok(Math.abs(await startY() - (y1 - 60)) < 1, 'lines follow the page as it scrolls');
   await page.mouse.move(5, 650);
 
   // ---- Link lines off ----
