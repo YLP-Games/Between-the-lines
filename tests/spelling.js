@@ -93,8 +93,7 @@ async function setLang(page, lang){
     }
   }
   fs.writeFileSync(path.join(__dirname, 'shots', 'spell-report.json'), JSON.stringify(report, null, 1));
-  if (!REPORT) await uiChecks(page);
-  await browser.close();
+  if (!REPORT) { await uiChecks(page); await browser.close(); await cacheChecks(); } else await browser.close();
   if (errors.length) { console.log('ERRORS:\n' + errors.join('\n')); process.exit(1); }
   console.log('no page errors');
 })().catch(e => { console.error(e); process.exit(1); });
@@ -168,6 +167,7 @@ async function uiChecks(page){
   await page.keyboard.type('The colour of the organisation, its organization and an analyse. '); await settle();
   f = await flagged();
   ok(['colour', 'organisation', 'analyse'].every(w => f.includes(w)) && !f.includes('organization'), 'US English marks colour, organisation and analyse: ' + f.join(', '));
+  await page.click('#tab-view');
   await page.selectOption('#spellLang', 'en-GB'); await page.waitForFunction(() => spellDict && spellDict.lang === 'en-GB', null, {timeout: 60000}); await page.waitForTimeout(800);
   f = await flagged();
   ok(!['colour', 'organisation', 'organization', 'analyse'].some(w => f.includes(w)), 'UK English accepts them all (-ise and -ize), and marks nothing of that sentence: ' + f.join(', '));
@@ -203,6 +203,10 @@ async function uiChecks(page){
   await page.keyboard.type('Table: '); await page.keyboard.press('Enter'); await page.keyboard.type('a wrod in a second line. '); await settle();
   ok((await flagged()).includes('wrod'), 'a second line (block) is checked too');
 
+  // ---- a huge pasted blob must not freeze the page ----
+  const blob = await page.evaluate(() => { const t = performance.now(); spellScan('x'.repeat(300000) + ' ' + 'ab.cd'.repeat(20000) + ' ' + 'a1b2c3-'.repeat(20000) + ' ' + 'ab+'.repeat(30000) + '@'); return Math.round(performance.now() - t); });
+  ok(blob < 1500, `a pasted blob of letters, dots and hyphens is scanned in ${blob} ms`);
+
   // ---- speed with a big notebook: 200 notes ----
   const ms = await page.evaluate(() => {
     const pool = 'the investors rational market price adjust bank rating deleveraging heteroskedasticity regression equilibrium lecture notes mitochondria photosynthesis recieve seperate wrod tommorow definately arbitrage hedging liquidity amortisation securitisation capex Keynes Clicks Tesco Nasdaq rerating non-linear co-operative'.split(' ');
@@ -212,4 +216,34 @@ async function uiChecks(page){
     spellCache = new Map(); const t = performance.now(); spellAll(); const first = performance.now() - t; const t2 = performance.now(); spellAll(); return [Math.round(first), Math.round(performance.now() - t2), document.querySelectorAll('.mine').length, spellHl.size];
   });
   ok(ms[2] >= 200 && ms[0] < 1500 && ms[1] < 700, `spell check of ${ms[2]} notes (${ms[3]} marked words): ${ms[0]} ms from cold, ${ms[1]} ms again`);
+}
+
+// ---- served over http, like the real thing: the word list is made once (in a worker, the page stays alive) and then kept on the device ----
+async function cacheChecks(){
+  const http = require('http'), root = path.resolve(__dirname, '..');
+  const srv = http.createServer((req, res) => {
+    const u = req.url.split('?')[0], f = path.join(root, u === '/' ? 'index.html' : u);
+    fs.readFile(f, (e, b) => { if (e || !f.startsWith(root)) { res.writeHead(404); return res.end(); } res.writeHead(200, {'content-type': f.endsWith('.html') ? 'text/html' : f.endsWith('.js') ? 'text/javascript' : 'application/octet-stream'}); res.end(b); });
+  });
+  await new Promise(r => srv.listen(0, '127.0.0.1', r));
+  const {browser, page, errors} = await open(APP, {url: `http://127.0.0.1:${srv.address().port}/`, contextOptions: {serviceWorkers: 'block'}});
+  const t0 = Date.now();
+  await page.waitForFunction(() => typeof spellDict !== 'undefined' && !!spellDict, null, {timeout: 120000});
+  const first = Date.now() - t0;
+  const keys = await page.evaluate(async () => { const c = await caches.open('btl-spell-v2'); return (await c.keys()).map(r => r.url.replace(/^https?:\/\/[^/]+/, '').slice(0, 60)); });
+  ok(keys.some(k => /btl.invalid|\/spell\/en-US/.test(k) || k.startsWith('/spell/en-US')), 'first visit: the US word list is kept on the device (' + keys.length + ' files in the cache)');
+  const alive = await page.evaluate(async () => {            // make the list again and see that the page keeps running meanwhile, and that a worker did it
+    const c = await caches.open('btl-spell-v2'); for (const k of await c.keys()) if (/\/spell\/en-GB/.test(k.url)) await c.delete(k);
+    let ticks = 0, workers = 0; const W = Worker; window.Worker = function(...a){ workers++; return new W(...a); };
+    const iv = setInterval(() => ticks++, 10), t = performance.now(); const text = await spellList('en-GB'); clearInterval(iv); window.Worker = W;
+    return {ticks, workers, words: text.split('\n').length, ms: Math.round(performance.now() - t)};
+  });
+  ok(alive.workers === 1 && alive.ticks > alive.ms / 40, `the UK word list (${alive.words} words) is made in a worker in ${alive.ms} ms and the page keeps running meanwhile (${alive.ticks} ticks)`);
+  const reqs = []; page.on('request', r => reqs.push(r.url()));
+  const t1 = Date.now(); await page.reload(); await page.waitForFunction(() => typeof spellDict !== 'undefined' && !!spellDict, null, {timeout: 120000});
+  const second = Date.now() - t1;
+  ok(!reqs.some(u => /\.(aff|dic)$|typo\.js/.test(u)), `next visit: no dictionary files are downloaded (ready in ${second} ms, the first visit took ${first} ms)`);
+  ok(await page.evaluate(() => spellDict.words.size > 100000 && wordOk('rerating') && !wordOk('recieve')), 'and it checks as before');
+  await browser.close(); srv.close();
+  if (errors.length) { console.log('ERRORS:\n' + errors.join('\n')); process.exit(1); }
 }
