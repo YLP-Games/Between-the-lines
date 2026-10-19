@@ -24,7 +24,7 @@ const MAP = [
 ];
 const TYPES = {js: 'text/javascript', css: 'text/css', aff: 'text/plain', dic: 'text/plain', woff2: 'font/woff2', json: 'application/json'};
 
-async function open(file, {width = 1440, height = 900, colorScheme = 'light', storage, contextOptions = {}} = {}){
+async function open(file, {width = 1440, height = 900, colorScheme = 'light', storage, contextOptions = {}, url} = {}){
   fs.mkdirSync(path.join(__dirname, 'shots'), {recursive: true});
   const browser = await engine.launch(process.env.SHOWBARS && engine === playwright.chromium ? {ignoreDefaultArgs: ['--hide-scrollbars']} : {});
   const context = await browser.newContext({viewport: {width, height}, colorScheme, acceptDownloads: true, ...(storage ? {storageState: storage} : {}), ...contextOptions});
@@ -48,7 +48,7 @@ async function open(file, {width = 1440, height = 900, colorScheme = 'light', st
   const page = await context.newPage();
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
-  await page.goto('file://' + file);
+  await page.goto(url || 'file://' + file);
   return {browser, context, page, errors};
 }
 module.exports = {open};
