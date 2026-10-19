@@ -182,6 +182,7 @@ const PNG = f => { const b = fs.readFileSync(f); return {w: b.readUInt32BE(16), 
   ok(await lit('[data-cmd="removeFormat"]') === await lit('[data-cmd="indent"]'), 'a tapped button does not stay lit in its hover colour');
   // a favourite colour works on the first tap (no × popping up under the finger instead)
   await page.evaluate(() => { favs = ['#7b1fa2']; storeFavs(); });
+  if (await page.isVisible('#colorBtn')) await tapEl('#colorBtn');      // (an upright iPad keeps the colours in a pop-up under one button)
   await tapEl('#favText .sw');
   ok(await page.evaluate(() => document.querySelector('#color').value.toLowerCase() === '#7b1fa2' && getComputedStyle(document.querySelector('#favText .favx')).opacity === '0'), 'a favourite colour is picked on the first tap, and its × stays out of the way');
   await d.browser.close();
@@ -200,7 +201,7 @@ const PNG = f => { const b = fs.readFileSync(f); return {w: b.readUInt32BE(16), 
   const hi = () => page.evaluate(() => hist.i), notes = () => page.evaluate(() => [...document.querySelectorAll('.notebox .mine')].map(m => m.textContent).join('|'));
   const h0 = await hi(), n0 = await notes();
   ok(h0 > 0 && /Two finger test/.test(n0), 'a note written on the iPad');
-  const cx = 500, cy = 700, cdp = d.cdp, T = ms => page.waitForTimeout(ms);
+  const cx = 500, cy = await page.evaluate(() => Math.round(document.querySelector('.notebox').getBoundingClientRect().top)) - 18, cdp = d.cdp, T = ms => page.waitForTimeout(ms);      // (on the page, 18px above the note, whatever the toolbar's height)
   const two = async ({gap = 30, hold = 60, move = 0} = {}) => {
     await touch(cdp, 'touchStart', [[cx, cy, 1]]); await T(gap);
     await touch(cdp, 'touchStart', [[cx, cy, 1], [cx + 120, cy + 20, 2]]); await T(hold / 2);
