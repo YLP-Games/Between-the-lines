@@ -1,0 +1,22 @@
+Word lists the spell check loads (index.html, "spell check" section), and the copies the tests use so they run offline.
+
+UK English (en-GB), the main list
+  LibreOffice's en_GB.aff / en_GB.dic (Marco A.G. Pinto, David Bartlett, Brian Kelk, Andrew Brown; LGPL, see README_en_GB.txt),
+  tag libreoffice-26.2.7.1 of https://github.com/LibreOffice/dictionaries (commit a41644ff1b40ff76c59bd0ce86466037d6a6966b), files en/en_GB.aff and en/en_GB.dic. Saved here unchanged.
+  The app asks for, in this order:
+    https://cdn.jsdelivr.net/gh/LibreOffice/dictionaries@libreoffice-26.2.7.1/en/en_GB.(aff|dic)
+    https://raw.githubusercontent.com/LibreOffice/dictionaries/libreoffice-26.2.7.1/en/en_GB.(aff|dic)
+    https://cdn.jsdelivr.net/npm/dictionary-en-gb@3.0.0/index.(aff|dic)        (the older SCOWL list the app used before)
+
+US English (en-US)
+  https://cdn.jsdelivr.net/npm/dictionary-en@4.0.0/index.(aff|dic)            (the same word list as LibreOffice's en_US.dic, from node_modules in the tests)
+  https://raw.githubusercontent.com/LibreOffice/dictionaries/libreoffice-26.2.7.1/en/en_US.(aff|dic)
+
+Each language also gets the other English's words that are not just its spelling of a word it has (US users get British names and the reverse).
+
+Expanding the .aff and .dic files into one list of words: https://cdn.jsdelivr.net/npm/typo-js@1.2.4/typo.js (BSD), run in a worker.
+
+How common a word is (for putting the likelier suggestion first): SCOWL lists 10, 20 and 35 from the wordlist-english package (MIT; SCOWL's licence is in COPYRIGHT_scowl.txt),
+  https://cdn.jsdelivr.net/npm/wordlist-english@1.2.1/(english|british|american)-words-(10|20|35).json     saved here unchanged.
+
+The academic and technical words are inside index.html (<script type="text/plain" id="spellX">).
