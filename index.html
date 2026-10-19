@@ -214,6 +214,17 @@ main.paged{max-width:none;align-items:center;gap:24px}
 main.fit{max-width:none;align-items:center}
 main.fit > :not(.sidewrap){width:var(--cw);flex:none}
 main.fit > .sidepage{width:var(--sidew)}
+/* page zoom: a pinch on the pages zooms them (in the script), not the whole window; zoomed in past the fit, they scroll sideways in their own column */
+main:is(.fit,.paged){touch-action:pan-x pan-y}
+main.zoomed{overflow-x:auto;overscroll-behavior-x:contain}
+main.zoomed:is(.fit,.paged){align-items:flex-start}
+main.zoomed.fit > :not(.sidewrap),main.zoomed.paged > *{margin-inline:auto}      /* (centred while they fit, from the left edge once they don't) */
+main.zoomed.fit.side-on:not(.side-split):not(.side-stack){justify-content:start}
+@supports (justify-content:safe center){main.zoomed.fit.side-on:not(.side-split):not(.side-stack){justify-content:safe center}}
+.zoombox{display:inline-flex;align-items:center;gap:2px}
+.zoombox[hidden]{display:none}
+#zoomPct{min-width:52px;justify-content:center;font-variant-numeric:tabular-nums}
+@media (max-width:640px){.zoombox{display:none}}      /* (a phone pinches: there is no room for the buttons) */
 .slide,.sheet,.file-head,.notebox{scroll-margin-top:calc((var(--appbar-h) + 16px) / var(--z,1));scroll-margin-bottom:calc((var(--status-h) + 16px) / var(--z,1))}
 .sheet{width:var(--sheet-w);min-height:var(--sheet-h);background:#fff;padding:48px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;flex-shrink:0;color:#1b2330}
 .sheet > .slide{box-shadow:none;border-radius:0;flex-shrink:0;align-self:center;width:100%}
@@ -2016,6 +2027,11 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
   <span id="noteInfo"></span>
   <span id="besideInfo" hidden></span>
   <span class="spacer"></span>
+  <span class="zoombox" id="zoomBox" role="group" aria-label="Zoom" hidden>
+    <button class="btn" id="zoomOut" title="Zoom out: smaller pages" aria-label="Zoom out"><svg class="i"><use href="#i-minus"/></svg></button>
+    <button class="btn" id="zoomPct" title="Fit the pages to the window">Fit</button>
+    <button class="btn" id="zoomIn" title="Zoom in: bigger pages to write on (or pinch them)" aria-label="Zoom in"><svg class="i"><use href="#i-plus"/></svg></button>
+  </span>
   <button class="btn notes-toggle" id="notesToggle" disabled><svg class="i"><use href="#i-eye-off"/></svg><span>Hide notes</span></button>
 </footer>
 
@@ -2225,9 +2241,9 @@ const APP_HTML = (() => {
   return '<!doctype html>\n' + c.outerHTML;
 })();
 // The pages are scaled with CSS zoom, and everything that measures them expects the box as it is on screen (as Chrome, Edge and Firefox
-// give it). Safari before its standard zoom (on the iPad too) gives a zoomed box, and the boxes and text inside it, in unzoomed pixels:
-// on screen they are that times the zoom. There, the measuring is put right once, here, so a tap, a pen stroke or a dragged note lands
-// where it is on screen.
+// give it). Safari before its standard zoom (on the iPad too) gives a zoomed box, and the boxes and text inside it, in unzoomed pixels
+// (and less the page's scroll only after that). There, the measuring is put right once, here, so a tap, a pen stroke or a dragged note
+// lands where it is on screen, wherever the page is scrolled to.
 (() => {
   const probe = document.createElement('div');
   probe.style.cssText = 'position:absolute;left:0;top:0;width:100px;height:1px;zoom:.5;visibility:hidden;pointer-events:none';
@@ -2235,7 +2251,8 @@ const APP_HTML = (() => {
   const unzoomed = probe.getBoundingClientRect().width > 75; probe.remove();
   if (!unzoomed) return;
   const zoomAt = n => { let z = 1; for (; n && n.style; n = n.parentElement) { const v = parseFloat(n.style.zoom); if (v) z *= v; } return z; };
-  const scaled = (r, z) => new DOMRect(r.x * z, r.y * z, r.width * z, r.height * z);
+  // (there a box is (its place on the page ÷ zoom) less the page's scroll: on screen it is (that + the scroll) × zoom less the scroll)
+  const scaled = (r, z) => { const sx = scrollX, sy = scrollY; return new DOMRect((r.x + sx) * z - sx, (r.y + sy) * z - sy, r.width * z, r.height * z); };
   const rangeZoom = r => { const n = r.commonAncestorContainer; return zoomAt(n.nodeType === 1 ? n : n.parentElement); };
   const patch = (proto, name, zoomFor, list) => {
     const orig = proto[name];
@@ -5012,6 +5029,9 @@ $('#layout').value = layout;
 $('#layout').onchange = e => { layout = e.target.value; pref.set('pdf-layout', layout); paginateView(); };
 // ================= page layout on screen: A4 / A3 sheets, portrait or landscape =================
 let viewZoom = 1, pageTimer = null;
+// page zoom, on top of the fit (1 is the fit): set by pinching the pages, double-tapping a slide or − / + in the status bar
+let pageZoom = 1, fitZoom = 1;
+const ZOOM_STEPS = [.5, .67, .8, 1, 1.25, 1.5, 2, 2.5, 3], ZOOM_MIN = .5, ZOOM_MAX = 3;
 const pxSize = ([pw, ph]) => [Math.round(pw * 96 / 72), Math.round(ph * 96 / 72)];   // points to screen pixels
 const SHEET_MARGIN = 48;
 // undo the sheets: back to one list of headings and slides, with split slides joined up again
@@ -5054,8 +5074,9 @@ function fitPlan(W, size){
     total = stack ? W + 32 : split ? apart : beside;
   } else if (vis) total = W + SIDE_GAP + SIDE_W + 32;
   const fluid = !size && !sideForce && room > 0 && room < FLUID_W;
-  const z = sideForce || fluid || !room ? 1 : Math.max(.2, Math.min(1, room / total));
-  return {vis, split, stack, fluid, z, W, key: [vis, split, stack].join()};
+  const fz = sideForce || fluid || !room ? 1 : Math.max(.2, Math.min(1, room / total));
+  const z = sideForce || !room ? fz : +(fz * pageZoom).toFixed(4);           // (the page zoom never reaches the PDF)
+  return {vis, split, stack, fluid, z, fz, W, key: [vis, split, stack].join()};
 }
 // set main up for a plan; returns how much the zoom changed (the scroll position follows it)
 function fitApply(p, paged){
@@ -5067,6 +5088,7 @@ function fitApply(p, paged){
   main.style.setProperty('--sidew', p.fluid ? 'min(' + SIDE_W + 'px,100%)' : SIDE_W + 'px');
   main.style.setProperty('--z', p.z);
   viewZoom = p.z; main.style.zoom = p.z === 1 ? '' : p.z;
+  fitZoom = p.fz ?? p.z; main.classList.toggle('zoomed', has && pageZoom > 1); paintZoom();
   return p.z / old;
 }
 // the Default layout: slides side by side, or with their side pages (the printed layouts do the same in paginateView)
@@ -5149,6 +5171,124 @@ new ResizeObserver(() => {
   if (fitRuns.push(now) > 6) return;                // (a scroll bar that comes and goes with the scale must not make it flicker for ever)
   clearTimeout(resizeTimer); resizeTimer = setTimeout(relayout, 30);
 }).observe(main);
+
+// ---------- page zoom: the pages bigger (or smaller) than the fit, to write on them on a tablet ----------
+// Pinch the pages, double-tap a slide, or use − / + in the status bar. Only the pages zoom: the toolbar, the side panels and the status bar
+// stay as they are, and pages wider than the window scroll sideways in their own column. The zoom stays until it is changed.
+const zoomClamp = u => Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, u));
+// the middle of what you can see of the pages
+function zoomMid(){
+  const r = main.getBoundingClientRect(), top = appbar.offsetParent ? appbar.getBoundingClientRect().bottom : 0, bar = $('#statusbar'), bottom = bar.offsetParent ? bar.getBoundingClientRect().top : innerHeight;
+  return [(Math.max(0, r.left) + Math.min(innerWidth, r.right)) / 2, (Math.max(0, top) + bottom) / 2];
+}
+// the page under a point, and where on it the point is, so that after zooming the same spot can be put back under it
+function zoomAnchor(x, y){
+  let el = document.elementFromPoint(x, y)?.closest?.('#main .slide, #main .sidepage, #main .sheet');
+  if (!el) for (const c of main.querySelectorAll('.slide, .sidepage')) { const r = c.getBoundingClientRect(); if (r.height && r.bottom > y) { el = c; break; } }
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return {el, fx: (x - r.left) / (r.width || 1), fy: (y - r.top) / (r.height || 1)};
+}
+function zoomRestore(a, x, y){
+  if (!a || !a.el.isConnected) return;
+  const r = a.el.getBoundingClientRect(), dx = r.left + a.fx * r.width - x, dy = r.top + a.fy * r.height - y;
+  if (Math.abs(dy) > .5) scrollBy({top: dy, behavior: 'instant'});
+  if (Math.abs(dx) > .5) main.scrollLeft += dx * (main.clientWidth || 1) / (main.getBoundingClientRect().width || 1);    // (main counts its own scroll in its zoomed pixels)
+}
+// while a pinch goes on only main's zoom changes (cheap); the notes, side pages and printed sheets are laid out again when it ends
+function zoomLive(u, x, y, a){
+  pageZoom = zoomClamp(u);
+  const z = +(fitZoom * pageZoom).toFixed(4);
+  viewZoom = z; main.style.setProperty('--z', z); main.style.zoom = z === 1 ? '' : z;
+  main.classList.toggle('zoomed', pageZoom > 1);
+  zoomRestore(a, x, y); paintZoom();
+}
+function zoomCommit(x, y){
+  if (Math.abs(pageZoom - 1) < .06) pageZoom = 1;              // (close to the fit is the fit)
+  const a = zoomAnchor(x, y);
+  hideGap(); relayout(); zoomRestore(a, x, y);
+}
+function setPageZoom(u, x, y){
+  u = zoomClamp(u);
+  if (!main.querySelector('.slide') || Math.abs(u - pageZoom) < .001) return paintZoom();
+  if (x == null) [x, y] = zoomMid();
+  const a = zoomAnchor(x, y);
+  pageZoom = u; hideGap(); relayout(); zoomRestore(a, x, y);
+}
+function paintZoom(){
+  const box = $('#zoomBox'); if (!box) return;
+  box.hidden = !main.querySelector('.slide');
+  const fit = Math.abs(pageZoom - 1) < .005, pct = $('#zoomPct');
+  pct.textContent = fit ? 'Fit' : Math.round(pageZoom * 100) + '%';
+  pct.setAttribute('aria-label', fit ? 'Zoom: the pages fit the window' : `Zoom: ${Math.round(pageZoom * 100)}% of the fit. Fit the pages to the window`);
+  $('#zoomIn').disabled = pageZoom >= ZOOM_MAX - .001; $('#zoomOut').disabled = pageZoom <= ZOOM_MIN + .001;
+}
+$('#zoomIn').onclick = () => setPageZoom(ZOOM_STEPS.find(s => s > pageZoom + .01) ?? ZOOM_MAX);
+$('#zoomOut').onclick = () => setPageZoom([...ZOOM_STEPS].reverse().find(s => s < pageZoom - .01) ?? ZOOM_MIN);
+$('#zoomPct').onclick = () => setPageZoom(1);
+// pages scrolled sideways in their column: what follows the page as it scrolls (the page counter, bars over the page) follows this too
+main.addEventListener('scroll', () => document.dispatchEvent(new Event('scroll', {bubbles: true})), {passive: true});
+// two fingers on the pages: they zoom and move with the fingers, as in GoodNotes (the Pencil, or a hand resting by it, never pinches)
+let pinch = null;
+main.addEventListener('touchstart', e => {
+  if (e.touches.length > 2) return pinchEnd();
+  if (e.touches.length !== 2 || !main.querySelector('.slide')) return;
+  const [a, b] = e.touches;
+  if (a.touchType === 'stylus' || b.touchType === 'stylus') return;
+  const x = (a.clientX + b.clientX) / 2, y = (a.clientY + b.clientY) / 2;
+  pinch = {d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1, u: pageZoom, x, y, a: zoomAnchor(x, y), raf: 0, moved: false};
+}, {passive: true});
+main.addEventListener('touchmove', e => {
+  if (!pinch || e.touches.length !== 2) return;
+  e.preventDefault();                                         // (the pages zoom and move, not Safari's whole page)
+  const [a, b] = e.touches;
+  pinch.next = [pinch.u * Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) / pinch.d, (a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2];
+  if (!pinch.raf) pinch.raf = requestAnimationFrame(() => {
+    if (!pinch) return;
+    const [u, x, y] = pinch.next; Object.assign(pinch, {raf: 0, moved: true, x, y});
+    zoomLive(u, x, y, pinch.a);
+  });
+}, {passive: false});
+function pinchEnd(){
+  if (!pinch) return;
+  const p = pinch; pinch = null; cancelAnimationFrame(p.raf);
+  if (p.raf) { const [u, x, y] = p.next; Object.assign(p, {moved: true, x, y}); zoomLive(u, x, y, p.a); }     // (where the fingers were last, even if no frame showed it yet)
+  if (p.moved) zoomCommit(p.x, p.y);
+}
+main.addEventListener('touchend', e => { if (e.touches.length < 2) pinchEnd(); }, {passive: true});
+main.addEventListener('touchcancel', pinchEnd, {passive: true});
+// a double tap with a finger on a slide (not on a note, a button or a word you are editing): zoom in there, and again for the whole slide
+let tapDown = null, tapPrev = null;
+const zoomTapOk = t => !document.body.classList.contains('drawing') && !!t?.closest?.('.slide, .sidepage, .sheet')
+  && !t.closest('.notebox, .note-chip, .gappill, .grip, button, a, input, textarea, select, [contenteditable="true"], img.blk, video, audio, .wguide');
+main.addEventListener('touchstart', e => { const t = e.touches[0]; tapDown = e.touches.length === 1 && t.touchType !== 'stylus' ? {x: t.clientX, y: t.clientY, t: performance.now()} : null; }, {passive: true});
+main.addEventListener('touchmove', e => { const t = e.touches[0]; if (tapDown && (e.touches.length > 1 || Math.hypot(t.clientX - tapDown.x, t.clientY - tapDown.y) > 10)) tapDown = null; }, {passive: true});
+main.addEventListener('touchend', e => {
+  const s = tapDown, now = performance.now(); tapDown = null;
+  if (!s || e.touches.length || now - s.t > 300 || !zoomTapOk(e.target) || !main.querySelector('.slide')) { tapPrev = null; return; }
+  if (tapPrev && now - tapPrev.t < 350 && Math.hypot(s.x - tapPrev.x, s.y - tapPrev.y) < 30) {
+    tapPrev = null; e.preventDefault();                      // (the second tap makes no click)
+    setPageZoom(Math.abs(pageZoom - 1) < .01 ? 2 : 1, s.x, s.y);
+  } else tapPrev = {x: s.x, y: s.y, t: now};
+}, {passive: false});
+// a pinch on a trackpad: Safari's gesture events, and a wheel with Ctrl in the other browsers
+let gest = null;
+main.addEventListener('gesturestart', e => {
+  e.preventDefault();
+  if (pinch || !main.querySelector('.slide')) return;
+  const x = e.clientX ?? zoomMid()[0], y = e.clientY ?? zoomMid()[1];
+  gest = {u: pageZoom, x, y, a: zoomAnchor(x, y)};
+});
+main.addEventListener('gesturechange', e => { e.preventDefault(); if (gest && !pinch) zoomLive(gest.u * e.scale, gest.x, gest.y, gest.a); });
+main.addEventListener('gestureend', e => { e.preventDefault(); if (!gest) return; const g = gest; gest = null; zoomCommit(g.x, g.y); });
+let wheelZoom = null;
+main.addEventListener('wheel', e => {
+  if (!e.ctrlKey || !main.querySelector('.slide')) return;
+  e.preventDefault();
+  if (!wheelZoom) wheelZoom = {x: e.clientX, y: e.clientY, a: zoomAnchor(e.clientX, e.clientY)};
+  zoomLive(pageZoom * Math.exp(-e.deltaY * (e.deltaMode ? .2 : .01)), wheelZoom.x, wheelZoom.y, wheelZoom.a);
+  clearTimeout(wheelZoom.t); wheelZoom.t = setTimeout(() => { const w = wheelZoom; wheelZoom = null; zoomCommit(w.x, w.y); }, 220);
+}, {passive: false});
 
 document.querySelectorAll('.notes-toggle').forEach(b => b.onclick = () => {
   const hide = notesBtnMode() === 'hide';            // do exactly what the button says
@@ -10138,6 +10278,9 @@ const CK_ACTIONS = [
   {id: 'odnbs', label: 'Your notebooks in OneDrive', ico: 'onedrive', words: 'onedrive microsoft sync carry on continue another device ipad phone laptop cloud', ok: () => !!ONEDRIVE.clientId, run: () => cloudNotebooks(CLOUD.onedrive)},
   {id: 'focus', label: 'Focus mode', ico: 'focus', hint: 'Ctrl+Shift+F', words: 'hide toolbar panels distraction', run: ckClick('#focusBtn')},
   {id: 'study', label: 'Study mode', ico: 'book', words: 'read only revise', run: ckClick('#readBtn')},
+  {id: 'zoomin', label: 'Zoom in', ico: 'plus', words: 'bigger larger pages magnify enlarge write ipad pencil', ok: ckPages, run: ckClick('#zoomIn')},
+  {id: 'zoomout', label: 'Zoom out', ico: 'minus', words: 'smaller pages shrink', ok: ckPages, run: ckClick('#zoomOut')},
+  {id: 'zoomfit', label: 'Fit the pages to the window', ico: 'monitor', words: 'zoom reset whole page 100', ok: ckPages, run: () => setPageZoom(1)},
   {id: 'sidebg', label: 'Side page background', ico: 'palette', words: 'side notes paper colour pattern lined grid dots cream dark', run: () => openSideBg($('#sideBgBtn'))},
   {id: 'install', label: 'Install as an app', ico: 'download', words: 'add to home screen ipad iphone android dock offline app pwa', run: () => installNow()},
   {id: 'tips', label: 'Show tips on or off', ico: 'lightbulb', words: 'help hints coach teaching messages', run: () => setTips(!tipsOn())},
