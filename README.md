@@ -24,7 +24,7 @@ A simple web page for taking notes on lecture slides.
 
 ## Taking notes
 
-- **Open** a **PDF**, or drop it anywhere on the page. Each page shows exactly as it is, with background graphics, side bands and slide numbers removed. You can select and copy text from the pages.
+- **Open** a **PDF**, or drop it anywhere on the page. Each page shows exactly as it is, with background graphics, side bands and slide numbers removed. You can select and copy text from the pages. A scanned PDF (handwritten notes from a scanner or a scanner app, one picture per page) shows its pictures, with **+ Add here** finding the blank rows of the paper as it does on a picture; if the scan has recognised text, that text can be selected too.
 - Point at a spot on a page and press **+ Add here** to add a **Note** there: the page opens up at the nearest gap between lines for you to type in your own font, size and colour (handwriting styles and standard fonts). **Right-click** the button (or the dashed line; press and hold the button on a touch screen) for a menu like Notion's: **Note**, **Sticky note** (put on top of the page there) or **Equation** (a formula in the gap). Point at an option or use the arrow keys, type to search, Enter to add, Esc to close.
 - In a note, type **/** (at the start, or after a space) for the same menu at the cursor: add an equation, or turn the note into a sticky note and back. What you type after the slash searches it.
 - **Sticky notes** are yellow paper on top of the page. Drag one by its tape to move it anywhere, even onto another page; it shows in the Notes panel as a sticky note and in the PDF as you see it.

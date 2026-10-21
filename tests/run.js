@@ -7,7 +7,7 @@ const args = process.argv.slice(2), browser = (args.find(a => a.startsWith('--br
 // assets.js writes nbfile.html, which driveshare.js and trash.js read, so it runs first
 const ALL = ['assets', 'e2e', 'nb', 'menu', 'hover', 'tips', 'anno', 'trash', 'cmdk', 'prefs', 'folders', 'fixes', 'tab', 'side', 'beside',
   'drive', 'driveshare', 'sync', 'odsync', 'onedrive', 'guides', 'pickframe', 'fidelity', 'pptxsafe', 'tablet', 'sideink', 'organise', 'layoutscale',
-  'sidecorner', 'sidescroll', 'ribbonscroll', 'pdfside', 'guide', 'table', 'journal', 'blankshape', 'formula', 'pagenum', 'mdlist', 'gapselect', 'hidenotes', 'bullets', 'ios', 'notegeo', 'templates', 'pdfmath', 'drawtools', 'scan'];
+  'sidecorner', 'sidescroll', 'ribbonscroll', 'pdfside', 'guide', 'table', 'journal', 'blankshape', 'formula', 'pagenum', 'mdlist', 'gapselect', 'hidenotes', 'bullets', 'ios', 'notegeo', 'templates', 'pdfmath', 'drawtools', 'scan', 'pdfscan'];
 // these use Chrome DevTools features (touch/pen emulation, CPU throttling) that only Chromium has
 const CHROMIUM_ONLY = new Set(['blankshape', 'guide', 'guides', 'hover', 'table', 'tablet', 'sideink', 'organise', 'ios', 'drawtools']);
 const pick = args.filter(a => !a.startsWith('--'));
