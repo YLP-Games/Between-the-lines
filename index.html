@@ -3703,15 +3703,9 @@ async function ppRender(D, path, n){
   for (const s of shapesOf(xf(c.slide.doc, 'spTree'))) await ppNode(X, ctx, s, G);
   const groups = X.groups.sort((a, b) => (Math.abs(a.y - b.y) < 14 ? a.x - b.x : a.y - b.y));
   // rows with nothing of this slide's own on them (what the layout and master draw doesn't count): where a note can open the page up
-  const px = ctx.getImageData(0, 0, cv.width, cv.height).data, gaps = [];
+  const px = ctx.getImageData(0, 0, cv.width, cv.height).data;
   const inked = i => Math.abs(px[i] - px0[i]) + Math.abs(px[i + 1] - px0[i + 1]) + Math.abs(px[i + 2] - px0[i + 2]) > 60;
-  let start = -1;
-  for (let y = 0; y < cv.height; y += 2) {
-    let blank = true;
-    for (let x = 0; x < cv.width; x += 3) if (inked((y * cv.width + x) * 4)) { blank = false; break; }
-    if (blank && start < 0) start = y;
-    if ((!blank || y + 2 >= cv.height) && start >= 0) { if (y - start >= 6) gaps.push([+(start / S).toFixed(1), +(y / S).toFixed(1)]); start = -1; }
-  }
+  const gaps = blankGaps(cv, S, inked);
   const items = groups.flatMap(g => g.items);
   if (!gaps.length && items.length) {             // a picture behind everything: the gaps are between the lines of words instead
     const lines = [...new Map(items.map(i => [Math.round(i[2]), i])).values()].sort((a, b) => a[2] - b[2]);
@@ -3868,11 +3862,8 @@ async function readPdf(buf, name){
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
     skipBackgrounds(ctx, S, W, H, [...placed[p - 1]].filter(template).map(k => k.split(',').slice(0, 4).map(Number)));
     await page.render({canvasContext: ctx, viewport: v, background: 'rgba(0,0,0,0)'}).promise;
-    // page colour = the most common colour
     let px = ctx.getImageData(0, 0, cv.width, cv.height).data;
-    const tally = {};
-    for (let i = 0; i < px.length; i += 4 * 97) { const k = (px[i] >> 4) + ',' + (px[i+1] >> 4) + ',' + (px[i+2] >> 4); tally[k] = (tally[k] || 0) + 1; }
-    const bgKey = Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0].split(',').map(v => v == 15 ? 255 : v * 16 + 8);
+    const bgKey = paperOf(px);
     const inked = i => Math.abs(px[i] - bgKey[0]) + Math.abs(px[i+1] - bgKey[1]) + Math.abs(px[i+2] - bgKey[2]) > 60;
     // solid bands along the sides (and thin ones along top or bottom): paint them out
     const colInk = x => { let c = 0, t = 0; for (let y = 0; y < cv.height; y += 4) { t++; if (inked((y * cv.width + x) * 4)) c++; } return c / t; };
@@ -3904,15 +3895,7 @@ async function readPdf(buf, name){
       ctx.fillRect(x - 3 * S, y - size * 1.05 * S, (i.width + 6) * S, size * 1.4 * S);
     }
     px = ctx.getImageData(0, 0, cv.width, cv.height).data;
-    // blank rows: where the page can open up without cutting through anything
-    const gaps = [];
-    let start = -1;
-    for (let y = 0; y < cv.height; y += 2) {
-      let blank = true;
-      for (let x = 0; x < cv.width; x += 3) { if (inked((y * cv.width + x) * 4)) { blank = false; break; } }
-      if (blank && start < 0) start = y;
-      if ((!blank || y + 2 >= cv.height) && start >= 0) { if (y - start >= 6) gaps.push([+(start / S).toFixed(1), +(y / S).toFixed(1)]); start = -1; }
-    }
+    const gaps = blankGaps(cv, S, inked);
     await addPageCard(cv, S, W, H, gaps, tc.items.filter(i => i.str && i.str.trim() && !isSlideNo(i)).map(i => {
       const t = i.transform, [x, y] = v.convertToViewportPoint(t[4], t[5]);
       return [i.str, +(x / S).toFixed(1), +(y / S).toFixed(1), +(Math.hypot(t[2], t[3]) || i.height || 10).toFixed(1), +(i.width).toFixed(1), i.hasEOL ? 1 : 0];
@@ -3931,6 +3914,26 @@ async function addPageCard(cv, S, W, H, gaps, items, quality = 0.88, home = curI
   card.dataset.text = JSON.stringify(items);
   card.append(makeStrip(card, 0, H));
   away(home); main.append(card);
+}
+// the paper's colour: the most common colour on the page
+function paperOf(px){
+  const tally = {};
+  for (let i = 0; i < px.length; i += 4 * 97) { const k = (px[i] >> 4) + ',' + (px[i+1] >> 4) + ',' + (px[i+2] >> 4); tally[k] = (tally[k] || 0) + 1; }
+  return Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0].split(',').map(v => v == 15 ? 255 : v * 16 + 8);
+}
+// blank rows, in page units: where the page can open up without cutting through anything.
+// `noise` is the share of a row that may be inked and still count as blank (the grain of a photo or a scan)
+function blankGaps(cv, S, inked, noise = 0){
+  const gaps = [], allow = Math.floor(cv.width / 3 * noise);
+  let start = -1;
+  for (let y = 0; y < cv.height; y += 2) {
+    let n = 0;
+    for (let x = 0; x < cv.width; x += 3) if (inked((y * cv.width + x) * 4) && ++n > allow) break;
+    const blank = n <= allow;
+    if (blank && start < 0) start = y;
+    if ((!blank || y + 2 >= cv.height) && start >= 0) { if (y - start >= 6) gaps.push([+(start / S).toFixed(1), +(y / S).toFixed(1)]); start = -1; }
+  }
+  return gaps;
 }
 const boxKey = b => [b.l, b.t, b.r, b.b].map(x => Math.round(x / 4) * 4).join(',');
 
@@ -4528,11 +4531,31 @@ async function readDocx(buf, name){
   markBlocks(box); safeLinks(box);
 }
 
-// ---------- pictures ----------
-async function readImage(file){
-  const url = await readAsUrl(file);
-  const card = slideCard();
-  card.querySelector('.content').innerHTML = `<img class="blk" alt="${esc(file.name)}" src="${url}">`;
+// ---------- pictures (a scan or a photo of handwritten notes) ----------
+// a picture opens as a page, exactly like a PDF page: as wide as every other page, in the picture's own shape, with
+// notes between its lines, floating notes, sticky notes and ink on top. There are no words to select (it is only a picture).
+const PIC_PX = 12e6;        // pixels in the page's picture at most: Safari on an iPad can't hold much bigger canvases
+const isPicture = (f, ext) => f.type.startsWith('image/') || /^(jpe?g|png|webp|gif|bmp)$/.test(ext);
+async function readImage(file, home = curId){
+  const url = URL.createObjectURL(file);
+  let img;
+  try { img = await loadImg(url); } catch { throw new Error('this browser can’t show this kind of picture; try a .jpg or .png'); }
+  finally { URL.revokeObjectURL(url); }
+  const iw = img.naturalWidth, ih = img.naturalHeight;          // (turned the right way up already, as the camera saved it)
+  if (!iw || !ih) throw new Error('the picture is empty');
+  // page units like a PDF page's: the width of a page on screen, and the picture's height in proportion.
+  // Drawn at up to twice that (sharp on a Retina screen), never bigger than the picture itself, and never past PIC_PX
+  const W = CARD_W, H = +(W * ih / iw).toFixed(1), S = Math.min(2, iw / W, Math.sqrt(PIC_PX / (W * H)));
+  const cv = document.createElement('canvas');
+  cv.width = Math.max(1, Math.round(W * S)); cv.height = Math.max(1, Math.round(H * S));
+  try {
+    const ctx = cv.getContext('2d', {willReadFrequently: true});
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);          // a see-through PNG goes on white paper
+    ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, 0, 0, cv.width, cv.height);
+    const px = ctx.getImageData(0, 0, cv.width, cv.height).data, paper = paperOf(px);
+    const inked = i => Math.abs(px[i] - paper[0]) + Math.abs(px[i+1] - paper[1]) + Math.abs(px[i+2] - paper[2]) > 60;
+    await addPageCard(cv, S, W, H, blankGaps(cv, S, inked, 0.01), [], 0.92, home);
+  } finally { cv.width = cv.height = 0; }
 }
 
 // open files (from Open, the sidebar, or dropped on the page): each file becomes its own notebook,
@@ -4544,11 +4567,11 @@ async function openFiles(picked, here = false){
   let hadPages = !!main.querySelector('.slide'), first = null;
   for (const f of picked) {
     const ext = f.name.split('.').pop().toLowerCase(), notebook = ext === 'html' || ext === 'htm';
-    const read = notebook ? null : {pptx: readPptx, pdf: readPdf, docx: readDocx, md: readMarkdown, markdown: readMarkdown, txt: readMarkdown}[ext] || (f.type.startsWith('image/') ? readImage : null);
+    const read = notebook ? null : {pptx: readPptx, pdf: readPdf, docx: readDocx, md: readMarkdown, markdown: readMarkdown, txt: readMarkdown}[ext] || (isPicture(f, ext) ? readImage : null);
     // the readers come from the internet the first time: if one didn't arrive, say so instead of failing quietly
     const missing = !(await ensureReader(ext)) && (ext === 'pdf' ? 'PDF' : 'PowerPoint');
     if (missing) { toast(`The ${missing} reader didn’t load, so “${f.name}” can’t be opened yet. Check your internet connection (or an ad or script blocker), then reload the page.`); continue; }
-    if (!notebook && !read) { toast(`“${f.name}” can't be opened. Use a .pdf, .pptx, .docx, .md or .txt file (an old .ppt or .doc file can be saved as one of these).`); continue; }
+    if (!notebook && !read) { toast(`“${f.name}” can't be opened. Use a .pdf, .pptx, .docx, .md or .txt file or a picture (.jpg, .png, .webp); an old .ppt or .doc file can be saved as one of these.`); continue; }
     const data = notebook ? readNotebookHtml(await f.text()) : null;
     if (notebook && !data) { toast(`“${f.name}” isn't a notebook file saved from this page.`); continue; }
     if (!here && main.querySelector('.slide')) { await switchDoc(null); hadPages = false; }
@@ -4563,7 +4586,7 @@ async function openFiles(picked, here = false){
     main.append(head);
     try {
       const buf = read === readImage ? null : await f.arrayBuffer(); away(home);
-      await (read === readImage ? readImage(f) : read(buf, f.name));
+      await (read === readImage ? readImage(f, home) : read(buf, f.name));
       if (ext === 'pptx' && head.nextElementSibling && pref.get('pptx-tip') !== 'off' && tipsOn()) head.after(pptxTip(pptxMode(), f));
       first ??= head;
       toast(''); saveSoon();
