@@ -77,7 +77,7 @@ async function makeScan(){
   await page.click('.gappill'); await page.waitForTimeout(300);
   await page.keyboard.type('Remember the diagram'); await page.waitForTimeout(300);
   ok(await scan.locator(':scope > .notebox .mine').textContent() === 'Remember the diagram', 'a note goes between the lines of the scan');
-  const strips = await scan.$$eval(':scope > .strip', ss => ss.map(s => [+s.dataset.y0, +s.dataset.y1]));
+  const strips = await scan.locator(':scope > .strip').evaluateAll(ss =>ss.map(s => [+s.dataset.y0, +s.dataset.y1]));
   ok(strips.length === 2 && gaps.some(([a, b]) => strips[0][1] >= a - 0.5 && strips[0][1] <= b + 0.5), `the scan opens up in a gap (${strips[0][1]})`);
   await page.mouse.click(5, 700); await page.waitForTimeout(300);
 
