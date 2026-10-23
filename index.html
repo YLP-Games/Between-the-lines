@@ -2204,7 +2204,6 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="i-onedrive" viewBox="0 0 24 24"><path d="M7 18.5h10.5a3.75 3.75 0 0 0 .55-7.46A5.75 5.75 0 0 0 7.1 9.9 4.3 4.3 0 0 0 7 18.5Z"/></symbol><symbol id="i-drive" viewBox="0 0 24 24"><path d="M9 3h6l7 12h-6L9 3Z"/><path d="M9 3 2 15l3 5 7-12"/><path d="M5 20h14l3-5H8"/></symbol></svg>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
 <script type="text/plain" id="spellX">
 # finance, accounting, economics, business (stem/flags: S plural, D -ed, G -ing, R -er, L -ly, Z the -ise/-ize family, written without it: capital/Z)
@@ -4103,6 +4102,7 @@ async function readPdf(buf, name){
   const home = curId;                    // switching notebook while it reads stops it (the pages would go into the other notebook)
   // fonts a PDF leaves out (Symbol, Times…) and the character maps of Chinese, Japanese and Korean text come from the pdf.js package
   const lib = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/';
+  pdfjsLib.GlobalWorkerOptions.workerSrc ||= 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';      // reading happens in a Web Worker, so a big PDF doesn't freeze the page (if the browser won't make one, pdf.js reads on the page)
   const pdf = await pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false, cMapUrl: lib + 'cmaps/', cMapPacked: true, standardFontDataUrl: lib + 'standard_fonts/'}).promise;
   const OPS = pdfjsLib.OPS, mul = pdfjsLib.Util.transform, n = pdf.numPages;
 
@@ -4783,7 +4783,7 @@ function loadScript(src, again){
   });
 }
 // the PDF and PowerPoint readers load with the page; if one didn't arrive, try once more before giving up
-const READERS = {pdf: [() => window.pdfjsLib && window.pdfjsWorker, ['pdf.js/3.11.174/pdf.min.js', 'pdf.js/3.11.174/pdf.worker.min.js']], pptx: [() => window.JSZip, ['jszip/3.10.1/jszip.min.js']]};
+const READERS = {pdf: [() => window.pdfjsLib, ['pdf.js/3.11.174/pdf.min.js']], pptx: [() => window.JSZip, ['jszip/3.10.1/jszip.min.js']]};
 async function ensureReader(ext){
   const r = READERS[ext]; if (!r || r[0]()) return true;
   try { for (const f of r[1]) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/' + f, true); } catch {}
