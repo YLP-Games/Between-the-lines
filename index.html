@@ -219,6 +219,17 @@ main.paged{max-width:none;align-items:center;gap:24px}
 main.fit{max-width:none;align-items:center}
 main.fit > :not(.sidewrap){width:var(--cw);flex:none}
 main.fit > .sidepage{width:var(--sidew)}
+/* page zoom: a pinch on the pages zooms them (in the script), not the whole window; zoomed in past the fit, they scroll sideways in their own column */
+main:is(.fit,.paged){touch-action:pan-x pan-y}
+main.zoomed{overflow-x:auto;overscroll-behavior-x:contain}
+main.zoomed:is(.fit,.paged){align-items:flex-start}
+main.zoomed.fit > :not(.sidewrap),main.zoomed.paged > *{margin-inline:auto}      /* (centred while they fit, from the left edge once they don't) */
+main.zoomed.fit.side-on:not(.side-split):not(.side-stack){justify-content:start}
+@supports (justify-content:safe center){main.zoomed.fit.side-on:not(.side-split):not(.side-stack){justify-content:safe center}}
+.zoombox{display:inline-flex;align-items:center;gap:2px}
+.zoombox[hidden]{display:none}
+#zoomPct{min-width:52px;justify-content:center;font-variant-numeric:tabular-nums}
+@media (max-width:640px){.zoombox{display:none}}      /* (a phone pinches: there is no room for the buttons) */
 .slide,.sheet,.file-head,.notebox{scroll-margin-top:calc((var(--appbar-h) + 16px) / var(--z,1));scroll-margin-bottom:calc((var(--status-h) + 16px) / var(--z,1))}
 .sheet{width:var(--sheet-w);min-height:var(--sheet-h);background:#fff;padding:48px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;flex-shrink:0;color:#1b2330}
 .sheet > .slide{box-shadow:none;border-radius:0;flex-shrink:0;align-self:center;width:100%}
@@ -819,10 +830,11 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
 .ink .hl{opacity:.35;mix-blend-mode:multiply}
 .ink .pc{opacity:.9}
 .ink .mk{opacity:.45;mix-blend-mode:multiply}
+.inklive{position:fixed;left:0;top:0;z-index:14;pointer-events:none}      /* the stroke being drawn, over the page (under the bars and drawers) */
+.inklive[hidden]{display:none}
 .inkdefs{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
 body.drawing :is(.strip,.sidepage),body.drawing .tl{cursor:crosshair;user-select:none;-webkit-user-select:none}
 body.drawing :is(.strip,.sidepage){touch-action:none}
-body.penning{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 body.drawing.erasing :is(.strip,.sidepage),body.drawing.erasing .tl{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%23fff' stroke-width='3'/%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%23222' stroke-width='1.5'/%3E%3C/svg%3E") 12 12,crosshair}
 body.drawing .gappill,body.drawing .gapline{display:none}
 body.drawing.texting :is(.strip,.sidepage),body.drawing.texting .tl{cursor:text}
@@ -2056,6 +2068,11 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
   <span id="noteInfo"></span>
   <span id="besideInfo" hidden></span>
   <span class="spacer"></span>
+  <span class="zoombox" id="zoomBox" role="group" aria-label="Zoom" hidden>
+    <button class="btn" id="zoomOut" title="Zoom out: smaller pages" aria-label="Zoom out"><svg class="i"><use href="#i-minus"/></svg></button>
+    <button class="btn" id="zoomPct" title="Fit the pages to the window">Fit</button>
+    <button class="btn" id="zoomIn" title="Zoom in: bigger pages to write on (or pinch them)" aria-label="Zoom in"><svg class="i"><use href="#i-plus"/></svg></button>
+  </span>
   <button class="btn notes-toggle" id="notesToggle" disabled><svg class="i"><use href="#i-eye-off"/></svg><span>Hide notes</span></button>
 </footer>
 
@@ -2265,9 +2282,9 @@ const APP_HTML = (() => {
   return '<!doctype html>\n' + c.outerHTML;
 })();
 // The pages are scaled with CSS zoom, and everything that measures them expects the box as it is on screen (as Chrome, Edge and Firefox
-// give it). Safari before its standard zoom (on the iPad too) gives a zoomed box, and the boxes and text inside it, in unzoomed pixels:
-// on screen they are that times the zoom. There, the measuring is put right once, here, so a tap, a pen stroke or a dragged note lands
-// where it is on screen.
+// give it). Safari before its standard zoom (on the iPad too) gives a zoomed box, and the boxes and text inside it, in unzoomed pixels
+// (and less the page's scroll only after that). There, the measuring is put right once, here, so a tap, a pen stroke or a dragged note
+// lands where it is on screen, wherever the page is scrolled to.
 (() => {
   const probe = document.createElement('div');
   probe.style.cssText = 'position:absolute;left:0;top:0;width:100px;height:1px;zoom:.5;visibility:hidden;pointer-events:none';
@@ -2275,7 +2292,8 @@ const APP_HTML = (() => {
   const unzoomed = probe.getBoundingClientRect().width > 75; probe.remove();
   if (!unzoomed) return;
   const zoomAt = n => { let z = 1; for (; n && n.style; n = n.parentElement) { const v = parseFloat(n.style.zoom); if (v) z *= v; } return z; };
-  const scaled = (r, z) => new DOMRect(r.x * z, r.y * z, r.width * z, r.height * z);
+  // (there a box is (its place on the page ÷ zoom) less the page's scroll: on screen it is (that + the scroll) × zoom less the scroll)
+  const scaled = (r, z) => { const sx = scrollX, sy = scrollY; return new DOMRect((r.x + sx) * z - sx, (r.y + sy) * z - sy, r.width * z, r.height * z); };
   const rangeZoom = r => { const n = r.commonAncestorContainer; return zoomAt(n.nodeType === 1 ? n : n.parentElement); };
   const patch = (proto, name, zoomFor, list) => {
     const orig = proto[name];
@@ -5070,6 +5088,9 @@ $('#layout').value = layout;
 $('#layout').onchange = e => { layout = e.target.value; pref.set('pdf-layout', layout); paginateView(); };
 // ================= page layout on screen: A4 / A3 sheets, portrait or landscape =================
 let viewZoom = 1, pageTimer = null;
+// page zoom, on top of the fit (1 is the fit): set by pinching the pages, double-tapping a slide or − / + in the status bar
+let pageZoom = 1, fitZoom = 1;
+const ZOOM_STEPS = [.5, .67, .8, 1, 1.25, 1.5, 2, 2.5, 3], ZOOM_MIN = .5, ZOOM_MAX = 3;
 const pxSize = ([pw, ph]) => [Math.round(pw * 96 / 72), Math.round(ph * 96 / 72)];   // points to screen pixels
 const SHEET_MARGIN = 48;
 // undo the sheets: back to one list of headings and slides, with split slides joined up again
@@ -5112,8 +5133,9 @@ function fitPlan(W, size){
     total = stack ? W + 32 : split ? apart : beside;
   } else if (vis) total = W + SIDE_GAP + SIDE_W + 32;
   const fluid = !size && !sideForce && room > 0 && room < FLUID_W;
-  const z = sideForce || fluid || !room ? 1 : Math.max(.2, Math.min(1, room / total));
-  return {vis, split, stack, fluid, z, W, key: [vis, split, stack].join()};
+  const fz = sideForce || fluid || !room ? 1 : Math.max(.2, Math.min(1, room / total));
+  const z = sideForce || !room ? fz : +(fz * pageZoom).toFixed(4);           // (the page zoom never reaches the PDF)
+  return {vis, split, stack, fluid, z, fz, W, key: [vis, split, stack].join()};
 }
 // set main up for a plan; returns how much the zoom changed (the scroll position follows it)
 function fitApply(p, paged){
@@ -5125,6 +5147,7 @@ function fitApply(p, paged){
   main.style.setProperty('--sidew', p.fluid ? 'min(' + SIDE_W + 'px,100%)' : SIDE_W + 'px');
   main.style.setProperty('--z', p.z);
   viewZoom = p.z; main.style.zoom = p.z === 1 ? '' : p.z;
+  fitZoom = p.fz ?? p.z; main.classList.toggle('zoomed', has && pageZoom > 1); paintZoom();
   return p.z / old;
 }
 // the Default layout: slides side by side, or with their side pages (the printed layouts do the same in paginateView)
@@ -5207,6 +5230,124 @@ new ResizeObserver(() => {
   if (fitRuns.push(now) > 6) return;                // (a scroll bar that comes and goes with the scale must not make it flicker for ever)
   clearTimeout(resizeTimer); resizeTimer = setTimeout(relayout, 30);
 }).observe(main);
+
+// ---------- page zoom: the pages bigger (or smaller) than the fit, to write on them on a tablet ----------
+// Pinch the pages, double-tap a slide, or use − / + in the status bar. Only the pages zoom: the toolbar, the side panels and the status bar
+// stay as they are, and pages wider than the window scroll sideways in their own column. The zoom stays until it is changed.
+const zoomClamp = u => Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, u));
+// the middle of what you can see of the pages
+function zoomMid(){
+  const r = main.getBoundingClientRect(), top = appbar.offsetParent ? appbar.getBoundingClientRect().bottom : 0, bar = $('#statusbar'), bottom = bar.offsetParent ? bar.getBoundingClientRect().top : innerHeight;
+  return [(Math.max(0, r.left) + Math.min(innerWidth, r.right)) / 2, (Math.max(0, top) + bottom) / 2];
+}
+// the page under a point, and where on it the point is, so that after zooming the same spot can be put back under it
+function zoomAnchor(x, y){
+  let el = document.elementFromPoint(x, y)?.closest?.('#main .slide, #main .sidepage, #main .sheet');
+  if (!el) for (const c of main.querySelectorAll('.slide, .sidepage')) { const r = c.getBoundingClientRect(); if (r.height && r.bottom > y) { el = c; break; } }
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return {el, fx: (x - r.left) / (r.width || 1), fy: (y - r.top) / (r.height || 1)};
+}
+function zoomRestore(a, x, y){
+  if (!a || !a.el.isConnected) return;
+  const r = a.el.getBoundingClientRect(), dx = r.left + a.fx * r.width - x, dy = r.top + a.fy * r.height - y;
+  if (Math.abs(dy) > .5) scrollBy({top: dy, behavior: 'instant'});
+  if (Math.abs(dx) > .5) main.scrollLeft += dx * (main.clientWidth || 1) / (main.getBoundingClientRect().width || 1);    // (main counts its own scroll in its zoomed pixels)
+}
+// while a pinch goes on only main's zoom changes (cheap); the notes, side pages and printed sheets are laid out again when it ends
+function zoomLive(u, x, y, a){
+  pageZoom = zoomClamp(u);
+  const z = +(fitZoom * pageZoom).toFixed(4);
+  viewZoom = z; main.style.setProperty('--z', z); main.style.zoom = z === 1 ? '' : z;
+  main.classList.toggle('zoomed', pageZoom > 1);
+  zoomRestore(a, x, y); paintZoom();
+}
+function zoomCommit(x, y){
+  if (Math.abs(pageZoom - 1) < .06) pageZoom = 1;              // (close to the fit is the fit)
+  const a = zoomAnchor(x, y);
+  hideGap(); relayout(); zoomRestore(a, x, y);
+}
+function setPageZoom(u, x, y){
+  u = zoomClamp(u);
+  if (!main.querySelector('.slide') || Math.abs(u - pageZoom) < .001) return paintZoom();
+  if (x == null) [x, y] = zoomMid();
+  const a = zoomAnchor(x, y);
+  pageZoom = u; hideGap(); relayout(); zoomRestore(a, x, y);
+}
+function paintZoom(){
+  const box = $('#zoomBox'); if (!box) return;
+  box.hidden = !main.querySelector('.slide');
+  const fit = Math.abs(pageZoom - 1) < .005, pct = $('#zoomPct');
+  pct.textContent = fit ? 'Fit' : Math.round(pageZoom * 100) + '%';
+  pct.setAttribute('aria-label', fit ? 'Zoom: the pages fit the window' : `Zoom: ${Math.round(pageZoom * 100)}% of the fit. Fit the pages to the window`);
+  $('#zoomIn').disabled = pageZoom >= ZOOM_MAX - .001; $('#zoomOut').disabled = pageZoom <= ZOOM_MIN + .001;
+}
+$('#zoomIn').onclick = () => setPageZoom(ZOOM_STEPS.find(s => s > pageZoom + .01) ?? ZOOM_MAX);
+$('#zoomOut').onclick = () => setPageZoom([...ZOOM_STEPS].reverse().find(s => s < pageZoom - .01) ?? ZOOM_MIN);
+$('#zoomPct').onclick = () => setPageZoom(1);
+// pages scrolled sideways in their column: what follows the page as it scrolls (the page counter, bars over the page) follows this too
+main.addEventListener('scroll', () => document.dispatchEvent(new Event('scroll', {bubbles: true})), {passive: true});
+// two fingers on the pages: they zoom and move with the fingers, as in GoodNotes (the Pencil, or a hand resting by it, never pinches)
+let pinch = null;
+main.addEventListener('touchstart', e => {
+  if (e.touches.length > 2) return pinchEnd();
+  if (e.touches.length !== 2 || !main.querySelector('.slide')) return;
+  const [a, b] = e.touches;
+  if (a.touchType === 'stylus' || b.touchType === 'stylus') return;
+  const x = (a.clientX + b.clientX) / 2, y = (a.clientY + b.clientY) / 2;
+  pinch = {d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1, u: pageZoom, x, y, a: zoomAnchor(x, y), raf: 0, moved: false};
+}, {passive: true});
+main.addEventListener('touchmove', e => {
+  if (!pinch || e.touches.length !== 2) return;
+  e.preventDefault();                                         // (the pages zoom and move, not Safari's whole page)
+  const [a, b] = e.touches;
+  pinch.next = [pinch.u * Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) / pinch.d, (a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2];
+  if (!pinch.raf) pinch.raf = requestAnimationFrame(() => {
+    if (!pinch) return;
+    const [u, x, y] = pinch.next; Object.assign(pinch, {raf: 0, moved: true, x, y});
+    zoomLive(u, x, y, pinch.a);
+  });
+}, {passive: false});
+function pinchEnd(){
+  if (!pinch) return;
+  const p = pinch; pinch = null; cancelAnimationFrame(p.raf);
+  if (p.raf) { const [u, x, y] = p.next; Object.assign(p, {moved: true, x, y}); zoomLive(u, x, y, p.a); }     // (where the fingers were last, even if no frame showed it yet)
+  if (p.moved) zoomCommit(p.x, p.y);
+}
+main.addEventListener('touchend', e => { if (e.touches.length < 2) pinchEnd(); }, {passive: true});
+main.addEventListener('touchcancel', pinchEnd, {passive: true});
+// a double tap with a finger on a slide (not on a note, a button or a word you are editing): zoom in there, and again for the whole slide
+let tapDown = null, tapPrev = null;
+const zoomTapOk = t => !document.body.classList.contains('drawing') && !!t?.closest?.('.slide, .sidepage, .sheet')
+  && !t.closest('.notebox, .note-chip, .gappill, .grip, button, a, input, textarea, select, [contenteditable="true"], img.blk, video, audio, .wguide');
+main.addEventListener('touchstart', e => { const t = e.touches[0]; tapDown = e.touches.length === 1 && t.touchType !== 'stylus' ? {x: t.clientX, y: t.clientY, t: performance.now()} : null; }, {passive: true});
+main.addEventListener('touchmove', e => { const t = e.touches[0]; if (tapDown && (e.touches.length > 1 || Math.hypot(t.clientX - tapDown.x, t.clientY - tapDown.y) > 10)) tapDown = null; }, {passive: true});
+main.addEventListener('touchend', e => {
+  const s = tapDown, now = performance.now(); tapDown = null;
+  if (!s || e.touches.length || now - s.t > 300 || !zoomTapOk(e.target) || !main.querySelector('.slide')) { tapPrev = null; return; }
+  if (tapPrev && now - tapPrev.t < 350 && Math.hypot(s.x - tapPrev.x, s.y - tapPrev.y) < 30) {
+    tapPrev = null; e.preventDefault();                      // (the second tap makes no click)
+    setPageZoom(Math.abs(pageZoom - 1) < .01 ? 2 : 1, s.x, s.y);
+  } else tapPrev = {x: s.x, y: s.y, t: now};
+}, {passive: false});
+// a pinch on a trackpad: Safari's gesture events, and a wheel with Ctrl in the other browsers
+let gest = null;
+main.addEventListener('gesturestart', e => {
+  e.preventDefault();
+  if (pinch || !main.querySelector('.slide')) return;
+  const x = e.clientX ?? zoomMid()[0], y = e.clientY ?? zoomMid()[1];
+  gest = {u: pageZoom, x, y, a: zoomAnchor(x, y)};
+});
+main.addEventListener('gesturechange', e => { e.preventDefault(); if (gest && !pinch) zoomLive(gest.u * e.scale, gest.x, gest.y, gest.a); });
+main.addEventListener('gestureend', e => { e.preventDefault(); if (!gest) return; const g = gest; gest = null; zoomCommit(g.x, g.y); });
+let wheelZoom = null;
+main.addEventListener('wheel', e => {
+  if (!e.ctrlKey || !main.querySelector('.slide')) return;
+  e.preventDefault();
+  if (!wheelZoom) wheelZoom = {x: e.clientX, y: e.clientY, a: zoomAnchor(e.clientX, e.clientY)};
+  zoomLive(pageZoom * Math.exp(-e.deltaY * (e.deltaMode ? .2 : .01)), wheelZoom.x, wheelZoom.y, wheelZoom.a);
+  clearTimeout(wheelZoom.t); wheelZoom.t = setTimeout(() => { const w = wheelZoom; wheelZoom = null; zoomCommit(w.x, w.y); }, 220);
+}, {passive: false});
 
 document.querySelectorAll('.notes-toggle').forEach(b => b.onclick = () => {
   const hide = notesBtnMode() === 'hide';            // do exactly what the button says
@@ -6826,10 +6967,62 @@ function inkItems(card){
   try { const v = JSON.parse(raw || '[]'); if (Array.isArray(v)) items = v.filter(it => it && typeof it === 'object'); } catch {}
   inkCache.set(card, {raw, items}); return items;
 }
-function setInk(card, items){
+function setInkData(card, items){
   if (items.length) card.dataset.ink = JSON.stringify(items); else delete card.dataset.ink;
   inkCache.set(card, {raw: card.dataset.ink || '', items});
-  renderInk(card);
+}
+function setInk(card, items){ setInkData(card, items); renderInk(card); }
+// One stroke added (the pen lifted): its data goes onto the end of the saved list, and it is drawn in an svg of its own, just its size,
+// over the page's other ink, instead of drawing (and writing out) all of the page's ink again, which takes longer the more a page holds
+// (Safari paints a whole svg again when anything in it changes).
+function inkAdd(card, it){
+  const items = [...inkItems(card), it], raw = card.dataset.ink || '', one = JSON.stringify(it);
+  card.dataset.ink = raw.length > 2 ? raw.slice(0, -1) + ',' + one + ']' : '[' + one + ']';
+  inkCache.set(card, {raw: card.dataset.ink, items});
+  if (!isStroke(it)) return renderInk(card);
+  if (card.classList.contains('sidepage')) return inkOne(card, card, it);
+  const [lo, hi] = inkSpan(it);
+  for (const s of card.querySelectorAll(':scope > .strip')) if (hi >= inkNum(s.dataset.y0) && lo <= inkNum(s.dataset.y1)) inkOne(card, s, it);
+}
+// a stroke's own svg in a strip (or on a side page): its box, cut to the strip, in the same page units as the strip's svg
+function inkOne(card, s, it){
+  const side = s === card, W = side ? 0 : inkNum(card.dataset.w), m = penW(it) + 2, b = inkBox(it);
+  const sy0 = side ? -1e9 : inkNum(s.dataset.y0), sy1 = side ? 1e9 : inkNum(s.dataset.y1);
+  const x0 = Math.max(0, b[0] - m), x1 = side ? b[2] + m : Math.min(W, b[2] + m), y0 = Math.max(side ? 0 : sy0, b[1] - m), y1 = Math.min(sy1, b[3] + m);
+  if (x1 <= x0 || y1 <= y0) return;
+  const svg = svgEl('svg', {class: 'ink one', viewBox: `${inkR1(x0)} ${inkR1(y0)} ${inkR1(x1 - x0)} ${inkR1(y1 - y0)}`, preserveAspectRatio: 'none', 'aria-hidden': 'true'});
+  if (side) svg.style.cssText = `left:${x0}px;top:${y0}px;width:${x1 - x0}px;height:${y1 - y0}px`;
+  else { const H = (sy1 - sy0) || 1; svg.style.cssText = `left:${x0 / W * 100}%;top:${(y0 - sy0) / H * 100}%;width:${(x1 - x0) / W * 100}%;height:${(y1 - y0) / H * 100}%`; }
+  const after = [...s.querySelectorAll(':scope > svg.ink')].pop();          // (with the page's other ink: under the words and notes)
+  if (after) after.after(svg); else s.prepend(svg);
+  inkPut(svg, it, W);
+}
+// which paths in an svg draw which item, so the eraser can change only what it touched
+const inkMap = new WeakMap();
+function inkPut(svg, it, W, before = null){
+  const nodes = inkNodes(it, W);
+  for (const n of nodes) svg.insertBefore(n, before);
+  let m = inkMap.get(svg); if (!m) inkMap.set(svg, m = new Map()); m.set(it, nodes);
+}
+// The eraser, as it goes: the strokes it took away leave the page and the pieces it left go in their place; the rest is not touched.
+// (Anything not drawn by stripInk or inkAdd, so not in inkMap, is drawn again in full.)
+function inkShow(card, items){
+  const side = card.classList.contains('sidepage'), W = side ? 0 : inkNum(card.dataset.w);
+  const surfs = side ? [card] : [...card.querySelectorAll(':scope > .strip')];
+  for (const s of surfs) {
+    const all = [...s.querySelectorAll(':scope > svg.ink')], svg = all.find(g => !g.classList.contains('one')), ones = all.filter(g => g !== svg);
+    if (all.some(g => !inkMap.get(g))) return renderInk(card);
+    const y0 = side ? -1e9 : inkNum(s.dataset.y0), y1 = side ? 1e9 : inkNum(s.dataset.y1);
+    const want = items.filter(it => { if (side) return true; const [lo, hi] = inkSpan(it); return hi >= y0 && lo <= y1; }), keep = new Set(want), alone = new Set();
+    for (const g of ones) { const [it] = inkMap.get(g).keys(); if (keep.has(it)) alone.add(it); else g.remove(); }      // (a stroke drawn in an svg of its own goes with its svg)
+    const rest = want.filter(it => !alone.has(it));
+    if (!svg && !rest.length) continue;
+    const g = svg || inkSvg(card, s), map = inkMap.get(g) || new Map();
+    for (const [it, nodes] of map) if (!keep.has(it)) { nodes.forEach(n => n.remove()); map.delete(it); }
+    inkMap.set(g, map);
+    let next = null;                                   // new pieces go just before the next item that is still there, so the order stays
+    for (let i = rest.length - 1; i >= 0; i--) { const it = rest[i]; if (map.has(it)) next = map.get(it)[0]; else { inkPut(g, it, W, next); next = map.get(it)[0] || next; } }
+  }
 }
 // a stroke as a smooth path (the same one is used on screen and in the PDF)
 function inkPath(p){
@@ -6905,8 +7098,20 @@ function badgeAt(it, W){
   const rs = rectsOf(it), last = rs[rs.length - 1]; if (!last) return null;
   return [Math.min(inkNum(last[0]) + inkNum(last[2]) + 1.5, W - BADGE_W - 1), inkNum(last[1]) - 1];
 }
-// the top and bottom of an item, in page units
+// a stroke's box in page units, and its top and bottom, worked out once (a stroke never changes once made: the eraser makes new ones)
+const inkBoxes = new WeakMap(), inkSpans = new WeakMap();
+function inkBox(it){
+  let b = inkBoxes.get(it);
+  if (!b) { b = [1e9, 1e9, -1e9, -1e9]; for (const q of strokePts(it)) { b[0] = Math.min(b[0], q[0]); b[1] = Math.min(b[1], q[1]); b[2] = Math.max(b[2], q[0]); b[3] = Math.max(b[3], q[1]); } inkBoxes.set(it, b); }
+  return b;
+}
 function inkSpan(it){
+  if (!isStroke(it)) return inkSpanOf(it);
+  let s = inkSpans.get(it); if (!s) inkSpans.set(it, s = inkSpanOf(it));
+  return s;
+}
+// the top and bottom of an item, in page units
+function inkSpanOf(it){
   let lo = 1e9, hi = -1e9;
   if (it.k === 'mark') for (const r of rectsOf(it)) { lo = Math.min(lo, inkNum(r[1])); hi = Math.max(hi, inkNum(r[1]) + inkNum(r[3]) + BADGE_H); }
   else { const sp = strokePts(it); for (const q of sp) { lo = Math.min(lo, q[1]); hi = Math.max(hi, q[1]); } if (hasPr(sp)) return [lo - penW(it) * .85 - 2, hi + penW(it) * .85 + 2]; }
@@ -6930,15 +7135,15 @@ function inkSvg(card, s){
 }
 // the ink for one strip: everything on the card, cropped to this slice of the page by the viewBox
 function stripInk(card, s){
-  s.querySelector(':scope > svg.ink')?.remove();
+  s.querySelectorAll(':scope > svg.ink').forEach(g => g.remove());
   const items = inkItems(card); if (!items.length) return;
   const y0 = inkNum(s.dataset.y0), y1 = inkNum(s.dataset.y1), W = inkNum(card.dataset.w), svg = inkSvg(card, s);
-  for (const it of items) { const [lo, hi] = inkSpan(it); if (hi >= y0 && lo <= y1) svg.append(...inkNodes(it, W)); }
+  for (const it of items) { const [lo, hi] = inkSpan(it); if (hi >= y0 && lo <= y1) inkPut(svg, it, W); }
 }
 function renderInk(card){
   if (card.classList.contains('sidepage')) {
-    card.querySelector(':scope > svg.ink')?.remove();
-    const items = inkItems(card); if (items.length) inkSvg(card, card).append(...items.flatMap(it => inkNodes(it, 0)));
+    card.querySelectorAll(':scope > svg.ink').forEach(g => g.remove());
+    const items = inkItems(card); if (items.length) { const svg = inkSvg(card, card); for (const it of items) inkPut(svg, it, 0); }
     return;
   }
   for (const s of card.querySelectorAll(':scope > .strip')) stripInk(card, s);
@@ -7181,6 +7386,8 @@ const reachOf = (it, p, r) => penW(it) * (hasPr(p) ? .85 : .5) + r;
 // does the eraser, going from a to b, touch this stroke?
 function strokeHit(it, a, b, r){
   if (!isStroke(it)) return false;
+  const bx = inkBox(it), m = penW(it) * .85 + r;     // (a quick no: the eraser is nowhere near the stroke's box)
+  if (Math.max(a[0], b[0]) < bx[0] - m || Math.min(a[0], b[0]) > bx[2] + m || Math.max(a[1], b[1]) < bx[1] - m || Math.min(a[1], b[1]) > bx[3] + m) return false;
   const p = strokePts(it), reach = reachOf(it, p, r);
   if (p.length === 1) return segDist(p[0], a, b) <= reach;
   for (let i = 1; i < p.length; i++) if (segSeg(p[i - 1], p[i], a, b) <= reach) return true;
@@ -7209,17 +7416,93 @@ function eraseBits(it, a, b, r){
   if (out.length === 1 && out[0].length === q.length) return [it];
   return out.filter(x => x.length > 1).map(x => ({...it, p: x}));
 }
-// the stroke being drawn shows as it goes, in every strip it passes through
-function liveInk(card, tool, pts, w){
-  const a = strokeAttrs(tool, pts, ds.colors[tool], penW({k: tool, w}));
-  for (const s of card.classList.contains('sidepage') ? [card] : card.querySelectorAll(':scope > .strip')) {
-    const svg = s.querySelector(':scope > svg.ink') || inkSvg(card, s);
-    let p = svg.querySelector(':scope > path.live');
-    if (!p) { p = svgEl('path', {class: 'live ' + tool}); svg.append(p); }
-    for (const k in a) p.setAttribute(k, a[k]);
-    if (a.stroke === 'none') for (const k of ['stroke-width', 'stroke-linecap', 'stroke-linejoin']) p.removeAttribute(k);
+// ---------- the stroke being drawn ----------
+// While the pen moves, the stroke is painted on one canvas laid over the window, with the same shapes as the saved ink (paintStroke, as
+// in the PDF), and nothing on the page itself changes: no svg is touched, laid out or redrawn until the pen lifts and the stroke joins
+// the page's ink (inkAdd), in the same frame as the canvas is cleared. Where the page's slices are on screen is measured once per stroke.
+const liveCv = document.createElement('canvas'); liveCv.className = 'inklive'; liveCv.hidden = true; liveCv.setAttribute('aria-hidden', 'true'); document.body.append(liveCv);
+let liveCtx = null;
+function inkGeo(card, strip){
+  const top = appbar.offsetParent ? appbar.getBoundingClientRect().bottom : 0, bar = $('#statusbar'), bottom = bar.offsetParent ? bar.getBoundingClientRect().top : innerHeight, m = main.getBoundingClientRect();
+  const view = {l: Math.max(0, m.left), t: Math.max(0, top), r: Math.min(innerWidth, m.right), b: Math.min(innerHeight, bottom)};
+  if (strip) return {view, W: +card.dataset.w || 1, strips: [...card.querySelectorAll(':scope > .strip')].map(s => ({r: s.getBoundingClientRect(), y0: +s.dataset.y0, y1: +s.dataset.y1}))};
+  const r = card.getBoundingClientRect(), k = r.width / (card.offsetWidth || 1);
+  return {view, side: {r, k, cl: card.clientLeft, ct: card.clientTop}};
+}
+// The canvas, the size of the window. Once made it stays on screen, empty when nothing is being drawn (it lets every touch through):
+// showing and hiding something this big costs Safari a long frame each time, which would be a stutter as the pen goes down and lifts.
+function liveReady(){
+  const dpr = Math.min(3, devicePixelRatio || 1), w = Math.round(innerWidth * dpr), h = Math.round(innerHeight * dpr);
+  if (liveCv.width !== w || liveCv.height !== h) { liveCv.width = w; liveCv.height = h; liveCtx = null; }
+  liveCv.style.width = innerWidth + 'px'; liveCv.style.height = innerHeight + 'px';
+  liveCtx ||= liveCv.getContext('2d', {desynchronized: true}) || liveCv.getContext('2d');     // (desynchronized: shown sooner where the browser can)
+  liveCv.hidden = false;
+  return dpr;
+}
+function liveBegin(tool){
+  const dpr = liveReady();
+  liveCv.style.mixBlendMode = tool === 'hl' ? 'multiply' : '';                                // (the highlighter darkens what is under it, as on the page)
+  return dpr;
+}
+// on a tablet it is made ready before the first stroke (and again when the window changes size), so that stroke starts smoothly too
+if (matchMedia('(pointer:coarse)').matches) {
+  const warm = () => { if (main.querySelector('.pagecard, .sidepage')) liveReady(); };
+  addEventListener('load', () => setTimeout(warm, 1500));
+  let warmT = 0; addEventListener('resize', () => { if (!liveCv.hidden) { clearTimeout(warmT); warmT = setTimeout(warm, 400); } });
+}
+// Paint the stroke in each slice of the page it crosses, cut to what can be seen. Only the bit of the page that changed since the last
+// frame is cleared and painted again (box: page units; null for all of the stroke), from the stroke's one path, so a highlighter or the
+// pencil (which are see-through) is no darker where it crosses itself or where one frame's bit meets the next.
+function livePaint(geo, dpr, it, box){
+  const c = liveCtx; if (!c) return;
+  const v = geo.view, parts = geo.strips || [geo.side];
+  for (const p of parts) {
+    if (geo.strips && box && (box[3] < p.y0 || box[1] > p.y1)) continue;
+    const r = p.r, ky = geo.strips ? r.height / ((p.y1 - p.y0) || 1) : p.k, kx = geo.strips ? r.width / geo.W : p.k;
+    const ox = geo.strips ? r.left : r.left + p.cl * p.k, oy = geo.strips ? r.top - p.y0 * ky : r.top + p.ct * p.k;
+    let l = Math.max(r.left, v.l), t = Math.max(r.top, v.t), rr = Math.min(r.right, v.r), b = Math.min(r.bottom, v.b);
+    if (box) { l = Math.max(l, ox + box[0] * kx - 1); t = Math.max(t, oy + box[1] * ky - 1); rr = Math.min(rr, ox + box[2] * kx + 1); b = Math.min(b, oy + box[3] * ky + 1); }
+    if (rr <= l || b <= t) continue;
+    const X = Math.floor(l * dpr), Y = Math.floor(t * dpr), X2 = Math.ceil(rr * dpr), Y2 = Math.ceil(b * dpr);
+    c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(X, Y, X2 - X, Y2 - Y);
+    c.save(); c.beginPath(); c.rect(X, Y, X2 - X, Y2 - Y); c.clip();
+    c.setTransform(dpr * kx, 0, 0, dpr * ky, dpr * ox, dpr * oy);
+    paintLive(c, it);
+    c.restore();
   }
 }
+// The stroke being drawn, as a Path2D made straight from its points (the same shapes as inkOutline and inkPath, so it looks the same
+// once saved), and painted as paintStroke does: no text to build and read back on every frame, and much less for Safari to clear away.
+function livePath(k, p, w){
+  const path = new Path2D(), n = p.length;
+  if (!n) return {path, fill: false};
+  const edge = e => {
+    const m = e.length; if (m === 2) return path.lineTo(e[1][0], e[1][1]);
+    for (let i = 1; i < m - 1; i++) path.quadraticCurveTo(e[i][0], e[i][1], (e[i][0] + e[i + 1][0]) / 2, (e[i][1] + e[i + 1][1]) / 2);
+    path.lineTo(e[m - 1][0], e[m - 1][1]);
+  };
+  if (!((k === 'pen' || k === 'pc') && hasPr(p))) { path.moveTo(p[0][0], p[0][1]); if (n === 1) path.lineTo(p[0][0], p[0][1]); else edge(p); return {path, fill: false}; }
+  const r = p.map(q => prW(w, q[2]) / 2 || .1);
+  if (n === 1) { path.arc(p[0][0], p[0][1], r[0], 0, 2 * Math.PI); return {path, fill: true}; }
+  const L = [], R = [];
+  for (let i = 0; i < n; i++) {
+    const a = p[Math.max(0, i - 1)], b = p[Math.min(n - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1, nx = -dy / l * r[i], ny = dx / l * r[i];
+    L.push([p[i][0] + nx, p[i][1] + ny]); R.push([p[i][0] - nx, p[i][1] - ny]);
+  }
+  path.moveTo(L[0][0], L[0][1]); edge(L);
+  const ae = Math.atan2(L[n - 1][1] - p[n - 1][1], L[n - 1][0] - p[n - 1][0]); path.arc(p[n - 1][0], p[n - 1][1], r[n - 1], ae, ae - Math.PI, true);     // (round end)
+  R.reverse(); edge(R);
+  const as = Math.atan2(R[n - 1][1] - p[0][1], R[n - 1][0] - p[0][0]); path.arc(p[0][0], p[0][1], r[0], as, as - Math.PI, true);                      // (round start)
+  path.closePath();
+  return {path, fill: true};
+}
+function paintLive(ctx, it){
+  const w = penW(it), {path, fill} = livePath(it.k, it.p, w), pc = it.k === 'pc' && grainFill(ctx, it.c), col = inkHex(it.c);
+  ctx.globalAlpha = it.k === 'hl' ? .35 : pc ? .9 : 1; ctx.globalCompositeOperation = it.k === 'hl' ? 'multiply' : 'source-over';
+  if (fill) { ctx.fillStyle = pc || col; ctx.fill(path); return; }
+  ctx.strokeStyle = pc || col; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(path);
+}
+function liveEnd(){ if (liveCtx) { liveCtx.setTransform(1, 0, 0, 1, 0, 0); liveCtx.clearRect(0, 0, liveCv.width, liveCv.height); } liveCv.style.mixBlendMode = ''; }
 // how many screen pixels a page unit is, on a strip of a PDF page or on a side page
 const unitPx = (card, strip) => strip ? strip.getBoundingClientRect().width / (+card.dataset.w || 1) : card.getBoundingClientRect().width / (card.offsetWidth || 1);
 function ringAt(ev, card, strip){
@@ -7251,6 +7534,9 @@ function textNote(card, x, y){
 // Apple Pencil (or any pen) draws by itself with the tool picked, while fingers scroll and tap: "Apple Pencil draws automatically" in Settings
 const penAuto = () => pref.get('pen-auto', '1') !== '0';
 let penLive = 0, fingerInk = null;                   // penLive: a pen stroke is going, so other touches are a resting palm; fingerInk: a finger stroke that a pen can cancel
+// while the pen writes, a hand resting on the page doesn't start selecting words (its touches are stopped as they start, below). This
+// isn't a style on the body: changing one there makes Safari work out the style of the whole page again, a stutter as the pen goes down.
+document.addEventListener('selectstart', e => { if (penLive) e.preventDefault(); });
 // where ink goes: a strip of a PDF page, or a side page (not on a note: pen strokes there are for writing, with Scribble)
 function inkTarget(t){
   if (!t?.closest || t.closest('.notebox, .gappill, .cardbar')) return null;
@@ -7272,20 +7558,21 @@ main.addEventListener('pointerdown', e => {
   const W = +card.dataset.w, u = mmUnits(card), pts = [], t0 = Date.now(), x0 = e.clientX, y0 = e.clientY;
   const col = ds.colors[tool], w = Math.round(ds.thickness[tool] * u / (tool === 'hl' ? 4 : 1) * 100) / 100, er = tool === 'er' ? ds.thickness.er * u / 2 : 0, part = ds.eraserMode === 'part';
   let far = false, pr = null, dead = false;
+  // where the page's slices are on screen: measured once, as the page doesn't move under the pen (and again if it scrolls all the same)
+  let geo = inkGeo(card, strip);
+  const regeo = () => { geo = inkGeo(card, strip); full = true; if (!raf) raf = requestAnimationFrame(paint); };
   // the point on the page under the pointer: the strip it is over decides (over a note in between, the last point stays)
   const at = strip ? ev => {
-    for (const s of card.querySelectorAll(':scope > .strip')) {
-      const r = s.getBoundingClientRect();
+    for (const {r, y0, y1} of geo.strips) {
       if (ev.clientY < r.top || ev.clientY > r.bottom || !r.width) continue;
-      const y0 = +s.dataset.y0, y1 = +s.dataset.y1;
       return [inkR1(Math.min(W, Math.max(0, (ev.clientX - r.left) / r.width * W))), inkR1(y0 + (ev.clientY - r.top) / r.height * (y1 - y0))];
     }
     return null;
   } : ev => {                                        // a side page: pixels from its top left corner
-    const r = card.getBoundingClientRect(), k = r.width / (card.offsetWidth || 1);
-    return [inkR1(Math.max(0, (ev.clientX - r.left) / k - card.clientLeft)), inkR1(Math.max(0, (ev.clientY - r.top) / k - card.clientTop))];
+    const {r, k, cl, ct} = geo.side;
+    return [inkR1(Math.max(0, (ev.clientX - r.left) / k - cl)), inkR1(Math.max(0, (ev.clientY - r.top) / k - ct))];
   };
-  let items = inkItems(card), erased = false, raf = 0, last = null;
+  let items = inkItems(card), erased = false, raf = 0, last = null, ahead = [], shown = [], drawn = 0, full = true;
   const erase = pt => {                              // whole strokes the eraser touches, or (partial) only the bits under it
     const a = last || pt, out = []; let got = false; last = pt;
     for (const it of items) {
@@ -7303,28 +7590,51 @@ main.addEventListener('pointerdown', e => {
     if (!l || Math.hypot(pt[0] - l[0], pt[1] - l[1]) >= 1) pts.push(pt);
   };
   const take = ev => { if (dead) return; const pt = at(ev); if (pt) { if (tool === 'er') erase(pt); else add(pt, ev); } };
-  const paint = () => { raf = 0; if (tool === 'er') { if (erased) setInk(card, items); } else liveInk(card, tool, pts, w); };
+  const reach = penW({k: tool, w}) + 2;
+  // each frame: the eraser changes only what it touched; a stroke is painted on the canvas, reaching a little ahead to where the pen is
+  // about to be where the browser can tell (that bit is never saved)
+  const paint = () => {
+    raf = 0;
+    if (tool === 'er') { if (erased) inkShow(card, items); return; }
+    const p = ahead.length && pts.length ? pts.concat(ahead) : pts;
+    let box = null;                                  // what changed: the last points drawn (their shape changes as the stroke goes on), the new ones, and the old and new bit ahead
+    if (full) { liveCtx?.setTransform(1, 0, 0, 1, 0, 0); liveCtx?.clearRect(0, 0, liveCv.width, liveCv.height); }
+    else {
+      box = [1e9, 1e9, -1e9, -1e9];
+      const grow = q => { box[0] = Math.min(box[0], q[0]); box[1] = Math.min(box[1], q[1]); box[2] = Math.max(box[2], q[0]); box[3] = Math.max(box[3], q[1]); };
+      for (let i = Math.max(0, drawn - 3); i < pts.length; i++) grow(pts[i]);
+      shown.forEach(grow); ahead.forEach(grow);
+      box = [box[0] - reach, box[1] - reach, box[2] + reach, box[3] + reach];
+    }
+    livePaint(geo, dpr, {k: tool, c: col, w, p}, box);
+    drawn = pts.length; shown = ahead; full = false;
+  };
+  const dpr = tool === 'er' ? 1 : liveBegin(tool);
   take(e); paint();
   if (er) ringAt(e, card, strip);
+  addEventListener('scroll', regeo, true);
   try { surf.setPointerCapture(e.pointerId); } catch {}
   const move = ev => {
     if (ev.pointerId !== e.pointerId) return;
     if (Math.hypot(ev.clientX - x0, ev.clientY - y0) > 3) far = true;
     for (const q of (ev.getCoalescedEvents?.() || []).length ? ev.getCoalescedEvents() : [ev]) take(q);
+    if (tool !== 'er') { ahead = []; for (const q of ev.getPredictedEvents?.() || []) { const pt = at(q); if (pt) { if (pts.length && pts[pts.length - 1].length > 2) pt.push(pts[pts.length - 1][2]); ahead.push(pt); } } }
     if (er) ringAt(ev, card, strip);
     if (!raf) raf = requestAnimationFrame(paint);
   };
   const end = save => {
     surf.removeEventListener('pointermove', move); surf.removeEventListener('pointerup', up); surf.removeEventListener('pointercancel', up);
+    removeEventListener('scroll', regeo, true);
     cancelAnimationFrame(raf);
     if (pen && !--penLive) setTimeout(() => { if (!penLive) document.body.classList.remove('penning'); }, 300);
     if (fingerInk === me) fingerInk = null;
-    if (tool === 'er') { if (e.pointerType !== 'mouse') erRing.hidden = true; if (erased) { setInk(card, items); saveSoon(); } return; }
-    if (!save || dead) { renderInk(card); return; }
-    if (auto && !far && Date.now() - t0 < 500) { renderInk(card); return; }          // a tap with the pen: not a dot (it can show "+ Add here")
+    if (tool === 'er') { if (e.pointerType !== 'mouse') erRing.hidden = true; if (erased) { setInkData(card, items); inkShow(card, items); saveSoon(); } return; }
+    const tap = auto && !far && Date.now() - t0 < 500;                  // (a tap with the pen is not a dot: it can show "+ Add here")
+    if (save && !dead && !tap && pts.length) inkAdd(card, {k: tool, c: col, w, p: pts});
+    liveEnd();                                        // (in the same frame as the stroke joins the page, so it never blinks)
+    if (!save || dead || tap) return;
     if (auto) swallow(300);                           // (the click that follows a stroke is not a tap)
-    if (!pts.length) { renderInk(card); return; }
-    setInk(card, [...inkItems(card), {k: tool, c: col, w, p: pts}]);
+    if (!pts.length) return;
     if (card.classList.contains('sidepage')) sideSoon();
     saveSoon();
   };
@@ -10196,6 +10506,9 @@ const CK_ACTIONS = [
   {id: 'odnbs', label: 'Your notebooks in OneDrive', ico: 'onedrive', words: 'onedrive microsoft sync carry on continue another device ipad phone laptop cloud', ok: () => !!ONEDRIVE.clientId, run: () => cloudNotebooks(CLOUD.onedrive)},
   {id: 'focus', label: 'Focus mode', ico: 'focus', hint: 'Ctrl+Shift+F', words: 'hide toolbar panels distraction', run: ckClick('#focusBtn')},
   {id: 'study', label: 'Study mode', ico: 'book', words: 'read only revise', run: ckClick('#readBtn')},
+  {id: 'zoomin', label: 'Zoom in', ico: 'plus', words: 'bigger larger pages magnify enlarge write ipad pencil', ok: ckPages, run: ckClick('#zoomIn')},
+  {id: 'zoomout', label: 'Zoom out', ico: 'minus', words: 'smaller pages shrink', ok: ckPages, run: ckClick('#zoomOut')},
+  {id: 'zoomfit', label: 'Fit the pages to the window', ico: 'monitor', words: 'zoom reset whole page 100', ok: ckPages, run: () => setPageZoom(1)},
   {id: 'sidebg', label: 'Side page background', ico: 'palette', words: 'side notes paper colour pattern lined grid dots cream dark', run: () => openSideBg($('#sideBgBtn'))},
   {id: 'install', label: 'Install as an app', ico: 'download', words: 'add to home screen ipad iphone android dock offline app pwa', run: () => installNow()},
   {id: 'tips', label: 'Show tips on or off', ico: 'lightbulb', words: 'help hints coach teaching messages', run: () => setTips(!tipsOn())},
