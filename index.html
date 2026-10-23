@@ -251,7 +251,8 @@ main.zoomed.fit.side-on:not(.side-split):not(.side-stack){justify-content:start}
 /* (nothing on a page is cut off: a note can hang over its edge, and the picture's corners are rounded like the page's) */
 .pagecard > .strip:first-child{border-top-left-radius:inherit;border-top-right-radius:inherit}
 .pagecard > .strip:not(:has(~ .strip, ~ .notebox:not(.floating))){border-bottom-left-radius:inherit;border-bottom-right-radius:inherit}
-.strip{position:relative;overflow:hidden;width:100%;max-width:100%;background-image:var(--pg);background-size:100% auto;background-repeat:no-repeat;cursor:text;font-size:0;color:transparent;container-type:inline-size}
+.strip{position:relative;overflow:hidden;width:100%;max-width:100%;background-image:var(--pg);background-size:100% auto;background-repeat:no-repeat;cursor:text;font-size:0;color:transparent;container-type:inline-size;isolation:isolate}
+.strip>canvas.sharp{position:absolute;z-index:-1;pointer-events:none}      /* zoomed in, the page drawn again sharp: over the picture, under the ink and the words */
 .tl{position:absolute;white-space:pre;line-height:1;transform-origin:0 0;color:transparent;background:transparent;font-family:Arial,Helvetica,sans-serif;cursor:text;forced-color-adjust:none} /* never painted: a high-contrast theme would otherwise show it as text on solid blocks over the page */
 .tl::selection{background:rgba(39,71,201,.3);color:transparent}
 .gapline{position:absolute;left:0;right:0;border-top:2px dashed var(--accent);pointer-events:none;z-index:2}
@@ -3919,11 +3920,15 @@ return {deck: ppDeck, render: ppRender};
 })();
 
 // ---------- PDF: the real page, background graphics removed, opened up where you add notes ----------
+// fonts a PDF leaves out (Symbol, Times…) and the character maps of Chinese, Japanese and Korean text come from the pdf.js package
+const PDF_LIB = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/';
+const pdfOpen = buf => pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false, cMapUrl: PDF_LIB + 'cmaps/', cMapPacked: true, standardFontDataUrl: PDF_LIB + 'standard_fonts/'}).promise;
+const PDF_S = 2;                         // a PDF page's picture: pixels per point (sharp at the fit on a 2× screen; zoomed in, sharpen() draws it again)
 async function readPdf(buf, name){
   const home = curId;                    // switching notebook while it reads stops it (the pages would go into the other notebook)
-  // fonts a PDF leaves out (Symbol, Times…) and the character maps of Chinese, Japanese and Korean text come from the pdf.js package
-  const lib = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/';
-  const pdf = await pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false, cMapUrl: lib + 'cmaps/', cMapPacked: true, standardFontDataUrl: lib + 'standard_fonts/'}).promise;
+  // the PDF itself is kept too (in this browser, not in notebook files), so a page can be drawn again sharp when it is zoomed in
+  const src = await addAsset(new Blob([buf], {type: 'application/pdf'}));
+  const pdf = await pdfOpen(buf);
   const OPS = pdfjsLib.OPS, mul = pdfjsLib.Util.transform, n = pdf.numPages;
 
   // first look: the same picture (as many pixels across and down) in the same place on many pages, at the edge of the page,
@@ -3957,11 +3962,12 @@ async function readPdf(buf, name){
   for (let p = 1; p <= n; p++) {
     away(home); toast(`Reading ${name}: page ${p} of ${n}`);
     const page = await pdf.getPage(p);
-    const S = 2, v = page.getViewport({scale: S}), W = v.width / S, H = v.height / S;
+    const S = PDF_S, v = page.getViewport({scale: S}), W = v.width / S, H = v.height / S;
     const cv = document.createElement('canvas'); cv.width = v.width; cv.height = v.height;
     const ctx = cv.getContext('2d', {willReadFrequently: true});
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
-    skipBackgrounds(ctx, S, W, H, [...placed[p - 1]].filter(template).map(k => k.split(',').slice(0, 4).map(Number)));
+    const rep = [...placed[p - 1]].filter(template).map(k => k.split(',').slice(0, 4).map(Number));
+    skipBackgrounds(ctx, S, W, H, rep);
     await page.render({canvasContext: ctx, viewport: v, background: 'rgba(0,0,0,0)'}).promise;
     // page colour = the most common colour
     let px = ctx.getImageData(0, 0, cv.width, cv.height).data;
@@ -3973,14 +3979,15 @@ async function readPdf(buf, name){
     const colInk = x => { let c = 0, t = 0; for (let y = 0; y < cv.height; y += 4) { t++; if (inked((y * cv.width + x) * 4)) c++; } return c / t; };
     const rowInk = y => { let c = 0, t = 0; for (let x = 0; x < cv.width; x += 4) { t++; if (inked((y * cv.width + x) * 4)) c++; } return c / t; };
     ctx.fillStyle = `rgb(${bgKey.join(',')})`;
+    const out = [], paint = (x, y, w, h) => { ctx.fillRect(x, y, w, h); out.push([x, y, w, h].map(n => +(n / S).toFixed(2))); };     // (kept in points, for the sharp drawing)
     let L = 0; while (L < cv.width * 0.12 && colInk(L) > 0.8) L++;
     let R = cv.width - 1; while (R > cv.width * 0.88 && colInk(R) > 0.8) R--;
     let T = 0; while (T < cv.height * 0.06 && rowInk(T) > 0.8) T++;
     let B = cv.height - 1; while (B > cv.height * 0.94 && rowInk(B) > 0.8) B--;
-    if (L > 0 && L < cv.width * 0.12) ctx.fillRect(0, 0, L + 2, cv.height);
-    if (R < cv.width - 1 && R > cv.width * 0.88) ctx.fillRect(R - 2, 0, cv.width - R + 2, cv.height);
-    if (T > 0 && T < cv.height * 0.06) ctx.fillRect(0, 0, cv.width, T + 2);
-    if (B < cv.height - 1 && B > cv.height * 0.94) ctx.fillRect(0, B - 2, cv.width, cv.height - B + 2);
+    if (L > 0 && L < cv.width * 0.12) paint(0, 0, L + 2, cv.height);
+    if (R < cv.width - 1 && R > cv.width * 0.88) paint(R - 2, 0, cv.width - R + 2, cv.height);
+    if (T > 0 && T < cv.height * 0.06) paint(0, 0, cv.width, T + 2);
+    if (B < cv.height - 1 && B > cv.height * 0.94) paint(0, B - 2, cv.width, cv.height - B + 2);
     // slide numbers are painted out: a number alone on its line, in the top or bottom margin, in a corner or the middle,
     // that counts along with the pages (slide 7 is numbered 4 to 10). Any other number is part of the slide and stays.
     const tc = await page.getTextContent();
@@ -3996,7 +4003,7 @@ async function readPdf(buf, name){
     for (const i of tc.items.filter(isSlideNo)) {
       const t = i.transform, size = Math.hypot(t[2], t[3]) || i.height || 10;
       const [x, y] = v.convertToViewportPoint(t[4], t[5]);
-      ctx.fillRect(x - 3 * S, y - size * 1.05 * S, (i.width + 6) * S, size * 1.4 * S);
+      paint(x - 3 * S, y - size * 1.05 * S, (i.width + 6) * S, size * 1.4 * S);
     }
     px = ctx.getImageData(0, 0, cv.width, cv.height).data;
     // blank rows: where the page can open up without cutting through anything
@@ -4011,16 +4018,18 @@ async function readPdf(buf, name){
     await addPageCard(cv, S, W, H, gaps, tc.items.filter(i => i.str && i.str.trim() && !isSlideNo(i)).map(i => {
       const t = i.transform, [x, y] = v.convertToViewportPoint(t[4], t[5]);
       return [i.str, +(x / S).toFixed(1), +(y / S).toFixed(1), +(Math.hypot(t[2], t[3]) || i.height || 10).toFixed(1), +(i.width).toFixed(1), i.hasEOL ? 1 : 0];
-    }), 0.88, home);
+    }), 0.88, home, {src, p, rep, out, bg: bgKey.join(',')});
     cv.width = cv.height = 0; page.cleanup();          // let go of the drawing at once: Safari on an iPad has little room for canvases, and a long PDF would run out
   }
 }
-// a page picture (stored once, as an asset) with its words and the gaps between lines, as a card at the end of the notebook
-async function addPageCard(cv, S, W, H, gaps, items, quality = 0.88, home = curId){
+// a page picture (stored once, as an asset) with its words and the gaps between lines, as a card at the end of the notebook.
+// From a PDF, the card also names the PDF (data-pdfsrc) and how its page was drawn (data-pdf), to draw it again sharp when zoomed in.
+async function addPageCard(cv, S, W, H, gaps, items, quality = 0.88, home = curId, pdf = null){
   away(home);
   const card = document.createElement('section');
   card.className = 'slide pagecard';
   card.dataset.w = W.toFixed(1); card.dataset.h = H.toFixed(1); card.dataset.gaps = JSON.stringify(gaps);
+  if (pdf) { const {src, ...how} = pdf; card.dataset.pdfsrc = src; card.dataset.pdf = JSON.stringify(how); }
   const pic = await new Promise(r => cv.toBlob(r, 'image/jpeg', quality));
   card.style.setProperty('--pg', `url(${pic ? await addAsset(pic) : cv.toDataURL('image/jpeg', quality)})`);
   card.dataset.text = JSON.stringify(items);
@@ -4030,8 +4039,9 @@ async function addPageCard(cv, S, W, H, gaps, items, quality = 0.88, home = curI
 const boxKey = b => [b.l, b.t, b.r, b.b].map(x => Math.round(x / 4) * 4).join(',');
 
 // Leave out page backgrounds, edge banners and repeated template pictures while the page is drawn
-function skipBackgrounds(ctx, S, W, H, repeated){
-  const devBox = pts => { const m = ctx.getTransform(); const q = pts.map(([x, y]) => [(m.a*x + m.c*y + m.e) / S, (m.b*x + m.d*y + m.f) / S]);
+// (ox, oy: where the canvas starts on the page, in its pixels, when only a part of the page is drawn)
+function skipBackgrounds(ctx, S, W, H, repeated, ox = 0, oy = 0){
+  const devBox = pts => { const m = ctx.getTransform(); const q = pts.map(([x, y]) => [(m.a*x + m.c*y + m.e + ox) / S, (m.b*x + m.d*y + m.f + oy) / S]);
     return {l: Math.min(...q.map(a => a[0])), r: Math.max(...q.map(a => a[0])), t: Math.min(...q.map(a => a[1])), b: Math.max(...q.map(a => a[1]))}; };
   const isRepeat = b => repeated.some(r => Math.abs(r[0] - b.l) < 6 && Math.abs(r[1] - b.t) < 6 && Math.abs(r[2] - b.r) < 6 && Math.abs(r[3] - b.b) < 6);
   const drawImage = ctx.drawImage.bind(ctx);
@@ -4839,9 +4849,12 @@ function notebookName(){
   const h = main.querySelector('.file-head');
   return ((h && h.textContent.trim()) || 'My notes').replace(/[\\/:*?"<>|]+/g, ' ').slice(0, 80).trim() || 'My notes';
 }
-function currentDoc(){
+// (file: for a notebook file, which leaves the PDFs behind: they are kept in this browser only, to zoom in sharp; a file, uploaded again
+// every minute while it is in Google Drive or OneDrive, would be the size of each PDF again)
+function currentDoc(file = false){
   const c = main.cloneNode(true);
-  c.querySelectorAll('.gapline, .gappill, .welcome, .empty, .cardbar, .pptx-tip').forEach(x => x.remove());
+  if (file) c.querySelectorAll('[data-pdfsrc]').forEach(x => { x.removeAttribute('data-pdfsrc'); x.removeAttribute('data-pdf'); });
+  c.querySelectorAll('.gapline, .gappill, .welcome, .empty, .cardbar, .pptx-tip, canvas.sharp').forEach(x => x.remove());
   c.querySelectorAll('.media-sel, .target-page, .multi-sel, .flash, .drop-target, .touched').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel', 'flash', 'drop-target', 'touched'));
   c.querySelectorAll('.mine').forEach(x => { x.contentEditable = 'true'; });
   c.querySelectorAll('.tpl .rev').forEach(x => x.classList.remove('rev'));
@@ -4862,7 +4875,7 @@ async function saveFile(filename, blob){
 
 // Notebook file: this whole app plus your pages and notes, in one .html file you can open anywhere
 async function notebookFile(){
-  const data = JSON.stringify({v: 2, id: curId, name: notebookName(), named: !!curDoc()?.named, doc: await inlineAssets(currentDoc()), style, favs}).replace(/</g, '\\u003c');
+  const data = JSON.stringify({v: 2, id: curId, name: notebookName(), named: !!curDoc()?.named, doc: await inlineAssets(currentDoc(true)), style, favs}).replace(/</g, '\\u003c');
   const html = APP_HTML.replace(/<body[^>]*>/, m => `${m}\n<script id="notebook-data" type="application/json">${data}<\/script>`);
   return {name: notebookName() + ' (notes).html', blob: new Blob([html], {type: 'text/html'})};
 }
@@ -5084,6 +5097,8 @@ $('#layout').onchange = e => { layout = e.target.value; pref.set('pdf-layout', l
 let viewZoom = 1, pageTimer = null;
 // page zoom, on top of the fit (1 is the fit): set by pinching the pages, double-tapping a slide or − / + in the status bar
 let pageZoom = 1, fitZoom = 1;
+// zoomed in, the PDF pages you can see are drawn again sharp (sharpen, below)
+const sharp = {timer: 0, gen: 0, busy: null, docs: new Map(), pages: new Map(), live: new Set(), failed: new Set()}, SHARP_MAX = 12e6;     // (pixels in one drawing at most: Safari draws no canvas over 16.7 million)
 const ZOOM_STEPS = [.5, .67, .8, 1, 1.25, 1.5, 2, 2.5, 3], ZOOM_MIN = .5, ZOOM_MAX = 3;
 const pxSize = ([pw, ph]) => [Math.round(pw * 96 / 72), Math.round(ph * 96 / 72)];   // points to screen pixels
 const SHEET_MARGIN = 48;
@@ -5141,7 +5156,7 @@ function fitApply(p, paged){
   main.style.setProperty('--sidew', p.fluid ? 'min(' + SIDE_W + 'px,100%)' : SIDE_W + 'px');
   main.style.setProperty('--z', p.z);
   viewZoom = p.z; main.style.zoom = p.z === 1 ? '' : p.z;
-  fitZoom = p.fz ?? p.z; main.classList.toggle('zoomed', has && pageZoom > 1); paintZoom();
+  fitZoom = p.fz ?? p.z; main.classList.toggle('zoomed', has && pageZoom > 1); paintZoom(); sharpSoon();
   return p.z / old;
 }
 // the Default layout: slides side by side, or with their side pages (the printed layouts do the same in paginateView)
@@ -5342,6 +5357,88 @@ main.addEventListener('wheel', e => {
   zoomLive(pageZoom * Math.exp(-e.deltaY * (e.deltaMode ? .2 : .01)), wheelZoom.x, wheelZoom.y, wheelZoom.a);
   clearTimeout(wheelZoom.t); wheelZoom.t = setTimeout(() => { const w = wheelZoom; wheelZoom = null; zoomCommit(w.x, w.y); }, 220);
 }, {passive: false});
+
+// ---------- zoomed in, the PDF pages drawn again sharp: only what you can see ----------
+// A PDF page's picture has PDF_S pixels per point, which is sharp at the fit. Zoomed in past that, once the zoom and the scrolling stop, the part
+// of each page you can see (and a little round it) is drawn again from the PDF at the screen's own resolution, on a canvas over that part of its
+// strip. Nothing more is kept: a drawing is let go of as soon as it is scrolled away or the zoom is back at the fit, and the PDF is closed again
+// then, because Safari on an iPad has little room for canvases (a long PDF ran it out of canvas memory before).
+function sharpSoon(ms = 150){ clearTimeout(sharp.timer); sharp.timer = setTimeout(sharpen, ms); }
+document.addEventListener('scroll', () => { if (pageZoom > 1) sharpSoon(); }, {passive: true});
+async function sharpen(){
+  const gen = ++sharp.gen;
+  await sharp.busy;                                    // (one at a time: a drawing already started finishes first)
+  if (gen !== sharp.gen) return;
+  sharp.busy = sharpPass(gen).catch(err => console.warn('A zoomed-in page wasn’t drawn again:', err));
+}
+// at once, not when Safari next tidies up: a canvas only taken out of the page keeps its memory till then
+const sharpDrop = c => { c.width = c.height = 0; c.remove(); sharp.live.delete(c); };
+function sharpDoc(src){
+  let d = sharp.docs.get(src);
+  if (!d) sharp.docs.set(src, d = (async () => await ensureReader('pdf') ? pdfOpen(await (await fetch(src)).arrayBuffer()) : null)().catch(() => null));
+  return d;
+}
+async function sharpPass(gen){
+  for (const c of sharp.live) if (!c.isConnected) sharpDrop(c);          // (the notebook was changed, or a note opened the page up there)
+  if (pageZoom <= 1) sharp.failed.clear();                              // (a PDF that couldn't be opened is tried again next time)
+  if (pageZoom <= 1 && !sharp.live.size && !sharp.docs.size) return;
+  if (pinch || gest || wheelZoom) return sharpSoon();                    // (still pinching)
+  const dpr = devicePixelRatio || 1, mr = main.getBoundingClientRect();
+  const vx0 = Math.max(0, mr.left), vx1 = Math.min(innerWidth, mr.right), vy1 = innerHeight, mx = (vx1 - vx0) / 5, my = vy1 / 5;
+  const jobs = [];
+  for (const s of main.querySelectorAll('.pagecard[data-pdfsrc] > .strip')) {
+    if (sharp.failed.has(s.parentElement.dataset.pdfsrc)) continue;
+    const card = s.parentElement, old = s.querySelector(':scope > canvas.sharp'), r = s.getBoundingClientRect();
+    const W = +card.dataset.w, y0 = +s.dataset.y0, kx = r.width / W, k = kx * dpr;          // (on-screen and device pixels per point)
+    const near = r.width > 0 && r.right > vx0 - mx && r.left < vx1 + mx && r.bottom > -my && r.top < vy1 + my;
+    if (pageZoom <= 1 || k < PDF_S * 1.15 || !near) { if (old) sharpDrop(old); continue; }
+    // what to draw: what you can see of it and a fifth of the window round it, on whole screen pixels (none round it, and then fewer pixels, if that is too many)
+    const px = x => (x - r.left) / kx, py = y => y0 + (y - r.top) / kx, e = 1 / k, area = q => (q.x1 - q.x0) * (q.y1 - q.y0);
+    let X0, X1, Y0, Y1;
+    for (const m of [1, 0]) {
+      X0 = Math.floor(Math.max(r.left, vx0 - mx * m) * dpr); X1 = Math.ceil(Math.min(r.right, vx1 + mx * m) * dpr);
+      Y0 = Math.floor(Math.max(r.top, -my * m) * dpr); Y1 = Math.ceil(Math.min(r.bottom, vy1 + my * m) * dpr);
+      if ((X1 - X0) * (Y1 - Y0) <= SHARP_MAX) break;
+    }
+    const want = {x0: px(X0 / dpr), x1: px(X1 / dpr), y0: py(Y0 / dpr), y1: py(Y1 / dpr)}, seen = r.right > vx0 && r.left < vx1 && r.bottom > 0 && r.top < vy1;
+    // drawn already at this zoom, all you can see of it, and not much more than that (what has gone off the screen is let go of)?
+    const o = old?.sharp, keep = o && Math.abs(o.k - k) < k * .02 && area(o) <= area(want) * 1.25
+      && (!seen || (o.x0 <= px(Math.max(r.left, vx0)) + e && o.x1 >= px(Math.min(r.right, vx1)) - e && o.y0 <= py(Math.max(r.top, 0)) + e && o.y1 >= py(Math.min(r.bottom, vy1)) - e));
+    if (keep) continue;
+    if (!seen) { if (old) sharpDrop(old); continue; }                    // (just off the screen: not drawn for that alone)
+    const f = Math.min(1, Math.sqrt(SHARP_MAX / ((X1 - X0) * (Y1 - Y0))));
+    jobs.push({s, card, k, f, w: Math.max(1, Math.round((X1 - X0) * f)), h: Math.max(1, Math.round((Y1 - Y0) * f)), ...want,
+      box: [(X0 / dpr - r.left) / r.width, (Y0 / dpr - r.top) / r.height, (X1 - X0) / dpr / r.width, (Y1 - Y0) / dpr / r.height]});
+  }
+  for (const j of jobs) {
+    let how; try { how = JSON.parse(j.card.dataset.pdf); } catch { continue; }
+    const src = j.card.dataset.pdfsrc, doc = await sharpDoc(src);
+    if (gen !== sharp.gen) return;
+    if (!doc) { sharp.failed.add(src); continue; }
+    if (!j.s.isConnected) continue;
+    const key = src + '#' + how.p; if (!sharp.pages.has(key)) sharp.pages.set(key, doc.getPage(how.p));
+    const page = await sharp.pages.get(key), K = j.k * j.f, tx = j.x0 * K, ty = j.y0 * K;
+    const cv = document.createElement('canvas'); cv.width = j.w; cv.height = j.h; sharp.live.add(cv);
+    const ctx = cv.getContext('2d');
+    // as the page's picture was made (readPdf): without the backgrounds, side bands and slide numbers
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, j.w, j.h);
+    skipBackgrounds(ctx, K, +j.card.dataset.w, +j.card.dataset.h, how.rep || [], tx, ty);
+    try { await page.render({canvasContext: ctx, viewport: page.getViewport({scale: K}), transform: [1, 0, 0, 1, -tx, -ty], background: 'rgba(0,0,0,0)'}).promise; }
+    catch (err) { sharpDrop(cv); throw err; }
+    ctx.fillStyle = `rgb(${how.bg})`; for (const [x, y, w, h] of how.out || []) ctx.fillRect(x * K - tx, y * K - ty, w * K, h * K);
+    if (!j.s.isConnected || pageZoom <= 1) { sharpDrop(cv); continue; }
+    const old = j.s.querySelector(':scope > canvas.sharp'); if (old) sharpDrop(old);
+    cv.className = 'sharp'; cv.setAttribute('aria-hidden', 'true'); cv.sharp = {k: j.k, x0: j.x0, x1: j.x1, y0: j.y0, y1: j.y1};
+    const [l, t, w, h] = j.box.map(v => (v * 100).toFixed(4) + '%');
+    Object.assign(cv.style, {left: l, top: t, width: w, height: h});
+    j.s.prepend(cv);
+    if (gen !== sharp.gen) return;
+  }
+  // the PDFs, and their pages, that no drawing needs any more are closed
+  const inUse = new Set([...sharp.live].map(c => { const card = c.parentElement?.parentElement; try { return card.dataset.pdfsrc + '#' + JSON.parse(card.dataset.pdf).p; } catch { return ''; } }));
+  for (const [key, pg] of sharp.pages) if (!inUse.has(key)) { sharp.pages.delete(key); pg.then(x => x.cleanup()).catch(() => {}); }
+  for (const [src, d] of sharp.docs) if (![...inUse].some(k => k.startsWith(src + '#'))) { sharp.docs.delete(src); d.then(x => x?.destroy()).catch(() => {}); }
+}
 
 document.querySelectorAll('.notes-toggle').forEach(b => b.onclick = () => {
   const hide = notesBtnMode() === 'hide';            // do exactly what the button says
