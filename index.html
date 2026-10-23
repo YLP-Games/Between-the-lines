@@ -1930,9 +1930,10 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       </div><span class="cap">Theme</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row">
-        <select id="spellLang" aria-label="Spell check" title="Spell check: misspelt words get a red wavy line; right-click one (or tap it) for suggestions">
+        <select id="spellLang" aria-label="Spell check" title="Spell check: misspelt words get a red wavy line; right-click one (or tap it) for suggestions. “This device’s own” leaves it to your browser’s or system’s spell check">
           <option value="en-US">Spelling: US English</option>
           <option value="en-GB">Spelling: UK English</option>
+          <option value="device">Spelling: this device’s own</option>
           <option value="off">Spelling: off</option>
         </select>
       </div><span class="cap">Proofing</span></div>
@@ -2205,6 +2206,286 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
+<script type="text/plain" id="spellX">
+# finance, accounting, economics, business (stem/flags: S plural, D -ed, G -ing, R -er, L -ly, Z the -ise/-ize family, written without it: capital/Z)
+capex opex ebit ebitda eps dcf wacc npv irr cagr ytd ipo ipos
+bookrunner/S bourse/S cashflow/S chartist/S clearinghouse/S
+crowdsourcing cyclical/S deadweight decile/S disintermediation
+divestment/S drawdown/S duopsony econometrician/S elasticities
+eurobond/S eurozone externality externalities fintech/S floatation forex holdco
+illiquid illiquidity kaizen kanban keynesian/S
+levy/S licensor/S lockup margining microcap
+monopsony monopsonist/S monopsonies
+oligopolist/S oligopolistic onboarding
+payable/S payables perpetuities procyclical
+puttable quintile/S quartile/S quant/S reit/S repo/S
+scalable seigniorage spinoff/S
+swaption/S tradable tranching
+whistleblower/S whistleblowing writedown/S writeoff/S
+capital/Z central/Z collateral/Z commodit/Z financial/Z global/Z liquid/Z maxim/Z minim/Z monet/Z national/Z optim/Z privat/Z recapital/Z securit/Z standard/Z subsid/Z token/Z util/Z amort/Z annuit/Z digit/Z
+incentiv/Z depriorit/Z priorit/Z normal/Z annual/Z real/Z custom/Z modern/Z industrial/Z commercial/Z social/Z stabil/Z harmon/Z rational/Z
+cheque/S
+gaap ifrs materiality
+autarky bilateral/S
+endogeneity exogeneity freerider/S rider/S
+isocost isoquant laissez faire nontradable pareto
+phillips pigouvian signalling
+off/S
+# statistics, mathematics
+anova manova ancova bayesian/S bernoulli bivariate boxplot/S
+collinearity multicollinearity confounder/S covariate/S dendrogram/S
+dimensionality eigenspace/S ergodic estimand/S frequentist gaussian generalis/Z
+heteroskedasticity heteroscedasticity heteroskedastic heteroscedastic homoskedasticity homoscedasticity homoskedastic homoscedastic
+interquartile kurtosis laplace logit/S lognormal markov
+multinomial nonlinearities orthonormal overfit/dDG
+poisson probit/S quantile/S randomis/Z regressand/S regressor/S
+scatterplot/S skewness stationarity studentised survivorship univariate variate/S weibull
+asymptote/S automorphism/S bijection/S bijective cardinality combinatorial combinatorics
+contrapositive
+diffeomorphism/S diagonalis/Z endomorphism/S epimorphism/S factoris/Z fibonacci functional/S functor/S
+groupoid/S hamiltonian/S hessian/S holomorphic homeomorphism/S homeomorphic homomorphism/S homotopy
+infimum infima injective integrand/S integrable invertible involution/S isomorphism/S jacobian/S lagrangian/S
+linearis/Z meromorphic minimis/Z monoid/S monomial/S monotonicity morphism/S nilpotent nullspace/S
+parametris/Z polytope/S pointwise piecewise elementwise stepwise columnwise rowwise bitwise quartic/S quintic/S
+rhombi simplices
+supremum suprema surjection/S surjective tetrahedra topologies trinomial/S
+# computing and engineering
+api/S apis async backend/S backpropagation bluetooth boolean/S breakpoint/S bytecode
+checksum/S ciphertext config/S cron cryptographic cybersecurity
+datatype/S deque/S deserialis/Z devops directory/S dns dropdown/S embedding/S ethernet
+filesystem/S frontend/S fullstack gpu/S hashtable/S hardcoded hostname/S
+json kubernetes lexer/S linux localhost lookup/S middleware
+mutex/S namespace/S netmask/S nosql ontologies parser/S plaintext plugin/S polymorphism
+postfix query/DS regex/S repository/S runtime/S schema/S
+serialis/Z serverless shader/S sql stacktrace/S
+tokenis/Z trojan/S unicode userland variadic virtualis/Z webpage/S wifi xml yaml
+perceptron/S convolutional lstm regularis/Z
+tokeniser/S lemmatis/Z stemmer/S
+aerofoil/S airfoil/S
+fluidic galvanis/Z inductor/S
+mechatronics pneumatic/S potentiometer/S
+stator/S
+waveform/S
+# physics and chemistry
+aldehyde/S alkali/S alkane/S alkene/S alkyne/S
+boson/S calorimeter/S calorimetry candela carbonyl carboxyl carboxylic cationic chiral
+chromatogram/S crystallis/Z cuvette/S dalton/S
+electrophile/S electrophilic
+enthalpy enthalpies enantiomer/S entropies fermion/S frictionless
+hadron/S halide/S hamiltonian hydroxyl
+interferometer/S ionis/Z isothermal isentropic isochoric lagrangian
+ligand/S lipophilic magnetis/Z molality molarity muon/S
+nitrile/S nucleophile/S nucleophilic nuclide/S oxidis/Z
+plasma/S polarimeter/S polaris/Z polymeris/Z propanol quantis/Z
+radionuclide/S redox reductant/S refractometer/S
+spectrometry spectrophotometer/S stereochemistry stereoisomer/S stoichiometric stoichiometry
+titrant/S titration/S viscoelastic voltammetry wavefunction/S
+# biology and earth science
+abiotic acetylcholine adenosine allelic allosteric anabolic anaerobic/S anaphase
+archaea archaeal autotroph/S autotrophic bacteriophage/S basophil/S benthic bilayer/S
+biogeochemical biome/S blastocyst/S
+catabolic catabolism centriole/S centromere/S chemoautotroph/S chemotaxis chromatid/S ciliate/S
+cladistic/S cladogram/S clade/S commensal commensalism cytokinesis cytokine/S cytoskeleton
+cytoskeletal dendritic deoxyribonucleic disaccharide/S exocrine exocytosis
+fibroblast/S gametophyte/S gastrulation genomic genotype/S genotypic glia glial glycolysis
+helminth/S hemoglobin heterotroph/S heterotrophic heterozygous heterozygote/S histone/S homozygous
+homozygote/S intron/S isotonic
+kinase/S lipase/S lysosome/S meristem/S mesophyll
+microbiome/S monocot/S monosaccharide/S
+morphogenesis mutualism mutualistic mycelium mycorrhiza mycorrhizal myelin myosin
+neutrophil/S nucleotide/S oligosaccharide/S oocyte/S oogenesis operon/S osmoregulation
+parenchyma peptidoglycan phenotype/S phenotypic phospholipid/S
+phylogenetic pinocytosis plasmid/S plasmodesmata pluripotent polygenic polymerase
+polyploid polysaccharide/S predation prophase protist/S proteome/S proteomics
+pseudopod/S recombinant repressor/S ribonucleic ribosomal ribosome/S rubisco
+saprotroph/S sarcomere/S speciation stoma stomata symbiont/S telomere/S telophase thylakoid/S
+tonicity totipotent transcriptional trophic turgor ubiquitin vasodilation
+virion/S
+agroecology albedo anthropogenic biogenic cenozoic cryosphere cryospheric
+diagenesis epicentre/S epicenter/S erosional estuarine eustatic evapotranspiration fumarole/S
+glaciofluvial halocline insolation
+isostasy isostatic karst lahar/S lithospheric loess magmatic mesozoic nunatak/S orogeny orogenic paleoclimate palaeoclimate
+paleontology palaeontology pedogenesis pyroclastic regolith renewables
+stratigraphy stratigraphic subduction/S thermocline thermohaline tropospheric
+# medicine and health
+adenoma/S aetiology aetiological anaemia anaemic anaesthesia anaesthetic/S anaesthetist/S anaphylaxis anaphylactic
+angiography antifungal/S antimicrobial/S antipyretic/S
+antiretroviral/S anxiolytic/S arrhythmia/S arthroplasty bariatric benzodiazepine/S
+bronchiolitis bronchodilator/S bronchoscopy cachexia cannula/S cardiothoracic
+claudication colectomy comorbidities corticosteroid/S
+craniotomy cytotoxic
+dysplasia dyspnoea dyspnea dysrhythmia edema oedema embolus emboli
+encephalopathy
+epiglottitis erythema exacerbation/S gastrectomy gastroenterology gastroscopy
+glomerular glomerulonephritis glycaemic glycemic haematology hematology haematoma haemoglobin haemophilia haemorrhage haemorrhagic haemorrhoid/S
+hepatomegaly histological hyperbilirubinaemia hypercholesterolaemia hyperglycaemia hyperglycemia
+hyperlipidaemia hypoglycaemia hypoglycemia hypotensive
+hypoxia hypoxic iatrogenic ileus immunisation/S immunization/S immunocompromised immunosuppressant/S immunosuppression
+immunotherapy infarction/S intubation ischaemia ischemia ischaemic ischemic
+ketoacidosis laryngoscopy leukaemia leukemia lithotripsy lymphadenopathy
+malabsorption microbiome
+multiparous myalgia myasthenia myeloma myocarditis myopathy nasogastric nephrectomy
+nephrologist/S nephrology nephrotic neuroblastoma neuropathic neuropathy
+neutropenia neutropenic nosocomial nutraceutical/S oedematous oesophagus oesophageal oncogenic
+orthopaedic orthopedic orthopaedics orthopedics orthotic/S osteomyelitis osteoporotic
+otitis otolaryngology pancytopenia parenteral paresthesia pathogenesis pathologic
+pathophysiology pediatric/S paediatric/S paediatrician/S pediatrician/S perioperative pharmacodynamics
+pharmacokinetics phlebotomy pleural
+pneumothorax polycythaemia postoperatively postpartum
+prostatectomy prostatitis proteinuria prothrombin pruritus psoriatic
+pulmonology pyrexia radiograph/S radiologic radiological radiotherapeutic
+retinopathy rheumatologist/S rheumatology scleroderma
+septicaemia seropositive spirometry splenomegaly statin/S sternotomy stoma/S stomatitis
+tachypnoea tamponade tendonitis teratogenic tetany thoracotomy
+thrombocytopenia thrombolysis thyroidectomy thyroiditis thyrotoxicosis tracheostomy
+tumour/S tumor/S ulcerative ultrasonography
+vasopressor/S vasovagal venepuncture
+vitiligo
+# law, politics, social sciences, humanities
+actus amicus certiorari
+covenantor/S decidendi delict/S delictual
+ejusdem
+habeas
+alia intra vires jurisprudential justiciable laches
+mens nolo feasance
+obiter ombud prima probate/D
+recusal replevin res restitutionary reus servitude/S
+subrogation/ judice tortfeasor/S
+tortious usufruct
+clientelism communitarian communitarianism
+decolonis/Z delegitimis/Z democratis/Z diaspora/S
+globalis/Z hegemon/S irredentism
+marginalis/Z multilateralism
+oligarch/S
+polarisation polarization privatis/Z referenda
+androcentric anomie behaviourism behaviourist/S
+behaviorism behaviorist/S constructivism constructivist/S counselling counseling
+dehumanis/Z dyad/S egocentrism
+endogamy enculturation essentialism essentialist/S ethnomethodology
+exogamy habitus heteronormative heteronormativity
+hypothesise/Z idiographic institutionalis/Z
+interactionism interactionist/S labelling liminal marginality
+matrilineal
+nativism nomothetic operationalis/Z orientalism patrilineal
+proletariat/S
+replicability replicable
+representativeness secularis/Z secularisation secularization socialis/Z
+socialisation socialization socio stigmatis/Z
+syncretism urbanis/Z
+victimis/Z welfarism worldview/S
+anapest/S anaphora antihero/ES
+bildungsroman characteris/Z chiasmus
+contextualis/Z diachronic
+fabliau siecle gothic
+hagiographic harlem hermeneutic/S hermeneutics historiographical iconographic
+intertextuality metonymy metre
+mimesis narratology narratological oxymoron/S
+parataxis periodis/Z
+stichomythia
+synaesthesia synecdoche tercet/S
+vers libre villanelle/S vorticism
+affective agglutinative allophone/S allomorph/S anaphoric clitic/S
+deixis deictic derivational diglossia
+evidentiality grapheme/S graphemic hyponym/S hypernym/S idiolect/S illocutionary isogloss/S
+lexeme/S lingua franca locative metonym/S morphosyntax nominal/S
+perlocutionary phonotactic/S
+prosodic rhotic sociolect/S stative suprasegmental syntagmatic
+# abbreviations and units (lowercase; capitalised and all-capital forms are fine as well)
+etc eg ie cf viz incl excl eqn eqns ch refs ltd inc plc corp dr mr mrs jr sr st tbc tba fyi wrt iff resp ed nos qv
+hz khz mhz ghz kb mb gb tb bn mn tn kwh mwh mins hr hrs yrs mo wk wks cu dept univ govt intl assoc mgmt
+tel ok thx pls tbh imo imho btw rsvp nb ps po cv ba bsc msc mba phd mphil llb llm md dphil
+# Latin and other phrases that turn up in lectures
+bona de facto decisis emptor facie fide infinitum ipsa ipso loquitur mutatis mutandis modus operandi
+passu annum capita se rata sensu posteriori priori stricto tabula rasa voce
+vitro vivo rea lato lege lex standi
+# South African English and other words from around the world
+amapiano bakkie/S biltong boerewors braai/S braaing braaied braaiing droewors indaba/S jol/dSDG kwaito lekker rand/S rooibos sjambok/S spaza stokvel/S ubuntu vetkoek veldt koppie/S
+bobotie koeksister/S potjie potjiekos mielie mielies tsotsi/S muti nyaope kombi/S bergie/S dagga eish yebo sawubona hayibo ayoba
+kimchi ramen bao biryani naan paneer roti/S chai matcha falafel tahini shawarma
+# modern words
+ebook/S livestream/SDG podcast/SDG vlog/dSDG vlogger/S influencer/S fintech edtech
+ethereum stablecoin/S chatbot/S upskill/DG reskill/DG telework/SDG lockdown/S
+screencast/S dropdown checkbox/ES textbox/ES
+wearable/S hotspot/S livestream
+# more finance, accounting, markets, banking
+accretive amortisable amortizable annualis/Z arbitrageable assignee/S
+backtest/SDG backwardation basel bookbuilding bookkeep/G breakeven
+capitalisation capitalization
+clawback/S commoditis/Z commoditisation commoditization consols contango
+corporate/S
+defeasance dow drawdown
+duration/S earnout/S expiries
+run/DG frontrunning
+fund/S immunis/Z
+investable investee/S keiretsu
+leverag/G libor
+maker/S monetis/Z
+mudaraba novation/S offeree/S offeror/S
+peg/SDG
+forma
+redemption/S rehypothecation
+repatriat/G
+fence/SD securitisation
+sell/G speculat/G spread/SDG
+ordinated subsidiary/S sukuk surety/S swap/SDG
+tranche/SD
+unrealis/Z utility/S vega volatility/S
+# more accounting and taxation
+amortisation
+centre
+depreciable
+imprest
+realisable
+# anatomy, drugs, chemicals, organisms
+acetabulum acromion adductor/S aponeurosis/S arachnoid axilla/S brachial brachialis buccal calcaneus cecum caecum
+condyle/S cruciate deltoid endocardium
+epididymis flexor/S foramen/S foramina ganglion/S gastrocnemius gluteal
+gluteus hallux hyoid ileal iliac intercostal lacrimal ligamentous malleus
+manubrium masseter mesentery mesenteric mucosa mucosal navicular occipital
+orbicularis ossicle/S patellar periosteum peroneal
+popliteal rectus sacral sagittal sclera serosa sigmoid soleus
+sphenoid splenic sternal supraspinatus tendinous tibialis trapezius trochlear
+ureteric vena venae vestibular xiphoid zygomatic
+aldol allotrope/S allotropic ascorbic atenolol atorvastatin azithromycin butanol
+carbamazepine cephalosporin/S ciprofloxacin cisplatin citalopram clopidogrel creatine dexamethasone
+diclofenac digoxin doxycycline norepinephrine ethene gabapentin
+glycine glycerine haloperidol hydrochloric isopropanol ketamine levothyroxine lidocaine lisinopril
+loratadine lorazepam losartan metoprolol metronidazole naproxen nitrous omeprazole
+ondansetron oxalic oxycodone prednisolone propofol propylene ranitidine salbutamol
+sertraline simvastatin sulphate/S sulfide/S sulphide/S sulfuric sulphuric tramadol trimethoprim
+valproate vancomycin
+acinetobacter actinomycetes aspergillus bacteroides bifidobacterium borrelia campylobacter clostridium corynebacterium cryptococcus
+enterobacter enterococcus escherichia giardia haemophilus helicobacter klebsiella lactobacillus legionella leishmania mycobacterium mycoplasma neisseria pasteurella
+plasmodium pneumocystis pseudomonas rickettsia rotavirus shigella spirochete/S toxoplasma treponema vibrio yersinia
+cephalopod/S lepidoptera molluscs mollusks monotreme/S
+platyhelminth/S
+# physics and astronomy extras
+anisotropic anisotropy arcsecond/S astrometry aurorae baryonic
+binary/S blackbody blueshift/S bremsstrahlung cepheid/S chandrasekhar chromosphere circumstellar collimat/G
+doppler ejecta emissivity epicycle/S exoplanetary
+heliosphere hubble isotropy kuiper magnetar/S
+nebula/S nucleosynthesis oort
+planetesimal/S radiative redshift/S
+syzygy
+# more terms
+retracement/S pullback/S backtest/dDSG acyclical procyclicality cyclicality
+greenwash/DG greenwashing esg decarbon/Z securitis/Z
+abelian nonabelian circumcentre/S circumcenter/S circumcircle/S incentre/S incenter/S incircle/S excircle/S orthocentre/S orthocenter/S centroid/S barycentre/S barycenter/S
+cyclotomic eigenbasis eigendecomposition/S bilinear sesquilinear tensorial
+repudiatory repudiat/G unconscionability
+dyscalculia dysgraphia dyspraxia dyspraxic
+livelock/S
+containeris/Z orchestrat/G monorepo/S unittest/S mockup/S wireframe/S
+backprop softmax/ES sigmoid/S relu logits embeddings
+arima garch vecm granger heckman probit tobit logit
+counterfactual/S moderat/G
+axiological hermeneutical absurdism sceptical
+consequentialist contractarian contractualism
+andragogy andragogical scaffold/SDG constructivist summative
+spearphishing pentesting exfiltration
+memo/Z finetune/SDG
+parameter/Z pipeline/G
+</script>
 <script>
 
 // Google Drive: the site owner fills these in (see "Google Drive" in the README). While clientId is empty, Drive is switched off.
@@ -5591,50 +5872,97 @@ $('#readBtn').onclick = () => {
 
 // ================= spell check =================
 // misspelt words in your notes get a red wavy line (drawn with the CSS Highlight API, so the notes themselves are untouched);
-// right-click one, or tap it, for suggestions. Dictionaries: Hunspell US / UK English, checked with Typo.js.
+// right-click one, or tap it, for suggestions. Words: the LibreOffice Hunspell US / UK English lists (expanded once, then kept on this device)
+// plus our own academic and technical words (#spellX), prefixes (re-rating, non-linear), hyphenated words, names and brands.
+// Device leaves it all to the browser's or system's own spell check.
 const SPELL_LIB = 'https://cdn.jsdelivr.net/npm/typo-js@1.2.4/typo.js';
-const SPELL_DICTS = {'en-US': ['https://cdn.jsdelivr.net/npm/dictionary-en@4.0.0/index', 'en_US'], 'en-GB': ['https://cdn.jsdelivr.net/npm/dictionary-en-gb@3.0.0/index', 'en_GB']};
+const SPELL_LO = 'libreoffice-26.2.7.1/en/', SPELL_REV = 'lo26.2.7.1-1';
+// where each language's .aff and .dic come from, best first (the later ones are older or mirrored copies, in case the first can't be reached)
+const SPELL_DICTS = {
+  'en-US': ['https://cdn.jsdelivr.net/npm/dictionary-en@4.0.0/index', 'https://raw.githubusercontent.com/LibreOffice/dictionaries/' + SPELL_LO + 'en_US'],
+  'en-GB': ['https://cdn.jsdelivr.net/gh/LibreOffice/dictionaries@' + SPELL_LO + 'en_GB', 'https://raw.githubusercontent.com/LibreOffice/dictionaries/' + SPELL_LO + 'en_GB', 'https://cdn.jsdelivr.net/npm/dictionary-en-gb@3.0.0/index'],
+};
+const SPELL_TIERS = 'https://cdn.jsdelivr.net/npm/wordlist-english@1.2.1/';
 const canHighlight = !!(window.CSS && CSS.highlights && window.Highlight);
 let spellLang = /^en-(GB|AU|NZ|IE|ZA|IN)/i.test(navigator.language || '') ? 'en-GB' : 'en-US';
-{ const l = pref.get('spell-lang'); if (l && (l in SPELL_DICTS || l === 'off')) spellLang = l; }
+{ const l = pref.get('spell-lang'); if (l && (l in SPELL_DICTS || l === 'off' || l === 'device')) spellLang = l; }
 let spellDict = null, spellLoading = null, spellCache = new Map();
 let userWords = new Set([].concat(pref.json('spell-words', [])));
 const ignoredWords = new Set();
 const spellHl = canHighlight ? new Highlight() : null;
 if (spellHl) CSS.highlights.set('spell', spellHl);
 const spellRanges = new Map();          // note -> [{range, word}]
-// the browser's own spell check is used only when ours can't run (an older browser, or no internet for the dictionary)
-// until our dictionary is ready (and whenever it can't be used), the browser's own spell check does the job, so checking never pauses
+// until our words are ready (and whenever they can't be used: an older browser, no internet for the first download), or if you chose
+// Device, the browser's own spell check does the job, so checking never pauses
 function nativeSpell(){ return spellLang !== 'off' && !spellDict; }
 function spellAttrs(el){
-  const native = nativeSpell();
+  const native = nativeSpell(), l = spellLang === 'device' ? navigator.language : spellLang;
   if (el.spellcheck !== native) el.spellcheck = native;
-  if (spellLang === 'off') el.removeAttribute('lang'); else if (el.lang !== spellLang) el.lang = spellLang;
+  if (spellLang === 'off' || !l) el.removeAttribute('lang'); else if (el.lang !== l) el.lang = l;
 }
 // files are kept in the browser's cache storage after the first visit, so later visits (and offline use) start at once
+const spellBox = async () => { try { return window.caches ? await caches.open('btl-spell-v2') : null; } catch { return null; } };
 async function spellFetch(url){
-  let cache = null;
-  try { cache = window.caches ? await caches.open('btl-spell-v1') : null; } catch { cache = null; }
-  const hit = cache && await cache.match(url).catch(() => null);
+  const box = await spellBox(), hit = box && await box.match(url).catch(() => null);
   if (hit) return hit.text();
   const r = await fetch(url); if (!r.ok) throw new Error(r.status);
-  if (cache) cache.put(url, r.clone()).catch(() => {});
+  if (box) box.put(url, r.clone()).catch(() => {});
   return r.text();
+}
+// Hunspell's two files become one plain list of words, which loads far faster than they do. It is made in a worker (so the page never
+// stops) and kept on this device, so that happens once. It runs on its own, hence no outside names. Notes after a word's first space
+// (LibreOffice has some) are left out, 's forms are left to the checker, and the other English's words that are not just its way of
+// spelling one we have (color / colour, organize / organise) are added, so a US speller still gets British names and the reverse.
+function spellWork(src, own, other, gb){
+  const T = new Function(src + ';return Typo')();
+  const load = f => { const d = new T('x', f[0], f[1].replace(/[ \t].*$/gm, '')).dictionaryTable; return Object.keys(d).filter(w => !(w.endsWith("'s") && d.hasOwnProperty(w.slice(0, -2)))); };
+  const mine = new Set(load(own));
+  if (other) {
+    const us = [[/or(s|ed|ing|ful|less|able|y|ite|ites|ist|ists)?$/, 'our$1'], [/(i|y)z(?=(e|es|ed|ing|ation|ations|er|ers|able)$)/, '$1s'], [/er(s?)$/, 're$1'], [/og(s?)$/, 'ogue$1'], [/ense(s?)$/, 'ence$1'], [/([aeiou])l(ed|ing|er|ers|or)$/, '$1ll$2'], [/dgment/, 'dgement'], [/ll(ful|ment)/, 'l$1'], [/^(enrol|distil|fulfil|instil)l/, '$1'], [/^gray/, 'grey'], [/^plow/, 'plough'], [/^tire(s|d)?$/, 'tyre$1'], [/^curb/, 'kerb'], [/^aluminum/, 'aluminium'], [/^sulfur/, 'sulphur'], [/^pajama/, 'pyjama'], [/^program(s?)$/, 'programme$1'], [/^mold/, 'mould'], [/^mom(s?)$/, 'mum$1'], [/^skeptic/, 'sceptic'], [/^maneuver/, 'manoeuvre'], [/older$/, 'oulder'], [/^mustache/, 'moustache'], [/^ax(es)?$/, 'axe$1'], [/^check(s?)$/, 'cheque$1']];
+    const uk = [[/our(s|ed|ing|ful|less|able|y|ite|ites|ist|ists)?$/, 'or$1'], [/(i|y)s(?=(e|es|ed|ing|ation|ations|er|ers|able)$)/, '$1z'], [/re(s?)$/, 'er$1'], [/ogue(s?)$/, 'og$1'], [/ence(s?)$/, 'ense$1'], [/([aeiou])ll(ed|ing|er|ers|or)$/, '$1l$2'], [/dgement/, 'dgment'], [/l(ful|ment)/, 'll$1'], [/^(enrol|distil|fulfil|instil)$/, '$1l'], [/^grey/, 'gray'], [/^plough/, 'plow'], [/^tyre(s|d)?$/, 'tire$1'], [/^kerb/, 'curb'], [/^aluminium/, 'aluminum'], [/^sulphur/, 'sulfur'], [/^pyjama/, 'pajama'], [/^programme(s?)$/, 'program$1'], [/^mould/, 'mold'], [/^mum(s?)$/, 'mom$1'], [/^sceptic/, 'skeptic'], [/^manoeuvr/, 'maneuver'], [/oulder$/, 'older'], [/^moustache/, 'mustache'], [/^axe(s)?$/, 'ax$1'], [/^cheque(s?)$/, 'check$1'], [/ae/, 'e'], [/oe/, 'e']];
+    const rules = gb ? us : uk, skip = gb ? /iz(e|es|ed|ing|ation|ations|er|ers|able)$/ : /is(e|es|ed|ing|ation|ations|er|ers|able)$/;
+    outer: for (const w of load(other)) {
+      if (mine.has(w) || skip.test(w)) continue;
+      for (const [r, t] of rules) if (r.test(w) && mine.has(w.replace(r, t))) continue outer;
+      if (gb) for (const m of w.matchAll(/e/g)) for (const x of ['ae', 'oe']) if (mine.has(w.slice(0, m.index) + x + w.slice(m.index + 1))) continue outer;
+      mine.add(w);
+    }
+  }
+  return [...mine].join('\n');
+}
+async function spellExpand(own, other, gb){
+  const src = await spellFetch(SPELL_LIB);
+  try {
+    const u = URL.createObjectURL(new Blob(['onmessage=e=>postMessage((' + spellWork + ').apply(null,e.data))'], {type: 'text/javascript'})), w = new Worker(u);
+    try { return await new Promise((res, rej) => { w.onmessage = e => res(e.data); w.onerror = e => rej(new Error(e.message || 'worker')); w.postMessage([src, own, other, gb]); }); }
+    finally { w.terminate(); URL.revokeObjectURL(u); }
+  } catch (err) { console.warn('Spell check list is made without a worker', err); return spellWork(src, own, other, gb); }
+}
+// a language's word list: from this device if it was made before, else made now from the first source that can be reached
+async function spellList(lang){
+  const mine = SPELL_DICTS[lang], gb = lang === 'en-GB', box = await spellBox();
+  const files = async list => { for (const b of list) { try { return await Promise.all([spellFetch(b + '.aff'), spellFetch(b + '.dic')]); } catch {} } return null; };
+  try { if (window.caches) caches.delete('btl-spell-v1'); } catch {}
+  for (let i = 0; i < mine.length; i++) {
+    const key = `https://btl.invalid/spell/${lang}/${SPELL_REV}/${i}`, hit = box && await box.match(key).catch(() => null);
+    if (hit) return hit.text();
+    try {
+      const own = await files([mine[i]]); if (!own) continue;
+      const text = await spellExpand(own, await files(SPELL_DICTS[gb ? 'en-US' : 'en-GB']), gb);
+      if (box) box.put(key, new Response(text)).catch(() => {});
+      return text;
+    } catch (err) { console.warn('Spell check list could not be made from', mine[i], err); }
+  }
+  throw new Error('no dictionary');
 }
 let spellRetry = 0;
 function loadSpell(){
-  if (spellLang === 'off' || !canHighlight || spellDict) return Promise.resolve(spellDict);
+  if (spellLang === 'off' || spellLang === 'device' || !canHighlight || spellDict) return Promise.resolve(spellDict);
   const lang = spellLang;
   return spellLoading || (spellLoading = (async () => {
     try {
-      if (!window.Typo) {
-        const u = URL.createObjectURL(new Blob([await spellFetch(SPELL_LIB)], {type: 'text/javascript'}));
-        try { await loadScript(u); } finally { URL.revokeObjectURL(u); }
-      }
-      const [base, code] = SPELL_DICTS[lang];
-      const [aff, dic] = await Promise.all([spellFetch(base + '.aff'), spellFetch(base + '.dic')]);
-      await new Promise(r => setTimeout(r, 0));
-      if (lang === spellLang) { spellDict = new Typo(code, aff, dic); spellCache = new Map(); spellRetry = 0; }
+      const d = await spellMake(await spellList(lang), lang);
+      if (lang === spellLang) { spellDict = d; spellCache = new Map(); spellRetry = 0; spellTiers(d); setTimeout(() => spellPool(d), 400); }
     } catch (err) {
       console.warn('Spell check dictionary could not load; using the browser spell check', err);
       spellDict = null;
@@ -5644,12 +5972,116 @@ function loadSpell(){
     return spellDict;
   })());
 }
+// the list as a Set (filled in slices so the page stays responsive) with our own words added
+async function spellMake(text, lang){
+  const a = text.split('\n'), words = new Set();
+  for (let i = 0; i < a.length; i += 50000) { for (let j = i, e = Math.min(a.length, i + 50000); j < e; j++) words.add(a[j]); await new Promise(r => setTimeout(r)); }
+  for (const w of spellExtra(lang)) words.add(w);
+  return {words, lang, tier: null, pool: null, phon: null, check(w){
+    if (words.has(w)) return true;
+    const l = w.toLowerCase(); if (w === l) return false;
+    return w === w.toUpperCase() ? words.has(l) || words.has(l[0].toUpperCase() + l.slice(1)) : w[0] !== l[0] && w.slice(1) === l.slice(1) && words.has(l);
+  }};
+}
+// how common words are (SCOWL's lists 10, 20 and 35, most common first): they decide which suggestion comes first, and which capitalised words are slips
+async function spellTiers(d){
+  try {
+    const dia = d.lang === 'en-GB' ? 'british' : 'american', tier = new Map();
+    for (const [n, t] of [['english-words-35', 3], [dia + '-words-35', 3], ['english-words-20', 2], [dia + '-words-20', 2], ['english-words-10', 1], [dia + '-words-10', 1]]) for (const w of JSON.parse(await spellFetch(SPELL_TIERS + n + '.json'))) tier.set(w, t);
+    d.tier = tier; d.phon = new Map();
+    for (const w of tier.keys()) { const k = spellKey(w); (d.phon.get(k) || d.phon.set(k, []).get(k)).push(w); }
+    if (spellDict === d) { spellCache = new Map(); spellAll(); }
+  } catch (err) { console.warn('Common words list could not load', err); }
+}
+// our own words, in #spellX: stems with an optional /flags: S plural or -s, D -ed, G -ing, R -er, L -ly, d the last letter doubles, Z the -ise / -ize family (US or UK spelling as needed)
+function* spellExtra(lang){
+  const gb = lang === 'en-GB';
+  for (const t of (document.getElementById('spellX')?.textContent || '').split(/\s+/)) {
+    if (!t || t[0] === '#') continue;
+    const [s, f = ''] = t.split('/'); if (!f) { yield s; continue; }
+    const e = s.endsWith('e'), y = /[^aeiou]y$/.test(s), b = e ? s.slice(0, -1) : s, g = f.includes('d') ? s + s.slice(-1) : b;      // d: the last letter doubles (fit, fitted)
+    if (f.includes('Z')) { const z = s.replace(/i[sz]e?$/, '') + (gb ? 'is' : 'iz'); yield* ['e', 'es', 'ed', 'ing', 'ation', 'ations', 'er', 'ers'].map(x => z + x); continue; }
+    yield s;
+    if (f.includes('S')) yield y ? b + 'ies' : /(s|x|z|ch|sh)$/.test(s) ? s + 'es' : s + 's';
+    if (f.includes('D')) yield y ? b + 'ied' : f.includes('d') ? g + 'ed' : e ? s + 'd' : s + 'ed';
+    if (f.includes('G')) yield g + 'ing';
+    if (f.includes('R')) yield* [g + 'er', g + 'ers'];
+    if (f.includes('L')) yield y ? b + 'ily' : s + 'ly';
+  }
+}
+// ---- is this word fine?
+const SPELL_PRE = new Set('re de un non pre post over under co mis dis sub inter intra multi anti semi micro macro mid counter cross extra hyper hypo ultra super supra trans mono poly pseudo quasi neo meta self out up down off mega mini nano omni auto bio geo eco electro hydro socio psycho neuro thermo photo'.split(' '));
+const SPELL_SHORT = /^(post|over|under|inter|multi|micro|macro|anti|semi|mono|poly|hypo|meta|auto|mini|mega|nano|omni|bio|geo|eco)$/;      // prefixes that go with a word of three letters
+const SPELL_ROMAN = /^(?=[ivxlcdm]{2,}$)m{0,4}(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$/;
+// (UK spelling takes -ize as well as -ise: both are right)
+const spellKnown = lw => spellDict.check(lw) || (spellLang === 'en-GB' && /[iy]z/.test(lw) && spellDict.check(lw.replace(/([iy])z/g, '$1s')));
+// a known prefix and a word: rerating, nonlinear, underperformance (but not untill, corelation: a letter doubled or left single is a slip)
+function spellPre(lw){
+  for (let i = 2; i <= 7 && i < lw.length - 2; i++) {
+    if (!SPELL_PRE.has(lw.slice(0, i))) continue;
+    const r = lw.slice(i);
+    // the word after the prefix must be an everyday one, or a long one (not co + lour = colour)
+    if (r.length >= (i < 4 || SPELL_SHORT.test(lw.slice(0, i)) ? 3 : 4) && spellKnown(r) && (r.length > 5 || (spellDict.tier ? spellDict.tier.has(r) : r.length > 3))) return !spellDouble(lw);
+  }
+  return false;
+}
+function spellDouble(lw){
+  for (let i = 0; i < lw.length; i++) if (spellDict.words.has(lw.slice(0, i) + lw[i] + lw.slice(i)) || lw[i] === lw[i + 1] && spellDict.words.has(lw.slice(0, i) + lw.slice(i + 1))) return true;
+  return false;
+}
+// a Capitalised word that isn't listed is taken to be a name (Clicks, Mbeki) unless it looks like a typing slip for a common word:
+// letters swapped (Recieve), one vowel for another (Seperate), a doubled letter missing or extra; or, in a long word, any one letter out (Mitocondria)
+function spellSlip(lw){
+  const d = spellDict, t = d.tier, n = lw.length; if (!t || n < 3) return false;
+  const common = (c, k = 3) => (t.get(c) || 9) < k;
+  for (let i = 0; i < n - 1; i++) if (lw[i] !== lw[i + 1] && t.has(lw.slice(0, i) + lw[i + 1] + lw[i] + lw.slice(i + 2))) return true;
+  if (n < 5) return false;
+  for (let i = 0; i < n; i++) {
+    if (VOW.includes(lw[i])) for (const v of VOW) if (v !== lw[i] && common(lw.slice(0, i) + v + lw.slice(i + 1))) return true;
+    if (i < n - 1 && lw[i] === lw[i + 1] && common(lw.slice(0, i) + lw.slice(i + 1))) return true;
+    if (i > 0 && common(lw.slice(0, i) + lw[i - 1] + lw.slice(i))) return true;
+  }
+  return n > 7 && spellEdits(lw).some(c => c.length > 7 && c[0] === lw[0] && d.words.has(c));
+}
+function spellApos(w, lw){
+  if (/^[A-Z]'[A-Za-z]/.test(w)) return true;                            // O'Brien, D'Arcy
+  const i = w.lastIndexOf("'"), stem = w.slice(0, i), suf = lw.slice(i + 1);
+  if (['s', 'll', 're', 've', 'd', 'm'].includes(suf)) return wordOk(stem);
+  return suf === 't' && stem.endsWith('n') && wordOk(stem.slice(0, -1));          // mightn't
+}
+function spellWord(w){
+  const lw = w.toLowerCase();
+  if (w.length < 2 || w.length > 40 || userWords.has(lw) || ignoredWords.has(lw) || w === w.toUpperCase() || /^[A-Z]{2,}[a-z]*$/.test(w) || /[a-z][A-Z]/.test(w) || spellDict.check(w)) return true;
+  if (w.includes("'")) return spellApos(w, lw);
+  if (spellKnown(lw) || spellPre(lw) || SPELL_ROMAN.test(lw) || lw.endsWith('wise') && lw.length > 7 && spellKnown(lw.slice(0, -4))) return true;
+  return w[0] !== lw[0] && w.slice(1) === lw.slice(1) ? !spellSlip(lw) : false;
+}
 function wordOk(w){
   if (spellCache.has(w)) return spellCache.get(w);
-  const lw = w.toLowerCase();
-  const ok = w.length < 2 || (w === w.toUpperCase()) || userWords.has(lw) || ignoredWords.has(lw) ||
-    spellDict.check(w) || (/'s$/i.test(w) && spellDict.check(w.slice(0, -2))) || (/^[A-Z][a-z]/.test(w) && spellDict.check(lw));
+  let ok; try { ok = spellWord(w); } catch { ok = true; }
   spellCache.set(w, ok); return ok;
+}
+// the words in a text that need a red line: [{w, at, len}]. A hyphenated word is looked at in parts (re-rateing marks only "rateing");
+// web addresses, e-mails, @names, #tags, file names and Ph.D.-type abbreviations are left alone, as is anything next to a digit or underscore
+const SPELL_TOK = /[A-Za-zÀ-ÖØ-öø-ÿ]+(?:['’-][A-Za-zÀ-ÖØ-öø-ÿ]+)*/g;
+const SPELL_SKIP = /(?:https?:\/\/|www\.)[^\s<>"]+|[\w.+-]{1,64}@[\w-]{1,63}(?:\.[\w-]{1,63}){1,5}|[@#][\w-]+|[A-Za-z]{1,40}(?:\.[A-Za-z]{1,40}){1,6}/g;
+const SPELL_EXT = /^(com|org|net|edu|gov|ac|co|uk|za|io|us|au|nz|ca|de|fr|pdf|docx?|txt|csv|xlsx?|pptx?|png|jpe?g|gif|svg|md|json|js|ts|py|java|html?|css|xml|zip|mp[34]|heic|ipynb|rtf|odt|key|pages|numbers)$/i;
+function spellScan(text){
+  const out = [], skip = [];
+  for (const m of text.matchAll(SPELL_SKIP)) {
+    const p = m[0].split('.');
+    if (/^[A-Za-z]+(?:\.[A-Za-z]+)+$/.test(m[0]) && !(p.some(x => x.length < 3) || SPELL_EXT.test(p[p.length - 1]))) continue;
+    skip.push([m.index, m.index + m[0].length]);
+  }
+  for (const m of text.matchAll(SPELL_TOK)) {
+    const at = m.index, end = at + m[0].length, w = m[0].replace(/’/g, "'");
+    if (/[\d_]/.test(text[at - 1] || '') || /[\d_]/.test(text[end] || '') || skip.some(([a, b]) => at < b && end > a)) continue;
+    if (!w.includes('-')) { if (!wordOk(w)) out.push({w, at, len: w.length}); continue; }
+    if (spellDict.words.has(w) || spellDict.words.has(w.toLowerCase())) continue;          // mother-in-law is a word in its own right
+    const parts = w.split('-'); let o = at;
+    parts.forEach((p, i) => { if (p.length > 1 && !(i < parts.length - 1 && SPELL_PRE.has(p.toLowerCase())) && !wordOk(p)) out.push({w: p, at: o, len: p.length}); o += p.length + 1; });
+  }
+  return out;
 }
 // the note's text as one string (so words split by bold/italic still count as one), with a map back to the text nodes
 function noteText(note){
@@ -5680,14 +6112,12 @@ function spellNote(note, all){
   const {text, parts} = noteText(note); if (!parts.length) return;
   const sel = getSelection(), typing = !all && document.activeElement === note && sel.rangeCount && sel.isCollapsed ? sel.getRangeAt(0) : null;
   const found = [];
-  for (const m of text.matchAll(/[A-Za-zÀ-ÖØ-öø-ÿ]+(?:['’][A-Za-zÀ-ÖØ-öø-ÿ]+)*/g)) {
-    const w = m[0].replace(/’/g, "'");
-    if (/\d/.test(text[m.index - 1] || '') || /\d/.test(text[m.index + m[0].length] || '') || wordOk(w)) continue;
+  for (const x of spellScan(text)) {
     const r = document.createRange();
-    try { r.setStart(...posAt(parts, m.index, false)); r.setEnd(...posAt(parts, m.index + m[0].length, true)); } catch { continue; }
+    try { r.setStart(...posAt(parts, x.at, false)); r.setEnd(...posAt(parts, x.at + x.len, true)); } catch { continue; }
     // the word you are still typing isn't marked until you move on from it
     if (typing && r.comparePoint(typing.startContainer, typing.startOffset) === 0) continue;
-    found.push({range: r, word: w, at: m.index});
+    found.push({range: r, word: x.w, at: x.at});
   }
   if (found.length) spellRanges.set(note, found);
 }
@@ -5709,9 +6139,10 @@ function spellAll(){
 // moving the cursor off a word you just typed marks it if it is misspelt
 document.addEventListener('selectionchange', () => { if (spellDict && noteActive()) spellSoon(active); });
 const spellSel = $('#spellLang'); spellSel.value = spellLang;
+const spellDocLang = () => spellLang === 'off' ? 'en' : spellLang === 'device' ? navigator.language || 'en' : spellLang;
 spellSel.onchange = () => {
   spellLang = spellSel.value; pref.set('spell-lang', spellLang);
-  document.documentElement.lang = spellLang === 'off' ? 'en' : spellLang; spellRetry = 0;
+  document.documentElement.lang = spellDocLang(); spellRetry = 0;
   spellDict = null; spellLoading = null; spellCache = new Map();
   spellAll(); loadSpell();
   if (noteActive()) restoreSel();
@@ -5836,39 +6267,113 @@ main.addEventListener('pointerup', e => {
   const x = e.clientX, y = e.clientY;
   setTimeout(() => { if (getSelection().isCollapsed) { const hit = spellHit(note, x, y); if (hit) openSpellMenu(hit, x, y + 10); } }, 250);
 });
-// spelling suggestions, best first: one edit away (swapped, missing, extra or wrong letter), then two if needed
-const KB = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
+// ---- suggestions, best first. Every word one edit away is tried, then every word of the same first letter within two; each is scored by how
+// far the slip is (a neighbouring key, a swapped pair, a doubled letter or a sound-alike counts for less), whether it sounds the same,
+// and how common the word is. All of it takes a few milliseconds.
+const KB = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'], SPELL_AL = "abcdefghijklmnopqrstuvwxyz'", VOW = 'aeiou';
 const near = (a, b) => { const p = c => { for (let r = 0; r < 3; r++) { const i = KB[r].indexOf(c); if (i >= 0) return [r, i]; } return null; }; const x = p(a), y = p(b); return x && y && Math.abs(x[0] - y[0]) <= 1 && Math.abs(x[1] - y[1]) <= 1; };
-const VOW = 'aeiou';
-function spellSuggest(dict, word, max = 6){
-  const lower = word.toLowerCase(), AL = "abcdefghijklmnopqrstuvwxyz'";
-  const seen = new Map();
-  const add = (w, score) => { if (w && w !== lower && (!seen.has(w) || seen.get(w) > score)) seen.set(w, score); };
-  const edits = (w, base, out) => {
-    for (let i = 0; i <= w.length; i++) {
-      const a = w.slice(0, i), b = w.slice(i);
-      if (b) out(a + b.slice(1), base + (b[0] === b[1] || b[0] === a.slice(-1) ? 0.6 : 1.2));                   // extra letter (cheap if doubled)
-      if (b.length > 1) out(a + b[1] + b[0] + b.slice(2), base + 0.5);                                          // two letters swapped
-      for (const c of AL) {
-        if (b && c !== b[0]) out(a + c + b.slice(1), base + (near(c, b[0]) ? 0.8 : VOW.includes(c) && VOW.includes(b[0]) ? 0.8 : 1.4));   // wrong letter
-        out(a + c + b, base + (c === a.slice(-1) || c === b[0] ? 0.6 : 1.3));                                    // missing letter (cheap if doubling)
-      }
-    }
-  };
-  const one = new Map();
-  edits(lower, 0, (w, s) => { if (!one.has(w) || one.get(w) > s) one.set(w, s); });
-  for (const [w, s] of one) if (dict.check(w)) add(w, s + (w[0] !== lower[0] ? 0.7 : 0));
-  // a split into two words ("alot" → "a lot")
-  for (let i = 1; i < lower.length; i++) { const a = lower.slice(0, i), b = lower.slice(i); if ((a.length > 1 || a === 'a' || a === 'i') && b.length > 2 && dict.check(a) && dict.check(b)) add(a + ' ' + b, 1.1); }
-  if (seen.size < 3 && lower.length > 3) {                    // two edits away, within a time budget
-    const t0 = performance.now();
-    for (const [w1, s1] of one) {
-      if (performance.now() - t0 > 250) break;
-      edits(w1, s1, (w, s) => { if (s < 3 && !seen.has(w) && dict.check(w)) add(w, s + (w[0] !== lower[0] ? 0.7 : 0)); });
+const SIM = new Set('cs ck kq sz gj dt iy fv bp'.split(' ')), sim = (a, b) => SIM.has(a + b) || SIM.has(b + a);
+const SPELL_APART = {alot: 'a lot', infact: 'in fact', aswell: 'as well', atleast: 'at least', noone: 'no one', eachother: 'each other', upto: 'up to', ofcourse: 'of course', infront: 'in front', incase: 'in case', inbetween: 'in between', alittle: 'a little', thankyou: 'thank you', aslong: 'as long'};       // run together, and nearly always meant as two
+const SPELL_RUDE = /^(cum(s|ming|med)?|cocks?|cunts?|fuck(s|ed|er|ers|ing)?|shit(s|ty|ted|ting)?|piss(es|ed|ing)?|twats?|wank(s|ed|er|ers|ing)?|bitch(es|y|ing)?|sluts?|whores?|bollocks?|arse(s|d)?|porn)$/;       // never offered as a correction
+function spellEdits(w){
+  const out = [];
+  for (let i = 0; i <= w.length; i++) {
+    const a = w.slice(0, i), b = w.slice(i);
+    if (b) out.push(a + b.slice(1));
+    if (b.length > 1) out.push(a + b[1] + b[0] + b.slice(2));
+    for (const c of SPELL_AL) { if (b && c !== b[0]) out.push(a + c + b.slice(1)); out.push(a + c + b); }
+  }
+  return out;
+}
+// how the word sounds, roughly: fisiks / physics, nolege / knowledge, fourty / forty give the same key
+function spellKey(w){
+  w = w.replace(/[^a-z]/g, '').replace(/^(kn|gn|pn|wr)/, m => m[1]).replace(/^ps/, 's').replace(/^wh/, 'w').replace(/^x/, 's').replace(/ough$/, 'uf')
+    .replace(/ph/g, 'f').replace(/gh/g, '').replace(/ck/g, 'k').replace(/sc(?=[eiy])/g, 's').replace(/c(?=[eiy])/g, 's').replace(/tch/g, 'ch').replace(/ch/g, 'k').replace(/c/g, 'k')
+    .replace(/th/g, '0').replace(/q/g, 'k').replace(/x/g, 'ks').replace(/z/g, 's').replace(/dn/g, 'n').replace(/dg/g, 'g').replace(/g(?=[eiy])/g, 'j');
+  return ((VOW.includes(w[0]) ? 'a' : w[0] || '') + w.slice(1).replace(/[aeiouyhw]/g, '')).replace(/(.)\1+/g, '$1');
+}
+// what each kind of slip costs (lower is a likelier slip): a doubled letter missing or extra, a vowel next to a vowel, one vowel for another, a sound-alike,
+// a neighbouring key, any other letter, two letters swapped, a wrong first letter, length; then what a common word is worth, a matching sound, and a name for a lower-case word
+const SPELL_W = {dbl: .45, vow: .75, vsub: .55, sim: .5, near: .65, sub: 1, swap: .4, first: .8, firstSim: .25, len: .03, t1: .55, t2: .4, t3: .2, key: .5, name: .4};
+// how far the typed word is from a real one
+function spellCost(a, b){
+  const n = a.length, m = b.length, D = [[0]], W = SPELL_W;
+  const del = i => a[i - 1] === a[i - 2] || a[i - 1] === a[i] ? W.dbl : VOW.includes(a[i - 1]) && (VOW.includes(a[i - 2]) || VOW.includes(a[i])) ? W.vow : 1;
+  const ins = j => b[j - 1] === b[j - 2] || b[j - 1] === b[j] ? W.dbl : VOW.includes(b[j - 1]) && (VOW.includes(b[j - 2]) || VOW.includes(b[j])) ? W.vow : 1;
+  for (let j = 1; j <= m; j++) D[0][j] = D[0][j - 1] + ins(j);
+  for (let i = 1; i <= n; i++) {
+    D[i] = [D[i - 1][0] + del(i)];
+    for (let j = 1; j <= m; j++) {
+      const x = a[i - 1], y = b[j - 1];
+      let v = Math.min(D[i - 1][j] + del(i), D[i][j - 1] + ins(j), D[i - 1][j - 1] + (x === y ? 0 : VOW.includes(x) && VOW.includes(y) ? W.vsub : sim(x, y) ? W.sim : near(x, y) ? W.near : W.sub));
+      if (i > 1 && j > 1 && x === b[j - 2] && a[i - 2] === y) v = Math.min(v, D[i - 2][j - 2] + W.swap);
+      D[i][j] = v;
     }
   }
-  const keepCase = w => word === word.toUpperCase() && word.length > 1 ? w.toUpperCase() : word[0] === word[0].toUpperCase() ? w[0].toUpperCase() + w.slice(1) : w;
-  return [...seen].sort((x, y) => x[1] - y[1] || Math.abs(x[0].length - lower.length) - Math.abs(y[0].length - lower.length)).slice(0, max).map(([w]) => keepCase(w));
+  return D[n][m] + (a[0] === b[0] || a[0] === b[1] && a[1] === b[0] ? 0 : sim(a[0], b[0]) ? W.firstSim : W.first) + W.len * Math.abs(n - m);
+}
+// edit distance (a swap of neighbours counts as one) with a cap, for the quick first pass over the word list
+function spellOsa(a, b, max){
+  const n = a.length, m = b.length; if (Math.abs(n - m) > max) return max + 1;
+  let p2 = null, p1 = new Array(m + 1);
+  for (let j = 0; j <= m; j++) p1[j] = j;
+  for (let i = 1; i <= n; i++) {
+    const cur = [i], x = a.charCodeAt(i - 1); let min = i;
+    for (let j = 1; j <= m; j++) {
+      const y = b.charCodeAt(j - 1);
+      let v = Math.min(p1[j] + 1, cur[j - 1] + 1, p1[j - 1] + (x === y ? 0 : 1));
+      if (i > 1 && j > 1 && x === b.charCodeAt(j - 2) && a.charCodeAt(i - 2) === y && p2[j - 2] + 1 < v) v = p2[j - 2] + 1;
+      cur.push(v); if (v < min) min = v;
+    }
+    if (min > max) return max + 1;
+    p2 = p1; p1 = cur;
+  }
+  return p1[m];
+}
+// the word list sorted by first letter (c, k, q and s sound alike at the start), for the scan; built once, after the words load
+const spellBucket = c => 'ckq'.includes(c) ? 'k' : c;
+function spellPool(d){
+  if (d.pool) return d.pool;
+  const by = new Map();
+  for (const w of d.words) {
+    if (w.length < 2 || /[\d.]/.test(w) || w.endsWith("'s") || /[A-Z].*[A-Z]|^[A-Z]+$/.test(w)) continue;
+    const l = w.toLowerCase(); if (l !== w && d.words.has(l)) continue;
+    const k = spellBucket(l[0]); (by.get(k) || by.set(k, []).get(k)).push(w);
+  }
+  return d.pool = by;
+}
+function spellSuggest(d, word, max = 6){
+  const typed = word.toLowerCase(), caps = word.length > 1 && word === word.toUpperCase(), title = !caps && word[0] !== typed[0];
+  const key = spellKey(typed), t0 = performance.now(), out = new Map(), tier = d.tier;
+  const score = (l, w) => {
+    let s = spellCost(typed, l);
+    const t = tier && tier.get(l); if (t) s -= SPELL_W['t' + t];
+    if (spellKey(l) === key) s -= SPELL_W.key;
+    if (w !== l && !title) s += SPELL_W.name;                          // a name, for something typed in lower case
+    return s;
+  };
+  const add = (w, lw = w.toLowerCase()) => { if (lw !== typed && !out.has(lw) && !SPELL_RUDE.test(lw)) out.set(lw, {w, s: score(lw, w)}); };
+  const has = w => d.words.has(w) || userWords.has(w);
+  for (const c of spellEdits(typed)) { if (has(c)) add(c); else { const C = c[0].toUpperCase() + c.slice(1); if (c.length > 1 && d.words.has(C)) add(C, c); } }
+  if (typed.length > 3) {
+    const lim = typed.length > 5 ? 2 : 1;                              // short words have too many neighbours two edits away
+    let n = 0;
+    for (const w of spellPool(d).get(spellBucket(typed[0])) || []) {
+      if ((++n & 2047) === 0 && performance.now() - t0 > 40) break;
+      if (Math.abs(w.length - typed.length) > lim) continue;
+      const l = w.toLowerCase(); if (!out.has(l) && l !== typed && spellOsa(typed, l, lim) <= lim) add(w, l);
+    }
+    for (const u of userWords) if (spellOsa(typed, u, lim) <= lim) add(u);
+  }
+  if (d.phon && typed.length > 3) for (const l of d.phon.get(key) || []) if (spellOsa(typed, l, 4) <= 4) add(l);
+  // two words run together: the usual ones (alot, infact), or any two very common words
+  if (SPELL_APART[typed]) out.set(SPELL_APART[typed], {w: SPELL_APART[typed], s: -9});
+  else if (d.tier && typed.length > 5) for (let i = 2; i < typed.length - 1; i++) {
+    const a = typed.slice(0, i), b = typed.slice(i), x = d.tier.get(a), y = d.tier.get(b);
+    if (x < 3 && y < 3) out.set(a + ' ' + b, {w: a + ' ' + b, s: 1.2 - (x === 1 ? .15 : 0) - (y === 1 ? .15 : 0)});
+  }
+  const show = w => caps ? w.toUpperCase() : title && w[0] === w[0].toLowerCase() ? w[0].toUpperCase() + w.slice(1) : w;
+  return [...out.values()].sort((x, y) => x.s - y.s || Math.abs(x.w.length - typed.length) - Math.abs(y.w.length - typed.length) || (x.w < y.w ? -1 : 1)).slice(0, max).map(x => show(x.w));
 }
 
 // as soon as you click into a note: make sure its spell checking is on and up to date
@@ -5879,7 +6384,7 @@ main.addEventListener('focusin', e => {
   else if (spellDict) { spellNote(note); paintSpell(); }
   else loadSpell();
 });
-document.documentElement.lang = spellLang === 'off' ? 'en' : spellLang;
+document.documentElement.lang = spellDocLang();
 loadSpell();                 // start straight away; the browser checks spelling until it's ready
 
 // ================= Select all: every note on the current page, to restyle, move or delete together =================

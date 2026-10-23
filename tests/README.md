@@ -20,6 +20,7 @@ Screenshots that tests take go to `tests/shots/` (not saved in git).
 ## Notes
 
 - The CDN libraries the app loads (pdf.js, JSZip, KaTeX, mammoth, docx-preview, spell-check dictionaries, fonts) are served from `node_modules`, so the tests run offline.
+- The UK English spell-check list (LibreOffice's `en_GB`, by Marco A.G. Pinto, LGPL; see `dict/README_en_GB.txt`) and the common-word lists (SCOWL, from `wordlist-english`) are saved in `dict/`; the US list and Typo.js come from `node_modules`. `spelling.js` measures the spell checker on the word lists in `spell/` (see the top of that file; the `holdout-*` files are the ones never used for tuning) and drives the menu, the language choice and the word-list cache. `SPELL_REPORT=1 node spelling.js` only prints the numbers, and `APP=/path/to/older/index.html` measures an older copy.
 - `assets.js` writes `nbfile.html`, which `driveshare.js` and `trash.js` read: `run.js` runs it first.
 - `tablet.js`, `sideink.js`, `hover.js`, `guide.js`, `guides.js`, `table.js`, `organise.js`, `blankshape.js` and `ios.js` use Chrome DevTools features (touch and Apple Pencil emulation, CPU throttling, PDF printing), so they only run in Chromium.
 - `ios.js` serves the app on a local web address (the Add to Home Screen card only shows on the web), pretends to be Safari on an iPad, an iPhone or an older iOS, and checks the card, Install as an app, the iPad layout and two-finger undo.
