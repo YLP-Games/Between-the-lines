@@ -1558,19 +1558,27 @@ html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;text-
 @media (pointer:coarse) and (min-width:641px){.panel{height:calc(74px + var(--sbh))}}      /* room for the ribbon's 44px buttons (and the View tab's button pairs) with their captions */
 /* an iPad turned sideways is short: the group captions under the tools give their room to the page */
 @media (pointer:coarse) and (min-width:641px) and (max-height:900px){.ribbon .cap{display:none}.panel{height:calc(56px + var(--sbh))}}
-/* a touch screen up to about 1100px wide (an iPad held upright): the groups open up into one row of 44px tools, so the ones used most come first and the rest are a swipe away */
+/* a touch screen up to about 1100px wide (an iPad held upright), or one turned sideways (its captions are already gone): the groups open up into one row of 44px tools,
+   so the ones used most come first and the rest are a swipe away */
 @media (pointer:coarse) and (min-width:641px) and (max-width:1100px){.panel{height:calc(56px + var(--sbh))}}      /* (a phone's panel fits itself) */
-@media (pointer:coarse) and (max-width:1100px){
+@media (pointer:coarse) and (max-width:1100px),(pointer:coarse) and (max-height:900px){
   .ribbon .cap{display:none}
   .panel > .grp,.panel > .grp > .row:not(.seg){display:contents}
   .panel > .grp > .row > *{scroll-snap-align:start}
   .panel::after{order:2}
   /* Home: font and size, text colour, B I U and highlight, lists and indents, alignment; then strikethrough, x², x₂, clear formatting and the bullet and indent menus */
-  #font{width:110px!important}
-  #panel-home > .grp:has(#colorBtn) + .sep,#panel-home :is([data-cmd=strikeThrough],[data-cmd=superscript],[data-cmd=subscript],[data-cmd=removeFormat],#listStyle,#indentSize){order:1}
+  #panel-home :is([data-cmd=strikeThrough],[data-cmd=superscript],[data-cmd=subscript],[data-cmd=removeFormat],#listStyle,#indentSize){order:1}
+  #panel-home [data-cmd=strikeThrough]{margin-left:14px}
+  #swatches,#favText{flex:none}      /* (now in the row itself: whole, never squeezed into a pile) */
   /* Insert, Box and View: a button's words go under its icon, in small type */
   :is(#panel-insert,#panel-box,#panel-view) .btn:has(> .i,> .sidesw){flex-direction:column;gap:1px;padding:0 4px;font-size:12px;line-height:1.1}
+}
+/* upright, the colours fold into one button (and the separator after them goes along to mark the tools at the end) */
+@media (pointer:coarse) and (max-width:1100px){
+  #font{width:110px!important}
   @supports selector(:popover-open){
+    #panel-home > .grp:has(#colorBtn) + .sep{order:1}
+    #panel-home [data-cmd=strikeThrough]{margin-left:0}
     #colorBtn{display:inline-flex}
     #colours:not(:popover-open){display:none}
     #colours:popover-open{display:flex;flex-wrap:wrap;align-items:center;gap:2px;width:max-content;max-width:min(366px,calc(100vw - 40px));inset:auto;margin:0;padding:8px;
