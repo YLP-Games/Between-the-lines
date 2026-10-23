@@ -24,7 +24,8 @@ const clearNotes = page => page.evaluate(() => { document.querySelectorAll('.not
   const baseCounts = [['panel-home', 22], ['panel-insert', 10], ['panel-box', 9], ['panel-view', 15]];
 
   const {browser, page, errors, card} = await start();
-  const counts = await page.evaluate(() => [...document.querySelectorAll('#ribbon .panel')].map(p => [p.id, p.querySelectorAll('button').length]));
+  // the buttons the ribbon has with a mouse (Home's "A" colour button is only there on narrow touch screens, in place of the swatches)
+  const counts = await page.evaluate(() => [...document.querySelectorAll('#ribbon .panel')].map(p => [p.id, [...p.querySelectorAll('button')].filter(b => getComputedStyle(b).display !== 'none').length]));
   const ins0 = baseCounts.find(c => c[0] === 'panel-insert')[1], ins1 = counts.find(c => c[0] === 'panel-insert')[1];
   ok(ins1 === ins0 + 1, `the Insert tab has one more button than before (${ins0} → ${ins1})`);
   ok(counts.filter(c => c[0] !== 'panel-insert').every(c => baseCounts.find(b => b[0] === c[0])[1] === c[1]), 'every other tab has exactly the buttons it had');
