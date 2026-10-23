@@ -1,6 +1,7 @@
 // A scanned PDF (handwritten notes saved as one picture per page, as a scanner or "Microsoft: Print to PDF" makes them) shows
 // its picture: it isn't taken for a slide background and left out, which left the page blank. The same with hidden words from
 // text recognition on top, or a small stamp in words. A slide's background picture behind its words is still left out.
+// On a scan or photo of a table drawn by hand, + Add here finds the rows between its lines of writing and none goes through them.
 const {open} = require('./harness');
 const path = require('path');
 const APP = process.env.APP || path.resolve(__dirname, '..', 'index.html');
@@ -16,7 +17,27 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
     const slide = kind === 'slide', pw = slide ? 720 : 595, ph = slide ? 540 : 842, iw = pw * 2, ih = ph * 2;
     const c = document.createElement('canvas'); c.width = iw; c.height = ih;
     const x = c.getContext('2d');
+    const rows = [];          // (table) where each row of writing is, top and bottom of its ink, in picture pixels
     if (slide) { const g = x.createLinearGradient(0, 0, iw, ih); g.addColorStop(0, '#1d4fb8'); g.addColorStop(1, '#6a2bb0'); x.fillStyle = g; x.fillRect(0, 0, iw, ih); }
+    else if (kind.startsWith('table')) {
+      // a tax working on lined paper: a pink margin line from the very top of the page, a table drawn by hand (its column
+      // lines cross every row), a row of writing on every other rule, and in row 4 the thin tail of a y (2 pixels wide, at
+      // x 301 and 302, between the pixels a printed page is looked at in) hanging 40 pixels below its line
+      x.fillStyle = '#fbfaf7'; x.fillRect(0, 0, iw, ih);
+      x.fillStyle = '#bcd0e8'; for (let y = 160; y < ih; y += 56) x.fillRect(0, y, iw, 2);
+      x.fillStyle = '#e7b3cf'; x.fillRect(170, 0, 7, ih);
+      x.fillStyle = '#333'; for (const cx of [200, 420, 980, 1140]) x.fillRect(cx, 230, 3, 1270);
+      x.fillRect(200, 230, 943, 3); x.fillRect(200, 1497, 943, 3);
+      x.fillStyle = '#1f2f6b'; x.font = 'italic 36px cursive';
+      const cells = [['Revenue', 'gross income', '750 000'], ['Bad debts', 's11(i)', '(187 500)'], ['Prior year', 's11(j) inclusion', '53 000'], ['Lavender', 'home use', '34 000'],
+        ['Fuchsia', 'no consideration', '(65 000)'], ['Viridian', 'local school', '12 000'], ['Cerulean', 'fire, no insurance', ''], ['Pewter', 'below market value', '40 000'], ['Subtotal', '', '436 000']];
+      cells.forEach((row, i) => {
+        const base = 300 + i * 112; let top = base, bottom = base;
+        row.forEach((t, k) => { if (!t) return; x.fillText(t, [215, 435, 1000][k], base); const m = x.measureText(t); top = Math.min(top, base - Math.ceil(m.actualBoundingBoxAscent)); bottom = Math.max(bottom, base + Math.ceil(m.actualBoundingBoxDescent)); });
+        if (i === 3) { x.fillRect(301, base, 2, 40); bottom = Math.max(bottom, base + 40); }
+        rows.push([top, bottom]);
+      });
+    }
     else {
       // a scan: off-white paper, faint rules, handwriting on the first lines, a blank stretch, then more, and grey specks
       x.fillStyle = '#f6f3ea'; x.fillRect(0, 0, iw, ih);
@@ -48,7 +69,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
     const xref = len, size = offs.length;
     push(`xref\n0 ${size}\n0000000000 65535 f \n` + offs.slice(1).map(o => String(o).padStart(10, '0') + ' 00000 n \n').join(''));
     push(`trailer\n<< /Size ${size} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
-    await openFiles([new File(chunks, kind + '.pdf', {type: 'application/pdf'})]);
+    await openFiles([kind.endsWith('picture') ? new File([jpeg], kind + '.jpg', {type: 'image/jpeg'}) : new File(chunks, kind + '.pdf', {type: 'application/pdf'})]);
     // what the page shows: its stored picture
     const card = [...document.querySelectorAll('.pagecard')].pop();
     const im = await loadImg(card.style.getPropertyValue('--pg').match(/url\(["']?(.*?)["']?\)$/)[1]);
@@ -57,7 +78,8 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
     const d = cx.getImageData(0, 0, cv.width, cv.height).data, at = (fx, fy) => { const i = (Math.floor(fy * cv.height) * cv.width + Math.floor(fx * cv.width)) * 4; return [d[i], d[i + 1], d[i + 2]]; };
     let blue = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 2] - d[i] > 60 && d[i] + d[i + 1] + d[i + 2] < 400) blue++;
     return {pages: document.querySelectorAll('.pagecard').length, w: +card.dataset.w, h: +card.dataset.h, blue: blue / (d.length / 4),
-      paper: at(0.5, 0.6), words: JSON.parse(card.dataset.text).map(t => t[0]).join(' '), gaps: JSON.parse(card.dataset.gaps), ink: at(0.9, 0.5)};
+      paper: at(0.5, 0.6), words: JSON.parse(card.dataset.text).map(t => t[0]).join(' '), gaps: JSON.parse(card.dataset.gaps), ink: at(0.9, 0.5),
+      rows: rows.map(r => r.map(v => v * +card.dataset.w / iw))};          // (in page units, like the gaps)
   }, [kind, text, box]);
   const paper = c => Math.abs(c[0] - 246) < 10 && Math.abs(c[1] - 243) < 10 && Math.abs(c[2] - 234) < 10;
   // between the two lots of handwriting (page units 255 to 585) only the paper's rules cross the page: a gap between each two
@@ -83,6 +105,17 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   const typed = await run('typed', '', 'BT 0 g /F1 22 Tf 4 92 Td (My answer: R3.5 million abatement) Tj 0 -28 Td (applies only once per estate) Tj'
     + ' 0 -28 Td (check s4q for the surviving spouse) Tj 0 -28 Td (deduction comes before the abatement) Tj ET');
   ok(typed.blue > 0.001 && paper(typed.paper), 'a scan with a text box typed onto it still shows its handwriting');
+
+  // ---- a table drawn by hand on lined paper: + Add here finds the rows between its lines of writing, and none goes through them ----
+  for (const kind of ['table', 'table-picture']) {
+    const t = await run(kind, ''), what = kind === 'table' ? 'a scanned PDF' : 'a photo';
+    const between = t.rows.slice(1).map((r, i) => t.gaps.filter(([a, b]) => a >= t.rows[i][1] - 0.5 && b <= r[0] + 0.5).length);
+    ok(between.every(n => n > 0), `on ${what} of a table drawn by hand, there are blank rows between every two rows of writing, though its column lines and margin line cross them (${between.join(' ')})`);
+    const cut = t.gaps.filter(([a, b]) => t.rows.some(([top, bottom]) => a < bottom - 0.5 && b > top + 0.5));
+    ok(!cut.length, `and none goes through writing${cut.length ? ` (${JSON.stringify(cut)})` : ''}`);
+    const [, tail] = t.rows[3], next = t.gaps.find(([a]) => a >= t.rows[3][0]);
+    ok(next && next[0] >= tail - 0.5, `nor through the thin tail of a y hanging below its line (the next gap starts at ${next && next[0]}, the tail ends at ${tail.toFixed(1)})`);
+  }
 
   // ---- a slide: a background picture behind its words is still left out ----
   const slide = await run('slide', 'BT 0 g /F1 34 Tf 50 470 Td (Tax 2: estate duty) Tj /F1 26 Tf 0 -60 Td (Property of the deceased) Tj 0 -45 Td (Deemed property: s3\\(3\\)) Tj'

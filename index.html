@@ -3917,7 +3917,8 @@ async function readPdf(buf, name){
       ctx.fillRect(x - 3 * S, y - size * 1.05 * S, (i.width + 6) * S, size * 1.4 * S);
     }
     px = ctx.getImageData(0, 0, cv.width, cv.height).data;
-    const gaps = blankGaps(cv, S, inked, scan ? 0.01 : 0);          // (a scan's paper has specks on its blank rows, as a picture's does)
+    // (a scan's paper has specks on its blank rows, as a picture's does, and lines drawn down it: a table's columns, the margin)
+    const gaps = scan ? blankGaps(cv, S, withoutDownLines(cv, S, inked), true) : blankGaps(cv, S, inked);
     await addPageCard(cv, S, W, H, gaps, tc.items.filter(i => i.str && i.str.trim() && !isSlideNo(i)).map(i => {
       const t = i.transform, [x, y] = v.convertToViewportPoint(t[4], t[5]);
       return [i.str, +(x / S).toFixed(1), +(y / S).toFixed(1), +(Math.hypot(t[2], t[3]) || i.height || 10).toFixed(1), +(i.width).toFixed(1), i.hasEOL ? 1 : 0];
@@ -3949,17 +3950,38 @@ function nearlyBlank(px){
   for (let i = 0; i < px.length; i += 4 * 13, all++) if (Math.abs(px[i] - c[0]) + Math.abs(px[i+1] - c[1]) + Math.abs(px[i+2] - c[2]) > 60) ink++;
   return ink < all * 0.005;
 }
+// On handwritten paper, lines drawn down the page (a table's columns, the margin) cross every row, so no row between two lines
+// of writing would be blank. Ink that runs down more than 40 page units without a break is such a line, not writing, and
+// is left out when looking for blank rows (looked for three pixels wide, for a line that slants, and left out five wide)
+function withoutDownLines(cv, S, inked){
+  const w = cv.width, h = cv.height, line = new Uint8Array(w * h), min = 40 * S;
+  const at = (x, y) => x >= 0 && x < w && inked((y * w + x) * 4);
+  for (let x = 0; x < w; x += 3) {
+    let start = -1, last = -1;
+    const end = () => { if (start >= 0 && last - start >= min) for (let y = start; y <= last; y++) line.fill(1, y * w + Math.max(0, x - 2), y * w + Math.min(w, x + 3)); };
+    for (let y = 0; y < h; y++) {
+      if (!(at(x - 1, y) || at(x, y) || at(x + 1, y))) continue;
+      if (start < 0 || y - last > 3) { end(); start = y; }          // (a break of a pixel or two in a scanned line doesn't end it)
+      last = y;
+    }
+    end();
+  }
+  return i => inked(i) && !line[i >> 2];
+}
 // blank rows, in page units: where the page can open up without cutting through anything.
-// `noise` is the share of a row that may be inked and still count as blank (the grain of a photo or a scan)
-function blankGaps(cv, S, inked, noise = 0){
-  const gaps = [], allow = Math.floor(cv.width / 3 * noise);
+// `paper`: a scan or a photo, whose blank rows have specks of dust and grain on them. A speck (ink with none 4 pixels
+// away all round it) doesn't stop a row being blank; a stroke of writing, however thin (the tail of a y), does. Every pixel
+// of every row is looked at there, as a pen stroke can be thinner than the 3 pixels across (and 2 down) a printed page is looked at in
+function blankGaps(cv, S, inked, paper = false){
+  const w = cv.width, h = cv.height, gaps = [], step = paper ? 1 : 3, down = paper ? 1 : 2;
+  const at = (x, y) => x >= 0 && x < w && y >= 0 && y < h && inked((y * w + x) * 4);
+  const speck = (x, y) => { for (let d = -4; d <= 4; d++) if (at(x + d, y - 4) || at(x + d, y + 4) || at(x - 4, y + d) || at(x + 4, y + d)) return false; return true; };
   let start = -1;
-  for (let y = 0; y < cv.height; y += 2) {
-    let n = 0;
-    for (let x = 0; x < cv.width; x += 3) if (inked((y * cv.width + x) * 4) && ++n > allow) break;
-    const blank = n <= allow;
+  for (let y = 0; y < h; y += down) {
+    let blank = true;
+    for (let x = 0; x < w; x += step) if (inked((y * w + x) * 4) && !(paper && speck(x, y))) { blank = false; break; }
     if (blank && start < 0) start = y;
-    if ((!blank || y + 2 >= cv.height) && start >= 0) { if (y - start >= 6) gaps.push([+(start / S).toFixed(1), +(y / S).toFixed(1)]); start = -1; }
+    if ((!blank || y + down >= h) && start >= 0) { if (y - start >= 6) gaps.push([+(start / S).toFixed(1), +(y / S).toFixed(1)]); start = -1; }
   }
   return gaps;
 }
@@ -4586,7 +4608,7 @@ async function readImage(file, home = curId){
     ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, 0, 0, cv.width, cv.height);
     const px = ctx.getImageData(0, 0, cv.width, cv.height).data, paper = paperOf(px);
     const inked = i => Math.abs(px[i] - paper[0]) + Math.abs(px[i+1] - paper[1]) + Math.abs(px[i+2] - paper[2]) > 60;
-    await addPageCard(cv, S, W, H, blankGaps(cv, S, inked, 0.01), [], 0.92, home);
+    await addPageCard(cv, S, W, H, blankGaps(cv, S, withoutDownLines(cv, S, inked), true), [], 0.92, home);
   } finally { cv.width = cv.height = 0; }
 }
 
