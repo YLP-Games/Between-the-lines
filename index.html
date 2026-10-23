@@ -1566,6 +1566,10 @@ html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;text-
   .panel > .grp,.panel > .grp > .row:not(.seg){display:contents}
   .panel > .grp > .row > *{scroll-snap-align:start}
   .panel::after{order:2}
+  .panel{align-items:flex-start}      /* (the tools keep out of the scroll bar's strip below them) */
+  .panel > .sep{margin:4px 1px;height:36px;align-self:flex-start}
+  .panel .seg{padding:0}      /* (its 44px buttons fill the row's height) */
+  .panel .chk{min-height:44px;flex:none}
   /* Home: font and size, text colour, B I U and highlight, lists and indents, alignment; then strikethrough, x², x₂, clear formatting and the bullet and indent menus */
   #panel-home :is([data-cmd=strikeThrough],[data-cmd=superscript],[data-cmd=subscript],[data-cmd=removeFormat],#listStyle,#indentSize){order:1}
   #panel-home [data-cmd=strikeThrough]{margin-left:14px}
