@@ -2798,12 +2798,13 @@ function startResize(box, g, e){
   const fm = fl ? null : flowMetrics(box), minL = fl ? hr.left : fm.cL, mt0 = parseFloat(getComputedStyle(box).marginTop) || 0;
   const minW = 60 * bz, minH = 30 * bz, {xs, ys} = snapTargets(box);
   let at = {l: r.left, t: r.top}, moved = false, ended = false;
+  const was = ['width', 'height', 'minHeight', 'marginLeft', 'marginTop', 'translate'].map(k => [k, box.style[k]]);
   try { g.setPointerCapture(e.pointerId); } catch {}
   document.documentElement.style.overflowAnchor = 'none';       // the page must not scroll by itself as the note grows
   const move = ev => {
     if (ev.type === 'pointermove' && !ev.buttons && ev.pointerType === 'mouse') return up({type: 'lost'});
     const free = noSnap(ev), dx = ev.clientX - sx, dy = ev.clientY - sy, vx = [], vy = [];
-    if (!moved && Math.hypot(dx, dy) < dragMin(e)) return;          // only a press so far: nothing changes
+    if (!moved && Math.hypot(E || W ? dx : 0, N || S ? dy : 0) < dragMin(e)) return;          // only a press so far (or a slide along the edge it doesn't move): nothing changes
     let l = r.left, t = r.top, rt = r.right, b = r.bottom;
     const snap = (v, targets, hits) => { const s = free ? null : snapAxis([v], targets); if (s) hits.push(...s.hits); return s ? v + s.d : v; };
     if (E) rt = Math.max(l + minW, Math.min(hr.right, snap(r.right + dx, xs, vx)));
@@ -2828,13 +2829,18 @@ function startResize(box, g, e){
   };
   const up = ev => {
     if (ended) return; ended = true;
-    for (const [t, f] of [['pointermove', move], ['pointerup', up], ['pointercancel', up], ['lostpointercapture', up]]) g.removeEventListener(t, f);
+    for (const [t, f] of [['pointermove', move], ['pointerup', up], ['pointercancel', cancel], ['lostpointercapture', up]]) g.removeEventListener(t, f);
+    document.removeEventListener('pointerdown', second, true);
     hideGuides(); document.documentElement.style.overflowAnchor = '';
     if (!moved) return;
     if (fl) { box.style.translate = ''; setFloatPos(box, at.l, at.t); placeFloats(); spreadChips(); }
     saveSoon();
   };
-  g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up); g.addEventListener('lostpointercapture', up);
+  // a second finger makes it a pinch or a scroll, and a cancelled touch was taken over by one: the note goes back as it was, and nothing is saved
+  const cancel = () => { if (ended) return; for (const [k, v] of was) box.style[k] = v; moved = false; up(); };
+  const second = ev => { if (ev.pointerType === 'touch' && ev.pointerId !== e.pointerId) cancel(); };
+  g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); g.addEventListener('pointercancel', cancel); g.addEventListener('lostpointercapture', up);
+  if (e.pointerType === 'touch') document.addEventListener('pointerdown', second, true);
 }
 // double-click an edge or corner: the box fits what is in it (as wide as its longest line, up to the edge of the page, and as tall as that makes it).
 // Its top-left corner stays where it is, and like a resize it is one step Back undoes
