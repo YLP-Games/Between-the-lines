@@ -125,6 +125,11 @@ html[data-tips="off"] .ribbon .tip{display:none}
 .seg .btn{height:28px}
 .seg .btn[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:700;box-shadow:inset 0 0 0 1.5px var(--accent)} /* taste-skill-ignore: a ring marking the chosen option, not a shadow */
 .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
+/* the text colours sit in the Home tab as they are; on a narrow touch screen (with the touch rules below) they fold into one button that opens them in a pop-up */
+#colorBtn{display:none}
+#colours{display:contents;color:inherit}
+#colorBtn .ca{position:relative;font-size:16px;font-weight:700;line-height:1;padding:0 2px 6px}
+#colorBtn .ca::after{content:"";position:absolute;left:-2px;right:-2px;bottom:0;height:4px;border-radius:2px;background:var(--c);box-shadow:0 0 0 1px rgba(0,0,0,.18)} /* taste-skill-ignore: a ring around the colour, as on the swatches */
 .showbar{position:fixed;z-index:30;top:calc(8px + env(safe-area-inset-top,0px));right:var(--gutter-r);display:inline-flex;align-items:center;gap:6px;font:13px var(--ui);height:32px;padding:0 14px;border-radius:999px;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer;opacity:.9} /* taste-skill-ignore: a floating button */
 .showbar:hover{opacity:1}
 #ribbonFold .i,#save .chev{width:16px;height:16px}
@@ -1565,6 +1570,34 @@ html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;text-
 @media (pointer:coarse) and (min-width:641px){.panel{height:calc(74px + var(--sbh))}}      /* room for the ribbon's 44px buttons (and the View tab's button pairs) with their captions */
 /* an iPad turned sideways is short: the group captions under the tools give their room to the page */
 @media (pointer:coarse) and (min-width:641px) and (max-height:900px){.ribbon .cap{display:none}.panel{height:calc(56px + var(--sbh))}}
+/* a touch screen up to about 1100px wide (an iPad held upright), or one turned sideways (its captions are already gone): the groups open up into one row of 44px tools,
+   so the ones used most come first and the rest are a swipe away */
+@media (pointer:coarse) and (min-width:641px) and (max-width:1100px){.panel{height:calc(56px + var(--sbh))}}      /* (a phone's panel fits itself) */
+@media (pointer:coarse) and (max-width:1100px),(pointer:coarse) and (max-height:900px){
+  .ribbon .cap{display:none}
+  .panel > .grp,.panel > .grp > .row:not(.seg){display:contents}
+  .panel > .grp > .row > *{scroll-snap-align:start}
+  .panel::after{order:2}
+  /* Home: font and size, text colour, B I U and highlight, lists and indents, alignment; then strikethrough, x², x₂, clear formatting and the bullet and indent menus */
+  #panel-home :is([data-cmd=strikeThrough],[data-cmd=superscript],[data-cmd=subscript],[data-cmd=removeFormat],#listStyle,#indentSize){order:1}
+  #panel-home [data-cmd=strikeThrough]{margin-left:14px}
+  #swatches,#favText{flex:none}      /* (now in the row itself: whole, never squeezed into a pile) */
+  /* Insert, Box and View: a button's words go under its icon, in small type */
+  :is(#panel-insert,#panel-box,#panel-view) .btn:has(> .i,> .sidesw){flex-direction:column;gap:1px;padding:0 4px;font-size:12px;line-height:1.1}
+}
+/* upright, the colours fold into one button (and the separator after them goes along to mark the tools at the end) */
+@media (pointer:coarse) and (max-width:1100px){
+  #font{width:110px!important}
+  @supports selector(:popover-open){
+    #panel-home > .grp:has(#colorBtn) + .sep{order:1}
+    #panel-home [data-cmd=strikeThrough]{margin-left:0}
+    #colorBtn{display:inline-flex}
+    #colours:not(:popover-open){display:none}
+    #colours:popover-open{display:flex;flex-wrap:wrap;align-items:center;gap:2px;width:max-content;max-width:min(366px,calc(100vw - 40px));inset:auto;margin:0;padding:8px;
+      background:var(--surface);color:var(--ink);border:1.5px solid var(--pencil);border-radius:var(--wob-lg);box-shadow:var(--pop-shadow)} /* taste-skill-ignore: pop-ups float */
+    #colours #favText{order:1;margin-left:0;flex-wrap:wrap}      /* your favourites on the line below */
+  }
+}
 @media (pointer:coarse) and (max-width:640px){.titlebar .btn{min-width:40px;height:40px}}      /* (a phone's title bar has no room for more) */
 /* Safari before 15.4 has no dvh: the window's height instead */
 @supports not (height:100dvh){
@@ -1795,10 +1828,13 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       </div><span class="cap">Font</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row">
-        <span id="swatches" class="row"></span>
-        <input type="color" id="color" value="#1f4fd1" aria-label="Any text colour" title="Any colour">
-        <span id="favText" class="favs" aria-label="Your favourite colours" title="Your favourite colours: click to use, right-click (or press and hold) to remove"></span>
-        <button id="favTextSave" class="btn favstar" aria-pressed="false" aria-label="Save this colour to your favourites" title="Favourite: save the current text colour to your favourites"><svg class="i" style="width:16px;height:16px"><use href="#i-star"/></svg></button>
+        <button class="btn" id="colorBtn" popovertarget="colours" aria-label="Text colour" title="Text colour: the colours and your favourites"><span class="ca" aria-hidden="true">A</span></button>
+        <span id="colours" popover>
+          <span id="swatches" class="row"></span>
+          <input type="color" id="color" value="#1f4fd1" aria-label="Any text colour" title="Any colour">
+          <span id="favText" class="favs" aria-label="Your favourite colours" title="Your favourite colours: click to use, right-click (or press and hold) to remove"></span>
+          <button id="favTextSave" class="btn favstar" aria-pressed="false" aria-label="Save this colour to your favourites" title="Favourite: save the current text colour to your favourites"><svg class="i" style="width:16px;height:16px"><use href="#i-star"/></svg></button>
+        </span>
       </div><span class="cap">Colour</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row">
@@ -2332,6 +2368,18 @@ function showStyle(s){
 showStyle(style);
 // pressing a toolbar button keeps the cursor (and any selected words) in the note
 $('#appbar').addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });
+// on a narrow touch screen the colours are one button, underlined in the colour in use, that opens them under it; picking one closes them
+{
+  const btn = $('#colorBtn'), pop = $('#colours');
+  let open = false;
+  const mark = () => btn.style.setProperty('--c', $('#color').value);
+  const place = () => { const r = btn.getBoundingClientRect(); pop.style.left = Math.max(8, Math.min(innerWidth - pop.offsetWidth - 8, r.left)) + 'px'; pop.style.top = r.bottom + 6 + 'px'; };
+  document.addEventListener('stylechange', mark); mark();
+  pop.addEventListener('beforetoggle', e => { if (e.newState === 'open') requestAnimationFrame(place); });
+  pop.addEventListener('toggle', e => { open = e.newState === 'open'; });
+  pop.addEventListener('click', e => { if (open && e.target.closest('.sw')) pop.hidePopover(); });
+  addEventListener('resize', () => { if (open) btn.offsetParent ? place() : pop.hidePopover(); });      // turned sideways: it follows its button, or closes when the colours are back in the toolbar
+}
 
 document.addEventListener('selectionchange', () => {
   const sel = getSelection(); if (!sel.rangeCount) return;
@@ -2469,7 +2517,7 @@ $('#indentSize').onchange = e => {
   if (!noteActive()) { toast('Click inside a note first, then choose the indent size.'); return; }
   active.style.setProperty('--ind', e.target.value); restoreSel(); saveSoon();
 };
-$('#hlColor').oninput = e => { $('#hlBtn .hl').style.background = e.target.value; };
+$('#hlColor').oninput = e => { $('#hlBtn .hlswatch').style.background = e.target.value; };
 ['b','i','u'].forEach(id => $('#' + id).onclick = () => {
   if (multi.size) {               // bold / italic / underline for every selected note
     const notes = [...multi].map(b => b.querySelector(':scope > .mine')).filter(Boolean), cs = getComputedStyle(notes[0]);
