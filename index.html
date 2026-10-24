@@ -2584,10 +2584,10 @@ document.addEventListener('selectionchange', () => {
   const sel = getSelection(); if (!sel.rangeCount) return;
   const r = sel.getRangeAt(0), n = r.commonAncestorContainer;
   const el = (n.nodeType === 1 ? n : n.parentElement)?.closest('.mine');
-  if (el) { active = el; savedRange = r.cloneRange(); showStyle(styleAt(r, el)); const nb = el.closest('.notebox'); if (nb) showBox(boxOf(nb)); $('#indentSize').value = el.style.getPropertyValue('--ind').trim() || '1.4em'; }
+  if (el && !el.closest('#bView')) { active = el; savedRange = r.cloneRange(); showStyle(styleAt(r, el)); const nb = el.closest('.notebox'); if (nb) showBox(boxOf(nb)); $('#indentSize').value = el.style.getPropertyValue('--ind').trim() || '1.4em'; }
 });
 document.addEventListener('mousedown', e => {
-  if (!e.target.closest('.mine, .notebox, .gappill, header, .fpanel, .mediabar, .chippop, .spellmenu, .multibar, .settings, .tplbox, .tmenu')) { active = null; savedRange = null; showStyle(style); }
+  if (e.target.closest('#bView') || !e.target.closest('.mine, .notebox, .gappill, header, .fpanel, .mediabar, .chippop, .spellmenu, .multibar, .settings, .tplbox, .tmenu')) { active = null; savedRange = null; showStyle(style); }      // (the notebook beside is read only: clicking in it leaves the note you were in)
 });
 function noteStyle(el){
   return {font: el.style.fontFamily.split(',')[0].replace(/"/g,'').trim() || style.font,

@@ -269,6 +269,43 @@ section('titlebar', async () => {
   }
 });
 
+// ---------- 10. the toolbar's formatting never reaches the read-only pane beside ----------
+section('beside', async () => {
+  const {browser, page, errors} = await open(APP, {width: 1440, height: 900});
+  await page.waitForTimeout(600);
+  await newNote(page, 'alpha beta gamma'); const a = await page.evaluate(() => curId);
+  await newNote(page, 'delta epsilon zeta');
+  await page.evaluate(id => openBeside(id), a); await page.waitForTimeout(900);
+  const pane = () => page.$eval('#bView', e => e.innerHTML);
+  const before = await pane();
+  const mine = await page.locator('#bView .mine').first().boundingBox();
+  const inPane = () => page.evaluate(() => !!active && !!active.closest('#bView'));
+  const same = async m => ok(await pane() === before, m);
+  await page.click('#tab-home');
+  // a word selected in the pane, then a caret in it: each time every Home button and box is used
+  for (const [how, put] of [['a selected word', () => page.mouse.dblclick(mine.x + 20, mine.y + mine.height / 2)], ['a caret', () => page.mouse.click(mine.x + 5, mine.y + mine.height / 2)]]) {
+    await put(); await page.waitForTimeout(250);
+    ok(!(await inPane()), 'pane: with ' + how + ' in the pane, it is not the note the toolbar works on');
+    await page.click('#b'); await page.click('#i'); await page.click('#u'); await same('pane, ' + how + ': Bold, Italic and Underline leave it alone');
+    await page.click('.sw >> nth=3'); await page.selectOption('#font', 'Verdana'); await same('pane, ' + how + ': a colour and a font leave it alone');
+    await page.fill('#size', '40'); await page.keyboard.press('Enter'); await page.waitForTimeout(150); await same('pane, ' + how + ': a size leaves it alone');
+    for (const c of ['justifyRight', 'insertUnorderedList', 'indent', 'hiliteColor']) { await page.click(`[data-cmd=${c}]`); await page.waitForTimeout(100); }
+    await same('pane, ' + how + ': alignment, a list, an indent and a highlight leave it alone');
+    await page.evaluate(() => { document.getElementById('color').value = '#00aa00'; document.getElementById('color').dispatchEvent(new Event('input', {bubbles: true})); }); await same('pane, ' + how + ': a colour from the picker leaves it alone');
+    await page.click('#tab-box');
+    for (const id of ['bFill', 'alRight', 'bOutline']) { await page.click('#' + id).catch(() => {}); await page.waitForTimeout(100); }
+    await same('pane, ' + how + ': the Box tab leaves it alone');
+    await page.click('#tab-home');
+  }
+  // and the notebook on the left still takes its formatting
+  const main = await page.locator('#main .mine:not(:empty)').first().boundingBox();
+  await page.mouse.click(main.x + 10, main.y + main.height / 2); await page.waitForTimeout(200);
+  await page.click('.sw >> nth=3'); await page.waitForTimeout(150);
+  ok(await page.$eval('#main .mine:not(:empty)', e => e.style.color !== 'rgb(31, 79, 209)'), 'the notebook you write in still takes the colour');
+  await same('pane: and the pane is still as it was');
+  finish(errors, 'beside'); await browser.close();
+});
+
 (async () => {
   for (const [name, fn] of Object.entries(SECTIONS)) {
     if (only.length && !only.includes(name)) continue;
