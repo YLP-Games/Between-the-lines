@@ -988,6 +988,7 @@ main.side-on .sidepage{display:block}
 :is(.sidepage,.sidebg .pv)[data-pat="dots"]{background-image:radial-gradient(var(--sp-line) 1.3px,transparent 1.8px);background-size:22px 22px;background-position:11px 11px}
 .sidepage::before{content:attr(data-label);display:none;position:absolute;left:12px;top:7px;font:13px var(--ui);opacity:.6;pointer-events:none}
 .sidepage .g-float{display:none}
+.sidepage > .notebox.floating{max-width:calc(100% - 8px)}
 .sidepage > .notebox.floating.collapsed > .note-chip{left:calc(4px + var(--ci, 0) * 23px)}
 /* beside the slides: two columns, each side page in the row of its slide (the row is as tall as the taller of the two, and both fill it:
    when the side notes run longer, the slide gets blank room below, and both shrink back together) */
@@ -3041,7 +3042,11 @@ function startResize(box, g, e){
   e.preventDefault();
   const dir = g.dataset.dir, W = dir.includes('w'), N = dir.includes('n'), E = dir.includes('e'), S = dir.includes('s');
   const r = box.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, bz = zoomOf(box), fl = box.classList.contains('floating');
-  const hr = (box.closest('.content, .slide, .sidepage') || box.parentElement).getBoundingClientRect();
+  let hr = (box.closest('.content, .slide, .sidepage') || box.parentElement).getBoundingClientRect();
+  if (fl && box.parentElement.classList.contains('sidepage')) {          // a side note: inside the page's border, and 8px short of its right side, where placeFloats keeps it
+    const sp = box.parentElement, s = zoomOf(sp) || 1, l = hr.left + sp.clientLeft * s;
+    hr = {left: l, right: l + (sp.clientWidth - 8) * s, top: hr.top + sp.clientTop * s, bottom: hr.bottom};
+  }
   const fm = fl ? null : flowMetrics(box), minL = fl ? hr.left : fm.cL, mt0 = parseFloat(getComputedStyle(box).marginTop) || 0;
   const minW = 60 * bz, minH = 30 * bz, {xs, ys} = snapTargets(box);
   let at = {l: r.left, t: r.top}, moved = false, ended = false;
@@ -4529,8 +4534,10 @@ function placeFloats(root){
     } else box.style.top = py.toFixed(2) + 'px';
     box.style.left = ((+box.dataset.px || 0) * 100).toFixed(4) + '%';
     if (card.classList.contains('sidepage') && box.offsetWidth) {         // a side note stays inside its page, even where the page is narrower
+      // (moved left until it fits, as far as the page's left side: never past its right side. A note wider than the page is
+      // shown as wide as the page, by its max-width)
       const over = box.offsetLeft + box.offsetWidth - (card.clientWidth - 8);
-      if (over > 0) box.style.left = Math.max(20, box.offsetLeft - over) + 'px';
+      if (over > 0) box.style.left = Math.max(0, box.offsetLeft - over) + 'px';
     }
   }
   fitPages(root);
