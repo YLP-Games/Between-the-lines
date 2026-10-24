@@ -121,6 +121,45 @@ section('grips', async () => {
   finish(errors, 'grips (mouse)'); await browser.close();
 });
 
+// ---------- 5. the writing guide sits under drawers, menus and pop-ups ----------
+// what takes the pointer at a point: the first element's name, and whether it is the guide
+const topAt = (page, x, y) => page.evaluate(([x, y]) => { const e = document.elementFromPoint(x, y); return {guide: !!e?.closest('#wguide'), name: e ? (e.id || (e.getAttribute('class') || '').split(' ')[0] || e.tagName) : null}; }, [x, y]);
+section('wguide', async () => {
+  for (const w of [820, 390]) {
+    const {browser, page, errors} = await open(APP, {width: w, height: 900});
+    await page.waitForTimeout(600);
+    await newNote(page, 'A note under a guide');
+    await page.evaluate(() => wgOpen()); await page.waitForTimeout(200);
+    // the guide takes the whole width, 160px down, so its corner icon is under a drawer on the left and its right edge handle under one on the right
+    await page.evaluate(() => wgSet(0, 160, innerWidth - 100, 400)); await page.waitForTimeout(100);
+    const ind = await page.$eval('#wguide .wg-ind', e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+    ok((await topAt(page, ind[0], ind[1])).guide, w + 'px: with no drawer open, the guide icon takes the pointer');
+    await page.evaluate(() => setPanel('pages', true)); await page.waitForTimeout(300);
+    let t = await topAt(page, ind[0], ind[1]);
+    ok(!t.guide, w + 'px: the sidebar drawer is above the writing guide (' + t.name + ' is on top)');
+    await page.evaluate(() => setPanel('notes', true)); await page.waitForTimeout(300);
+    const he = await page.$eval('#wguide .wg-e', e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+    t = await topAt(page, he[0], he[1]);
+    ok(he[0] > w * 0.4 && !t.guide, w + 'px: the Notes drawer is above the guide\'s edge handle (' + t.name + ' is on top)');
+    const z = await page.evaluate(() => ({g: +getComputedStyle(document.getElementById('wguide')).zIndex, side: +getComputedStyle(document.getElementById('notesPanel')).zIndex, scrim: +getComputedStyle(document.getElementById('scrim')).zIndex, bar: +getComputedStyle(document.getElementById('appbar')).zIndex, status: +getComputedStyle(document.getElementById('statusbar')).zIndex, beside: +getComputedStyle(document.getElementById('beside')).zIndex}));
+    ok(z.g < z.scrim && z.g < z.side && z.g < z.status && z.g < z.bar, w + 'px: the guide (z ' + z.g + ') is under the scrim (' + z.scrim + '), drawers (' + z.side + '), status bar (' + z.status + ') and toolbar (' + z.bar + ')');
+    ok(z.g > 0, w + 'px: and still over the pages');
+    await page.evaluate(() => { setPanel('pages', false); setPanel('notes', false); }); await page.waitForTimeout(200);
+    finish(errors, 'wguide ' + w); await browser.close();
+  }
+  // a wide window: the sidebar that peeks in over the pages is above the guide too
+  const {browser, page, errors} = await open(APP, {width: 1440, height: 900});
+  await page.waitForTimeout(600);
+  await newNote(page, 'A note under a guide');
+  await page.evaluate(() => { setPanel('pages', false); wgOpen(); wgSet(0, 160, 700, 400); }); await page.waitForTimeout(200);
+  const ind = await page.$eval('#wguide .wg-ind', e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+  await page.mouse.move(2, 400); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => document.getElementById('pagesPanel').classList.contains('peeking')), '1440px: pointing at the left edge peeks the sidebar in');
+  const t = await topAt(page, ind[0], ind[1]);
+  ok(!t.guide, '1440px: the peeking sidebar is above the writing guide (' + t.name + ' is on top)');
+  finish(errors, 'wguide 1440'); await browser.close();
+});
+
 (async () => {
   for (const [name, fn] of Object.entries(SECTIONS)) {
     if (only.length && !only.includes(name)) continue;

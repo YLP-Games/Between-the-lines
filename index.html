@@ -1098,8 +1098,9 @@ body.bresizing .beside{pointer-events:none}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--wg-ink:#8da3d1}}
 :root[data-theme="dark"]{--wg-ink:#8da3d1}
 
-/* the writing guide: a grid, ruled lines or dots over the pages, to write straight with a pen. It sits in the page (not in the notebook) and lets everything through except its bar and handles. */
-.wguide{position:absolute;z-index:17;box-sizing:border-box;pointer-events:none;outline:1px dashed color-mix(in srgb,var(--wg-ink) 65%,transparent);outline-offset:-1px;--wg-gap:28px;--wg-op:.55;--wg-hs:18px}
+/* the writing guide: a grid, ruled lines or dots over the pages, to write straight with a pen. It sits in the page (not in the notebook) and lets everything through except its bar and handles.
+   It is over the pages but under everything that opens over them: the notebook beside (14), the drawers and the sidebar that peeks in (16, 17), the status bar and toolbar. */
+.wguide{position:absolute;z-index:13;box-sizing:border-box;pointer-events:none;outline:1px dashed color-mix(in srgb,var(--wg-ink) 65%,transparent);outline-offset:-1px;--wg-gap:28px;--wg-op:.55;--wg-hs:18px}
 .wguide .wg-pat{position:absolute;inset:0;opacity:var(--wg-op);pointer-events:none}
 .wguide[data-pat="grid"] .wg-pat{background-image:linear-gradient(var(--wg-ink) 1px,transparent 1px),linear-gradient(90deg,var(--wg-ink) 1px,transparent 1px);background-size:var(--wg-gap) var(--wg-gap)}
 .wguide[data-pat="lines"] .wg-pat{background-image:linear-gradient(transparent calc(var(--wg-gap) - 1px),var(--wg-ink) calc(var(--wg-gap) - 1px));background-size:100% var(--wg-gap)}
