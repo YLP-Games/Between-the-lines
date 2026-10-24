@@ -4323,7 +4323,7 @@ function makeStrip(card, y0, y1){
     s.append(sp, eol ? document.createElement('br') : document.createTextNode(' '));
   }
   stripInk(card, s);
-  requestAnimationFrame(() => measureStrip(s));
+  measureSoon(s);
   return s;
 }
 const textCache = new WeakMap();
@@ -5362,13 +5362,23 @@ function flatten(root){
   }
   root.querySelectorAll(':scope > .slide').forEach(c => { c.style.zoom = ''; c.style.width = ''; });
 }
-function measureStrip(s){
-  s.querySelectorAll('.tl').forEach(sp => {
-    if (sp.style.transform || !s.isConnected) return;
-    const target = +sp.dataset.w * s.getBoundingClientRect().width, actual = sp.getBoundingClientRect().width;
-    if (actual > 0 && target > 0) sp.style.transform = `scaleX(${(target / actual).toFixed(4)})`;
-  });
+// all the reads, then all the writes: one layout for every span, not one per span (a big PDF has thousands)
+function measureStrips(ss){
+  const todo = [];
+  for (const s of ss) {
+    if (!s.isConnected) continue;
+    const w = s.getBoundingClientRect().width;
+    for (const sp of s.querySelectorAll('.tl')) {
+      if (sp.style.transform) continue;
+      const target = +sp.dataset.w * w, actual = sp.getBoundingClientRect().width;
+      if (actual > 0 && target > 0) todo.push([sp, target / actual]);
+    }
+  }
+  for (const [sp, k] of todo) sp.style.transform = `scaleX(${k.toFixed(4)})`;
 }
+// strips made in the same frame are measured together
+const stripQ = new Set(); let stripRaf = 0;
+function measureSoon(s){ stripQ.add(s); stripRaf ||= requestAnimationFrame(() => { stripRaf = 0; const q = [...stripQ]; stripQ.clear(); measureStrips(q); }); }
 // ---------- one fixed layout, scaled to fit ----------
 // A slide (or printed sheet), its side page and every note are laid out at one fixed width, and main is zoomed to the room there is, so
 // the notes keep their place on the slide and their text wraps the same at any window width, with or without the sidebar or side pages.
@@ -5457,7 +5467,7 @@ function paginateView(){
     }
     if (pendingHead.length) { const sheet = document.createElement('div'); sheet.className = 'sheet'; main.append(sheet); pendingHead.forEach(h => sheet.append(h)); }
     main.append(...sps.values(), ...later);
-    main.querySelectorAll('.strip').forEach(measureStrip);
+    measureStrips(main.querySelectorAll('.strip'));
   }
   sideLayout(); placeFloats(); spreadChips(); spellAllSoon();
   window.scrollTo(0, scrollY);
@@ -7163,7 +7173,7 @@ function showDocHtml(html){
   main.querySelectorAll('.slide-label, .gapline, .gappill').forEach(e => e.remove());
   if (!main.children.length) showEmpty(); else upgradeNotes();
   applyReadMode(); renderAllInk(); paginateView(); updateNotesBtn();
-  requestAnimationFrame(() => main.querySelectorAll('.strip').forEach(measureStrip));
+  requestAnimationFrame(() => measureStrips(main.querySelectorAll('.strip')));
 }
 // open another notebook (no id: a new, empty one); the one you leave is saved first and keeps its Back history and place
 async function switchDoc(id){
@@ -8654,7 +8664,7 @@ async function besideShow(id, scroll = 0){
   bBody.scrollTop = scroll || 0;
   requestAnimationFrame(() => {
     if (t !== bs.token) return;
-    bView.querySelectorAll('.strip').forEach(measureStrip);
+    measureStrips(bView.querySelectorAll('.strip'));
     besideLayout(); bBody.scrollTop = scroll || 0;
   });
   relayout();

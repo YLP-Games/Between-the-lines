@@ -37,6 +37,35 @@ section('worker', async () => {
   finish(errors, 'worker fallback'); await browser.close();
 });
 
+// ---------- 9. measureStrip reads every span, then writes them: one layout, not one per span ----------
+section('measure', async () => {
+  const {browser, context, page, errors} = await open(APP);
+  await page.waitForTimeout(600);
+  await page.setInputFiles('#file', path.join(__dirname, 'long.pdf'));
+  await pdfCards(page, 44); await page.waitForTimeout(1500);
+  ok(await page.evaluate(() => [...document.querySelectorAll('#main .tl')].every(s => s.style.transform)), 'every text span of the 44-page PDF is measured');
+  // a strip with 60 spans, measured while Chrome counts how often it works out styles and layout
+  const cdp = await context.newCDPSession(page); await cdp.send('Performance.enable');
+  const counts = async () => { const m = Object.fromEntries((await cdp.send('Performance.getMetrics')).metrics.map(x => [x.name, x.value])); return m.RecalcStyleCount + m.LayoutCount; };
+  await page.evaluate(() => {
+    const strip = document.querySelector('#main .strip'), tpl = strip.querySelector('.tl');
+    for (let i = strip.querySelectorAll('.tl').length; i < 60; i++) { const c = tpl.cloneNode(true); c.style.top = (i % 20) * 4 + '%'; strip.append(c); }
+    strip.querySelectorAll('.tl').forEach(s => s.style.transform = '');
+    window.__strip = strip; strip.getBoundingClientRect();
+  });
+  const before = await counts();
+  const sized = await page.evaluate(() => { const t0 = performance.now(); if (window.measureStrips) measureStrips([__strip]); else measureStrip(__strip); return performance.now() - t0; });
+  const worked = (await counts()) - before;
+  const r = await page.evaluate(() => {
+    const strip = __strip, all = [...strip.querySelectorAll('.tl')], w = strip.getBoundingClientRect().width;
+    return {spans: all.length, sized: all.filter(s => s.style.transform).length, off: all.filter(s => { const a = s.getBoundingClientRect().width, t = +s.dataset.w * w; return !(t > 0 && Math.abs(a - t) / t < 0.03); }).length};
+  });
+  ok(r.sized === r.spans, 'a strip of ' + r.spans + ' spans: all ' + r.sized + ' were sized (' + Math.round(sized) + ' ms)');
+  ok(worked <= 6, 'measuring it made Chrome work out styles and layout ' + worked + ' times (a handful, not once per span)');
+  ok(r.off === 0, 'every span ends up as wide as the PDF says (' + r.off + ' off)');
+  finish(errors, 'measure'); await browser.close();
+});
+
 (async () => {
   for (const [name, fn] of Object.entries(SECTIONS)) {
     if (only.length && !only.includes(name)) continue;
