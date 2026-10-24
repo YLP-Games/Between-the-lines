@@ -1583,6 +1583,39 @@ html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;text-
   .foldkids{border-left:1px solid var(--line)}
   .wguide{outline:1px dashed var(--wg-ink)}
 }
+/* ================= printing (Ctrl+P): just the pages and notes, drawn the way the PDF download draws them ================= */
+@page{margin:12mm}
+@media print{
+  html,body{height:auto!important;overflow:visible!important;background:#fff!important;color:#000}
+  /* everything but the pages goes: toolbar, panels, status bar, pop-ups, menus, the paper grain and the writing guide (the body's other children are all of those) */
+  body::after,body > :not(.workspace):not(svg):not(script):not(style):not(template),.side,.beside{display:none!important}
+  .gappill,.gapline,.cardbar,.pptx-tip,.welcome,.empty,.grip,.nbar,.note-chip,.slide-label,.sidelines,.sidecorner,main > .file-head{display:none!important}      /* (a minimised note stays out, as on screen) */
+  .workspace{display:block;min-height:0}
+  /* one column of pages, scaled so a 960px slide fits a portrait page (a landscape page takes it full size); a slide and its side page go one under the other */
+  main,main.fit,main.paged{display:block!important;max-width:none!important;margin:0!important;padding:0!important;background:none!important;zoom:.72!important}
+  main.paged{zoom:1!important}
+  main > *{margin:0 auto 16px!important}
+  main.fit > :not(.sidewrap):not(.sidepage){width:var(--cw)!important}
+  main > .sidepage{width:var(--sidew)!important}
+  main.side-split .sidewrap{position:static;width:auto;pointer-events:auto}      /* (side pages that scroll by themselves come after the pages) */
+  main.side-split .sidecol{position:static;height:auto;overflow:visible;padding:0}
+  .slide,.sheet,.srow,.sidepage,.strip,.notebox{break-inside:avoid}
+  main.side-on:not(.side-split) > .slide{break-after:avoid}
+  main.paged > :not(:last-child){break-after:page}
+  main,main *{-webkit-print-color-adjust:exact;print-color-adjust:exact}      /* pictures of the pages, paper colours and highlights are backgrounds, which a printer leaves out unless asked */
+  .slide:not([style*="background"]){background:#fff}
+  .slide,.slide.target-page{box-shadow:none;outline:none}
+  .slide{border:1px solid #bbb!important;border-radius:0!important}      /* (a fine frame where several slides share a printed page; a printed sheet is the page itself) */
+  .sheet,.sheet > .slide{border:0!important}
+  .mine,.notebox:hover > .mine{box-shadow:none!important}
+  .mine:empty::before,.tpl [data-ph]:empty::before,.jrnl .j-acct[data-ph]:empty::before{content:none}
+  ::highlight(spell){text-decoration:none}
+  .tpl :is(.tui,.sv-ui,.ce-in,.hnd){display:none}
+  .tpl-fc .ans{filter:none!important}
+  .tpl-fc .fc-a::after{display:none!important}
+  .cd-lang::after{content:""}
+}
+@media print and (orientation:landscape){main,main.fit,main.paged{zoom:1!important}}
 </style>
 <script>
 // a saved Light or Dark theme is set before the page paints, so it doesn't flash the other one first
@@ -5354,6 +5387,13 @@ let layout = pref.get('pdf-layout', 'default');
 if (!(layout in LAYOUTS)) layout = 'default';
 $('#layout').value = layout;
 $('#layout').onchange = e => { layout = e.target.value; pref.set('pdf-layout', layout); paginateView(); };
+// printing (Ctrl+P): a sheet layout (A4, A3) prints each sheet on a page of its own size with no margin; a sheet with its side page beside it is shrunk to the page's width
+const printPage = Object.assign(document.createElement('style'), {id: 'printPage'}); document.head.append(printPage);
+addEventListener('beforeprint', () => {
+  const s = LAYOUTS[layout], row = main.querySelector('.srow');
+  printPage.textContent = !s ? '' : `@page{size:${s[0]}pt ${s[1]}pt;margin:0}` + (row ? `@media print{main.paged{zoom:${(pxSize(s)[0] / (pxSize(s)[0] + SIDE_GAP + SIDE_W)).toFixed(3)}!important}}` : '');
+});
+addEventListener('afterprint', () => { printPage.textContent = ''; });
 // ================= page layout on screen: A4 / A3 sheets, portrait or landscape =================
 let viewZoom = 1, pageTimer = null;
 const pxSize = ([pw, ph]) => [Math.round(pw * 96 / 72), Math.round(ph * 96 / 72)];   // points to screen pixels

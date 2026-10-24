@@ -9,7 +9,7 @@ const ALL = ['assets', 'e2e', 'nb', 'menu', 'hover', 'tips', 'anno', 'trash', 'c
   'drive', 'driveshare', 'sync', 'odsync', 'onedrive', 'guides', 'pickframe', 'fidelity', 'pptxsafe', 'tablet', 'sideink', 'organise', 'layoutscale',
   'sidecorner', 'sidescroll', 'ribbonscroll', 'pdfside', 'guide', 'table', 'journal', 'blankshape', 'formula', 'pagenum', 'mdlist', 'gapselect', 'hidenotes', 'bullets', 'ios', 'notegeo', 'templates', 'pdfmath', 'drawtools', 'spelling', 'scan', 'pdfscan', 'audit2'];
 // these use Chrome DevTools features (touch/pen emulation, CPU throttling) that only Chromium has
-const CHROMIUM_ONLY = new Set(['blankshape', 'guide', 'guides', 'hover', 'table', 'tablet', 'sideink', 'organise', 'ios', 'drawtools']);
+const CHROMIUM_ONLY = new Set(['blankshape', 'guide', 'guides', 'hover', 'table', 'tablet', 'sideink', 'organise', 'ios', 'drawtools', 'audit2']);
 const pick = args.filter(a => !a.startsWith('--'));
 let list = (pick.length ? pick : ALL).filter(t => browser === 'chromium' || pick.length || !CHROMIUM_ONLY.has(t));
 const rows = [];

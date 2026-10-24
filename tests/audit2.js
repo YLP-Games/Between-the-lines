@@ -385,6 +385,106 @@ section('contrast', async () => {
   }
 });
 
+// ---------- 1. Ctrl+P prints just the pages and notes ----------
+const {spawnSync} = require('child_process');
+const tool = (cmd, args) => { const r = spawnSync(cmd, args, {encoding: 'utf8'}); return r.error ? null : r.stdout; };
+const HAVE_POPPLER = tool('pdftotext', ['-v']) !== null || spawnSync('pdftotext', ['-v']).status !== null;
+// the app's own chrome, which none of a printout should show: every other child of the body, the panels, the grain, the page's own buttons and handles
+const printedChrome = page => page.evaluate(() => {
+  const shown = e => { const cs = getComputedStyle(e), r = e.getBoundingClientRect(); return cs.display !== 'none' && cs.visibility !== 'hidden' && r.width > 0 && r.height > 0; };
+  const body = [...document.body.children].filter(e => !e.matches('.workspace, svg, script, style, template') && shown(e)).map(e => e.id || e.className || e.tagName);
+  const panels = ['.appbar', '.side', '.beside', '.statusbar', '.scrim', '.showbar', '.toast', '.pop', '.menu', '.wguide', '.qtip', '.drawbar'].flatMap(s => [...document.querySelectorAll(s)].filter(shown).map(e => s + (e.id ? '#' + e.id : '')));
+  const page = ['.gappill', '.gapline', '.cardbar', '.grip', '.nbar', '.note-chip', '.pptx-tip', '.welcome'].flatMap(s => [...document.querySelectorAll('#main ' + s)].filter(shown).map(() => s));
+  return {body, panels, page, grain: getComputedStyle(document.body, '::after').display, bg: getComputedStyle(document.body).backgroundColor, bgImage: getComputedStyle(document.body).backgroundImage};
+});
+section('print', async () => {
+  const D = path.join(OUT, 'print-');
+  for (const scheme of ['light', 'dark']) {
+    const {browser, page, errors} = await open(APP, {width: 1440, height: 900, colorScheme: scheme});
+    await page.waitForTimeout(600);
+    await page.setInputFiles('#file', path.join(__dirname, 'lecture.pdf'));
+    await pdfCards(page, 6); await page.waitForTimeout(900);
+    const slides = await page.locator('#main .slide').count();
+    const strip = page.locator('.pagecard').nth(1).locator('.strip').first(); await strip.scrollIntoViewIfNeeded();
+    const b = await strip.boundingBox(); await page.mouse.move(b.x + 200, b.y + b.height * .5, {steps: 3}); await page.waitForTimeout(250);
+    ok(await page.locator('.gappill').isVisible(), scheme + ': (the Add here pill is up on screen)');
+    await page.click('.gappill'); await page.keyboard.type('Elasticity is about slopes'); await page.mouse.click(5, 700); await page.waitForTimeout(500);
+    // everything open at once: the sidebar, Notes, Help, a menu, a toast, the writing guide
+    await page.click('#pagesBtn').catch(() => {}); await page.click('#notesBtn'); await page.evaluate(() => { wgOpen(); toast('A message on the screen'); }); await page.waitForTimeout(400);
+    const screen = await printedChrome(page);
+    ok(screen.panels.length >= 4, scheme + ': on screen there is plenty of app around the pages (' + screen.panels.join(' ') + ')');
+    await page.emulateMedia({media: 'print'}); await page.waitForTimeout(300);
+    const p = await printedChrome(page);
+    ok(p.body.length === 0 && p.panels.length === 0 && p.page.length === 0, scheme + ': printing shows no toolbar, panel, pop-up, handle or button (' + [...p.body, ...p.panels, ...p.page].join(' ') + ')');
+    ok(p.grain === 'none' && p.bg === 'rgb(255, 255, 255)' && p.bgImage === 'none', scheme + ': on plain white, with no paper grain or dots (' + p.bg + ', grain ' + p.grain + ')');
+    const st = await page.evaluate(() => { const s = document.querySelector('#main .slide'), cs = getComputedStyle(s), m = getComputedStyle(document.getElementById('main')); return {bi: cs.breakInside, bg: cs.backgroundColor, mainW: document.getElementById('main').getBoundingClientRect().width, w: s.getBoundingClientRect().width, z: m.zoom, adj: getComputedStyle(document.querySelector('#main .strip')).printColorAdjust || getComputedStyle(document.querySelector('#main .strip')).webkitPrintColorAdjust}; });
+    ok(st.bi === 'avoid' && st.adj === 'exact', scheme + ': a slide stays whole on a printed page, and its picture is printed without "Background graphics" (break-inside ' + st.bi + ', colour adjust ' + st.adj + ')');
+    if (HAVE_POPPLER) {
+      const file = D + scheme + '.pdf';
+      await page.pdf({path: file, printBackground: false, preferCSSPageSize: true});
+      const text = tool('pdftotext', ['-layout', file, '-']) || '', info = tool('pdfinfo', [file]) || '', pages = +(info.match(/Pages:\s+(\d+)/) || [])[1];
+      const bad = ['Saved in this browser', 'Show toolbar', 'Hide notes', 'Between the Slides', 'Download', 'Study mode', 'A message on the screen', 'Writing guide', 'Add note', 'Notes list'].filter(t => text.includes(t));
+      ok(bad.length === 0, scheme + ': the printout has none of the app\'s own words (' + (bad.join(', ') || 'none') + ')');
+      ok(/Elasticity is about slopes/.test(text), scheme + ': it has the note you wrote (the pages themselves are pictures)');
+      ok(pages >= 2 && pages <= slides, scheme + ': ' + slides + ' slides print on ' + pages + ' pages, two to a portrait page');
+      const imgs = (tool('pdfimages', ['-list', file]) || '').split('\n').filter(l => /^\s*\d+\s+\d+\s+image\s/.test(l)).length;
+      ok(imgs >= slides, scheme + ': every page\'s picture is in the printout (' + imgs + ' pictures for ' + slides + ' slides)');
+    }
+    await page.emulateMedia({media: 'screen'}); await page.waitForTimeout(200);
+    const back = await printedChrome(page);
+    ok(back.panels.length >= 4 && back.body.length > 0, scheme + ': and back on screen the app is all there again');
+    finish(errors, 'print ' + scheme); await browser.close();
+  }
+  if (!HAVE_POPPLER) { console.log('    (pdftotext and pdfinfo are not installed: the printout itself was not read)'); return; }
+  // a blank notebook in the dark theme prints on white, not the cream of its dark-theme page
+  {
+    const {browser, page, errors} = await open(APP, {width: 1440, height: 900, colorScheme: 'dark'});
+    await page.waitForTimeout(600);
+    await newNote(page, 'A page of my own'); await page.emulateMedia({media: 'print'}); await page.waitForTimeout(300);
+    ok(await page.evaluate(() => getComputedStyle(document.querySelector('#main .slide')).backgroundColor) === 'rgb(255, 255, 255)', 'dark: a page you started yourself prints white');
+    finish(errors, 'print blank'); await browser.close();
+  }
+  // a landscape page takes the slides bigger
+  {
+    const {browser, page, errors} = await open(APP, {width: 1440, height: 900});
+    await page.waitForTimeout(600);
+    await page.setInputFiles('#file', path.join(__dirname, 'lecture.pdf')); await pdfCards(page, 6); await page.waitForTimeout(900);
+    await page.emulateMedia({media: 'print'}); await page.waitForTimeout(200);
+    const file = D + 'landscape.pdf'; await page.pdf({path: file, printBackground: false, landscape: true, preferCSSPageSize: false});
+    const info = tool('pdfinfo', [file]) || '';
+    const size = (info.match(/Page size:\s+([\d.]+) x ([\d.]+)/) || []).slice(1).map(Number);
+    ok(size[0] > size[1], 'a landscape printout is a landscape page (' + size.join(' x ') + ')');
+    ok(+(info.match(/Pages:\s+(\d+)/) || [])[1] >= 4, 'and takes a page for each slide or so (' + (info.match(/Pages:\s+(\d+)/) || [])[1] + ' pages)');
+    finish(errors, 'print landscape'); await browser.close();
+  }
+  // the A4 layout: one sheet to a page, A4 sized, with no margin
+  {
+    const {browser, page, errors} = await open(APP, {width: 1440, height: 900});
+    await page.waitForTimeout(600);
+    await page.setInputFiles('#file', path.join(__dirname, 'lecture.pdf')); await pdfCards(page, 6); await page.waitForTimeout(900);
+    await page.click('#tab-view'); await page.selectOption('#layout', 'a4-portrait'); await page.waitForTimeout(900);
+    const sheets = await page.locator('#main .sheet').count();
+    await page.emulateMedia({media: 'print'}); await page.waitForTimeout(200);
+    const file = D + 'a4.pdf'; await page.pdf({path: file, printBackground: false, preferCSSPageSize: true});
+    const info = tool('pdfinfo', [file]) || '', size = (info.match(/Page size:\s+([\d.]+) x ([\d.]+)/) || []).slice(1).map(Math.round);
+    ok(sheets >= 2 && size.join() === '595,842', 'A4 layout: the printout is A4 pages (' + size.join(' x ') + ' points)');
+    ok(+(info.match(/Pages:\s+(\d+)/) || [])[1] === sheets, 'A4 layout: one page for each of the ' + sheets + ' sheets (' + (info.match(/Pages:\s+(\d+)/) || [])[1] + ' pages)');
+    finish(errors, 'print A4'); await browser.close();
+  }
+  // side pages on: the words on a side page are printed too
+  {
+    const {browser, page, errors} = await open(APP, {width: 1440, height: 900});
+    await page.waitForTimeout(600);
+    await page.setInputFiles('#file', path.join(__dirname, 'lecture.pdf')); await pdfCards(page, 6); await page.waitForTimeout(900);
+    await page.click('#tab-view'); await page.click('#sideBtn'); await page.waitForTimeout(600);
+    await page.evaluate(() => { const sp = document.querySelectorAll('.sidepage')[1]; sideAddBox(sp, 40, 120, 200); }); await page.keyboard.type('Side note: price elasticity'); await page.mouse.click(5, 700); await page.waitForTimeout(700);
+    await page.emulateMedia({media: 'print'}); await page.waitForTimeout(200);
+    const file = D + 'side.pdf'; await page.pdf({path: file, printBackground: false, preferCSSPageSize: true});
+    ok(/Side note: price elasticity/.test((tool('pdftotext', ['-layout', file, '-']) || '').replace(/\s+/g, ' ')), 'side pages on: the side page and its note are in the printout');
+    finish(errors, 'print side'); await browser.close();
+  }
+});
+
 (async () => {
   for (const [name, fn] of Object.entries(SECTIONS)) {
     if (only.length && !only.includes(name)) continue;
