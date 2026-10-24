@@ -2122,6 +2122,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
         <li><b>Scribble:</b> tap inside a note and write with the Pencil; iPadOS turns your handwriting into text (switch it on in Settings › Apple Pencil). The Pencil never draws on top of a note, so you can always write in one.</li>
         <li><b>Press and hold</b> does what right-click does: on <b>+ Add here</b> (sticky note or equation), on a pencil icon’s colours, on a misspelt word (suggestions) and on a notebook in the sidebar. Tap a note to show its handles for moving and resizing.</li>
         <li><b>Tap with two fingers</b> on the page to go <b>Back</b> one step (undo).</li>
+        <li><b>Zoom</b> to write small: pinch the pages, double-tap a slide, or use − and + in the status bar. Zoomed in, the pages stay sharp, two fingers move them (with Draw on too), a pen line is as thick on the page as at the fit, and the eraser keeps its size on the screen, so it can rub out small bits. A hand resting by the Pencil never zooms or moves the page.</li>
         <li>Held upright, the sidebar and the Notes list open over the pages, so the pages keep their size: tap outside to close them.</li>
       </ul>
       <label class="chk penrow" for="penAuto" title="On: the Pencil draws on the page with the tool you picked, even when Draw is off. Off: the Pencil acts like a finger, and only draws while Draw is on."><input type="checkbox" id="penAuto"> Apple Pencil draws automatically</label>
@@ -5098,7 +5099,7 @@ let viewZoom = 1, pageTimer = null;
 // page zoom, on top of the fit (1 is the fit): set by pinching the pages, double-tapping a slide or − / + in the status bar
 let pageZoom = 1, fitZoom = 1;
 // zoomed in, the PDF pages you can see are drawn again sharp (sharpen, below)
-const sharp = {timer: 0, gen: 0, busy: null, docs: new Map(), pages: new Map(), live: new Set(), failed: new Set()}, SHARP_MAX = 12e6;     // (pixels in one drawing at most: Safari draws no canvas over 16.7 million)
+const sharp = {timer: 0, gen: 0, busy: null, task: null, docs: new Map(), pages: new Map(), live: new Set(), failed: new Set()}, SHARP_MAX = 12e6;     // (pixels in one drawing at most: Safari draws no canvas over 16.7 million)
 const ZOOM_STEPS = [.5, .67, .8, 1, 1.25, 1.5, 2, 2.5, 3], ZOOM_MIN = .5, ZOOM_MAX = 3;
 const pxSize = ([pw, ph]) => [Math.round(pw * 96 / 72), Math.round(ph * 96 / 72)];   // points to screen pixels
 const SHEET_MARGIN = 48;
@@ -5300,15 +5301,17 @@ main.addEventListener('scroll', () => document.dispatchEvent(new Event('scroll',
 let pinch = null;
 main.addEventListener('touchstart', e => {
   if (e.touches.length > 2) return pinchEnd();
-  if (e.touches.length !== 2 || !main.querySelector('.slide')) return;
+  if (e.touches.length !== 2 || !main.querySelector('.slide') || handByPen()) return;
   const [a, b] = e.touches;
   if (a.touchType === 'stylus' || b.touchType === 'stylus') return;
+  fingerInk?.stop();                                          // (with Draw on, the first finger had started a stroke: two fingers move the page instead)
   const x = (a.clientX + b.clientX) / 2, y = (a.clientY + b.clientY) / 2;
   pinch = {d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1, u: pageZoom, x, y, a: zoomAnchor(x, y), raf: 0, moved: false};
 }, {passive: true});
 main.addEventListener('touchmove', e => {
+  if (pinch && penLive) return pinchEnd();                    // (the Pencil came down: it writes, and the page stays where it is)
   if (!pinch || e.touches.length !== 2) return;
-  e.preventDefault();                                         // (the pages zoom and move, not Safari's whole page)
+  if (e.cancelable) e.preventDefault();                       // (the pages zoom and move, not Safari's whole page; with Draw on there is nothing to stop)
   const [a, b] = e.touches;
   pinch.next = [pinch.u * Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) / pinch.d, (a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2];
   if (!pinch.raf) pinch.raf = requestAnimationFrame(() => {
@@ -5329,7 +5332,7 @@ main.addEventListener('touchcancel', pinchEnd, {passive: true});
 let tapDown = null, tapPrev = null;
 const zoomTapOk = t => !document.body.classList.contains('drawing') && !!t?.closest?.('.slide, .sidepage, .sheet')
   && !t.closest('.notebox, .note-chip, .gappill, .grip, button, a, input, textarea, select, [contenteditable="true"], img.blk, video, audio, .wguide');
-main.addEventListener('touchstart', e => { const t = e.touches[0]; tapDown = e.touches.length === 1 && t.touchType !== 'stylus' ? {x: t.clientX, y: t.clientY, t: performance.now()} : null; }, {passive: true});
+main.addEventListener('touchstart', e => { const t = e.touches[0]; tapDown = e.touches.length === 1 && t.touchType !== 'stylus' && !handByPen() ? {x: t.clientX, y: t.clientY, t: performance.now()} : null; if (!tapDown) tapPrev = null; }, {passive: true});
 main.addEventListener('touchmove', e => { const t = e.touches[0]; if (tapDown && (e.touches.length > 1 || Math.hypot(t.clientX - tapDown.x, t.clientY - tapDown.y) > 10)) tapDown = null; }, {passive: true});
 main.addEventListener('touchend', e => {
   const s = tapDown, now = performance.now(); tapDown = null;
@@ -5343,11 +5346,11 @@ main.addEventListener('touchend', e => {
 let gest = null;
 main.addEventListener('gesturestart', e => {
   e.preventDefault();
-  if (pinch || !main.querySelector('.slide')) return;
+  if (pinch || !main.querySelector('.slide') || handByPen()) return;
   const x = e.clientX ?? zoomMid()[0], y = e.clientY ?? zoomMid()[1];
   gest = {u: pageZoom, x, y, a: zoomAnchor(x, y)};
 });
-main.addEventListener('gesturechange', e => { e.preventDefault(); if (gest && !pinch) zoomLive(gest.u * e.scale, gest.x, gest.y, gest.a); });
+main.addEventListener('gesturechange', e => { e.preventDefault(); if (gest && !pinch && !penLive) zoomLive(gest.u * e.scale, gest.x, gest.y, gest.a); });
 main.addEventListener('gestureend', e => { e.preventDefault(); if (!gest) return; const g = gest; gest = null; zoomCommit(g.x, g.y); });
 let wheelZoom = null;
 main.addEventListener('wheel', e => {
@@ -5383,6 +5386,7 @@ async function sharpPass(gen){
   if (pageZoom <= 1) sharp.failed.clear();                              // (a PDF that couldn't be opened is tried again next time)
   if (pageZoom <= 1 && !sharp.live.size && !sharp.docs.size) return;
   if (pinch || gest || wheelZoom) return sharpSoon();                    // (still pinching)
+  if (penLive || fingerInk) return sharpSoon(400);                       // (or writing: the pen comes first)
   const dpr = devicePixelRatio || 1, mr = main.getBoundingClientRect();
   const vx0 = Math.max(0, mr.left), vx1 = Math.min(innerWidth, mr.right), vy1 = innerHeight, mx = (vx1 - vx0) / 5, my = vy1 / 5;
   const jobs = [];
@@ -5423,8 +5427,10 @@ async function sharpPass(gen){
     // as the page's picture was made (readPdf): without the backgrounds, side bands and slide numbers
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, j.w, j.h);
     skipBackgrounds(ctx, K, +j.card.dataset.w, +j.card.dataset.h, how.rep || [], tx, ty);
-    try { await page.render({canvasContext: ctx, viewport: page.getViewport({scale: K}), transform: [1, 0, 0, 1, -tx, -ty], background: 'rgba(0,0,0,0)'}).promise; }
-    catch (err) { sharpDrop(cv); throw err; }
+    const task = sharp.task = page.render({canvasContext: ctx, viewport: page.getViewport({scale: K}), transform: [1, 0, 0, 1, -tx, -ty], background: 'rgba(0,0,0,0)'});
+    try { await task.promise; }
+    catch (err) { sharpDrop(cv); if (err?.name === 'RenderingCancelledException') return sharpSoon(400); throw err; }     // (stopped for a pen stroke: again after it)
+    finally { if (sharp.task === task) sharp.task = null; }
     ctx.fillStyle = `rgb(${how.bg})`; for (const [x, y, w, h] of how.out || []) ctx.fillRect(x * K - tx, y * K - ty, w * K, h * K);
     if (!j.s.isConnected || pageZoom <= 1) { sharpDrop(cv); continue; }
     const old = j.s.querySelector(':scope > canvas.sharp'); if (old) sharpDrop(old);
@@ -7163,15 +7169,15 @@ function grain(c){
   return `url(#${id})`;
 }
 const grainTiles = {};
-function grainFill(ctx, c){                         // the same grain for the PDF: a tile 5 page units wide
-  c = inkHex(c).toLowerCase();
-  let t = grainTiles[c];
+function grainFill(ctx, c, px = 4){                 // the same grain for the PDF and the stroke being drawn: a tile 5 page units wide, px pixels to a unit
+  c = inkHex(c).toLowerCase(); px = Math.min(16, Math.max(4, Math.ceil(px)));
+  let t = grainTiles[c + px];
   if (!t) {
-    t = grainTiles[c] = document.createElement('canvas'); t.width = t.height = 20;
-    const g = t.getContext('2d'); g.fillStyle = c; g.globalAlpha = .55; g.fillRect(0, 0, 20, 20);
-    for (const [x, y, r, a] of GRAIN) { g.globalAlpha = a; g.beginPath(); g.arc(x * 4, y * 4, r * 4, 0, 7); g.fill(); }
+    t = grainTiles[c + px] = document.createElement('canvas'); t.width = t.height = 5 * px;
+    const g = t.getContext('2d'); g.fillStyle = c; g.globalAlpha = .55; g.fillRect(0, 0, 5 * px, 5 * px);
+    for (const [x, y, r, a] of GRAIN) { g.globalAlpha = a; g.beginPath(); g.arc(x * px, y * px, r * px, 0, 7); g.fill(); }
   }
-  const p = ctx.createPattern(t, 'repeat'); p?.setTransform?.(new DOMMatrix([.25, 0, 0, .25, 0, 0]));
+  const p = ctx.createPattern(t, 'repeat'); p?.setTransform?.(new DOMMatrix([1 / px, 0, 0, 1 / px, 0, 0]));
   return p || c;
 }
 // a stroke's svg attributes: the pencil paints with its grain
@@ -7588,7 +7594,7 @@ function livePath(k, p, w){
   return {path, fill: true};
 }
 function paintLive(ctx, it){
-  const w = penW(it), {path, fill} = livePath(it.k, it.p, w), pc = it.k === 'pc' && grainFill(ctx, it.c), col = inkHex(it.c);
+  const w = penW(it), {path, fill} = livePath(it.k, it.p, w), pc = it.k === 'pc' && grainFill(ctx, it.c, ctx.getTransform().a), col = inkHex(it.c);
   ctx.globalAlpha = it.k === 'hl' ? .35 : pc ? .9 : 1; ctx.globalCompositeOperation = it.k === 'hl' ? 'multiply' : 'source-over';
   if (fill) { ctx.fillStyle = pc || col; ctx.fill(path); return; }
   ctx.strokeStyle = pc || col; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(path);
@@ -7596,8 +7602,10 @@ function paintLive(ctx, it){
 function liveEnd(){ if (liveCtx) { liveCtx.setTransform(1, 0, 0, 1, 0, 0); liveCtx.clearRect(0, 0, liveCv.width, liveCv.height); } liveCv.style.mixBlendMode = ''; }
 // how many screen pixels a page unit is, on a strip of a PDF page or on a side page
 const unitPx = (card, strip) => strip ? strip.getBoundingClientRect().width / (+card.dataset.w || 1) : card.getBoundingClientRect().width / (card.offsetWidth || 1);
+// the eraser's width in page units: it keeps its size on the screen, so zoomed in it takes away smaller bits (pens draw the same on the page at any zoom)
+const eraserUnits = card => ds.thickness.er * mmUnits(card) / (pageZoom || 1);
 function ringAt(ev, card, strip){
-  erRing.style.width = erRing.style.height = (ds.thickness.er * mmUnits(card) * unitPx(card, strip)).toFixed(1) + 'px';
+  erRing.style.width = erRing.style.height = (eraserUnits(card) * unitPx(card, strip)).toFixed(1) + 'px';
   erRing.style.translate = `${ev.clientX}px ${ev.clientY}px`; erRing.hidden = false;
 }
 // the Text tool: a tap on the page starts a note there, in the colour, size and font picked, floating where you tapped
@@ -7624,7 +7632,9 @@ function textNote(card, x, y){
 }
 // Apple Pencil (or any pen) draws by itself with the tool picked, while fingers scroll and tap: "Apple Pencil draws automatically" in Settings
 const penAuto = () => pref.get('pen-auto', '1') !== '0';
-let penLive = 0, fingerInk = null;                   // penLive: a pen stroke is going, so other touches are a resting palm; fingerInk: a finger stroke that a pen can cancel
+let penLive = 0, fingerInk = null, penUp = -1e9;     // penLive: a pen stroke is going, so other touches are a resting palm; fingerInk: a finger stroke that a pen can cancel
+// a hand resting by the Pencil: while it writes, and in the moment between one stroke and the next. It never zooms, pans, double-taps or undoes.
+const handByPen = () => penLive > 0 || performance.now() - penUp < 400;
 // while the pen writes, a hand resting on the page doesn't start selecting words (its touches are stopped as they start, below). This
 // isn't a style on the body: changing one there makes Safari work out the style of the whole page again, a stutter as the pen goes down.
 document.addEventListener('selectstart', e => { if (penLive) e.preventDefault(); });
@@ -7645,9 +7655,11 @@ main.addEventListener('pointerdown', e => {
   let tool = eraser ? 'er' : ds.activeTool;
   if (tool === 'tx') { if (!auto) return textDown(e, card); tool = 'pen'; }        // (with Draw off, the Pencil by itself writes with the pen)
   e.preventDefault(); hideGap();
-  if (pen) { penLive++; document.body.classList.add('penning'); fingerInk?.stop(); }
+  if (pen) { penLive++; document.body.classList.add('penning'); fingerInk?.stop(); if (pinch) pinchEnd(); }
+  sharp.task?.cancel();                              // (a zoomed-in page being drawn again sharp waits: the stroke comes first)
   const W = +card.dataset.w, u = mmUnits(card), pts = [], t0 = Date.now(), x0 = e.clientX, y0 = e.clientY;
-  const col = ds.colors[tool], w = Math.round(ds.thickness[tool] * u / (tool === 'hl' ? 4 : 1) * 100) / 100, er = tool === 'er' ? ds.thickness.er * u / 2 : 0, part = ds.eraserMode === 'part';
+  const col = ds.colors[tool], w = Math.round(ds.thickness[tool] * u / (tool === 'hl' ? 4 : 1) * 100) / 100, er = tool === 'er' ? eraserUnits(card) / 2 : 0, part = ds.eraserMode === 'part';
+  const step = Math.min(1, 1 / unitPx(card, strip));         // (a point every screen pixel or page unit: zoomed in, the writing keeps the detail it is written with)
   let far = false, pr = null, dead = false;
   // where the page's slices are on screen: measured once, as the page doesn't move under the pen (and again if it scrolls all the same)
   let geo = inkGeo(card, strip);
@@ -7678,7 +7690,7 @@ main.addEventListener('pointerdown', e => {
       pr = pr == null ? raw : pr + (raw - pr) * .45; pt.push(Math.round(pr * 100) / 100);
     }
     const l = pts[pts.length - 1];
-    if (!l || Math.hypot(pt[0] - l[0], pt[1] - l[1]) >= 1) pts.push(pt);
+    if (!l || Math.hypot(pt[0] - l[0], pt[1] - l[1]) >= step) pts.push(pt);
   };
   const take = ev => { if (dead) return; const pt = at(ev); if (pt) { if (tool === 'er') erase(pt); else add(pt, ev); } };
   const reach = penW({k: tool, w}) + 2;
@@ -7717,9 +7729,14 @@ main.addEventListener('pointerdown', e => {
     surf.removeEventListener('pointermove', move); surf.removeEventListener('pointerup', up); surf.removeEventListener('pointercancel', up);
     removeEventListener('scroll', regeo, true);
     cancelAnimationFrame(raf);
+    if (pen) penUp = performance.now();
     if (pen && !--penLive) setTimeout(() => { if (!penLive) document.body.classList.remove('penning'); }, 300);
     if (fingerInk === me) fingerInk = null;
-    if (tool === 'er') { if (e.pointerType !== 'mouse') erRing.hidden = true; if (erased) { setInkData(card, items); inkShow(card, items); saveSoon(); } return; }
+    if (tool === 'er') {
+      if (e.pointerType !== 'mouse') erRing.hidden = true;
+      if (erased) { if (save && !dead) { setInkData(card, items); inkShow(card, items); saveSoon(); } else inkShow(card, inkItems(card)); }     // (stopped by a second finger: nothing was erased)
+      return;
+    }
     const tap = auto && !far && Date.now() - t0 < 500;                  // (a tap with the pen is not a dot: it can show "+ Add here")
     if (save && !dead && !tap && pts.length) inkAdd(card, {k: tool, c: col, w, p: pts});
     liveEnd();                                        // (in the same frame as the stroke joins the page, so it never blinks)
@@ -7745,7 +7762,7 @@ main.addEventListener('pointerleave', () => { erRing.hidden = true; });
 main.addEventListener('touchstart', e => {
   if (!e.cancelable || reading) return;
   const stylus = [...e.changedTouches].some(t => t.touchType === 'stylus');
-  if (penLive || (stylus && penAuto() && inkTarget(e.target))) e.preventDefault();
+  if (handByPen() || (stylus && penAuto() && inkTarget(e.target))) e.preventDefault();
 }, {passive: false});
 
 // ---------- highlights and comments ----------
@@ -11417,7 +11434,7 @@ document.addEventListener('touchstart', e => {
   if (n === 1 || (n === 2 && e.changedTouches.length === 2)) tap2 = page ? {t: now, two: n === 2, at: {}} : null;
   else if (n === 2 && tap2 && !tap2.two && page && now - tap2.t < 150) tap2.two = true;
   else tap2 = null;
-  if (tap2?.two) { if (penLive) tap2 = null; else fingerInk?.stop(); }       // (two fingers don't draw, and a hand resting by the Pencil is no tap)
+  if (tap2?.two) { if (handByPen()) tap2 = null; else fingerInk?.stop(); }       // (two fingers don't draw, and a hand resting by the Pencil is no tap)
   if (tap2) for (const t of e.changedTouches) { if (t.touchType === 'stylus') { tap2 = null; return; } tap2.at[t.identifier] = [t.clientX, t.clientY]; }
 }, {passive: true});
 document.addEventListener('touchmove', e => {
