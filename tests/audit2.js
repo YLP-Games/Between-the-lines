@@ -306,6 +306,85 @@ section('beside', async () => {
   finish(errors, 'beside'); await browser.close();
 });
 
+// ---------- 8. contrast: the app's own text is at least 4.5:1 (3:1 when large) on its background, in both themes ----------
+// runs in the page: every piece of visible text and every placeholder outside the pages and notes (which are your own colours), with the colours the browser worked out
+function crawlContrast(){
+  const num = s => s.trim() === 'none' ? 0 : parseFloat(s);
+  const parse = c => {
+    if (!c || c === 'transparent') return {r: 0, g: 0, b: 0, a: 0};
+    let m = c.match(/^rgba?\(([^)]+)\)/);
+    if (m) { const p = m[1].split(/[\s,\/]+/).filter(Boolean).map(Number); return {r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1}; }
+    m = c.match(/^color\(srgb ([^)]+)\)/);
+    if (m) { const p = m[1].split(/[\s\/]+/).filter(Boolean).map(Number); return {r: p[0] * 255, g: p[1] * 255, b: p[2] * 255, a: p.length > 3 ? p[3] : 1}; }
+    return null;
+  };
+  const over = (t, b) => { const a = t.a + b.a * (1 - t.a); return a ? {r: (t.r * t.a + b.r * b.a * (1 - t.a)) / a, g: (t.g * t.a + b.g * b.a * (1 - t.a)) / a, b: (t.b * t.a + b.b * b.a * (1 - t.a)) / a, a} : {r: 0, g: 0, b: 0, a: 0}; };
+  const lum = c => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }; return .2126 * f(c.r) + .7152 * f(c.g) + .0722 * f(c.b); };
+  const ratio = (a, b) => { const l1 = lum(a), l2 = lum(b); return (Math.max(l1, l2) + .05) / (Math.min(l1, l2) + .05); };
+  const bgOf = el => {
+    let acc = {r: 0, g: 0, b: 0, a: 0}, hasImg = false;
+    for (let n = el; n && acc.a < 1; n = n.parentElement) {
+      const cs = getComputedStyle(n), c = parse(cs.backgroundColor);
+      if (c && c.a) acc = over(acc, c);   // layers further up go underneath
+      if (cs.backgroundImage !== 'none' && !/radial-gradient/.test(cs.backgroundImage) && n !== document.body) hasImg = true;
+    }
+    if (acc.a < 1) acc = over(acc, parse(getComputedStyle(document.documentElement).backgroundColor).a ? parse(getComputedStyle(document.documentElement).backgroundColor) : {r: 255, g: 255, b: 255, a: 1});
+    if (acc.a < 1) acc = over(acc, {r: 255, g: 255, b: 255, a: 1});
+    return {c: acc, hasImg};
+  };
+  const opacityOf = el => { let o = 1; for (let n = el; n; n = n.parentElement) o *= parseFloat(getComputedStyle(n).opacity); return o; };
+  const visible = el => { const r = el.getBoundingClientRect(); if (r.width < 1 || r.height < 1) return false; for (let n = el; n; n = n.parentElement) { const cs = getComputedStyle(n); if (cs.display === 'none' || cs.visibility === 'hidden') return false; } return true; };
+  const skip = el => el.closest('main, .tl, .mine, svg, option, script, style, [aria-hidden="true"], .bview, #bView, .welcome-art, .d-slide, .thumb, .sw, .dot, .hlswatch, .fchip .dot') || el.disabled || el.closest('[disabled]') || false;
+  const out = [], seen = new Set();
+  const check = (el, text, fg0, kind) => {
+    if (!visible(el) || skip(el)) return;
+    const cs = getComputedStyle(el), op = opacityOf(el), {c: bg, hasImg} = bgOf(el);
+    if (hasImg) return;
+    let fg = parse(fg0); if (!fg) return;
+    fg = {...fg, a: fg.a * op};
+    if (!fg.a) return;
+    const eff = over(fg, bg), r = ratio(eff, bg), fs = parseFloat(cs.fontSize), bold = parseInt(cs.fontWeight) >= 700, large = fs >= 24 || (fs >= 18.66 && bold), need = large ? 3 : 4.5;
+    if (r < need - 0.005) {
+      const id = el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).join('.') : '');
+      const key = id + '|' + fg0 + '|' + JSON.stringify(bg);
+      if (seen.has(key)) return; seen.add(key);
+      out.push({el: id, kind, text: text.trim().slice(0, 30), ratio: +r.toFixed(2), need, fs, fg: `rgb(${Math.round(eff.r)},${Math.round(eff.g)},${Math.round(eff.b)})`, bg: `rgb(${Math.round(bg.r)},${Math.round(bg.g)},${Math.round(bg.b)})`, op: +op.toFixed(2)});
+    }
+  };
+  for (const el of document.body.querySelectorAll('*')) {
+    let own = ''; for (const n of el.childNodes) if (n.nodeType === 3) own += n.data;
+    if (own.trim()) check(el, own, getComputedStyle(el).color, 'text');
+    if (el.matches('input,textarea') && !el.value && el.placeholder) check(el, el.placeholder, getComputedStyle(el, '::placeholder').color, 'placeholder');
+  }
+  return out;
+}
+const contrast = (page, label) => page.evaluate(`(${crawlContrast.toString()})()`).then(r => r.map(f => `${f.ratio} ${f.el} "${f.text}" ${f.fg} on ${f.bg} (${label})`));
+section('contrast', async () => {
+  for (const scheme of ['light', 'dark']) {
+    const {browser, page, errors} = await open(APP, {width: 1440, height: 900, colorScheme: scheme});
+    await page.waitForTimeout(800);
+    const bad = [], scan = async label => bad.push(...await contrast(page, label));
+    await scan('start');
+    for (const t of ['insert', 'box', 'view', 'home']) { await page.click('#tab-' + t); await page.waitForTimeout(200); await scan('the ' + t + ' tab'); }
+    await page.setInputFiles('#file', path.join(__dirname, 'lecture.pdf')); await pdfCards(page, 6); await page.waitForTimeout(700);
+    await page.click('#pagesBtn').catch(() => {}); await page.click('#notesBtn'); await page.waitForTimeout(400); await scan('the sidebar and Notes');
+    await page.click('#save'); await page.waitForTimeout(250); await scan('the Download menu'); await page.keyboard.press('Escape'); await page.mouse.click(700, 500);
+    await page.click('#helpBtn'); await page.waitForTimeout(400); await scan('Help and settings'); await page.click('#setClose'); await page.waitForTimeout(200);
+    await page.keyboard.press('Control+k'); await page.waitForTimeout(400); await scan('the command palette'); await page.keyboard.press('Escape');
+    // "Clear notebook? Click again", under the pointer that just pressed it and away from it
+    await page.click('#tab-view'); await page.evaluate(() => { document.getElementById('panel-view').scrollLeft = 9999; });
+    await page.click('#clear'); await page.waitForTimeout(250);
+    const sure = () => page.evaluate(`(${crawlContrast.toString()})()`).then(r => r.filter(f => /Click again/.test(f.text)));
+    ok((await sure()).length === 0, scheme + ': "Click again" can be read while the pointer is on it');
+    await scan('Click again, pointed at');
+    await page.mouse.move(700, 600); await page.waitForTimeout(250);
+    ok((await sure()).length === 0, scheme + ': and when it is not');
+    await scan('Click again');
+    ok(bad.length === 0, scheme + ': every piece of the app\'s text is readable (AA) in 11 views' + (bad.length ? ':\n    ' + [...new Set(bad)].join('\n    ') : ''));
+    finish(errors, 'contrast ' + scheme); await browser.close();
+  }
+});
+
 (async () => {
   for (const [name, fn] of Object.entries(SECTIONS)) {
     if (only.length && !only.includes(name)) continue;

@@ -19,7 +19,7 @@
 /* ================= tokens ================= */
 :root{
   --bg:#eeede9; --surface:#fbfbf8; --surface-2:#f5f4ef; --hover:#e6e4dd; --ink:#24231f; --muted:#605d55; --line:#dad7cd; --line-strong:#b9b5a8; --pencil:#2f2b24;
-  --accent:#3552c4; --accent-ink:#fff; --accent-soft:#e2e6f4; --accent-strong:#243c9e; --danger:#b03a28; --ok:#2e6a38; --mark:#ffd54a;
+  --accent:#3552c4; --accent-ink:#fff; --accent-soft:#e2e6f4; --accent-strong:#243c9e; --danger:#b03a28; --danger-ink:#fff; --ok:#2e6a38; --mark:#ffd54a;
   --card:#fff; --card-ink:#1b2330; --card-muted:#6b7686; --dot:rgba(47,43,36,.13);
   --radius:9px; --wob:10px 7px 11px 6px / 6px 11px 7px 10px; --wob-lg:16px 10px 18px 9px / 9px 18px 10px 16px; --wob-pill:255px 15px 225px 15px / 15px 225px 15px 255px;
   --sketch:2px 3px 0 var(--pencil); --pop-shadow:4px 5px 0 rgba(47,43,36,.85); 
@@ -27,8 +27,8 @@
   --appbar-h:0px; --status-h:34px; --gutter-l:max(12px,env(safe-area-inset-left,0px)); --gutter-r:max(12px,env(safe-area-inset-right,0px));
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d2320;--surface:#242b26;--surface-2:#202722;--hover:#2f3832;--ink:#ece6d6;--muted:#aaa594;--line:#38423b;--line-strong:#56614f;--pencil:#ddd6c4;--accent:#a4b6ff;--accent-ink:#141a2e;--accent-soft:#2c3550;--accent-strong:#c7d2ff;--danger:#ff9e8c;--ok:#9fd8a5;--card:#f4f1e8;--dot:rgba(236,230,214,.07);--pop-shadow:4px 5px 0 rgba(0,0,0,.55);color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#1d2320;--surface:#242b26;--surface-2:#202722;--hover:#2f3832;--ink:#ece6d6;--muted:#aaa594;--line:#38423b;--line-strong:#56614f;--pencil:#ddd6c4;--accent:#a4b6ff;--accent-ink:#141a2e;--accent-soft:#2c3550;--accent-strong:#c7d2ff;--danger:#ff9e8c;--ok:#9fd8a5;--card:#f4f1e8;--dot:rgba(236,230,214,.07);--pop-shadow:4px 5px 0 rgba(0,0,0,.55);color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d2320;--surface:#242b26;--surface-2:#202722;--hover:#2f3832;--ink:#ece6d6;--muted:#aaa594;--line:#38423b;--line-strong:#56614f;--pencil:#ddd6c4;--accent:#a4b6ff;--accent-ink:#141a2e;--accent-soft:#2c3550;--accent-strong:#c7d2ff;--danger:#ff9e8c;--danger-ink:#1d2320;--ok:#9fd8a5;--card:#f4f1e8;--dot:rgba(236,230,214,.07);--pop-shadow:4px 5px 0 rgba(0,0,0,.55);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1d2320;--surface:#242b26;--surface-2:#202722;--hover:#2f3832;--ink:#ece6d6;--muted:#aaa594;--line:#38423b;--line-strong:#56614f;--pencil:#ddd6c4;--accent:#a4b6ff;--accent-ink:#141a2e;--accent-soft:#2c3550;--accent-strong:#c7d2ff;--danger:#ff9e8c;--danger-ink:#1d2320;--ok:#9fd8a5;--card:#f4f1e8;--dot:rgba(236,230,214,.07);--pop-shadow:4px 5px 0 rgba(0,0,0,.55);color-scheme:dark}
 body{margin:0;color:var(--ink);font:16px var(--ui);background:var(--bg) radial-gradient(var(--dot) 1px,transparent 1.4px) 0 0/24px 24px} /* taste-skill-ignore: the dotted paper of the sketch look */
 /* a little paper grain over everything */
 body::after{content:"";position:fixed;inset:0;z-index:200;pointer-events:none;opacity:.06;
@@ -54,9 +54,10 @@ img{max-width:100%}
 @media (any-hover:hover){.btn.primary:hover{background:var(--accent-strong);border-color:var(--accent-strong)}}
 .btn[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
 .btn.danger{color:var(--danger)}
-.btn.sure{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn.sure,.btn.sure:hover,.btn.outline.sure:hover{background:var(--danger);border-color:var(--danger);color:var(--danger-ink)}      /* (still red under the pointer you just clicked with, and its words readable in both themes) */
 .btn.big{height:44px;padding:0 22px;font-size:15px;font-weight:600;border-radius:10px}
 :is(button,select,input,label,a):focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+::placeholder{color:var(--muted);opacity:1}      /* (the browser's own grey is under 4.5:1 on these backgrounds, and fainter still in Firefox) */
 select{font:inherit;font-size:13px;height:32px;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius);padding:0 6px;cursor:pointer}
 input[type=color]{width:28px;height:28px;padding:0;border:1px solid var(--line-strong);border-radius:6px;background:none;cursor:pointer;flex:none}
 .sw{width:28px;height:28px;padding:0;border:none;background:transparent;border-radius:50%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none}
@@ -481,7 +482,7 @@ kbd{font:12px ui-monospace,Menlo,Consolas,monospace;padding:1px 5px;border:1px s
 .dictlist{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
 .dictlist li{display:inline-flex;align-items:center;gap:2px;padding:2px 2px 2px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface-2);font-size:13px}
 .dictlist li button,.favmanage button.x{border:none;background:transparent;padding:2px 7px;border-radius:999px;font-size:15px;line-height:1;color:var(--muted);cursor:pointer}
-.dictlist li button:hover,.favmanage button.x:hover{background:var(--danger);color:#fff}
+.dictlist li button:hover,.favmanage button.x:hover{background:var(--danger);color:var(--danger-ink)}
 .dictlist .none,.favmanage .none{border:none;background:none;padding:0;color:var(--muted);font-style:italic;font-size:13px}
 .favmanage{display:flex;flex-wrap:wrap;gap:8px}
 .favmanage .fm{display:inline-flex;align-items:center;gap:2px;padding:2px;border:1px solid var(--line);border-radius:999px}
@@ -604,7 +605,7 @@ body.focus .peekzone{display:none}
 .nbsname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .nbsempty{font-size:14.5px;color:var(--muted);margin:8px 2px}
 .docmenu .danger{color:var(--danger)}
-.docmenu .danger.sure{background:var(--danger);color:#fff}
+.docmenu .danger.sure{background:var(--danger);color:var(--danger-ink)}
 @media (max-width:900px),(pointer:coarse) and (orientation:portrait) and (max-width:1100px){.peekzone{display:none}.side.pages{width:min(270px,86vw)}}
 
 /* ================= the add menu: a note, sticky note or equation, Notion style ================= */
@@ -758,7 +759,7 @@ body.pgdragging,body.pgdragging *{cursor:grabbing!important}
 .shwho small{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .shrole{flex:none;font-size:14px;color:var(--muted)}
 .shpeople .x{flex:none;border:none;background:transparent;padding:2px 8px;border-radius:999px;font-size:17px;line-height:1.2;color:var(--muted);cursor:pointer}
-.shpeople .x:hover{background:var(--danger);color:#fff}
+.shpeople .x:hover{background:var(--danger);color:var(--danger-ink)}
 .shpeople .none{color:var(--muted);font-style:italic;font-size:14px;border-bottom:none}
 .shlinkrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .shlinkrow input{flex:1 1 180px}
@@ -808,7 +809,7 @@ body.pgdragging,body.pgdragging *{cursor:grabbing!important}
 /* ================= add a note from the Notes panel ================= */
 .ncompose{display:flex;flex-direction:column;gap:8px;padding:2px 0 4px}
 .ncompose textarea{display:block;width:100%;box-sizing:border-box;min-height:62px;max-height:180px;resize:none;padding:6px 10px;border:1.5px solid var(--pencil);border-radius:var(--wob);background:#fff;color:#1f4fd1;font:22px/1.2 Caveat,cursive;outline:none}
-.ncompose textarea::placeholder{color:#7d8696;font:17px/1.3 var(--ui)}
+.ncompose textarea::placeholder{color:#667080;font:17px/1.3 var(--ui)}
 .ncompose textarea:focus{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)} /* taste-skill-ignore: a ring marking focus, not a shadow */
 .ncrow{display:flex;align-items:center;gap:6px}
 .ncrow .btn{height:32px}
