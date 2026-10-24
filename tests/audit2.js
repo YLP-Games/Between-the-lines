@@ -192,6 +192,52 @@ section('ribbon', async () => {
   finish(errors, 'ribbon'); await browser.close();
 });
 
+// ---------- 4. the Show toolbar pill keeps off the buttons of the panels ----------
+// the pill, and every button, box or link in an open panel (or the notebook beside) that it covers
+const pillState = page => page.evaluate(() => {
+  const p = document.getElementById('showBar'), cs = getComputedStyle(p), pr = p.getBoundingClientRect(), shown = !p.hidden && cs.display !== 'none' && cs.visibility !== 'hidden';
+  const covers = !shown ? [] : [...document.querySelectorAll('.side:not([hidden]) :is(button, a[href], input, select, textarea), #beside:not([hidden]) :is(button, a[href], input, select, textarea)')].filter(e => {
+    const r = e.getBoundingClientRect(); if (r.width < 2 || r.height < 2 || e.closest('[hidden]')) return false;
+    return Math.min(r.right, pr.right) - Math.max(r.left, pr.left) > 1 && Math.min(r.bottom, pr.bottom) - Math.max(r.top, pr.top) > 1;
+  }).map(e => e.dataset.close || e.id || e.getAttribute('aria-label') || e.className);
+  return {shown, covers, left: Math.round(pr.left), right: Math.round(pr.right), w: innerWidth};
+});
+section('pill', async () => {
+  for (const w of [1440, 1100, 820, 390]) {
+    const {browser, page, errors} = await open(APP, {width: w, height: 900});
+    await page.waitForTimeout(600);
+    await newNote(page, 'First notebook'); const a = await page.evaluate(() => curId);
+    await newNote(page, 'Second notebook');
+    await page.evaluate(() => { setBar('hidden'); setPanel('pages', false); setPanel('notes', true); }); await page.waitForTimeout(400);
+    let s = await pillState(page);
+    ok(s.covers.length === 0, w + 'px, Notes open: the Show toolbar pill covers no button of the panel (' + (s.covers.join(', ') || 'none') + '; pill at ' + s.left + '-' + s.right + ')');
+    if (w >= 820) ok(s.shown, w + 'px, Notes open: and the pill is still there to press');
+    else ok(!s.shown, w + 'px, Notes open: on a phone the drawer fills the width, so the pill waits');
+    await page.evaluate(() => { setPanel('notes', false); setPanel('pages', true); }); await page.waitForTimeout(400);
+    s = await pillState(page);
+    ok(s.covers.length === 0, w + 'px, sidebar open: the pill covers no button of the sidebar (' + (s.covers.join(', ') || 'none') + (s.shown ? '' : '; it waits') + ')');
+    await page.evaluate(() => setPanel('pages', false)); await page.waitForTimeout(300);
+    s = await pillState(page);
+    ok(s.shown && s.right > w - 40, w + 'px, no panel: the pill is at the top right where it always was (' + s.left + '-' + s.right + ')');
+    // the notebook beside, with Notes shut: its Swap and Close buttons are at the top right too
+    await page.evaluate(id => openBeside(id), a); await page.waitForTimeout(900);
+    s = await pillState(page);
+    ok(s.covers.length === 0, w + 'px, notebook beside: the pill covers no button of the pane (' + (s.covers.join(', ') || 'none') + ')');
+    if (w >= 1100) {
+      await page.evaluate(() => setPanel('notes', true)); await page.waitForTimeout(500);
+      s = await pillState(page);
+      ok(s.covers.length === 0 && s.shown, w + 'px, beside and Notes open: still clear of both (' + (s.covers.join(', ') || 'none') + ')');
+      await page.evaluate(() => setPanel('notes', false)); await page.waitForTimeout(300);
+    }
+    await page.evaluate(() => besideClose()); await page.waitForTimeout(500);
+    s = await pillState(page);
+    ok(s.shown && s.right > w - 40, w + 'px: with everything shut, the pill goes back to the corner');
+    await page.click('#showBar'); await page.waitForTimeout(300);
+    ok(await page.evaluate(() => !document.getElementById('appbar').classList.contains('barhidden') && document.getElementById('showBar').hidden), w + 'px: pressing it brings the toolbar back');
+    finish(errors, 'pill ' + w); await browser.close();
+  }
+});
+
 (async () => {
   for (const [name, fn] of Object.entries(SECTIONS)) {
     if (only.length && !only.includes(name)) continue;

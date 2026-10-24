@@ -129,6 +129,7 @@ html[data-tips="off"] .ribbon .tip{display:none}
 .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
 .showbar{position:fixed;z-index:30;top:calc(8px + env(safe-area-inset-top,0px));right:var(--gutter-r);display:inline-flex;align-items:center;gap:6px;font:13px var(--ui);height:32px;padding:0 14px;border-radius:999px;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer;opacity:.9} /* taste-skill-ignore: a floating button */
 .showbar:hover{opacity:1}
+.showbar.away{visibility:hidden}
 #ribbonFold .i,#save .chev{width:16px;height:16px}
 #notesMenuBtn .chev{width:13px;height:13px;margin-left:-2px;opacity:.7}
 .notesmenu{width:290px}
@@ -6822,6 +6823,7 @@ function setBar(mode){
   ribbon.classList.toggle('compact', mode === 'compact'); ribbon.classList.remove('peek');
   appbar.classList.toggle('barhidden', mode === 'hidden');
   $('#showBar').hidden = mode !== 'hidden';
+  placeShowBar();
   $('#barModes').querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === mode));
   const fold = $('#ribbonFold'), compact = mode === 'compact';
   fold.innerHTML = icon(compact ? 'down' : 'up');
@@ -6837,6 +6839,16 @@ $('#barModes').addEventListener('click', e => {
 });
 $('#ribbonFold').onclick = () => setBar(barMode === 'compact' ? 'full' : 'compact');
 $('#showBar').onclick = () => setBar(pref.get('bar-last') === 'compact' ? 'compact' : 'full');
+// Show toolbar sits at the top right, left of anything docked there (the Notes list, the notebook beside) so it never covers their buttons;
+// where a drawer fills the width there is no room, so it waits until the drawer is closed
+function placeShowBar(){
+  const b = $('#showBar'); if (b.hidden) return;
+  const cw = document.documentElement.clientWidth, edge = (id, k) => { const e = $(id); return e.hidden ? null : e.getBoundingClientRect()[k]; };
+  const right = Math.min(cw, edge('#beside', 'left') ?? cw, edge('#notesPanel', 'left') ?? cw), left = edge('#pagesPanel', 'right') ?? 0;
+  b.style.right = right < cw ? `calc(var(--gutter-r) + ${cw - right}px)` : '';
+  b.classList.toggle('away', right - left < b.offsetWidth + 20);
+}
+{ const ro = new ResizeObserver(placeShowBar); ['#beside', '#notesPanel', '#pagesPanel'].forEach(id => ro.observe($(id))); addEventListener('resize', placeShowBar); }
 { const m = pref.get('bar-mode'); if (m === 'compact' || m === 'hidden') setBar(m); }
 // the side panels stick just under the app bar, however tall it is
 new ResizeObserver(() => document.documentElement.style.setProperty('--appbar-h', appbar.offsetHeight + 'px')).observe(appbar);
