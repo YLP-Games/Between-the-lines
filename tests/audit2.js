@@ -238,6 +238,37 @@ section('pill', async () => {
   }
 });
 
+// ---------- 6. a phone's title bar keeps the notebook's name (shrunk with …) and the sync status ----------
+section('titlebar', async () => {
+  const LONG = 'A really rather long lecture title about price elasticity and demand';
+  for (const [w, touch] of [[390, false], [390, true], [360, true], [320, true]]) {
+    const label = w + 'px' + (touch ? ' (touch)' : '');
+    const {browser, page, errors} = await open(APP, {width: w, height: 800, contextOptions: touch ? {hasTouch: true, isMobile: true} : {}});
+    await page.waitForTimeout(600);
+    await page.setInputFiles('#file', {name: LONG + '.pdf', mimeType: 'application/pdf', buffer: fs.readFileSync(path.join(__dirname, 'lecture.pdf'))});
+    await pdfCards(page, 6); await page.waitForTimeout(600);
+    await page.evaluate(() => { const el = document.getElementById('driveSync'); el.hidden = false; el.dataset.s = 'synced'; el.innerHTML = icon('saved') + '<span>Synced to Google Drive</span>'; });
+    await page.waitForTimeout(200);
+    const r = await page.evaluate(() => {
+      const q = s => document.querySelector(s), box = e => { const b = e.getBoundingClientRect(); return {l: Math.round(b.left), r: Math.round(b.right), t: Math.round(b.top), b: Math.round(b.bottom), w: Math.round(b.width), h: Math.round(b.height)}; };
+      const bar = q('.titlebar'), t = q('#docTitle'), d = q('.doc'), sync = q('#driveSync'), btns = [...bar.querySelectorAll('.btn')].filter(b => b.offsetParent).map(b => box(b));
+      const ts = getComputedStyle(t);
+      return {vw: document.documentElement.clientWidth, page: document.documentElement.scrollWidth, bar: [bar.scrollWidth, bar.clientWidth], title: box(t), name: t.textContent, ell: ts.textOverflow === 'ellipsis' && ts.overflow === 'hidden', cut: t.scrollWidth > t.clientWidth,
+        doc: box(d), sync: box(sync), syncLabel: box(sync.querySelector('span')), save: box(q('#saveState')), btns, minBtn: Math.min(...btns.map(b => Math.min(b.w, b.h))), maxRight: Math.max(...btns.map(b => b.r)), btnBottom: Math.max(...btns.map(b => b.b)), nbtn: btns.length};
+    });
+    ok(r.page <= r.vw && r.bar[0] <= r.bar[1], label + ': nothing overflows the width (page ' + r.page + ', title bar ' + r.bar[0] + ' of ' + r.bar[1] + ', buttons end at ' + r.maxRight + ')');
+    ok(r.title.w >= 120, label + ': the notebook\'s name has room (' + r.title.w + 'px for "' + r.name.slice(0, 20) + '…")');
+    ok(r.ell && r.cut, label + ': and a long name shrinks to an ellipsis');
+    ok(r.sync.l >= r.doc.l && r.sync.r <= r.doc.r && r.sync.r <= r.vw && r.syncLabel.w > 40 && r.sync.h > 8, label + ': the cloud sync status is whole, with its words (' + r.sync.l + '-' + r.sync.r + ' of ' + r.vw + ')');
+    ok(r.save.l >= r.doc.l && r.save.r <= r.doc.r && r.save.w >= 12, label + ': so is the saved mark (' + r.save.w + 'px wide)');
+    ok(r.minBtn >= (touch ? 34 : 32) && r.nbtn >= 9, label + ': the ' + r.nbtn + ' buttons stay at least ' + (touch ? 34 : 32) + 'px each way (smallest ' + r.minBtn + ')');
+    // opening the notes drawer and a menu still works from this bar
+    await page.click('#save'); await page.waitForTimeout(200);
+    ok(await page.evaluate(() => { const m = document.getElementById('saveMenu').getBoundingClientRect(); return !document.getElementById('saveMenu').hidden && m.left >= -1 && m.right <= innerWidth + 1; }), label + ': the Download menu opens inside the screen');
+    finish(errors, 'titlebar ' + label); await browser.close();
+  }
+});
+
 (async () => {
   for (const [name, fn] of Object.entries(SECTIONS)) {
     if (only.length && !only.includes(name)) continue;

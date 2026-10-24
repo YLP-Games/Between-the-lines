@@ -201,6 +201,11 @@ body.reading .ribbon [data-edit],body.reading #clear{display:none!important}
   .panel{height:auto;margin-bottom:0}
   .titlebar .btn{min-width:32px;padding:0 6px}
   .doc-title{font-size:13px}
+  /* nine buttons leave a phone no room beside them, so the notebook's name and its saved and sync marks get a line of their own (the name shrinks to …, the marks stay whole, and the sync one says its words) */
+  .titlebar{flex-wrap:wrap}
+  .doc{order:1;flex:1 0 100%;box-sizing:border-box;gap:8px;min-height:22px;padding:0 8px 2px}
+  .doc #driveSync span,.doc #offline span{display:inline}
+  .savewrap{position:static}      /* (the Download menu hangs from the whole bar, not from its button, which is nowhere near the right edge here) */
 }
 
 /* ================= status bar ================= */
@@ -1555,6 +1560,7 @@ html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;text-
 }
 @media (pointer:coarse) and (min-width:641px){.panel{height:calc(74px + var(--sbh))}}      /* room for the ribbon's 44px buttons (and the View tab's button pairs) with their captions */
 @media (pointer:coarse) and (max-width:640px){.titlebar .btn{min-width:40px;height:40px}}      /* (a phone's title bar has no room for more) */
+@media (max-width:379px){.titlebar .btn{min-width:34px}}      /* (nine of them still fit across the narrowest phones) */
 /* Safari before 15.4 has no dvh: the window's height instead */
 @supports not (height:100dvh){
   .workspace{min-height:calc(100vh - var(--appbar-h) - var(--status-h))}
