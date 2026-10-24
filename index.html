@@ -2073,7 +2073,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <h3>How to use it</h3>
       <ul class="howto">
         <li><b>Open</b> a PDF, PowerPoint (.pptx) or Word (.docx) file, or drop one anywhere on the page. Each file becomes its own <b>notebook</b> in the sidebar; <b>Insert › Add a file here</b> adds one to the notebook you're in instead.</li>
-        <li>PowerPoint files open as the slides look: each slide is a page with its text you can select, and you write between the lines as on a PDF. Complex animations and SmartArt may still differ; for an exact copy, save the slides as a PDF (File › Save as › PDF) and open that. Choose <b>Editable text</b> under <b>Open PowerPoint as</b> (View tab, or below) to rebuild the slides as text you can type inside instead.</li>
+        <li>PowerPoint files open as the slides look: each slide is a page with its text you can select, and you write between the lines as on a PDF. Complex animations and SmartArt may still differ; for an exact copy, save the slides as a PDF (File › Save as › PDF) and open that. Choose <b>Editable text</b> under <b>Open PowerPoint as</b> (View tab, or below) to rebuild the slides as text you can type inside instead. The presenter’s speaker notes go on each slide’s side page (<b>View › Side notes</b>), unless <b>PowerPoint speaker notes on side pages</b> is off below.</li>
         <li>Word files keep their fonts, colours, tables, headers and pictures as editable text. A few pictures (old EMF or WMF drawings, for example) may not come through: save the file as a PDF and open that, or add the picture with Insert › Picture, video or sound.</li>
         <li>On a PDF page, point at a spot and press <b>+ Add here</b> to add a note there (the page opens up between the lines). <b>Right-click</b> the button (press and hold on a touch screen) to pick <b>Note</b>, <b>Sticky note</b> or <b>Equation</b>. On other pages, click where you want to write. In a note, type <b>/</b> for the same choices.</li>
         <li><b>Writing tools</b> (Insert tab): <b>Writing guide</b> puts a grid, ruled lines or dots over the pages so you can write straight with a pen or Apple Pencil. Drag it by its handle, pull its edges to resize it, and press Esc or × to take it away; it is never saved in your notebook. Its bar goes when you click elsewhere: point at the faint icon in its top left corner to bring it back, or point at the Insert button for its settings. <b>Table</b> opens a grid to choose the size, then drop it in a note: Tab moves between cells, drag the borders to size it, and right-click (or ⋯) for rows, columns and merging. <b>Journal entry</b> is an accounting entry, lined up in columns (also under + Add here and by typing /journal): click DR or CR to switch a row, Enter adds a row, Tab and the arrow keys move around like a table, and right-click (or the × when you point at it) deletes the entry.</li>
@@ -2161,6 +2161,8 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <h3>PowerPoint files</h3>
       <p class="sethint">How a PowerPoint (.pptx) file opens next time. Slides as they look draws each slide like a PDF page, with its text you can select; Editable text rebuilds the slides as text you can type inside.</p>
       <div class="newrow"><select class="pptx-mode-sel" aria-label="Open PowerPoint as" title="How PowerPoint files open: as the slides look (a picture of each slide you can write between the lines of), or rebuilt as editable text. It applies to the next file you open."><option value="look">Slides as they look</option><option value="text">Editable text</option></select></div>
+      <label class="chk setchk" for="setPptxNotes"><input type="checkbox" id="setPptxNotes" checked> PowerPoint speaker notes on side pages</label>
+      <p class="sethint">When a PowerPoint file opens, its speaker notes go on each slide's side page.</p>
     </section>
     <section>
       <h3>Custom dictionary <span class="count" id="dictCount"></span></h3>
@@ -3222,12 +3224,17 @@ const safeLinks = box => box.querySelectorAll('a[href]').forEach(a => { if (!/^(
 // ---------- PowerPoint ----------
 // how PowerPoint files open: as the slides look (a picture of each slide, like a PDF page), or rebuilt as editable text
 const pptxMode = () => pref.get('pptx-mode') === 'text' ? 'text' : 'look';
+// whether a PowerPoint file's speaker notes go on its slides' side pages (Help & settings; on unless switched off)
+const pptxNotesOn = () => pref.get('pptx-notes', '1') !== '0';
+const PPTX_NOTES_SAID = 'The speaker notes are on the side pages, beside their slides (View › Side notes).';
 async function lookSlide(D, path, n, home){
   const r = await PPT.render(D, path, n + 1);
-  try { await addPageCard(r.cv, r.S, r.W, r.H, r.gaps, r.items, 0.92, home); } finally { r.cv.width = 0; }
+  try { return await addPageCard(r.cv, r.S, r.W, r.H, r.gaps, r.items, 0.92, home); } finally { r.cv.width = 0; }
 }
+// returns how many slides had speaker notes put on their side pages
 async function readPptx(buf, name, mode = pptxMode()){
-  const home = curId, zip = await JSZip.loadAsync(buf);
+  const home = curId, zip = await JSZip.loadAsync(buf), notesOn = pptxNotesOn();
+  let said = 0;
   const xml = async p => { const f = zip.file(p); return f ? new DOMParser().parseFromString(await f.async('string'), 'application/xml') : null; };
   const kids = (n, ln) => n ? [...n.children].filter(c => c.localName === ln) : [];
   const kid = (n, ln) => kids(n, ln)[0] || null;
@@ -3248,7 +3255,9 @@ async function readPptx(buf, name, mode = pptxMode()){
     if (!prel[ids[n]]) continue;
     const path = resolve('ppt/presentation.xml', prel[ids[n]]);
     if (deck) {                                   // a slide that can't be drawn is rebuilt as text instead
-      try { await lookSlide(deck, path, n, home); await new Promise(r => setTimeout(r)); continue; } catch (err) { if (err.moved) throw err; console.warn(`slide ${n + 1} drawn as text:`, err); }
+      let card = null;
+      try { card = await lookSlide(deck, path, n, home); } catch (err) { if (err.moved) throw err; console.warn(`slide ${n + 1} drawn as text:`, err); }
+      if (card) { await speakerNotes(path, card); await new Promise(r => setTimeout(r)); continue; }
     }
     const doc = await xml(path); if (!doc) continue;
     const srel = rels(await xml(path.replace(/([^/]+)$/, '_rels/$1.rels')));
@@ -3309,9 +3318,52 @@ async function readPptx(buf, name, mode = pptxMode()){
       for (const html of paras(find(it.c, 'txBody'), it.phType, 'div')) box.insertAdjacentHTML('beforeend', html);
     }
     if (!box.children.length) box.innerHTML = '<div class="blk" style="color:#8a94a3">(No text on this slide)</div>';
+    await speakerNotes(path, card);
   }
   away(home);
-  dropRepeats([...main.children].slice(firstCard));
+  dropRepeats([...main.children].slice(firstCard).filter(c => c.classList.contains('slide')));
+  if (said) { side.on = true; main.querySelectorAll('.sidepage').forEach(sideStyle); sidePaintUi(); }       // (laid out by whoever opened the file)
+  return said;
+
+  // the slide's speaker notes (the text of its notes page: not the slide's picture there, nor its number, header, footer or date) go on its
+  // side page, as one side note at the top left, a line for each paragraph
+  async function speakerNotes(path, card){
+    if (!notesOn || !card) return;
+    const rd = await xml(path.replace(/([^/]+)$/, '_rels/$1.rels'));
+    const r = rd && [...rd.getElementsByTagName('Relationship')].find(x => /\/notesSlide$/.test(x.getAttribute('Type') || '') && x.getAttribute('TargetMode') !== 'External');
+    const doc = r && await xml(resolve(path, r.getAttribute('Target'))); if (!doc) return;
+    const lines = [];
+    for (const sh of doc.getElementsByTagNameNS('*', 'sp')) {
+      const ph = find(sh, 'ph'); if (!ph || (ph.getAttribute('type') || 'body') !== 'body') continue;
+      let num = 0;
+      for (const p of kids(find(sh, 'txBody'), 'p')) {
+        const pPr = kid(p, 'pPr'); let html = '';
+        for (const c of p.children) {
+          if (c.localName === 'br') { html += '<br>'; continue; }
+          if (c.localName !== 'r' && c.localName !== 'fld') continue;
+          const t = kid(c, 't')?.textContent || ''; if (!t) continue;
+          const pr = kid(c, 'rPr'); let h = esc(t);
+          if (pr?.getAttribute('b') === '1') h = `<b>${h}</b>`;
+          if (pr?.getAttribute('i') === '1') h = `<i>${h}</i>`;
+          html += h;
+        }
+        if (!html.replace(/<br>/g, '').trim()) { lines.push(''); continue; }
+        const bul = kid(pPr, 'buNone') ? '' : kid(pPr, 'buAutoNum') ? (++num) + '. ' : kid(pPr, 'buChar') ? '• ' : '';
+        lines.push('\u00a0'.repeat(4 * +(pPr?.getAttribute('lvl') || 0)) + bul + html);
+      }
+    }
+    while (lines.length && !lines[0]) lines.shift();
+    while (lines.length && !lines.at(-1)) lines.pop();
+    if (!lines.length) return;
+    away(home);
+    const sp = document.createElement('aside'); sp.className = 'sidepage'; sp.dataset.for = sideSid(card);
+    const {box, el} = makeBox();
+    box.classList.add('floating'); box.dataset.spk = '1';                     // (until you change it: see reopenPptx)
+    box.style.width = sideWidth(sp) + 'px'; box.dataset.px = (30 / SIDE_W).toFixed(4); box.dataset.py = 24;
+    el.innerHTML = lines.map(l => `<div>${l || '<br>'}</div>`).join('');
+    sp.append(box); gripTitles(box); card.after(sp);
+    said++;
+  }
 
   function paras(body, phType, tag){
     if (!body) return [];
@@ -4267,6 +4319,7 @@ async function addPageCard(cv, S, W, H, gaps, items, quality = 0.88, home = curI
   card.dataset.text = JSON.stringify(items);
   card.append(makeStrip(card, 0, H));
   away(home); main.append(card);
+  return card;
 }
 // the paper's colour: the most common colour on the page
 function paperOf(px){
@@ -4972,10 +5025,10 @@ async function openFiles(picked, here = false){
     main.append(head);
     try {
       const buf = read === readImage ? null : await f.arrayBuffer(); away(home);
-      await (read === readImage ? readImage(f, home) : read(buf, f.name));
+      const said = await (read === readImage ? readImage(f, home) : read(buf, f.name));
       if (ext === 'pptx' && head.nextElementSibling && pref.get('pptx-tip') !== 'off' && tipsOn()) head.after(pptxTip(pptxMode(), f));
       first ??= head;
-      toast(''); saveSoon();
+      toast(ext === 'pptx' && said ? PPTX_NOTES_SAID : ''); saveSoon();
     } catch (err) {
       if (err.moved) { toast(`Stopped opening “${f.name}” because you switched to another notebook.`); return; }
       console.error(err); toast(`“${f.name}” couldn't be read${err?.message ? ` (${err.message})` : ''}. Try saving it as a PDF and opening that.`);
@@ -8424,7 +8477,9 @@ function sideAddBox(sp, x, y, w, link){
   focusNote(el); sideSoon();
   return box;
 }
-const sideWidth = sp => Math.round(Math.min(280, Math.max(150, sp.clientWidth * .62)));
+const sideWidth = sp => Math.round(Math.min(280, Math.max(150, (sp.clientWidth || SIDE_W) * .62)));        // (a page not shown yet is as wide as usual)
+// speaker notes from a PowerPoint file are yours once you change them (opening the file the other way then leaves its slides as they are)
+main.addEventListener('input', e => e.target.closest?.('.notebox[data-spk]')?.removeAttribute('data-spk'));
 function sideClick(e){
   if (getSelection().toString().trim() || sidePick) return;
   const sp = e.target.closest('.sidepage'), r = sp.getBoundingClientRect(), w = sideWidth(sp), z = zoomOf(sp) || 1;
@@ -9180,6 +9235,12 @@ $('#setTips').onchange = e => setTips(e.target.checked);
 $('#setTooltips').onchange = e => setTooltips(e.target.checked);
 $('#tipsBtn').onclick = () => setTips(!tipsOn());
 paintStar(); fillPrefs(); paintUiFont(); paintTheme(); paintTips();
+function setPptxNotes(on){
+  pref.set('pptx-notes', on ? '1' : '0'); $('#setPptxNotes').checked = on;
+  toast(on ? 'Speaker notes in PowerPoint files you open now go on the side pages.' : 'Speaker notes in PowerPoint files you open are now left out.');
+}
+$('#setPptxNotes').checked = pptxNotesOn();
+$('#setPptxNotes').onchange = e => setPptxNotes(e.target.checked);
 $('#penAuto').checked = penAuto();
 $('#penAuto').onchange = e => { pref.set('pen-auto', e.target.checked ? '1' : '0'); toast(e.target.checked ? 'The Pencil now draws by itself.' : 'The Pencil now draws only while Draw is on.'); };
 
@@ -9233,16 +9294,17 @@ let reopening = false;
 async function reopenPptx(tip, file, mode){
   if (reopening || !tip.isConnected) return;
   const cards = []; for (let e = tip.nextElementSibling; e && !e.classList.contains('file-head'); e = e.nextElementSibling) cards.push(e);
-  if (cards.some(c => c.querySelector('.mine, mark.anno') || c.dataset.ink)) { toast('You have already written on these slides, so they stay as they are. Open the file again to see it the other way.'); return; }
+  // (speaker notes you haven't changed don't count: they come again with the file)
+  if (cards.some(c => [...c.querySelectorAll('.mine')].some(m => !m.closest('.notebox[data-spk]')) || c.querySelector('mark.anno') || c.dataset.ink)) { toast('You have already written on these slides, so they stay as they are. Open the file again to see it the other way.'); return; }
   reopening = true; toast(`Opening “${file.name}” again…`);
   try {
     const after = cards.at(-1)?.nextElementSibling || null, n0 = main.children.length;
-    await readPptx(await file.arrayBuffer(), file.name, mode);
+    const said = await readPptx(await file.arrayBuffer(), file.name, mode);
     const fresh = [...main.children].slice(n0);
     cards.forEach(c => c.remove());
     for (const c of fresh) main.insertBefore(c, after);
     if (pref.get('pptx-tip') !== 'off') (fresh[0]?.previousElementSibling || tip).after(pptxTip(mode, file));
-    tip.remove(); toast(''); paginateView(); saveSoon();
+    tip.remove(); toast(said ? PPTX_NOTES_SAID : ''); paginateView(); saveSoon();
   } catch (err) { console.error(err); toast(`“${file.name}” couldn't be opened again${err?.message ? ` (${err.message})` : ''}.`); }
   reopening = false;
 }
@@ -10779,6 +10841,7 @@ const CK_ACTIONS = [
   {id: 'tips', label: 'Show tips on or off', ico: 'lightbulb', words: 'help hints coach teaching messages', run: () => setTips(!tipsOn())},
   {id: 'tooltips', label: 'Button tooltips on or off', ico: 'help', words: 'hover pop up labels help', run: () => setTooltips(!qtipsOn())},
   {id: 'autoalign', label: 'Auto-align notes on or off', ico: 'nalign-left', words: 'align line up box left edge tidy', run: () => setAutoAlign(!autoAlignOn())},
+  {id: 'pptxnotes', label: 'PowerPoint speaker notes on side pages on or off', ico: 'sidepage', words: 'pptx slides presenter speaker notes side pages settings', run: () => setPptxNotes(!pptxNotesOn())},
   {id: 'pdf', label: 'Download PDF', ico: 'download', words: 'save export print', ok: ckPages, run: ckDownload('pdf')},
   {id: 'file', label: 'Download notebook file', ico: 'download', words: 'save export html backup', ok: ckPages, run: ckDownload('notebook')},
   {id: 'md', label: 'Download notes as Markdown', ico: 'download', words: 'save export md text notion', ok: ckPages, run: ckDownload('markdown')},
