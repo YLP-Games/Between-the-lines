@@ -1,0 +1,122 @@
+// A PowerPoint file's speaker notes go on each slide's side page (a setting in Help & settings, on by default), in both ways of opening it
+const {open} = require('./harness');
+const path = require('path');
+const fs = require('fs');
+const JSZip = require('jszip');
+const OUT = path.join(__dirname, 'shots');
+fs.mkdirSync(OUT, {recursive: true});
+const APP = process.env.APP || path.resolve(__dirname, '..', 'index.html');
+const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok  ' + m); };
+
+// fid-rich.pptx (4 slides) with notes pages: slide 1 has two paragraphs (one word bold) and a slide number, header and slide picture placeholder;
+// slide 2 has none; slide 3 has an empty notes page; slide 4 has a bulleted line
+const P = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"';
+const shape = (id, type, body) => `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${type} ${id}"/><p:cNvSpPr/><p:nvPr><p:ph type="${type}"${type === 'body' ? ' idx="1"' : ''}/></p:nvPr></p:nvSpPr><p:spPr/>${body == null ? '' : `<p:txBody><a:bodyPr/><a:lstStyle/>${body}</p:txBody>`}</p:sp>`;
+const notesXml = shapes => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:notes ${P}><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>${shapes}</p:spTree></p:cSld></p:notes>`;
+const NOTES = {
+  1: notesXml(shape(2, 'sldImg') + shape(3, 'body', '<a:p><a:r><a:t>Start with the </a:t></a:r><a:r><a:rPr b="1"/><a:t>kinked</a:t></a:r><a:r><a:t> demand curve.</a:t></a:r></a:p><a:p><a:endParaRPr/></a:p><a:p><a:r><a:t>Then ask the class about price wars.</a:t></a:r></a:p>') +
+    shape(4, 'sldNum', '<a:p><a:fld id="{1}" type="slidenum"><a:t>SLIDENUM7</a:t></a:fld></a:p>') + shape(5, 'hdr', '<a:p><a:r><a:t>HEADERX</a:t></a:r></a:p>')),
+  3: notesXml(shape(2, 'sldImg') + shape(3, 'body', '<a:p><a:endParaRPr/></a:p><a:p><a:r><a:t>   </a:t></a:r></a:p>')),
+  4: notesXml(shape(2, 'sldImg') + shape(3, 'body', '<a:p><a:pPr><a:buChar char="•"/></a:pPr><a:r><a:t>Remember the quiz on Friday</a:t></a:r></a:p>')),
+};
+async function makeDeck(){
+  const z = await JSZip.loadAsync(fs.readFileSync(path.join(__dirname, 'fid-rich.pptx')));
+  let ct = await z.file('[Content_Types].xml').async('string');
+  for (const [n, xml] of Object.entries(NOTES)) {
+    z.file(`ppt/notesSlides/notesSlide${n}.xml`, xml);
+    z.file(`ppt/notesSlides/_rels/notesSlide${n}.xml.rels`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="../slides/slide${n}.xml"/></Relationships>`);
+    const rp = `ppt/slides/_rels/slide${n}.xml.rels`;
+    z.file(rp, (await z.file(rp).async('string')).replace('</Relationships>', `<Relationship Id="rIdN9" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide" Target="../notesSlides/notesSlide${n}.xml"/></Relationships>`));
+    ct = ct.replace('</Types>', `<Override PartName="/ppt/notesSlides/notesSlide${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml"/></Types>`);
+  }
+  z.file('[Content_Types].xml', ct);
+  const f = path.join(OUT, 'notes-deck.pptx');
+  fs.writeFileSync(f, await z.generateAsync({type: 'nodebuffer'}));
+  return f;
+}
+
+(async () => {
+  const deck = await makeDeck();
+  const {browser, page, errors} = await open(APP, {width: 1440, height: 900});
+  await page.waitForTimeout(600);
+  const openDeck = async (sel = '#main .slide') => {
+    await page.setInputFiles('#file', deck);
+    await page.waitForFunction(sel => document.querySelector('#main .file-head')?.textContent === 'notes-deck' && document.querySelectorAll(sel).length >= 4 && !(document.querySelector('#toast.show')?.textContent || '').startsWith('Reading'), sel, {timeout: 60000});
+    await page.waitForTimeout(900);
+  };
+  // each slide's side notes: how many, and their text (with lines kept)
+  const notes = () => page.evaluate(() => [...document.querySelectorAll('#main .slide')].map(s => [...(sideOf(s)?.querySelectorAll(':scope > .notebox') || [])].map(b => b.querySelector('.mine').innerText.trim())));
+  const sideOn = () => page.evaluate(() => [side.on, document.getElementById('main').classList.contains('side-on'), document.getElementById('sideBtn').getAttribute('aria-pressed')]);
+
+  // ---- the setting: on by default ----
+  ok(await page.evaluate(() => pptxNotesOn()) && await page.isChecked('#setPptxNotes'), 'Help & settings: “PowerPoint speaker notes on side pages” is on by default');
+  ok((await page.textContent('label[for="setPptxNotes"]')).includes('PowerPoint speaker notes on side pages') && (await page.evaluate(() => document.querySelector('label[for="setPptxNotes"]').nextElementSibling.textContent)).includes('speaker notes go on each slide'), 'with its label and hint');
+  ok(await page.evaluate(() => CK_ACTIONS.some(a => a.id === 'pptxnotes' && /speaker notes/i.test(a.label))), 'and in Ctrl+K');
+
+  // ---- slides as they look ----
+  await openDeck('#main .pagecard');
+  ok(await page.locator('.pagecard').count() === 4, 'the deck opens as 4 slide pictures');
+  let n = await notes();
+  ok(n.map(x => x.length).join() === '1,0,0,1', 'side notes on slides 1 and 4 only, not on 2 (no notes) or 3 (empty notes): ' + n.map(x => x.length).join());
+  ok(n[0][0].includes('Start with the kinked demand curve.') && n[0][0].includes('Then ask the class about price wars.') && /curve\.\n+Then/.test(n[0][0]), 'slide 1’s note has both paragraphs, on lines of their own');
+  ok(!n[0][0].includes('SLIDENUM7') && !n[0][0].includes('HEADERX'), 'without the slide number or header');
+  ok(await page.evaluate(() => sideOf(document.querySelector('.pagecard')).querySelector('.mine b')?.textContent === 'kinked'), 'bold words stay bold');
+  ok(n[3][0].includes('Remember the quiz on Friday') && n[3][0].startsWith('•'), 'slide 4’s bulleted line keeps its bullet');
+  ok((await sideOn()).join() === 'true,true,true', 'Side notes turned on by itself');
+  ok((await page.textContent('#toast')).includes('speaker notes are on the side pages'), 'and a message says where the notes are');
+  const geo = await page.evaluate(() => { const sp = sideOf(document.querySelector('.pagecard')), b = sp.querySelector('.notebox'), r = sp.getBoundingClientRect(), q = b.getBoundingClientRect(), z = zoomOf(sp) || 1; return {dx: (q.left - r.left) / z, dy: (q.top - r.top) / z, w: b.offsetWidth, sw: sp.clientWidth, right: q.right <= r.right + 1, floating: b.classList.contains('floating'), sid: sp.dataset.for === document.querySelector('.pagecard').dataset.sid}; });
+  ok(geo.floating && geo.sid && geo.dx < 60 && geo.dy < 60 && geo.right, `the note sits at the top left of slide 1’s own side page (${Math.round(geo.dx)}, ${Math.round(geo.dy)})`);
+  ok(geo.w === Math.round(Math.min(280, Math.max(150, geo.sw * .62))), 'as wide as a side note you add (' + geo.w + 'px)');
+  await page.click('#notesBtn').catch(() => {}); await page.waitForTimeout(400);
+  ok((await page.textContent('#noteList')).includes('Side note') && (await page.textContent('#noteList')).includes('kinked'), 'the Notes list shows them as side notes');
+  await page.screenshot({path: path.join(OUT, 'pptxnotes-look.png')});
+
+  // ---- opened again the other way, from the tip: the notes come along (they aren't counted as your writing) ----
+  const swap = page.locator('.pptx-tip button', {hasText: 'editable text'});
+  if (await swap.count()) {
+    await swap.click();
+    await page.waitForFunction(() => document.querySelectorAll('#main .slide:not(.pagecard)').length === 4, null, {timeout: 60000}); await page.waitForTimeout(800);
+    n = await notes();
+    ok(await page.locator('.pagecard').count() === 0 && n.map(x => x.length).join() === '1,0,0,1', 'reopened as editable text from the tip, with the notes on the same slides');
+  } else throw new Error('FAILED: no tip with its reopen link');
+
+  // ---- kept: reload, and the notebook file ----
+  await page.mouse.click(5, 500); await page.waitForTimeout(1500);
+  await page.reload(); await page.waitForTimeout(2500);
+  n = await notes();
+  ok(n.map(x => x.length).join() === '1,0,0,1' && n[0][0].includes('price wars') && n[3][0].includes('quiz'), 'after a reload the notes are on the same side pages');
+  ok((await sideOn()).join() === 'true,true,true', 'and Side notes is still on');
+  await page.click('#save'); const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-kind=notebook]')]);
+  const file = fs.readFileSync(await dl.path(), 'utf8');
+  ok(file.includes('kinked') && file.includes('price wars') && file.includes('sidepage'), 'Download notebook carries the speaker notes');
+  await page.keyboard.press('Escape');
+
+  // ---- editable text ----
+  await page.evaluate(() => pref.set('pptx-mode', 'text'));
+  await openDeck('#main .slide:not(.pagecard)');
+  ok(await page.locator('#main .slide:not(.pagecard)').count() === 4 && await page.locator('.pagecard').count() === 0, 'as editable text: 4 slides rebuilt as text, in a new notebook');
+  n = await notes();
+  ok(n.map(x => x.length).join() === '1,0,0,1' && n[0][0].includes('kinked demand curve') && n[3][0].includes('quiz'), 'the notes are on slides 1 and 4’s side pages there too');
+  ok((await sideOn()).join() === 'true,true,true', 'and Side notes is on');
+  await page.screenshot({path: path.join(OUT, 'pptxnotes-text.png')});
+
+  // ---- switched off: nothing added, Side notes stays off, no message ----
+  await page.evaluate(() => { const c = document.getElementById('setPptxNotes'); c.checked = false; c.dispatchEvent(new Event('change', {bubbles: true})); });
+  ok(await page.evaluate(() => pref.get('pptx-notes')) === '0' && !(await page.evaluate(() => pptxNotesOn())), 'switching it off is remembered');
+  await page.reload(); await page.waitForTimeout(2000);
+  ok(!(await page.isChecked('#setPptxNotes')), 'and still off after a reload');
+  await page.evaluate(() => pref.set('pptx-mode', 'look'));
+  await openDeck('#main .pagecard');
+  n = await notes();
+  ok(n.every(x => !x.length) && await page.locator('.sidepage .notebox').count() === 0, 'with it off, opening the deck adds no side notes');
+  ok((await sideOn()).join() === 'false,false,false', 'and leaves Side notes off');
+  ok(!(await page.evaluate(() => document.querySelector('#toast.show')?.textContent || '')).includes('speaker notes'), 'and says nothing about speaker notes');
+
+  // ---- on again from Ctrl+K ----
+  await page.evaluate(() => CK_ACTIONS.find(a => a.id === 'pptxnotes').run());
+  ok(await page.evaluate(() => pptxNotesOn()) && await page.isChecked('#setPptxNotes'), 'Ctrl+K’s action turns it back on');
+
+  await browser.close();
+  ok(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.join(' | ') : ''));
+  console.log(errors.length ? errors.join('\n') : 'no page errors');
+})().catch(e => { console.error(e); process.exit(1); });
