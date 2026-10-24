@@ -275,8 +275,8 @@ div.mine:empty::before{content:"Type, or press / for options"}
 .pagecard > .notebox > .mine{padding:8px 22px 8px 14px}
 /* a note box's handles, Notion style: dots beside it to drag, slim bars on its edges and a corner mark to resize, and a small toolbar at its top right.
    They show only for the note you point at (or last tapped with a finger), so the page stays clear. */
-.grip{position:absolute;z-index:3;box-sizing:border-box;touch-action:none;opacity:0;transition:opacity .15s;user-select:none;-webkit-user-select:none}
-.notebox:hover > .grip,.notebox.touched > .grip{opacity:1}
+.grip{position:absolute;z-index:3;box-sizing:border-box;touch-action:none;opacity:0;pointer-events:none;transition:opacity .15s;user-select:none;-webkit-user-select:none}      /* (unseen, a handle takes no taps: a finger by a note is for the page) */
+.notebox:hover > .grip,.notebox.touched > .grip{opacity:1;pointer-events:auto}
 .grip .i{width:15px;height:15px}
 .g-move{left:-14px;top:3px;width:15px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:#8f8d88;cursor:grab}
 .g-move:hover{background:rgba(55,53,47,.09);color:#55534e}
@@ -303,7 +303,7 @@ div.mine:empty::before{content:"Type, or press / for options"}
 /* the toolbar: pin, float on top, minimise. Hidden, it can't be clicked by accident */
 .nbar{position:absolute;z-index:4;top:-16px;right:10px;display:flex;align-items:center;gap:1px;padding:2px;border:1.5px solid var(--pencil);border-radius:8px;background:var(--surface);box-shadow:2px 2px 0 rgba(47,43,36,.18);opacity:0;visibility:hidden;transition:opacity .15s,visibility .15s} /* taste-skill-ignore: a small toolbar floats over the note */
 .notebox:hover > .nbar,.notebox.touched > .nbar{opacity:1;visibility:visible}
-.nbar .grip{position:static;opacity:1;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:6px;color:var(--muted);cursor:pointer}
+.nbar .grip{position:static;opacity:1;pointer-events:auto;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:6px;color:var(--muted);cursor:pointer}
 .nbar .grip:hover{background:var(--hover);color:var(--ink)}
 .nbar .i{width:14px;height:14px}
 .notebox.floating .g-float,.notebox.pinned .g-pin{color:var(--accent);background:var(--accent-soft)}
@@ -349,7 +349,7 @@ main.clean .notebox > *{display:none!important}
 /* several notes selected at once */
 .notebox.multi-sel > .mine{box-shadow:0 0 0 2px var(--accent),0 0 0 6px rgba(39,71,201,.18)!important} /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
 .notebox.multi-sel.collapsed > .note-chip{outline:2px solid var(--accent);outline-offset:2px}
-.notebox.multi-sel > .g-move{opacity:1;visibility:visible}
+.notebox.multi-sel > .g-move{opacity:1;visibility:visible;pointer-events:auto}
 /* study mode: read only, notes can still be opened and minimised */
 main.reading .grip:not(.g-min):not(.g-pin){display:none!important}
 main.reading .slide,main.reading .strip,main.reading .tl,main.reading .mine{cursor:auto}

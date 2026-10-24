@@ -66,6 +66,61 @@ section('measure', async () => {
   finish(errors, 'measure'); await browser.close();
 });
 
+// ---------- 7. note handles nobody can see take no taps ----------
+const newNote = async (page, text) => {
+  await page.evaluate(() => document.getElementById('newDocBtn').click()); await page.waitForTimeout(500);
+  await page.evaluate(t => { const s = document.querySelector('#main .slide'); const {box, el} = makeBox(); (s.querySelector('.content') || s).append(box); el.textContent = t; saveSoon(); }, text);
+  await page.evaluate(() => document.activeElement?.blur()); await page.waitForTimeout(500);      // (the empty note a new page starts with goes)
+};
+// each handle of every note: its pointer-events, and whether a point of it takes the pointer (a handle can be partly under another)
+const gripState = page => page.evaluate(() => [...document.querySelectorAll('#main .notebox > .grip')].map(g => {
+  const r = g.getBoundingClientRect(); let caught = false;
+  for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) { const t = document.elementFromPoint(r.left + r.width * (i + .5) / 5, r.top + r.height * (j + .5) / 5); if (t === g || g.contains(t)) caught = true; }
+  return {dir: g.dataset.dir, pe: getComputedStyle(g).pointerEvents, op: +getComputedStyle(g).opacity, caught};
+}));
+section('grips', async () => {
+  let {browser, page, errors} = await open(APP, {width: 1024, height: 768, contextOptions: {hasTouch: true, isMobile: true}});
+  await page.waitForTimeout(600);
+  await newNote(page, 'A note about slopes');
+  await page.mouse.click(5, 5); await page.waitForTimeout(200);
+  let g = await gripState(page);
+  ok(g.length >= 8 && g.every(x => x.op === 0), 'touch: nothing tapped, so every handle of the note is clear (' + g.length + ' handles)');
+  ok(g.every(x => x.pe === 'none' && !x.caught), 'touch: and none of them takes a tap (' + g.filter(x => x.caught).map(x => x.dir).join(' ') + ' do)');
+  // a tap on the note's bottom right corner, where its resize handle is, is a tap on the note: it is picked, not stretched
+  const before = await page.$eval('#main .notebox', b => { const r = b.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; });
+  const corner = await page.$eval('#main .notebox > .g-se', e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+  await page.touchscreen.tap(corner[0], corner[1]); await page.waitForTimeout(300);
+  ok(await page.$eval('#main .notebox', b => b.classList.contains('touched')), 'touch: tapping the note by its corner picks the note');
+  g = await gripState(page);
+  ok(g.every(x => x.op === 1 && x.pe === 'auto' && x.caught), 'touch: a picked note shows its handles and they all take a finger');
+  ok(await page.$eval('#main .notebox > .nbar .g-min', e => { const r = e.getBoundingClientRect(), t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return t === e || e.contains(t); }), 'touch: and so does the toolbar of a picked note');
+  const after = await page.$eval('#main .notebox', b => { const r = b.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; });
+  ok(before.join() === after.join(), 'touch: the tap did not resize the note (' + before + ' then ' + after + ')');
+  await page.touchscreen.tap(700, 740); await page.waitForTimeout(300);
+  g = await gripState(page);
+  ok(g.every(x => x.op === 0 && x.pe === 'none'), 'touch: tapping elsewhere puts the handles away again');
+  finish(errors, 'grips (touch)'); await browser.close();
+
+  // a mouse: pointing at the note shows its handles and they work; pointing away, they are clear and let everything through
+  ({browser, page, errors} = await open(APP, {width: 1440, height: 900}));
+  await page.waitForTimeout(600);
+  await newNote(page, 'A note about slopes');
+  await page.mouse.move(5, 700); await page.waitForTimeout(300);
+  g = await gripState(page);
+  ok(g.every(x => x.op === 0 && x.pe === 'none'), 'mouse: pointing elsewhere, the handles are clear and take nothing');
+  const r = await page.$eval('#main .notebox > .mine', e => { const b = e.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; });
+  await page.mouse.move(r[0], r[1], {steps: 3}); await page.waitForTimeout(300);
+  g = await gripState(page);
+  ok(g.every(x => x.op === 1 && x.pe === 'auto' && x.caught), 'mouse: pointing at the note shows its handles and they take the pointer');
+  const w0 = await page.$eval('#main .notebox', b => b.getBoundingClientRect().width);
+  const e = await page.$eval('#main .notebox > .g-e', e => { const b = e.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; });
+  await page.mouse.move(e[0], e[1], {steps: 3}); await page.mouse.down(); await page.mouse.move(e[0] - 60, e[1], {steps: 5}); await page.mouse.up(); await page.waitForTimeout(200);
+  ok(await page.$eval('#main .notebox', b => b.getBoundingClientRect().width) < w0 - 30, 'mouse: dragging the side handle still makes the note narrower');
+  await page.evaluate(() => { document.querySelector('#main .notebox').classList.add('multi-sel'); }); await page.mouse.move(5, 700); await page.waitForTimeout(300);
+  ok((await gripState(page)).find(x => x.dir === 'move').pe === 'auto', 'mouse: a note picked with others keeps its move handle live');
+  finish(errors, 'grips (mouse)'); await browser.close();
+});
+
 (async () => {
   for (const [name, fn] of Object.entries(SECTIONS)) {
     if (only.length && !only.includes(name)) continue;
