@@ -100,6 +100,8 @@ input[type=color]{width:28px;height:28px;padding:0;border:1px solid var(--line-s
 .panel > .grp, .panel > .tip{scroll-snap-align:start}      /* a sideways scroll comes to rest at the start of a group, with room before it: never half a button at the edge */
 /* the scroll bar sits in a strip (--sbh) below the tools that the next row overlaps, so it never squeezes them; it is clear, and shows while you point at the ribbon or scroll it; a soft fade at an edge says there is more that way */
 .ribbon:hover .panel,.panel.scrolling{scrollbar-color:var(--line-strong) transparent}
+.ribbon:not(.compact) .panel:not(.more-l):not(.more-r){pointer-events:none}      /* tools that all fit have no scroll bar to hold, so the spare strip under them lets clicks through to the page */
+.ribbon:not(.compact) .panel:not(.more-l):not(.more-r) > *{pointer-events:auto}
 @supports not (scrollbar-color:auto){.panel::-webkit-scrollbar{height:7px}.panel::-webkit-scrollbar-thumb{border-radius:4px;background:transparent}.ribbon:hover .panel::-webkit-scrollbar-thumb,.panel.scrolling::-webkit-scrollbar-thumb{background:var(--line-strong)}}
 .panel::before,.panel::after{content:"";position:sticky;flex:none;width:22px;align-self:stretch;z-index:3;pointer-events:none;opacity:0;transition:opacity .2s}
 .panel::before{left:0;margin-right:-24px;background:linear-gradient(to right,var(--surface) 72%,transparent)}

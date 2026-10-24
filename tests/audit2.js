@@ -160,6 +160,38 @@ section('wguide', async () => {
   finish(errors, 'wguide 1440'); await browser.close();
 });
 
+// ---------- 3. the ribbon's spare strip lets clicks through when there is nothing to scroll ----------
+section('ribbon', async () => {
+  const {browser, page, errors} = await open(APP, {width: 1440, height: 900});
+  await page.waitForTimeout(600);
+  await page.setInputFiles('#file', path.join(__dirname, 'lecture.pdf'));
+  await pdfCards(page, 6); await page.waitForTimeout(500);
+  const probe = () => page.evaluate(() => {
+    const p = [...document.querySelectorAll('.panel')].find(p => p.offsetParent), a = document.getElementById('appbar').getBoundingClientRect(), pr = p.getBoundingClientRect();
+    const miss = [], hits = []; for (let x = 40; x < innerWidth - 20; x += 90) { const e = document.elementFromPoint(x, a.bottom + 2); hits.push(e && e.closest('.panel') ? 'panel' : e?.tagName); }
+    const btns = [...p.querySelectorAll('button, select, input')].filter(b => b.offsetParent && !b.disabled && b.getBoundingClientRect().right < innerWidth && b.getBoundingClientRect().left > 0).map(b => { const r = b.getBoundingClientRect(), t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); const hit = t === b || b.contains(t); if (!hit) miss.push((b.id || b.className) + ' under ' + (t && (t.id || t.getAttribute('class') || t.tagName)) + ' at ' + Math.round(r.left)); return hit; });
+    return {over: p.scrollWidth - p.clientWidth, spill: Math.round(pr.bottom - a.bottom), hits, btns, miss, id: p.id};
+  });
+  let r = await probe();
+  ok(r.over <= 0 && r.spill > 0, 'the Home tab fits at 1440px, and its panel reaches ' + r.spill + 'px past the toolbar');
+  ok(r.hits.every(h => h !== 'panel'), 'a click just under the toolbar goes to the page, not to the ribbon (' + [...new Set(r.hits)] + ')');
+  ok(r.btns.length > 15 && r.btns.every(Boolean), 'every one of the ' + r.btns.length + ' Home buttons and boxes still takes the pointer');
+  await page.click('#b'); await page.click('#tab-insert'); await page.waitForTimeout(300);
+  r = await probe();
+  ok(r.hits.every(h => h !== 'panel') && r.btns.every(Boolean), 'the same on the Insert tab (' + r.over + 'px over)');
+  // a window too narrow for the tools: the panel scrolls, and the strip holds its scroll bar, so that does take the pointer
+  await page.setViewportSize({width: 820, height: 900}); await page.waitForTimeout(500); await page.click('#tab-view'); await page.waitForTimeout(400);
+  r = await probe();
+  ok(r.over > 50 && r.hits.includes('panel'), 'at 820px the View tab scrolls (' + r.over + 'px over): the strip under it is the scroll bar and takes the pointer');
+  ok(r.btns.every(Boolean), 'and its buttons still take the pointer ' + r.miss.join('; '));
+  // tabs only: the tools open as a pop-over, which must still block the page under it
+  await page.setViewportSize({width: 1440, height: 900}); await page.waitForTimeout(400);
+  await page.click('#ribbonFold'); await page.click('#tab-home'); await page.waitForTimeout(400);
+  const pop = await page.evaluate(() => { const p = document.getElementById('panel-home'), r = p.getBoundingClientRect(), e = document.elementFromPoint(r.right - 20, r.top + 30); return {shown: !!p.offsetParent, panel: !!e?.closest('#panel-home')}; });
+  ok(pop.shown && pop.panel, 'with tabs only, the pop-over tools still catch clicks on their empty parts');
+  finish(errors, 'ribbon'); await browser.close();
+});
+
 (async () => {
   for (const [name, fn] of Object.entries(SECTIONS)) {
     if (only.length && !only.includes(name)) continue;
