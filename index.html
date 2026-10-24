@@ -5299,7 +5299,7 @@ main.addEventListener('touchstart', e => {
 }, {passive: true});
 main.addEventListener('touchmove', e => {
   if (!pinch || e.touches.length !== 2) return;
-  e.preventDefault();                                         // (the pages zoom and move, not Safari's whole page)
+  if (e.cancelable) e.preventDefault();                       // (the pages zoom and move, not Safari's whole page; a move the browser has already taken can't be stopped, and needn't be)
   const [a, b] = e.touches;
   pinch.next = [pinch.u * Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) / pinch.d, (a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2];
   if (!pinch.raf) pinch.raf = requestAnimationFrame(() => {
