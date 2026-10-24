@@ -278,37 +278,67 @@ div.mine:empty::before{content:"Type, or press / for options"}
 .notebox > .mine{flex:1 1 auto;min-height:0;overflow:visible;margin:0!important;padding-right:22px}
 .notebox.inline{display:inline-flex;width:auto;vertical-align:baseline;margin:0 .15em}
 .notebox.inline > .mine{padding:0 14px 0 .25em}
-.notebox:hover > .mine{box-shadow:0 0 0 1px var(--accent)} /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
+.notebox:hover > .mine{box-shadow:0 0 0 1.5px var(--nb-ring)} /* taste-skill-ignore: a ring marking focus or selection, not a shadow */
+/* the outline and the corner mark are drawn on the paper, so they follow its colour (a slide stays white in the dark theme; a side page can be dark) */
+.notebox{--nb-ring:#3552c4;--nb-mark:#5f5b52}
+.sidepage.dark .notebox{--nb-ring:#a4b6ff;--nb-mark:#d4cdbb}
+.notebox[data-tone="dark"]{--nb-mark:#d4cdbb}      /* (the corner mark is inside the note, so on a filled note it follows the fill) */
+.sidepage.dark .notebox:is([data-tone="light"],.sticky:not([data-tone="dark"])){--nb-mark:#5f5b52}
 .pagecard > div.mine{margin:0 14px;padding:8px 14px}
 .pagecard > .notebox{margin:4px 14px;width:calc(100% - 28px);max-width:calc(100% - 28px)}
 .pagecard > .notebox > .mine{padding:8px 22px 8px 14px}
-/* a note box's handles, Notion style: dots beside it to drag, slim bars on its edges and a corner mark to resize, and a small toolbar at its top right.
-   They show only for the note you point at (or last tapped with a finger), so the page stays clear. */
+/* a note box's handles, Notion style: a move handle beside it, a bar on each edge and a dot or mark on each corner to resize, and a small toolbar at its top right.
+   They show only for the note you point at (or last tapped with a finger), so the page stays clear. Each edge catches the pointer all along it, in a strip 16px wide
+   that lies mostly outside the box (inside, only over its padding, never its words), and lights up when you point at it; each corner catches a 20px square. */
 .grip{position:absolute;z-index:3;box-sizing:border-box;touch-action:none;opacity:0;pointer-events:none;transition:opacity .15s;user-select:none;-webkit-user-select:none}      /* (unseen, a handle takes no taps: a finger by a note is for the page) */
 .notebox:hover > .grip,.notebox.touched > .grip{opacity:1;pointer-events:auto}
 .grip .i{width:15px;height:15px}
-.g-move{left:-14px;top:3px;width:15px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;color:#8f8d88;cursor:grab}
-.g-move:hover{background:rgba(55,53,47,.09);color:#55534e}
+/* the move handle: a small button of dots in the margin, drawn like the toolbar, on top of the left edge's strip */
+.g-move{z-index:5;left:-22px;top:4px;width:18px;height:28px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--pencil);border-radius:6px 5px 6px 4px / 5px 6px 4px 6px;background:var(--surface);color:var(--muted);box-shadow:1px 1px 0 rgba(47,43,36,.2);cursor:grab} /* taste-skill-ignore: the move handle floats beside the note, like its toolbar */
+.g-move::before{content:"";position:absolute;inset:0 0 0 -6px}      /* (a little more to catch, outwards) */
+.g-move .i{width:16px;height:16px}
+.g-move:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .g-move:active{cursor:grabbing}
-.pagecard > .notebox:not(.floating) > .g-move{left:-13px;width:13px}
-.g-e,.g-s{background:#fff;border:1.5px solid #8f8d86;border-radius:9px}
-.g-e{right:-4px;top:50%;width:7px;height:min(36px,60%);min-height:12px;translate:0 -50%;cursor:ew-resize}
-.g-s{bottom:-4px;left:50%;width:min(36px,40%);height:7px;translate:-50% 0;cursor:ns-resize}
-.g-e:hover,.g-s:hover{background:var(--accent);border-color:var(--accent)}
-.g-se{right:1px;bottom:1px;width:14px;height:14px;display:flex;color:#8f8d86;cursor:nwse-resize}
+/* the edges: a strip each, with the bar drawn in its middle; pointing at the strip draws a line all along the edge */
+.g-e,.g-w{top:0;bottom:0;width:16px;cursor:ew-resize}
+.g-e{right:-10px}
+.g-w{left:-10px}
+.g-n,.g-s{left:0;right:0;height:16px;cursor:ns-resize}
+.g-n{top:-12px}
+.g-s{bottom:-12px}
+.g-e:hover{background:linear-gradient(var(--nb-ring) 0 0) 5px 0/2px 100% no-repeat}
+.g-w:hover{background:linear-gradient(var(--nb-ring) 0 0) 9px 0/2px 100% no-repeat}
+.g-n:hover{background:linear-gradient(var(--nb-ring) 0 0) 0 11px/100% 2px no-repeat}
+.g-s:hover{background:linear-gradient(var(--nb-ring) 0 0) 0 3px/100% 2px no-repeat}
+:is(.g-e,.g-w,.g-n,.g-s,.g-nw,.g-ne,.g-sw)::after{content:"";position:absolute;box-sizing:border-box;background:var(--surface);border:1.5px solid var(--pencil);transition:background-color .12s,border-color .12s,width .12s,height .12s,scale .12s}
+.g-e::after,.g-w::after{top:50%;width:7px;height:min(36px,60%);min-height:12px;translate:0 -50%;border-radius:9px}
+.g-e::after{left:3px}
+.g-w::after{right:3px}
+.g-n::after,.g-s::after{left:50%;width:min(36px,40%);height:7px;translate:-50% 0;border-radius:9px}
+.g-n::after{bottom:1px}
+.g-s::after{top:1px}
+:is(.g-e,.g-w,.g-n,.g-s,.g-nw,.g-ne,.g-sw):hover::after{background:var(--nb-ring);border-color:var(--nb-ring)}
+:is(.g-e,.g-w):hover::after{height:min(56px,80%)}
+:is(.g-n,.g-s):hover::after{width:min(64px,60%)}
+/* the corners: a 20px square each, on top of the edges' strips, with a dot on the corner (and a mark inside the bottom right one) */
+.g-nw,.g-ne,.g-sw,.g-se{z-index:4}
+.g-nw,.g-ne,.g-sw{width:20px;height:20px}
+.g-nw{left:-13px;top:-13px;cursor:nwse-resize}
+.g-ne{right:-13px;top:-13px;cursor:nesw-resize}
+.g-sw{left:-13px;bottom:-13px;cursor:nesw-resize}
+:is(.g-nw,.g-ne,.g-sw)::after{width:10px;height:10px;border-radius:50%}
+.g-nw::after{left:8px;top:8px}
+.g-ne::after{right:8px;top:8px}
+.g-sw::after{left:8px;bottom:8px}
+:is(.g-nw,.g-ne,.g-sw):hover::after{scale:1.3}
+.g-se{right:-9px;bottom:-9px;width:24px;height:24px;padding:0 10px 10px 0;display:flex;color:var(--nb-mark);cursor:nwse-resize}
 .g-se .i{width:14px;height:14px;stroke-width:2.4}
-.g-se:hover{color:var(--accent)}
+.g-se:hover{color:var(--nb-ring)}
 .notebox.inline > .g-s,.notebox.inline > .g-se{display:none}
-/* the left and top edges and the other three corners: a bar on each edge, a small dot on each corner */
-.g-w,.g-n,.g-nw,.g-ne,.g-sw{background:#fff;border:1.5px solid #8f8d86}
-.g-w{left:-4px;top:50%;width:7px;height:min(36px,60%);min-height:12px;translate:0 -50%;border-radius:9px;cursor:ew-resize}
-.g-n{top:-4px;left:50%;width:min(36px,40%);height:7px;translate:-50% 0;border-radius:9px;cursor:ns-resize}
-.g-nw,.g-ne,.g-sw{width:10px;height:10px;border-radius:50%}
-.g-nw{left:-5px;top:-5px;cursor:nwse-resize}
-.g-ne{right:-5px;top:-5px;cursor:nesw-resize}
-.g-sw{left:-5px;bottom:-5px;cursor:nesw-resize}
-.g-w:hover,.g-n:hover,.g-nw:hover,.g-ne:hover,.g-sw:hover{background:var(--accent);border-color:var(--accent)}
 .notebox.inline > :is(.g-w,.g-n,.g-nw,.g-ne,.g-sw){display:none}
+.notebox.inline > .g-e{right:-4px}      /* (in running text the strip lies mostly over the note's own padding, so it doesn't catch the words after it) */
+.notebox.inline > .g-e::after{left:auto;right:0}
+.notebox.inline > .g-e:hover{background-position:11px 0}
 /* the toolbar: pin, float on top, minimise. Hidden, it can't be clicked by accident */
 .nbar{position:absolute;z-index:4;top:-16px;right:10px;display:flex;align-items:center;gap:1px;padding:2px;border:1.5px solid var(--pencil);border-radius:8px;background:var(--surface);box-shadow:2px 2px 0 rgba(47,43,36,.18);opacity:0;visibility:hidden;transition:opacity .15s,visibility .15s} /* taste-skill-ignore: a small toolbar floats over the note */
 .notebox:hover > .nbar,.notebox.touched > .nbar{opacity:1;visibility:visible}
@@ -321,16 +351,28 @@ div.mine:empty::before{content:"Type, or press / for options"}
 /* a finger can't point: tapping a note shows its handles, bigger, until you tap somewhere else
    (decided by how you touch, not by what the browser says the screen is: touchscreen laptops often claim they can't hover) */
 .notebox.touched .nbar .grip{width:34px;height:34px}
-.notebox.touched > .g-move{left:-22px;width:22px;height:32px;z-index:4}          /* (it stays on top of the left edge handle, whose catching area reaches over it) */
-.notebox.touched > .g-e{width:12px;right:-6px}
-.notebox.touched > .g-s{height:12px;bottom:-6px}
-.notebox.touched > .g-se{width:20px;height:20px}
-.notebox.touched > .g-w{width:12px;left:-6px}
-.notebox.touched > .g-n{height:12px;top:-6px}
-.notebox.touched > :is(.g-nw,.g-ne,.g-sw){width:14px;height:14px}
-.notebox.touched > .g-nw{left:-7px;top:-7px}
-.notebox.touched > .g-ne{right:-7px;top:-7px}
-.notebox.touched > .g-sw{left:-7px;bottom:-7px}
+.notebox.touched > .g-move{left:-26px;top:3px;width:22px;height:32px}          /* (it stays on top of the left edge's strip, whose catching area reaches over it) */
+.notebox.touched > .g-move .i{width:18px;height:18px}
+.notebox.touched > :is(.g-e,.g-w){width:20px}
+.notebox.touched > .g-e{right:-12px}
+.notebox.touched > .g-w{left:-12px}
+.notebox.touched > :is(.g-e,.g-w)::after{width:12px}
+.notebox.touched > .g-e::after{left:2px}
+.notebox.touched > .g-w::after{right:2px}
+.notebox.touched > :is(.g-n,.g-s){height:20px}
+.notebox.touched > .g-n{top:-13px}
+.notebox.touched > .g-s{bottom:-13px}
+.notebox.touched > :is(.g-n,.g-s)::after{height:12px}
+.notebox.touched > :is(.g-nw,.g-ne,.g-sw){width:26px;height:26px}
+.notebox.touched > .g-nw{left:-17px;top:-17px}
+.notebox.touched > .g-ne{right:-17px;top:-17px}
+.notebox.touched > .g-sw{left:-17px;bottom:-17px}
+.notebox.touched > :is(.g-nw,.g-ne,.g-sw)::after{width:14px;height:14px}
+.notebox.touched > .g-nw::after{left:10px;top:10px}
+.notebox.touched > .g-ne::after{right:10px;top:10px}
+.notebox.touched > .g-sw::after{left:10px;bottom:10px}
+.notebox.touched > .g-se{right:-10px;bottom:-10px;width:30px;height:30px}
+.notebox.touched > .g-se .i{width:20px;height:20px}
 .notebox.moving{opacity:.9;z-index:100000!important}
 .notebox.moving > .mine{box-shadow:0 6px 18px rgba(0,0,0,.22);background:rgba(255,255,255,.85)} /* taste-skill-ignore: a note being dragged floats */
 .notebox.flash > .mine{animation:flash 1.6s ease-out}
@@ -669,11 +711,11 @@ body.focus .peekzone{display:none}
 
 /* ================= sticky notes: yellow paper on top of the page, moved by their tape ================= */
 .slide .notebox.sticky > .mine{min-height:92px;padding:16px 14px 12px;background:var(--nb-fill,#fff59d);border:1px solid rgba(120,100,20,.35);border-radius:2px 3px 2px 4px;box-shadow:2px 4px 0 rgba(47,43,36,.22)} /* taste-skill-ignore: a sticky note is paper lifted off the page */
-.slide .notebox.sticky:hover > .mine{box-shadow:0 0 0 1px var(--accent),2px 4px 0 rgba(47,43,36,.22)} /* taste-skill-ignore: a sticky note is paper lifted off the page */
+.slide .notebox.sticky:hover > .mine{box-shadow:0 0 0 1.5px var(--nb-ring),2px 4px 0 rgba(47,43,36,.22)} /* taste-skill-ignore: a sticky note is paper lifted off the page */
 .slide .notebox.sticky > .mine:focus{box-shadow:0 0 0 2px var(--accent),2px 4px 0 rgba(47,43,36,.22)} /* taste-skill-ignore: a ring marking focus, and the sticky's own shadow */
 .notebox.sticky .g-float{display:none}
 .notebox.sticky > .g-move{left:50%;top:-9px;width:76px;height:20px;transform:translateX(-50%) rotate(-2deg);border:none;border-radius:2px;background:rgba(206,190,138,.72);opacity:1;visibility:visible;cursor:grab;box-shadow:0 1px 1px rgba(0,0,0,.12)} /* taste-skill-ignore: the tape that holds a sticky note */
-.notebox.sticky > .g-n{left:22%}
+.notebox.sticky > .g-n{right:calc(50% + 44px)}      /* (the top edge's strip and bar keep left of the tape, which moves the note) */
 .notebox.sticky > .g-move:hover{background:rgba(196,178,120,.85)}
 .notebox.sticky > .g-move .i{display:none}
 .notebox.sticky.moving{opacity:1}
@@ -1517,14 +1559,14 @@ main.reading .cd-lang::after,main.pdfpaper .cd-lang::after{content:""}
   /* the handles of a note you have tapped look the same but are easy to catch with a fingertip (the catching area reaches outwards, never over the words) */
   .notebox.touched > .grip::before{content:"";position:absolute}
   .notebox.touched > .g-move::before{inset:-10px 0 -10px -14px}
-  .notebox.touched > .g-e::before{inset:-8px -16px -8px -2px}
-  .notebox.touched > .g-s::before{inset:-2px -8px -16px -8px}
-  .notebox.touched > .g-se::before{inset:-4px -14px -14px -4px}
-  .notebox.touched > .g-w::before{inset:-8px -2px -8px -16px}
-  .notebox.touched > .g-n::before{inset:-16px -8px -2px -8px}
-  .notebox.touched > .g-nw::before{inset:-14px -2px -2px -14px}
-  .notebox.touched > .g-ne::before{inset:-14px -14px -2px -2px}
-  .notebox.touched > .g-sw::before{inset:-2px -2px -14px -14px}
+  .notebox.touched > .g-e::before{inset:-8px -12px -8px 0}
+  .notebox.touched > .g-s::before{inset:0 -8px -12px -8px}
+  .notebox.touched > .g-se::before{inset:0 -12px -12px 0}
+  .notebox.touched > .g-w::before{inset:-8px 0 -8px -12px}
+  .notebox.touched > .g-n::before{inset:-12px -8px 0 -8px}
+  .notebox.touched > .g-nw::before{inset:-8px 0 0 -8px}
+  .notebox.touched > .g-ne::before{inset:-8px -8px 0 0}
+  .notebox.touched > .g-sw::before{inset:0 0 -8px -8px}
   .bdiv{left:-16px;width:32px}
   .grp .chk,.chk{min-height:40px}
 }
@@ -2080,7 +2122,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
         <li><b>Sticky notes</b> sit on top of the page: drag one by its tape to move it, even onto another page. In the <b>Notes</b> panel, type a note and press <b>Add note</b>, or drag <b>Sticky</b> onto any page.</li>
         <li><b>Draw</b> (Insert tab) writes, sketches or highlights on PDF pages and side pages with a pen, pencil or highlighter, <b>Text</b> types where you tap, and the eraser rubs out whole strokes or (<b>Partial</b>) only where it goes. Each tool keeps its own colour and thickness in millimetres; <b>Save as favourite</b> keeps one a tap away, and <b>Minimise</b> folds the tools into a small purple button while you draw. Select words on any page to highlight them, or press <b>Comment</b>; open comments are listed in the <b>Notes</b> panel until you resolve them.</li>
         <li>The <b>Home</b> tab styles your notes: the font, size and colour are used for new notes, or click in a note (or select words) to change just that.</li>
-        <li>Point at a note (or tap it) and drag any edge or corner to resize it: the opposite side stays where it is. Drag its move handle to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
+        <li>Point at a note (or tap it) and drag any edge or corner to resize it: anywhere along an edge, just inside or outside the outline, works (it lights up), and the opposite side stays where it is. Drag the button of dots beside its top left corner to move it. Pink lines show when it lines up with other notes; hold <b>Alt</b> or <b>Shift</b> to move it freely.</li>
         <li>New notes line up with the note above or below them when they are close (<b>Box › Auto-align notes</b>). To tidy up, <b>Select all</b> on the Box tab, then use <b>Align</b>: left, centre or right, <b>Same width</b>, <b>Distribute</b> (floating and sticky notes, evenly spaced) or <b>Tidy page</b>. Each is one step you can take Back.</li>
         <li><b>View › Side pages</b> gives each slide a page for your own notes beside it. They work in the Default, A4 and A3 layouts (each printed page gets one beside it, and both shrink together when the window is narrow). Point near the top right corner of a side page (or tap it, or press Tab) to show a palette button that changes its paper, or use <b>Side page background</b> in the View tab. Slides, side pages and notes are scaled to fit the window as one, so nothing moves when you open the sidebar.</li>
         <li>On each note: the arrows float it on top of the page, the minus minimises it to a pencil icon (drag the icon aside, or Shift+drag it to take the note along; right-click it to colour it), and the pin keeps it open.</li>
