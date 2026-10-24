@@ -245,6 +245,8 @@ main.fit > .sidepage{width:var(--sidew)}
 .pagecard > .strip:first-child{border-top-left-radius:inherit;border-top-right-radius:inherit}
 .pagecard > .strip:not(:has(~ .strip, ~ .notebox:not(.floating))){border-bottom-left-radius:inherit;border-bottom-right-radius:inherit}
 .strip{position:relative;overflow:hidden;width:100%;max-width:100%;background-image:var(--pg);background-size:100% auto;background-repeat:no-repeat;cursor:text;font-size:0;color:transparent;container-type:inline-size}
+.slide .strip > .gifpic{position:absolute;z-index:-1;display:block;max-width:none;margin:0;pointer-events:none;user-select:none;-webkit-user-select:none} /* an animated GIF on a drawn slide: over the page's picture, under the ink and the words */
+.strip:has(> .gifpic){isolation:isolate}
 .tl{position:absolute;white-space:pre;line-height:1;transform-origin:0 0;color:transparent;background:transparent;font-family:Arial,Helvetica,sans-serif;cursor:text;forced-color-adjust:none} /* never painted: a high-contrast theme would otherwise show it as text on solid blocks over the page */
 .tl::selection{background:rgba(39,71,201,.3);color:transparent}
 .gapline{position:absolute;left:0;right:0;border-top:2px dashed var(--accent);pointer-events:none;z-index:2}
@@ -3224,7 +3226,7 @@ const safeLinks = box => box.querySelectorAll('a[href]').forEach(a => { if (!/^(
 const pptxMode = () => pref.get('pptx-mode') === 'text' ? 'text' : 'look';
 async function lookSlide(D, path, n, home){
   const r = await PPT.render(D, path, n + 1);
-  try { await addPageCard(r.cv, r.S, r.W, r.H, r.gaps, r.items, 0.92, home); } finally { r.cv.width = 0; }
+  try { await addPageCard(r.cv, r.S, r.W, r.H, r.gaps, r.items, 0.92, home, {gifs: r.gifs}); } finally { r.cv.width = 0; }
 }
 async function readPptx(buf, name, mode = pptxMode()){
   const home = curId, zip = await JSZip.loadAsync(buf);
@@ -3460,7 +3462,7 @@ function ppImage(X, id){
     const ext = rel.path.split('.').pop().toLowerCase();
     const blob = new Blob([await f.async('arraybuffer')], {type: ext === 'svg' ? 'image/svg+xml' : ext === 'jpg' ? 'image/jpeg' : 'image/' + ext});
     const url = URL.createObjectURL(blob);
-    try { const im = new Image(); im.src = url; await im.decode(); return im; } catch { return null; } finally { setTimeout(() => URL.revokeObjectURL(url), 5000); }
+    try { const im = new Image(); im.src = url; await im.decode(); if (ext === 'gif' && await gifAnimated(blob)) im.gif = blob; return im; } catch { return null; } finally { setTimeout(() => URL.revokeObjectURL(url), 5000); }
   })();
   if (X.D.imgs.size >= 24) X.D.imgs.delete(X.D.imgs.keys().next().value);        // a deck of photos doesn't keep them all decoded
   X.D.imgs.set(rel.path, pr); return pr;
@@ -3859,8 +3861,13 @@ async function ppNode(X, ctx, node, G){
   ctx.save(); set(m);
   if (ln === 'pic') {
     const pp = sh ? sh.path : parts.length ? parts.reduce((q, pt) => (q.addPath(pt.path), q), new Path2D()) : ppShape('rect', w, h, {}).path;      // a picture in a custom outline is shown through the outline
-    await ppFill(X, ctx, x1(node, 'blipFill'), pp, w, h, null);
+    const bf = x1(node, 'blipFill');
+    await ppFill(X, ctx, bf, pp, w, h, null);
     if (L?.c) ppStroke(X, ctx, L, null, pp);
+    // an animated GIF moves on the page when it is shown plainly: upright, square-cornered, uncropped, not tiled, faded or greyed
+    const im = await ppImage(X, x1(bf, 'blip')?.getAttribute('r:embed')), sr = x1(bf, 'srcRect');
+    if (im?.gif && !m[1] && !m[2] && m[0] > 0 && m[3] > 0 && prst === 'rect' && !x1(bf, 'tile') && !xf(bf, 'alphaModFix') && !xf(bf, 'grayscl')
+      && !['l', 't', 'r', 'b'].some(k => xn(sr, k))) X.gifs.push([im.gif, m[4], m[5], m[0] * w, m[3] * h]);
   } else {
     const has = !!fill && fill.localName !== 'noFill';
     if (has && ppShadow(X, ctx, eff, er?.ph, S)) { /* the shadow is drawn with the fill */ }
@@ -4011,7 +4018,7 @@ async function ppRender(D, path, n){
   cv.width = Math.round(D.W * S); cv.height = Math.round(D.H * S);
   const ctx = cv.getContext('2d', {willReadFrequently: true});
   D.mctx ||= document.createElement('canvas').getContext('2d');
-  const X = {D, c, S, n, theme: c.theme, map: c.map, groups: [], mctx: D.mctx, cur: 'master', part: c.mas};
+  const X = {D, c, S, n, theme: c.theme, map: c.map, groups: [], gifs: [], mctx: D.mctx, cur: 'master', part: c.mas};
   X.tx1 = ppC(X, 'tx1');
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
   // background: the slide's, else the layout's, else the master's
@@ -4043,7 +4050,7 @@ async function ppRender(D, path, n){
     if (D.H - prev >= 3) gaps.push([+prev.toFixed(1), +D.H.toFixed(1)]);
   }
   for (const r of [{path}, ...Object.values(c.slide.rels)]) if (!/^(slideLayout|slideMaster|theme)$/.test(r.type || '')) D.xml.delete(r.path);        // what only this slide used (its charts, diagrams) is let go
-  return {cv, S, W: D.W, H: D.H, items: items.map(i => i.map(v => typeof v === 'number' ? +v.toFixed(1) : v)), gaps};
+  return {cv, S, W: D.W, H: D.H, items: items.map(i => i.map(v => typeof v === 'number' ? +v.toFixed(1) : v)), gaps, gifs: X.gifs};
 }
 
 // ----- charts: bars, lines, areas, pies and scatter plots drawn plainly from the numbers saved in the file -----
@@ -4256,13 +4263,17 @@ async function readPdf(buf, name){
     cv.width = cv.height = 0; page.cleanup();          // let go of the drawing at once: Safari on an iPad has little room for canvases, and a long PDF would run out
   }
 }
-// a page picture (stored once, as an asset) with its words and the gaps between lines, as a card at the end of the notebook
-async function addPageCard(cv, S, W, H, gaps, items, quality = 0.88, home = curId){
+// a page picture (stored once, as an asset) with its words and the gaps between lines, as a card at the end of the notebook.
+// own: the picture to keep instead of the drawing (an animated GIF, which a canvas would stop on its first frame);
+// gifs: animated GIFs on the page, [blob, x, y, w, h] in page units, shown moving over the drawing
+async function addPageCard(cv, S, W, H, gaps, items, quality = 0.88, home = curId, {own = null, gifs = []} = {}){
   away(home);
   const card = document.createElement('section');
   card.className = 'slide pagecard';
   card.dataset.w = W.toFixed(1); card.dataset.h = H.toFixed(1); card.dataset.gaps = JSON.stringify(gaps);
-  const pic = await new Promise(r => cv.toBlob(r, 'image/jpeg', quality));
+  const urls = new Map(), urlOf = b => urls.get(b) || urls.set(b, addAsset(b)).get(b);        // (a GIF used twice on a page is stored once)
+  if (gifs.length) card.dataset.gifs = JSON.stringify(await Promise.all(gifs.map(async ([b, ...box]) => [await urlOf(b), ...box.map(v => +v.toFixed(1))])));
+  const pic = own || await new Promise(r => cv.toBlob(r, 'image/jpeg', quality));
   card.style.setProperty('--pg', `url(${pic ? await addAsset(pic) : cv.toDataURL('image/jpeg', quality)})`);
   card.dataset.text = JSON.stringify(items);
   card.append(makeStrip(card, 0, H));
@@ -4371,11 +4382,25 @@ function makeStrip(card, y0, y1){
     sp.dataset.w = (w / W).toFixed(5);
     s.append(sp, eol ? document.createElement('br') : document.createTextNode(' '));
   }
-  stripInk(card, s);
+  stripGifs(card, s); stripInk(card, s);
   measureSoon(s);
   return s;
 }
 const textCache = new WeakMap();
+// the animated GIFs on a slide drawn from PowerPoint, laid over this slice of the page where the drawing has their first frame
+// (made again from data-gifs, like the ink, so they are never stored twice; under the ink and the words, and never in the way of a click)
+function stripGifs(card, s){
+  s.querySelectorAll(':scope > .gifpic').forEach(x => x.remove());
+  if (!card.dataset.gifs) return;
+  let gifs; try { gifs = JSON.parse(card.dataset.gifs); } catch { return; }
+  const W = +card.dataset.w, y0 = +s.dataset.y0, y1 = +s.dataset.y1, h = y1 - y0;
+  for (const [src, x, y, w, gh] of gifs) {
+    if (y + gh <= y0 || y >= y1 || !/^(blob|data):/.test(src)) continue;
+    const im = document.createElement('img'); im.className = 'gifpic'; im.alt = ''; im.draggable = false; im.src = src;
+    Object.assign(im.style, {left: (x / W * 100).toFixed(3) + '%', top: ((y - y0) / h * 100).toFixed(3) + '%', width: (w / W * 100).toFixed(3) + '%', height: (gh / h * 100).toFixed(3) + '%'});
+    s.prepend(im);
+  }
+}
 // the nearest blank gap between lines to a point on the page
 function gapY(strip, clientY){
   const card = strip.closest('.pagecard'); const y0 = +strip.dataset.y0, y1 = +strip.dataset.y1;
@@ -4940,8 +4965,27 @@ async function readImage(file, home = curId){
     ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, 0, 0, cv.width, cv.height);
     const px = ctx.getImageData(0, 0, cv.width, cv.height).data, paper = paperOf(px);
     const inked = i => Math.abs(px[i] - paper[0]) + Math.abs(px[i+1] - paper[1]) + Math.abs(px[i+2] - paper[2]) > 60;
-    await addPageCard(cv, S, W, H, blankGaps(cv, S, withoutDownLines(cv, S, inked), true), [], 0.92, home);
+    // an animated GIF is kept as it came, so it moves on its page (the gaps between lines are found on its first frame,
+    // and the downloaded PDF shows that frame). One too big for an iPad to hold is kept still, like any other picture.
+    const own = iw * ih <= PIC_PX && await gifAnimated(file) ? new Blob([file], {type: 'image/gif'}) : null;
+    await addPageCard(cv, S, W, H, blankGaps(cv, S, withoutDownLines(cv, S, inked), true), [], 0.92, home, {own});
   } finally { cv.width = cv.height = 0; }
+}
+// a GIF with more than one picture in it. A GIF doesn't say up front how many it holds, so its blocks are counted:
+// the header and colour table, then pictures (0x2c) and extensions (0x21), each followed by sub-blocks up to a 0 byte
+async function gifAnimated(blob){
+  const b = new Uint8Array(await blob.arrayBuffer());
+  if (String.fromCharCode(...b.subarray(0, 4)) !== 'GIF8') return false;
+  let i = 13, n = 0;
+  if (b[10] & 0x80) i += 3 << ((b[10] & 7) + 1);
+  const subBlocks = () => { while (i < b.length && b[i]) i += b[i] + 1; i++; };
+  while (i < b.length) {
+    const t = b[i++];
+    if (t === 0x2c) { if (++n > 1) return true; const f = b[i + 8]; i += 9; if (f & 0x80) i += 3 << ((f & 7) + 1); i++; subBlocks(); }
+    else if (t === 0x21) { i++; subBlocks(); }
+    else break;
+  }
+  return false;
 }
 
 // open files (from Open, the sidebar, or dropped on the page): each file becomes its own notebook,
@@ -4957,7 +5001,7 @@ async function openFiles(picked, here = false){
     // the readers come from the internet the first time: if one didn't arrive, say so instead of failing quietly
     const missing = !(await ensureReader(ext)) && (ext === 'pdf' ? 'PDF' : 'PowerPoint');
     if (missing) { toast(`The ${missing} reader didn’t load, so “${f.name}” can’t be opened yet. Check your internet connection (or an ad or script blocker), then reload the page.`); continue; }
-    if (!notebook && !read) { toast(`“${f.name}” can't be opened. Use a .pdf, .pptx, .docx, .md or .txt file or a picture (.jpg, .png, .webp); an old .ppt or .doc file can be saved as one of these.`); continue; }
+    if (!notebook && !read) { toast(`“${f.name}” can't be opened. Use a .pdf, .pptx, .docx, .md or .txt file or a picture (.jpg, .png, .webp, .gif); an old .ppt or .doc file can be saved as one of these.`); continue; }
     const data = notebook ? readNotebookHtml(await f.text()) : null;
     if (notebook && !data) { toast(`“${f.name}” isn't a notebook file saved from this page.`); continue; }
     if (!here && main.querySelector('.slide')) { await switchDoc(null); hadPages = false; }
@@ -5061,6 +5105,10 @@ async function assetize(root = main){
     const m = el.style.getPropertyValue('--pg').match(/^url\(["']?(data:[^"')]+)["']?\)$/);
     if (m && bigData(m[1])) { el.style.setProperty('--pg', `url(${await addAsset(dataToBlob(m[1]))})`); n++; }
   }
+  for (const el of root.querySelectorAll('.pagecard[data-gifs*="data:"]')) {
+    try { el.dataset.gifs = JSON.stringify(await Promise.all(JSON.parse(el.dataset.gifs).map(async g => bigData(g[0]) ? (n++, [await addAsset(dataToBlob(g[0])), ...g.slice(1)]) : g))); } catch {}
+    el.querySelectorAll(':scope > .strip').forEach(s => stripGifs(el, s));
+  }
   for (const el of root.querySelectorAll('img[src^="data:"], video[src^="data:"], audio[src^="data:"], source[src^="data:"]')) {
     const u = el.getAttribute('src');
     if (bigData(u)) { el.setAttribute('src', await addAsset(dataToBlob(u))); n++; }
@@ -5161,7 +5209,7 @@ function currentDoc(){
   c.querySelectorAll('.tpl .rev').forEach(x => x.classList.remove('rev'));
   sideJoin(c);                                  // each side page is stored right after its slide, whichever way it is shown
   flatten(c);
-  c.querySelectorAll('svg.ink').forEach(x => x.remove());          // drawn again from data-ink
+  c.querySelectorAll('svg.ink, .gifpic').forEach(x => x.remove());          // drawn again from data-ink and data-gifs
   return c.innerHTML;
 }
 async function saveFile(filename, blob){
@@ -5224,7 +5272,7 @@ async function paintCard(card, scale, side){
     }
   }
   for (const im of qa('img')) {
-    if (im.closest('details:not([open])')) continue;
+    if (im.closest('details:not([open])') || im.classList.contains('gifpic')) continue;          // (a GIF's first frame is in the page's picture already, under the ink)
     const ir = im.getBoundingClientRect(); if (!ir.width || !im.complete) continue;
     try { ctx.drawImage(im, ir.left - ox, ir.top - oy, ir.width, ir.height); } catch {}
   }
@@ -7523,6 +7571,7 @@ function renderInk(card){
 }
 function renderAllInk(){
   main.querySelectorAll('.pagecard, .sidepage').forEach(renderInk);
+  main.querySelectorAll('.pagecard[data-gifs] > .strip').forEach(s => stripGifs(s.parentElement, s));
   if (drawing && !inkSurface()) setDrawing(false);
 }
 // somewhere to draw: a PDF page, or a side page that is showing
