@@ -3935,8 +3935,11 @@ function ppLayout(X, body, o){
   }
   return {...r, o};
 }
+// how far a drawing space is turned on the page, in degrees clockwise (0 when it is upright, or within a degree of it)
+const ppAng = m => { const a = Math.atan2(m[1], m[0]) * 180 / Math.PI; return Math.abs(a) < 1.2 ? 0 : +a.toFixed(1); };
 // draws a layout with the box's top-left corner at (ox, oy); with map (local → page points) the words are also added to items
-function ppDrawText(X, ctx, L, ox, oy, boxH, map, items){
+// (ang: how far they are turned on the page, see ppAng)
+function ppDrawText(X, ctx, L, ox, oy, boxH, map, items, ang = 0){
   const o = L.o, room = boxH - o.ins[1] - o.ins[3];
   const top = oy + o.ins[1] + (o.anchor === 'ctr' ? (room - L.h) / 2 : o.anchor === 'b' ? room - L.h : 0), left = ox + o.ins[0];
   ctx.textBaseline = 'alphabetic';
@@ -3965,7 +3968,7 @@ function ppDrawText(X, ctx, L, ox, oy, boxH, map, items){
       const lw = Math.max(.5, r.size / 18);
       if (r.u) ctx.fillRect(cx, y + r.size * .12, width, lw);
       if (r.s) ctx.fillRect(cx, y - r.size * .3, width, lw);
-      if (map && items && txt.trim()) { const [px_, py_] = map(cx, y); items.push([txt.trimEnd(), px_, py_, r.size, s.tw, last ? 1 : 0]); }
+      if (map && items && txt.trim()) { const [px_, py_] = map(cx, y); items.push([txt.trimEnd(), px_, py_, r.size, s.tw, last ? 1 : 0, ...(ang ? [ang] : [])]); }
       cx += (last ? s.tw : s.full) + extra * spaces;
     });
     ctx.letterSpacing = '0px';
@@ -4087,11 +4090,13 @@ async function ppShapeText(X, ctx, node, chain, body, ph, xfm, G, m, set, st){
   const rot = G.rot + xfm.rot, [cx, cy] = mP(m, xfm.w / 2, xfm.h / 2);
   let tm = mmul(mT(cx, cy), mR(rot)); tm = mmul(tm, mT(-xfm.w * G.sx / 2 + ox, -xfm.h * G.sy / 2 + oy));
   if (vr) { tm = mmul(tm, mT(w / 2, h / 2)); tm = mmul(tm, mR(vr)); tm = mmul(tm, mT(-bw / 2, -bh / 2)); }
-  const flat = !vr && Math.abs(Math.sin(rot)) < .02 && Math.cos(rot) > 0;
-  const mine = []; ctx.save(); set(tm);
-  ppDrawText(X, ctx, L, 0, 0, bh, flat ? (px_, py_) => mP(tm, px_, py_) : null, mine);
+  // turned words (a turned box, words down the side, upside down) can be selected too: they are turned the same way on the page
+  const ang = ppAng(tm), mine = []; ctx.save(); set(tm);
+  ppDrawText(X, ctx, L, 0, 0, bh, (px_, py_) => mP(tm, px_, py_), mine, ang);
   ctx.restore();
-  if (mine.length) X.groups.push({y: mine[0][2], x: mine[0][1], items: mine});
+  // (in reading order by where the words start; turned ones by the middle of their box, which stays put however far it turns)
+  const mid = ang && mP(tm, bw / 2, bh / 2);
+  if (mine.length) X.groups.push(mid ? {y: mid[1], x: mid[0], items: mine} : {y: mine[0][2], x: mine[0][1], items: mine});
 }
 
 // ----- tables, SmartArt, charts, embedded objects -----
@@ -4177,7 +4182,7 @@ async function ppTable(X, ctx, tbl, xfm, m, set){
     const b = cellBox(cell); const items = [];
     ctx.save(); ctx.translate(b.x, b.y);
     const L = cell.L; L.o.h = b.h;
-    ppDrawText(X, ctx, L, 0, 0, b.h, (px_, py_) => mP(mmul(m, mT(b.x, b.y)), px_, py_), items);
+    ppDrawText(X, ctx, L, 0, 0, b.h, (px_, py_) => mP(mmul(m, mT(b.x, b.y)), px_, py_), items, ppAng(m));
     ctx.restore();
     if (items.length) X.groups.push({y: items[0][2], x: items[0][1], items, cell: true});
   }
@@ -4244,7 +4249,7 @@ async function ppRender(D, path, n){
   const gaps = blankGaps(out, S, inked);
   const items = groups.flatMap(g => g.items);
   if (!gaps.length && items.length) {             // a picture behind everything: the gaps are between the lines of words instead
-    const lines = [...new Map(items.map(i => [Math.round(i[2]), i])).values()].sort((a, b) => a[2] - b[2]);
+    const lines = [...new Map(items.filter(i => !i[6]).map(i => [Math.round(i[2]), i])).values()].sort((a, b) => a[2] - b[2]);       // (turned words aren't lines)
     let prev = 0;
     for (const l of lines) { const y1 = l[2] - l[3] * .95; if (y1 - prev >= 3) gaps.push([+prev.toFixed(1), +y1.toFixed(1)]); prev = l[2] + l[3] * .3; }
     if (D.H - prev >= 3) gaps.push([+prev.toFixed(1), +D.H.toFixed(1)]);
@@ -4266,7 +4271,14 @@ async function ppChart(X, ctx, node, xfm, m, set){
   const fs = Math.min(18, sz(xf(plot, 'valAx')) || sz(xf(plot, 'catAx')) || sz(doc.documentElement) || 18), fl = Math.max(7, fs);
   ctx.save(); set(m); ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.clip();
   const bgc = x1(x1(doc.documentElement, 'spPr'), 'solidFill'); if (bgc) { ctx.fillStyle = css4(ppColor(X, bgc)); ctx.fillRect(0, 0, W, H); }
-  const txt = (s, x, y, size, al = 'center', col = grey) => { ctx.font = `${size}px ${font}`; ctx.fillStyle = col; ctx.textAlign = al; ctx.fillText(s, x, y); };
+  // each piece of the chart's words (its title, legend, the names and numbers on its axes) can be selected too, on a line of its own
+  const ang = ppAng(m);
+  const txt = (s, x, y, size, al = 'center', col = grey) => {
+    ctx.font = `${size}px ${font}`; ctx.fillStyle = col; ctx.textAlign = al; ctx.fillText(s, x, y);
+    if (!String(s).trim()) return;
+    const w = ctx.measureText(s).width, [px_, py_] = mP(m, al === 'center' ? x - w / 2 : al === 'right' ? x - w : x, y);
+    X.groups.push({y: py_, x: px_, items: [[String(s).trim(), px_, py_, size, w, 1, ...(ang ? [ang] : [])]]});
+  };
   const all = kinds.flatMap(k => xk(k, 'ser').map((s, i) => ({s, k, i})));
   const name = a => cacheOf(xf(x1(a.s, 'tx'), 'strCache') || x1(a.s, 'tx'))[0] || `Series ${a.i + 1}`;
   const colour = (a, i) => { const sp = x1(a.s, 'spPr'), f = x1(sp, 'solidFill') || x1(x1(sp, 'ln'), 'solidFill'); return ppColor(X, f) || ppC(X, 'accent' + ((i % 6) + 1)); };
@@ -4655,11 +4667,15 @@ function makeStrip(card, y0, y1){
   // invisible copy of the page's text, laid exactly over it so you can select and copy
   let items = textCache.get(card);
   if (!items) { try { items = JSON.parse(card.dataset.text || '[]'); } catch { items = []; } textCache.set(card, items); }
-  for (const [str, x, base, size, w, eol] of items) {
+  for (const [str, x, base, size, w, eol, ang] of items) {
     if (!(base > y0 && base <= y1)) continue;
     const sp = document.createElement('span'); sp.className = 'tl'; sp.textContent = str;
-    sp.style.left = (x / W * 100).toFixed(3) + '%';
-    sp.style.top = ((base - size * 0.82 - y0) / h * 100).toFixed(3) + '%';
+    // turned words (ang degrees clockwise, from a PowerPoint slide) turn about the span's top left corner, which is put where
+    // the turn takes it from the start of their baseline
+    const a = (ang || 0) * Math.PI / 180, up = size * 0.82;
+    sp.style.left = ((x + up * Math.sin(a)) / W * 100).toFixed(3) + '%';
+    sp.style.top = ((base - up * Math.cos(a) - y0) / h * 100).toFixed(3) + '%';
+    if (ang) sp.style.rotate = ang + 'deg';
     sp.style.fontSize = (size / W * 100).toFixed(3) + 'cqw';
     sp.dataset.w = (w / W).toFixed(5);
     s.append(sp, eol ? document.createElement('br') : document.createTextNode(' '));
@@ -5867,9 +5883,11 @@ function measureStrips(ss){
   for (const s of ss) {
     if (!s.isConnected) continue;
     const w = s.getBoundingClientRect().width;
+    let sw = 0;
     for (const sp of s.querySelectorAll('.tl')) {
       if (sp.style.transform) continue;
-      const target = +sp.dataset.w * w, actual = sp.getBoundingClientRect().width;
+      // (a turned span's box on the screen is turned too: its own width is measured instead, against the strip's)
+      const target = +sp.dataset.w * w, actual = sp.style.rotate ? parseFloat(getComputedStyle(sp).width) * w / (sw ||= parseFloat(getComputedStyle(s).width)) : sp.getBoundingClientRect().width;
       if (actual > 0 && target > 0) todo.push([sp, target / actual]);
     }
   }
@@ -7390,9 +7408,9 @@ function pageTitle(card){
   if (card.classList.contains('pagecard')) {
     let items = textCache.get(card);
     if (!items) { try { items = JSON.parse(card.dataset.text || '[]'); } catch { items = []; } textCache.set(card, items); }
-    const top = items.filter(it => it[2] < (+card.dataset.h || 1) * 0.4);
-    const big = (top.length ? top : items).reduce((a, b) => (!a || b[3] > a[3] ? b : a), null);
-    return big ? items.filter(it => Math.abs(it[2] - big[2]) < big[3] * 0.4).map(it => it[0]).join(' ').replace(/\s+/g, ' ').trim() : '';
+    const flat = items.filter(it => !it[6]), top = flat.filter(it => it[2] < (+card.dataset.h || 1) * 0.4);       // (turned words, down the side, are not a title)
+    const big = (top.length ? top : flat).reduce((a, b) => (!a || b[3] > a[3] ? b : a), null);
+    return big ? flat.filter(it => Math.abs(it[2] - big[2]) < big[3] * 0.4).map(it => it[0]).join(' ').replace(/\s+/g, ' ').trim() : '';
   }
   const b = card.querySelector('.content > .blk');
   return (b?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 120);
