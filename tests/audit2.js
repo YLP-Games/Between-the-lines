@@ -151,7 +151,7 @@ section('wguide', async () => {
   const {browser, page, errors} = await open(APP, {width: 1440, height: 900});
   await page.waitForTimeout(600);
   await newNote(page, 'A note under a guide');
-  await page.evaluate(() => { setPanel('pages', false); wgOpen(); wgSet(0, 160, 700, 400); }); await page.waitForTimeout(200);
+  await page.evaluate(() => { setSideHover(true); setPanel('pages', false); wgOpen(); wgSet(0, 160, 700, 400); }); await page.waitForTimeout(200);
   const ind = await page.$eval('#wguide .wg-ind', e => { const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
   await page.mouse.move(2, 400); await page.waitForTimeout(400);
   ok(await page.evaluate(() => document.getElementById('pagesPanel').classList.contains('peeking')), '1440px: pointing at the left edge peeks the sidebar in');
