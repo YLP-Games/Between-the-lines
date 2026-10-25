@@ -230,6 +230,11 @@ main.fit > .sidepage{width:var(--sidew)}
 .sheet > .cont{margin-top:0}
 .slide{box-sizing:border-box;position:relative;background:var(--card);color:var(--card-ink);border-radius:6px;padding:22px 28px 26px;cursor:text;min-width:0;overflow-wrap:anywhere;line-height:1.35}
 .file-head{font-family:var(--display);font-weight:600;font-size:26px;margin:14px 0 0;text-wrap:balance;overflow-wrap:anywhere}
+/* the × that removes a file's name (not its pages): beside the name while you point at it */
+.headx{position:fixed;z-index:30;width:28px;height:28px;display:grid;place-items:center;padding:0;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--muted);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.18);transform:translateY(-50%)}
+.headx:hover,.headx:focus-visible{background:var(--danger);border-color:var(--danger);color:var(--danger-ink)}
+.headx .i{width:15px;height:15px}
+main > .file-head.headx-on,.sheet > .file-head.headx-on{text-decoration:line-through;text-decoration-color:var(--danger);text-decoration-thickness:2px}
 .slide .blk{margin:0 0 .45em}
 .slide img{display:block;max-width:100%;height:auto;margin:.6em 0}
 .slide table{border-collapse:collapse;margin:.6em 0;display:block;overflow-x:auto}
@@ -2119,7 +2124,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
     <section>
       <h3>How to use it</h3>
       <ul class="howto">
-        <li><b>Open</b> a PDF, PowerPoint (.pptx) or Word (.docx) file, or drop one anywhere on the page. Each file becomes its own <b>notebook</b> in the sidebar; <b>Insert › File at end</b> adds one to the end of the notebook you're in instead, and <b>Insert › File after</b> puts it right after the current page.</li>
+        <li><b>Open</b> a PDF, PowerPoint (.pptx) or Word (.docx) file, or drop one anywhere on the page. Each file becomes its own <b>notebook</b> in the sidebar; <b>Insert › File at end</b> adds one to the end of the notebook you're in instead, and <b>Insert › File after</b> puts it right after the current page. Point at a file's name and press <b>×</b> to remove the name (its pages stay).</li>
         <li>PowerPoint files open as the slides look: each slide is a page with its text you can select, and you write between the lines as on a PDF. Complex animations and SmartArt may still differ; for an exact copy, save the slides as a PDF (File › Save as › PDF) and open that. Choose <b>Editable text</b> under <b>Open PowerPoint as</b> (View tab, or below) to rebuild the slides as text you can type inside instead. The presenter’s speaker notes go on each slide’s side page (<b>View › Side notes</b>), unless <b>PowerPoint speaker notes on side pages</b> is off below.</li>
         <li>Word files keep their fonts, colours, tables, headers and pictures as editable text. A few pictures (old EMF or WMF drawings, for example) may not come through: save the file as a PDF and open that, or add the picture with Insert › Picture, video or sound.</li>
         <li>On a PDF page, point at a spot and press <b>+ Add here</b> to add a note there (the page opens up between the lines). <b>Right-click</b> the button (press and hold on a touch screen) to pick <b>Note</b>, <b>Sticky note</b> or <b>Equation</b>. On other pages, click where you want to write. In a note, type <b>/</b> for the same choices.</li>
@@ -5383,6 +5388,46 @@ $('#openBtn').onclick = () => pickFiles(false);
 $('#addHereBtn').onclick = () => pickFiles(true);
 $('#addFileAfterBtn').onclick = () => { markPage(false); pickFiles(currentCard() || true); };
 main.addEventListener('click', e => { if (e.target.closest('[data-open]')) pickFiles(false); });
+// ---------- a file's name above its pages can be removed (the pages stay): point at it (or tap it) for a × at its end ----------
+// (one button for the whole page, kept outside the notebook, so it is never saved, printed or read as part of the name)
+const headX = Object.assign(document.createElement('button'), {type: 'button', className: 'headx', hidden: true, innerHTML: icon('x')});
+headX.title = 'Remove this file name (its pages stay)'; headX.setAttribute('aria-label', 'Remove this file name');
+document.body.append(headX);
+let headXFor = null, headXTimer = 0;
+function placeHeadX(){
+  const h = headXFor;
+  if (!h?.isConnected || reading || !main.contains(h)) return hideHeadX();
+  const r = document.createRange(); r.selectNodeContents(h);
+  const line = [...r.getClientRects()].pop() || h.getBoundingClientRect();
+  const x = Math.min(line.right + 8, innerWidth - 36), y = line.top + line.height / 2;
+  const under = document.elementFromPoint(Math.max(0, line.left + 2), y);       // (gone under the toolbar or a panel)
+  if (!under || !(under === h || h.contains(under))) { headX.hidden = true; return; }
+  headX.style.left = x + 'px'; headX.style.top = y + 'px'; headX.hidden = false;
+}
+function showHeadX(h){ clearTimeout(headXTimer); headXFor = h; placeHeadX(); }
+function hideHeadX(){ clearTimeout(headXTimer); headX.hidden = true; headXFor?.classList.remove('headx-on'); headXFor = null; }
+const hideHeadXSoon = () => { clearTimeout(headXTimer); headXTimer = setTimeout(hideHeadX, 400); };
+main.addEventListener('mouseover', e => { const h = e.target.closest?.('.file-head'); if (h && main.contains(h)) showHeadX(h); });
+main.addEventListener('mouseout', e => { if (headXFor && e.target.closest?.('.file-head') === headXFor && !headXFor.contains(e.relatedTarget) && e.relatedTarget !== headX) hideHeadXSoon(); });
+main.addEventListener('pointerdown', e => { const h = e.target.closest?.('.file-head'); if (h && e.pointerType !== 'mouse') { showHeadX(h); headXTimer = setTimeout(hideHeadX, 4000); } });
+headX.addEventListener('mouseenter', () => { clearTimeout(headXTimer); headXFor?.classList.add('headx-on'); });
+headX.addEventListener('mouseleave', () => { headXFor?.classList.remove('headx-on'); hideHeadXSoon(); });
+addEventListener('scroll', () => { if (headXFor) placeHeadX(); }, {passive: true, capture: true});
+addEventListener('resize', () => { if (headXFor) placeHeadX(); });
+headX.onclick = () => {
+  const h = headXFor; hideHeadX(); if (!h?.isConnected) return;
+  removeFileName(h); toast('File name removed. Press Back (Ctrl+Z) to bring it back.');
+};
+// the pages under it join the file above. Its PowerPoint tip goes with it, and if the names either side are the same
+// (a file's pages split by one added in the middle, with File after), they become one again
+function removeFileName(h){
+  flatten(main); sideJoin(main);
+  const heads = [...main.querySelectorAll(':scope > .file-head')], i = heads.indexOf(h), prev = heads[i - 1], next = heads[i + 1];
+  if (h.nextElementSibling?.classList.contains('pptx-tip')) h.nextElementSibling.remove();
+  h.remove();
+  if (prev && next && prev.textContent.trim() === next.textContent.trim()) { if (next.nextElementSibling?.classList.contains('pptx-tip')) next.nextElementSibling.remove(); next.remove(); }
+  paginateView(); saveSoon();
+}
 const smoothScroll = () => matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
 
 let clearTimer = null;
@@ -5550,7 +5595,7 @@ function notebookName(){
 function currentDoc(){
   const c = main.cloneNode(true);
   c.querySelectorAll('.gapline, .gappill, .welcome, .empty, .cardbar, .pptx-tip').forEach(x => x.remove());
-  c.querySelectorAll('.media-sel, .target-page, .multi-sel, .flash, .drop-target, .touched').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel', 'flash', 'drop-target', 'touched'));
+  c.querySelectorAll('.media-sel, .target-page, .multi-sel, .flash, .drop-target, .touched, .headx-on').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel', 'flash', 'drop-target', 'touched', 'headx-on'));
   c.querySelectorAll('.mine').forEach(x => { x.contentEditable = 'true'; });
   c.querySelectorAll('.tpl .rev').forEach(x => x.classList.remove('rev'));
   sideJoin(c);                                  // each side page is stored right after its slide, whichever way it is shown
