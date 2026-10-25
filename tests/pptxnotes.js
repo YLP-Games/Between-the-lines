@@ -46,6 +46,8 @@ async function makeDeck(){
   };
   // each slide's side notes: how many, and their text (with lines kept)
   const notes = () => page.evaluate(() => [...document.querySelectorAll('#main .slide')].map(s => [...(sideOf(s)?.querySelectorAll(':scope > .notebox') || [])].map(b => b.querySelector('.mine').innerText.trim())));
+  // the pencil icon colour of every side note, in page order
+  const chips = () => page.evaluate(() => [...document.querySelectorAll('#main .sidepage .notebox')].map(b => chipOf(b).toLowerCase()));
   const sideOn = () => page.evaluate(() => [side.on, document.getElementById('main').classList.contains('side-on'), document.getElementById('sideBtn').getAttribute('aria-pressed')]);
 
   // ---- the setting: on by default ----
@@ -71,6 +73,39 @@ async function makeDeck(){
   ok((await page.textContent('#noteList')).includes('Side note') && (await page.textContent('#noteList')).includes('kinked'), 'the Notes list shows them as side notes');
   await page.screenshot({path: path.join(OUT, 'pptxnotes-look.png')});
 
+  // ---- their pencil icon is black (the Black of Box › Icon colours); a note you add keeps the usual one ----
+  ok((await chips()).join() === '#263238,#263238', 'both speaker notes get the black pencil icon: ' + (await chips()).join());
+  ok(await page.evaluate(() => CHIP_COLORS.some(([c, n]) => c === SPK_CHIP && n === 'Black') && colourName(SPK_CHIP) === 'Black'), 'the Black of the icon colours');
+  ok(await page.evaluate(() => chipOf(makeBox().box) === (boxStyle.chip || CHIP)), 'a note you add still gets the usual icon colour');
+  const chipLook = await page.evaluate(() => {
+    const b = sideOf(document.querySelector('.pagecard')).querySelector('.notebox'); setCollapsed(b, true);
+    const c = b.querySelector(':scope > .note-chip'), cs = getComputedStyle(c);
+    return {bg: cs.backgroundColor, ink: cs.color};
+  });
+  ok(chipLook.bg === 'rgb(38, 50, 56)' && chipLook.ink === 'rgb(255, 255, 255)', `minimised, the icon is black with a white pencil (${chipLook.bg}, ${chipLook.ink})`);
+  // on the Dark slate side page the black icon still shows: its ring turns light, like the notes' corner mark there
+  const dark = await page.evaluate(() => {
+    const was = side.bg; sideSet({bg: '#2b2f36'});
+    const sp = sideOf(document.querySelector('.pagecard')), c = sp.querySelector('.note-chip');
+    const x = document.createElement('canvas').getContext('2d', {willReadFrequently: true});      // (a mixed colour reads back as color(srgb …))
+    const lum = s => { x.clearRect(0, 0, 1, 1); x.fillStyle = s; x.fillRect(0, 0, 1, 1); const [r, g, b] = x.getImageData(0, 0, 1, 1).data; return 0.299 * r + 0.587 * g + 0.114 * b; };
+    const out = {dark: sp.classList.contains('dark'), ring: lum(getComputedStyle(c).borderTopColor), paper: lum(getComputedStyle(sp).backgroundColor)};
+    sideSet({bg: was}); out.back = lum(getComputedStyle(c).borderTopColor);
+    return out;
+  });
+  ok(dark.dark && dark.ring - dark.paper > 60, `on a dark side page the black icon's ring is light enough to see (ring ${Math.round(dark.ring)} on paper ${Math.round(dark.paper)})`);
+  ok(dark.back < 40, 'and dark again on light paper');
+  await page.evaluate(() => { const b = sideOf(document.querySelector('.pagecard')).querySelector('.notebox'); setCollapsed(b, false); });
+  // it's an icon colour like any other: you can change it, and the Notes panel filters by it
+  const filt = await page.evaluate(() => {
+    const b = sideOf(document.querySelectorAll('#main .pagecard')[3]).querySelector('.notebox');
+    setChipColor(b, '#42a5f5', true); renderNotes();
+    const names = [...document.querySelectorAll('#noteFilters .fchip')].map(f => f.textContent);
+    setChipColor(b, SPK_CHIP, true); renderNotes();
+    return names;
+  });
+  ok(filt.includes('Black') && filt.includes('Blue'), 'you can change it, and the Notes panel’s colour filter lists Black: ' + filt.join(', '));
+
   // ---- opened again the other way, from the tip: the notes come along (they aren't counted as your writing) ----
   const swap = page.locator('.pptx-tip button', {hasText: 'editable text'});
   if (await swap.count()) {
@@ -78,6 +113,7 @@ async function makeDeck(){
     await page.waitForFunction(() => document.querySelectorAll('#main .slide:not(.pagecard)').length === 4, null, {timeout: 60000}); await page.waitForTimeout(800);
     n = await notes();
     ok(await page.locator('.pagecard').count() === 0 && n.map(x => x.length).join() === '1,0,0,1', 'reopened as editable text from the tip, with the notes on the same slides');
+    ok((await chips()).join() === '#263238,#263238', 'still with black pencil icons');
   } else throw new Error('FAILED: no tip with its reopen link');
 
   // ---- kept: reload, and the notebook file ----
@@ -88,12 +124,17 @@ async function makeDeck(){
   ok((await sideOn()).join() === 'true,true,true', 'and Side notes is still on');
   await page.click('#save'); const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-kind=notebook]')]);
   const file = fs.readFileSync(await dl.path(), 'utf8');
+  ok((await chips()).join() === '#263238,#263238', 'and keep their black icons');
   ok(file.includes('kinked') && file.includes('price wars') && file.includes('sidepage'), 'Download notebook carries the speaker notes');
+  ok((file.match(/--chip:\s*#263238/g) || []).length === 2, 'with their black icon colour');
   await page.keyboard.press('Escape');
 
   // ---- editable text ----
   await page.evaluate(() => pref.set('pptx-mode', 'text'));
+  await page.evaluate(() => { boxStyle.chip = '#42a5f5'; });       // (a colour chosen for new notes doesn't change them)
   await openDeck('#main .slide:not(.pagecard)');
+  ok((await chips()).join() === '#263238,#263238', 'black icons there too, even with another colour chosen for new notes');
+  await page.evaluate(() => { delete boxStyle.chip; });
   ok(await page.locator('#main .slide:not(.pagecard)').count() === 4 && await page.locator('.pagecard').count() === 0, 'as editable text: 4 slides rebuilt as text, in a new notebook');
   n = await notes();
   ok(n.map(x => x.length).join() === '1,0,0,1' && n[0][0].includes('kinked demand curve') && n[3][0].includes('quiz'), 'the notes are on slides 1 and 4’s side pages there too');

@@ -1039,6 +1039,7 @@ main.side-on .sidepage{display:block}
 .sidepage .g-float{display:none}
 .sidepage > .notebox.floating{max-width:calc(100% - 8px)}
 .sidepage > .notebox.floating.collapsed > .note-chip{left:calc(4px + var(--ci, 0) * 23px)}
+.sidepage.dark .notebox.collapsed > .note-chip{border-color:color-mix(in srgb, var(--chip,#ffd54a) 45%, #d4cdbb)}      /* (on dark paper the icon's ring is light, like the notes' corner mark, so a black icon still shows) */
 /* beside the slides: two columns, each side page in the row of its slide (the row is as tall as the taller of the two, and both fill it:
    when the side notes run longer, the slide gets blank room below, and both shrink back together) */
 main.fit.side-on:not(.side-split):not(.side-stack){display:grid;grid-template-columns:var(--cw) var(--sidew);justify-content:center;column-gap:18px;row-gap:16px;align-items:start}
@@ -2125,7 +2126,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <h3>How to use it</h3>
       <ul class="howto">
         <li><b>Open</b> a PDF, PowerPoint (.pptx) or Word (.docx) file, or drop one anywhere on the page. Each file becomes its own <b>notebook</b> in the sidebar; <b>Insert › File at end</b> adds one to the end of the notebook you're in instead, and <b>Insert › File after</b> puts it right after the current page. Point at a file's name and press <b>×</b> to remove the name (its pages stay).</li>
-        <li>PowerPoint files open as the slides look: each slide is a page with its text you can select, and you write between the lines as on a PDF. Complex animations and SmartArt may still differ; for an exact copy, save the slides as a PDF (File › Save as › PDF) and open that. Choose <b>Editable text</b> under <b>Open PowerPoint as</b> (View tab, or below) to rebuild the slides as text you can type inside instead. The presenter’s speaker notes go on each slide’s side page (<b>View › Side notes</b>), unless <b>PowerPoint speaker notes on side pages</b> is off below.</li>
+        <li>PowerPoint files open as the slides look: each slide is a page with its text you can select, and you write between the lines as on a PDF. Complex animations and SmartArt may still differ; for an exact copy, save the slides as a PDF (File › Save as › PDF) and open that. Choose <b>Editable text</b> under <b>Open PowerPoint as</b> (View tab, or below) to rebuild the slides as text you can type inside instead. The presenter’s speaker notes go on each slide’s side page (<b>View › Side notes</b>), with a black pencil icon, unless <b>PowerPoint speaker notes on side pages</b> is off below.</li>
         <li>Word files keep their fonts, colours, tables, headers and pictures as editable text. A few pictures (old EMF or WMF drawings, for example) may not come through: save the file as a PDF and open that, or add the picture with Insert › Picture, video or sound.</li>
         <li>On a PDF page, point at a spot and press <b>+ Add here</b> to add a note there (the page opens up between the lines). <b>Right-click</b> the button (press and hold on a touch screen) to pick <b>Note</b>, <b>Sticky note</b> or <b>Equation</b>. On other pages, click where you want to write. In a note, type <b>/</b> for the same choices.</li>
         <li><b>Writing tools</b> (Insert tab): <b>Writing guide</b> puts a grid, ruled lines or dots over the pages so you can write straight with a pen or Apple Pencil. Drag it by its handle, pull its edges to resize it, and press Esc or × to take it away; it is never saved in your notebook. Its bar goes when you click elsewhere: point at the faint icon in its top left corner to bring it back, or point at the Insert button for its settings. <b>Table</b> opens a grid to choose the size, then drop it in a note: Tab moves between cells, drag the borders to size it, and right-click (or ⋯) for rows, columns and merging. <b>Journal entry</b> is an accounting entry, lined up in columns (also under + Add here and by typing /journal): click DR or CR to switch a row, Enter adds a row, Tab and the arrow keys move around like a table, and right-click (or the × when you point at it) deletes the entry.</li>
@@ -3444,6 +3445,7 @@ async function readPptx(buf, name, mode = pptxMode()){
     const sp = document.createElement('aside'); sp.className = 'sidepage'; sp.dataset.for = sideSid(card);
     const {box, el} = makeBox();
     box.classList.add('floating'); box.dataset.spk = '1';                     // (until you change it: see reopenPptx)
+    setChipColor(box, SPK_CHIP, true);                                         // a black pencil icon, to tell them from your own notes
     box.style.width = sideWidth(sp) + 'px'; box.dataset.px = (30 / SIDE_W).toFixed(4); box.dataset.py = 24;
     el.innerHTML = lines.map(l => `<div>${l || '<br>'}</div>`).join('');
     sp.append(box); gripTitles(box); card.after(sp);
@@ -6043,6 +6045,7 @@ document.addEventListener('mousedown', e => { if (!e.target.closest('#notesMenu,
 addEventListener('resize', () => closeNotesMenu());
 // ================= box outline & fill =================
 const CHIP = '#ffd54a';            // the usual yellow pencil icon
+const SPK_CHIP = '#263238';        // a PowerPoint file's speaker notes get the Black one (you can change it as on any note)
 let boxStyle = {outline: true, border: '#9aa3b2', fill: '', chip: CHIP};
 Object.assign(boxStyle, pref.json('box-style', {}));
 function applyBoxVars(box, b){
