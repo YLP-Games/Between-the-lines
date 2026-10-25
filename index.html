@@ -2002,6 +2002,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <div class="grp"><div class="row">
         <button class="btn" id="notesMenuBtn" aria-haspopup="menu" aria-expanded="false" title="Hide or show notes: only those on your pages, or every note" disabled><svg class="i"><use href="#i-eye-off"/></svg><span>Hide notes</span><svg class="i chev"><use href="#i-down"/></svg></button>
         <button class="btn" data-panel="pages" aria-pressed="false" aria-label="Sidebar" title="Sidebar: your notebooks and their pages (Ctrl+\)"><svg class="i"><use href="#i-panel-left"/></svg><span class="vl">Sidebar</span></button>
+        <button class="btn" id="sideHoverBtn" aria-pressed="false" aria-label="Open sidebar on hover" title="Open sidebar on hover: when the sidebar is hidden, pointing at the left edge of the window shows it"><svg class="i"><use href="#i-hide-left"/></svg><span class="vl">Open on hover</span></button>
         <button class="btn" data-panel="notes" aria-pressed="false" aria-label="Notes list" title="Notes list: every note in one list, to search and jump to"><svg class="i"><use href="#i-panel-right"/></svg><span class="vl">Notes list</span></button>
       </div><span class="cap">Show</span></div>
       <span class="sep"></span>
@@ -2128,7 +2129,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
         <li>New notes line up with the note above or below them when they are close (<b>Box › Auto-align notes</b>). To tidy up, <b>Select all</b> on the Box tab, then use <b>Align</b>: left, centre or right, <b>Same width</b>, <b>Distribute</b> (floating and sticky notes, evenly spaced) or <b>Tidy page</b>. Each is one step you can take Back.</li>
         <li><b>View › Side pages</b> gives each slide a page for your own notes beside it. They work in the Default, A4 and A3 layouts (each printed page gets one beside it, and both shrink together when the window is narrow). Point near the top right corner of a side page (or tap it, or press Tab) to show a palette button that changes its paper, or use <b>Side page background</b> in the View tab. Slides, side pages and notes are scaled to fit the window as one, so nothing moves when you open the sidebar.</li>
         <li>On each note: the arrows float it on top of the page, the minus minimises it to a pencil icon (drag the icon aside, or Shift+drag it to take the note along; right-click it to colour it), and the pin keeps it open.</li>
-        <li>The <b>sidebar</b> (left) lists your notebooks: click one to switch, and the one you're in shows its pages. Use its <b>⋯</b> to rename or delete it. Hide it with <b>«</b> (Ctrl+\) and point at the left edge to peek at it. A notebook’s <b>⋯</b> menu can also star it as a <b>Favourite</b>, <b>Duplicate</b> it, or move it to the <b>Trash</b>, where it waits 30 days (and can be restored) before it is gone for ever. Group notebooks in <b>folders</b> (<b>New folder</b>): drag a notebook or a folder onto a folder to move it, or use <b>Move to…</b> in its <b>⋯</b> menu.</li>
+        <li>The <b>sidebar</b> (left) lists your notebooks: click one to switch, and the one you're in shows its pages. Use its <b>⋯</b> to rename or delete it. Hide it with <b>«</b> (Ctrl+\); it comes back with the same button or Ctrl+\. Turn on <b>Open sidebar on hover</b> (View tab, or below) to have it peek in when you point at the left edge. A notebook’s <b>⋯</b> menu can also star it as a <b>Favourite</b>, <b>Duplicate</b> it, or move it to the <b>Trash</b>, where it waits 30 days (and can be restored) before it is gone for ever. Group notebooks in <b>folders</b> (<b>New folder</b>): drag a notebook or a folder onto a folder to move it, or use <b>Move to…</b> in its <b>⋯</b> menu.</li>
         <li><b>Notes</b> (right) lists every note in the notebook to search, filter by icon colour and jump to.</li>
         <li><b>Install as an app</b> (below, or at the bottom of the sidebar) gives Between the Lines its own window, or a Home Screen icon on an iPad or iPhone, and it works offline.</li>
         <li><b>Focus</b> hides the toolbar, side panels and status bar so only your pages and notes are left (Esc brings them back). Each panel also closes with its ×, and View › Toolbar can shrink the toolbar to tabs only.</li>
@@ -2176,6 +2177,11 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
         <dt><kbd>/</kbd></dt><dd>In a note: add an equation, table or journal entry, or turn it into a sticky note</dd>
         <dt><kbd>Esc</kbd></dt><dd>Close a menu or end a selection</dd>
       </dl>
+    </section>
+    <section>
+      <h3>Sidebar</h3>
+      <label class="chk setchk" for="setSideHover"><input type="checkbox" id="setSideHover"> Open sidebar on hover</label>
+      <p class="sethint">When the sidebar is hidden, pointing at the left edge of the window shows it until you move away. Off, it opens only with its button or Ctrl+\.</p>
     </section>
     <section id="tipsSec">
       <h3>Tips and tooltips</h3>
@@ -2622,6 +2628,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintTheme
 if (pref.get('ui-font') === 'clean') document.documentElement.dataset.uiFont = 'clean';
 // Show tips (hints that teach a feature) and Button tooltips are on unless turned off
 const tipsOn = () => pref.get('tips', '1') !== '0', qtipsOn = () => pref.get('tooltips', '1') !== '0', autoAlignOn = () => pref.get('auto-align', '1') !== '0';
+const sideHoverOn = () => pref.get('side-hover', '0') === '1';          // Open sidebar on hover: off unless switched on
 if (!tipsOn()) document.documentElement.dataset.tips = 'off';
 const COLORS = [['#1f4fd1', 'Blue'], ['#c62828', 'Red'], ['#2e7d32', 'Green'], ['#7b1fa2', 'Purple'], ['#d35400', 'Orange'], ['#1d1d1f', 'Black']];
 const SIZES = [8,9,10,11,12,14,16,18,20,24,28,32,36,40,48,60,72];
@@ -7059,7 +7066,7 @@ function setPanel(name, on, quiet){
   if (on && focusMode) setFocus(false);
   panelOpen[name] = on;
   panelEl[name].hidden = !on;
-  if (name === 'pages') { panelEl.pages.classList.remove('peeking'); $('#peekZone').hidden = on; sideHideLabel(); }
+  if (name === 'pages') { panelEl.pages.classList.remove('peeking'); $('#peekZone').hidden = on || !sideHoverOn(); sideHideLabel(); }
   document.querySelectorAll(`#${name}Btn, [data-panel="${name}"]`).forEach(b => b.setAttribute('aria-pressed', on));
   $('#scrim').hidden = !(narrow.matches && (panelOpen.pages || panelOpen.notes));
   if (!narrow.matches && !quiet) pref.set('panel-' + name, on ? '1' : '0');
@@ -7511,17 +7518,34 @@ function startRename(id){
 // the file name in the title bar renames the notebook too
 $('#docTitle').addEventListener('dblclick', () => { if (!panelOpen.pages) setPanel('pages', true); startRename(curId); });
 
-// the sidebar hides with « (or Ctrl+\) and peeks in when you point at the left edge, like Notion
+// the sidebar hides with « (or Ctrl+\); with Open sidebar on hover (off unless switched on) it peeks in when you point at the left edge, like Notion
 function sideHideLabel(){
   const peek = panelEl.pages.classList.contains('peeking'), b = $('#sideHide');
   b.setAttribute('aria-label', peek ? 'Keep the sidebar open' : 'Hide the sidebar');
-  b.title = peek ? 'Keep the sidebar open' : 'Hide the sidebar (Ctrl+\\). Point at the left edge to peek at it.';
+  b.title = peek ? 'Keep the sidebar open' : 'Hide the sidebar (Ctrl+\\).' + (sideHoverOn() ? ' Point at the left edge to peek at it.' : '');
   b.innerHTML = icon(peek ? 'panel-left' : 'hide-left');
 }
-$('#peekZone').addEventListener('mouseenter', () => {
-  if (panelOpen.pages || focusMode || narrow.matches) return;
+// (a finger at the edge is a tap, not pointing: only a mouse, trackpad or a hovering pen peeks)
+$('#peekZone').addEventListener('pointerenter', e => {
+  if (panelOpen.pages || focusMode || narrow.matches || !sideHoverOn() || e.pointerType === 'touch') return;
   panelEl.pages.classList.add('peeking'); panelEl.pages.hidden = false; sideHideLabel(); refreshPanels();
 });
+// Open sidebar on hover: in Help & settings, the View tab and Ctrl+K
+function paintSideHover(){
+  const on = sideHoverOn();
+  $('#setSideHover').checked = on; $('#sideHoverBtn').setAttribute('aria-pressed', on);
+  $('#peekZone').hidden = panelOpen.pages || !on;
+  sideHideLabel();
+}
+function setSideHover(on){
+  pref.set('side-hover', on ? '1' : '0');
+  if (!on && panelEl.pages.classList.contains('peeking')) { panelEl.pages.classList.remove('peeking'); panelEl.pages.hidden = true; }
+  paintSideHover();
+  toast(on ? 'The hidden sidebar now opens when you point at the left edge of the window.' : 'The hidden sidebar now opens only with its button or Ctrl+\\.');
+}
+$('#setSideHover').onchange = e => setSideHover(e.target.checked);
+$('#sideHoverBtn').onclick = () => setSideHover(!sideHoverOn());
+paintSideHover();
 panelEl.pages.addEventListener('mouseleave', e => {
   if (!panelEl.pages.classList.contains('peeking') || renaming || !docMenu.hidden || docMenu.contains(e.relatedTarget)) return;
   panelEl.pages.classList.remove('peeking'); panelEl.pages.hidden = true;
@@ -10931,6 +10955,7 @@ const CK_ACTIONS = [
   {id: 'install', label: 'Install as an app', ico: 'download', words: 'add to home screen ipad iphone android dock offline app pwa', run: () => installNow()},
   {id: 'tips', label: 'Show tips on or off', ico: 'lightbulb', words: 'help hints coach teaching messages', run: () => setTips(!tipsOn())},
   {id: 'tooltips', label: 'Button tooltips on or off', ico: 'help', words: 'hover pop up labels help', run: () => setTooltips(!qtipsOn())},
+  {id: 'sidehover', label: 'Open sidebar on hover on or off', ico: 'hide-left', words: 'sidebar peek left edge point mouse hover automatically show hidden settings', run: () => setSideHover(!sideHoverOn())},
   {id: 'autoalign', label: 'Auto-align notes on or off', ico: 'nalign-left', words: 'align line up box left edge tidy', run: () => setAutoAlign(!autoAlignOn())},
   {id: 'pptxnotes', label: 'PowerPoint speaker notes on side pages on or off', ico: 'sidepage', words: 'pptx slides presenter speaker notes side pages settings', run: () => setPptxNotes(!pptxNotesOn())},
   {id: 'pdf', label: 'Download PDF', ico: 'download', words: 'save export print', ok: ckPages, run: ckDownload('pdf')},
