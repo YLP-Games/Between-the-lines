@@ -3239,9 +3239,8 @@ async function readPptx(buf, name, mode = pptxMode()){
   const prel = rels(await xml('ppt/_rels/presentation.xml.rels'));
   const slideW = +(find(pres, 'sldSz')?.getAttribute('cx')) || 12192000;
   const slideH = +(find(pres, 'sldSz')?.getAttribute('cy')) || 6858000;
-  const firstCard = main.children.length;
   const ids = [...pres.getElementsByTagNameNS('*', 'sldId')].map(s => s.getAttribute('r:id'));
-  const deck = mode === 'look' ? await PPT.deck(zip).catch(err => console.warn(err)) : null;
+  const deck = mode === 'look' ? await PPT.deck(zip).catch(err => console.warn(err)) : null, placed = [];
   for (let n = 0; n < ids.length; n++) {
     away(home);
     toast(`Reading ${name}: slide ${n + 1} of ${ids.length}`);
@@ -3253,6 +3252,18 @@ async function readPptx(buf, name, mode = pptxMode()){
     const doc = await xml(path); if (!doc) continue;
     const srel = rels(await xml(path.replace(/([^/]+)$/, '_rels/$1.rels')));
     const items = [];
+    const layPath = Object.values(srel).find(t => /slideLayout\d*\.xml$/.test(t)), lay = layPath && await xml(resolve(path, layPath));
+    const masPath = lay && Object.values(rels(await xml(resolve(path, layPath).replace(/([^/]+)$/, '_rels/$1.rels')))).find(t => /slideMaster\d*\.xml$/.test(t));
+    const mas = masPath && await xml(resolve(resolve(path, layPath), masPath));
+    const where = ph => {
+      const type = ph.getAttribute('type') || 'body', idx = ph.getAttribute('idx');
+      for (const d of [lay, mas]) for (const q of d ? d.getElementsByTagNameNS('*', 'ph') : []) {
+        if (!(idx != null && q.getAttribute('idx') === idx && d === lay) && (q.getAttribute('type') || 'body') !== type) continue;
+        const sp = q.closest('sp, pic') || q.parentElement?.parentElement?.parentElement, o = find(kid(sp, 'spPr'), 'off');
+        if (o) return [o, find(kid(sp, 'spPr'), 'ext')];
+      }
+      return null;
+    };
     let order = 0;
     const walk = node => {
       for (const c of node.children) {
@@ -3271,8 +3282,8 @@ async function readPptx(buf, name, mode = pptxMode()){
         }
         if (!['sp', 'pic', 'graphicFrame'].includes(ln)) continue;
         const ph = find(c, 'ph'); const phType = ph ? (ph.getAttribute('type') || 'body') : null;
-        const off = find(kid(c, 'spPr') || kid(c, 'xfrm') || c, 'off');
-        const ext = find(kid(c, 'spPr') || c, 'ext');
+        let off = find(kid(c, 'spPr') || kid(c, 'xfrm') || c, 'off'), ext = find(kid(c, 'spPr') || c, 'ext');
+        if (ph && !off) { const at = where(ph); if (at) [off, ext] = at; }         // a placeholder that doesn't say where it is sits where the layout's (else the master's) does
         let y = off ? +off.getAttribute('y') : phType === 'title' || phType === 'ctrTitle' ? 0 : 1371600;
         items.push({c, ln, phType, y, x: off ? +off.getAttribute('x') : 0, cx: ext ? +ext.getAttribute('cx') : 0, cy: ext ? +ext.getAttribute('cy') : 0, order: order++});
       }
@@ -3283,16 +3294,20 @@ async function readPptx(buf, name, mode = pptxMode()){
     away(home);
     const card = slideCard();
     const box = card.querySelector('.content');
+    const said = items.filter(i => i.ln !== 'pic' && find(i.c, 'txBody') && [...i.c.getElementsByTagNameNS('*', 't')].some(t => t.textContent.trim()));
+    const pics = [];
     for (const it of items) {
       if (it.ln === 'pic') {
         const emb = find(it.c, 'blip')?.getAttribute('r:embed'); const t = emb && srel[emb];
         if (!t || /\.(emf|wmf|tiff?)$/i.test(t)) continue;
         if (!it.formula && it.cx && it.cx < 914400 && it.cy < 914400) continue;  // skip small icons and logos
-        if (!it.formula && it.cx && it.cy && isBackground(it.x, it.y, it.x + it.cx, it.y + it.cy, slideW, slideH)) continue;
+        const [l, tp, r, b] = [it.x, it.y, it.x + it.cx, it.y + it.cy], on = said.filter(s => s.order > it.order && s.cx && s.x + s.cx / 2 >= l && s.x + s.cx / 2 <= r && s.y + s.cy / 2 >= tp && s.y + s.cy / 2 <= b);
+        if (!it.formula && it.cx && it.cy && ppBehind(l, tp, r, b, slideW, slideH, on, said)) continue;
         const f = zip.file(resolve(path, t)); if (!f) continue;
         const ext = t.split('.').pop().toLowerCase();
         const mime = ext === 'svg' ? 'image/svg+xml' : ext === 'jpg' ? 'image/jpeg' : 'image/' + ext;
-        const img = document.createElement('img'); img.className = it.formula ? 'blk formula' : 'blk'; if (!it.formula) img.dataset.k = t;
+        const img = document.createElement('img'); img.className = it.formula ? 'blk formula' : 'blk';
+        if (!it.formula) pics.push({k: t, l, t: tp, r, b, under: on.length > 0, img});
         img.src = `data:${mime};base64,` + await f.async('base64');
         if (it.cx) img.style.width = Math.min(100, it.cx / slideW * 100 * 1.1).toFixed(1) + '%';
         box.append(img); continue;
@@ -3308,10 +3323,13 @@ async function readPptx(buf, name, mode = pptxMode()){
       }
       for (const html of paras(find(it.c, 'txBody'), it.phType, 'div')) box.insertAdjacentHTML('beforeend', html);
     }
+    placed.push(pics);
     if (!box.children.length) box.innerHTML = '<div class="blk" style="color:#8a94a3">(No text on this slide)</div>';
   }
   away(home);
-  dropRepeats([...main.children].slice(firstCard));
+  // template artwork: the same picture in about the same place on many slides (see markTemplates)
+  markTemplates(placed, slideW, slideH);
+  for (const q of placed.flat()) if (q.template) { const box = q.img.parentElement; q.img.remove(); if (box && !box.children.length) box.innerHTML = '<div class="blk" style="color:#8a94a3">(No text on this slide)</div>'; }
 
   function paras(body, phType, tag){
     if (!body) return [];
@@ -3429,7 +3447,46 @@ async function ppDeck(zip){
   D.def = xf(pres.doc, 'defaultTextStyle');
   D.slides = [...pres.doc.getElementsByTagNameNS('*', 'sldId')].map(s => pres.rels[s.getAttribute('r:id')]?.path).filter(Boolean);
   const ts = await D.part('ppt/tableStyles.xml'); D.tstyles = ts.doc;
+  // a picture pasted onto the slides themselves that comes back in the same place on many of them (a logo, a watermark) is
+  // template artwork, as the master's pictures are (see markTemplates)
+  const placed = [];
+  for (const p of D.slides) {
+    try {
+      const c = await ppContext(D, p), own = shapesOf(xf(c.slide.doc, 'spTree'));
+      placed.push(own.flatMap((s, i) => {
+        const r = s.localName === 'pic' && c.slide.rels[xf(x1(s, 'blipFill'), 'blip')?.getAttribute('r:embed')], b = r?.path && ppBox(c, s);
+        if (!b) return [];
+        const under = own.slice(i + 1).some(t => { const q = hasText(t) && ppBox(c, t); return q && inBox(b, mid(q)); });
+        return [{k: r.path, l: b[0], t: b[1], r: b[2], b: b[3], under, s}];
+      }));
+    } catch { placed.push([]); }
+  }
+  markTemplates(placed, D.W, D.H);
+  D.tpl = new Set(placed.flat().filter(q => q.template).map(q => q.s));
   return D;
+}
+const hasText = n => [...n.getElementsByTagNameNS('*', 't')].some(t => t.textContent.trim());
+const inBox = (b, [x, y]) => !!b && x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3];
+const mid = b => [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2];
+// a shape's box on the slide, [left, top, right, bottom] in points (a placeholder's from the layout or master when it has none)
+function ppBox(c, s){
+  const ph = phOf(s), x = ppXfrm(s) || (ph && (ppXfrm(phFind(c.lay, ph, false)) || ppXfrm(phFind(c.mas, ph, true))));
+  return x && x.w && x.h ? [x.x, x.y, x.x + x.w, x.y + x.h] : null;
+}
+// Design on the slide itself, left out with the master's (see ppRender): a picture that is template artwork; a shape of plain
+// colour with no words that is a band along an edge or big; a picture that is a band, or big with the slide's title (or most of
+// its words) on top of it, or with words on top and nothing in it but flat colour. Any other picture is content, however big.
+async function ppBackdrop(X, own, i){
+  const s = own[i], ln = s.localName, {W, H} = X.D;
+  if (!(ln === 'pic' || ln === 'sp') || hasText(s) || xf(nvOf(s), 'cNvPr')?.getAttribute('hidden') === '1') return false;
+  const b = ppBox(X.c, s), fill = ln === 'pic' ? x1(s, 'blipFill') : fillIn(x1(s, 'spPr'));
+  if (!b || !fill || fill.localName === 'noFill') return false;
+  if (X.D.tpl?.has(s)) return true;
+  if (fill.localName !== 'blipFill') return isBand(...b, W, H) || isBig(...b, W, H);
+  const said = own.filter(hasText).map(t => ({t, b: ppBox(X.c, t), phType: phOf(t)?.type}));
+  const on = said.filter(w => own.indexOf(w.t) > i && w.b && inBox(b, mid(w.b)));
+  if (ppBehind(...b, W, H, on, said)) return true;
+  return on.length > 0 && isBig(...b, W, H) && flatPicture(await ppImage(X, xf(fill, 'blip')?.getAttribute('r:embed')));
 }
 // what a slide needs: its layout, master and theme
 async function ppContext(D, path){
@@ -3775,8 +3832,13 @@ function ppDrawText(X, ctx, L, ox, oy, boxH, map, items){
       ctx.font = fontOf(r); ctx.letterSpacing = r.sp ? r.sp + 'px' : '0px';
       const trail = s.full - s.tw, spaces = (last ? s.text.trimEnd() : s.text).match(/ /g)?.length || 0, width = s.tw + extra * (last ? spaces : spaces);
       if (r.hl) { ctx.fillStyle = css4(r.hl); ctx.fillRect(cx, y - r.size * .95, width, r.size * 1.2); }
-      ctx.fillStyle = css4(r.col);
       const txt = last ? s.text.trimEnd() : s.text;
+      // pale words with nothing of the slide's own under them, only the design (see ppRender): where they are is noted
+      if (X.light && map && txt.trim() && r.col && r.col[3] > .5 && r.col[0] * .3 + r.col[1] * .59 + r.col[2] * .11 > 185) {
+        const at = [cx + s.tw / 2, y - r.size * .35], d = ctx.getTransform().transformPoint(new DOMPoint(at[0], at[1]));
+        if (ctx.getImageData(Math.round(d.x), Math.round(d.y), 1, 1).data[3] < 128) X.light.push(map(at[0], at[1]));
+      }
+      ctx.fillStyle = css4(r.col);
       if (extra) { let x = cx; for (const w of txt.replace(/ /g, ' \u0000').split('\u0000')) { ctx.fillText(w, x, y); x += ctx.measureText(w).width + (w.endsWith(' ') ? extra : 0); } }
       else ctx.fillText(txt, cx, y);
       const lw = Math.max(.5, r.size / 18);
@@ -3839,7 +3901,9 @@ async function ppNode(X, ctx, node, G){
   const {x, y, w, h} = xfm, S = X.S;
   let m = mmul(G.m, mT(x + w / 2, y + h / 2)); m = mmul(m, mR(xfm.rot)); m = mmul(m, mS(xfm.fh ? -1 : 1, xfm.fv ? -1 : 1)); m = mmul(m, mT(-w / 2, -h / 2));
   const set = mm => ctx.setTransform(S * mm[0], S * mm[1], S * mm[2], S * mm[3], S * mm[4], S * mm[5]);
-  if (ln === 'graphicFrame') { await ppFrame(X, ctx, node, G, xfm, m, set); return; }
+  // (X.only: 'text' draws only the words, 'art' only the fills, outlines and pictures: the master's and layout's shapes are split so)
+  if (ln === 'graphicFrame') { if (X.only !== 'art') await ppFrame(X, ctx, node, G, xfm, m, set); return; }
+  if (X.only === 'text' && !x1(node, 'txBody')) return;
   const th = X.theme, st = x1(node, 'style'), spPr = x1(node, 'spPr');
   const prstN = chain.map(c => x1(x1(c, 'spPr'), 'prstGeom')).find(Boolean), cust = x1(spPr, 'custGeom');
   const av = {}; for (const gd of xk(x1(prstN, 'avLst'), 'gd')) av[gd.getAttribute('name')] = +(gd.getAttribute('fmla') || '').replace('val ', '');
@@ -3857,7 +3921,8 @@ async function ppNode(X, ctx, node, G){
   if (ln === 'pic' && L && !L.c) L = null;
   const eff = x1(spPr, 'effectLst') || (er?.i ? th.effects[er.i - 1] : null);
   ctx.save(); set(m);
-  if (ln === 'pic') {
+  if (X.only === 'text') { /* the words only */ }
+  else if (ln === 'pic') {
     const pp = sh ? sh.path : parts.length ? parts.reduce((q, pt) => (q.addPath(pt.path), q), new Path2D()) : ppShape('rect', w, h, {}).path;      // a picture in a custom outline is shown through the outline
     await ppFill(X, ctx, x1(node, 'blipFill'), pp, w, h, null);
     if (L?.c) ppStroke(X, ctx, L, null, pp);
@@ -3874,7 +3939,7 @@ async function ppNode(X, ctx, node, G){
     }
   }
   ctx.restore();
-  const body = x1(node, 'txBody');
+  const body = X.only === 'art' ? null : x1(node, 'txBody');
   if (body && xk(body, 'p').some(p => [...p.children].some(c => ['r', 'fld'].includes(c.localName) && x1(c, 't')?.textContent))) await ppShapeText(X, ctx, node, chain, body, ph, xfm, G, m, set, st);
 }
 async function ppShapeText(X, ctx, node, chain, body, ph, xfm, G, m, set, st){
@@ -4005,36 +4070,52 @@ async function ppTable(X, ctx, tbl, xfm, m, set){
 
 // ----- a whole slide, as a canvas -----
 const bgOf = (part) => x1(x1(xf(part.doc, 'cSld'), 'bg'), 'bgPr') || x1(x1(xf(part.doc, 'cSld'), 'bg'), 'bgRef');
+// The slide as it looks, without its design, as a PDF page is shown: the background, the pictures, fills and lines the master
+// and layout put on every slide (their words stay), and the slide's own backdrops (see ppBackdrop) are left out. A piece of the
+// design stays where pale words lie on it with nothing of the slide's own between (white words on a dark band or photo would
+// vanish on white paper), and the background stays when such words lie on nothing else that stays.
 async function ppRender(D, path, n){
   const c = await ppContext(D, path);
-  const S = Math.min(2, 2000 / D.W), cv = document.createElement('canvas');
-  cv.width = Math.round(D.W * S); cv.height = Math.round(D.H * S);
-  const ctx = cv.getContext('2d', {willReadFrequently: true});
+  const S = Math.min(2, 2000 / D.W), canvas = () => { const cv = document.createElement('canvas'); cv.width = Math.round(D.W * S); cv.height = Math.round(D.H * S); return cv; };
+  const cv = canvas(), ctx = cv.getContext('2d', {willReadFrequently: true});          // the slide's own words, pictures and shapes, and the template's words
   D.mctx ||= document.createElement('canvas').getContext('2d');
-  const X = {D, c, S, n, theme: c.theme, map: c.map, groups: [], mctx: D.mctx, cur: 'master', part: c.mas};
+  const X = {D, c, S, n, theme: c.theme, map: c.map, groups: [], mctx: D.mctx, cur: 'master', part: c.mas, light: []};
   X.tx1 = ppC(X, 'tx1');
-  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
-  // background: the slide's, else the layout's, else the master's
-  for (const [part, cur] of [[c.slide, 'slide'], [c.lay, 'layout'], [c.mas, 'master']]) {
-    const bg = bgOf(part); if (!bg || (bg.localName === 'bgPr' && !fillIn(bg))) continue;
-    X.part = part; let fill = fillIn(bg), ph = null;
-    if (bg.localName === 'bgRef') { const i = xn(bg, 'idx'); ph = ppColor(X, bg); fill = i > 1000 ? c.theme.bgs[i - 1001] : c.theme.fills[i - 1]; }
-    ctx.setTransform(S, 0, 0, S, 0, 0); const p = new Path2D(); p.rect(0, 0, D.W, D.H);
-    await ppFill(X, ctx, fill, p, D.W, D.H, ph); break;
-  }
   const G = {m: [1, 0, 0, 1, 0, 0], rot: 0, sx: 1, sy: 1}, root = part => part.doc.documentElement;
   const hideAll = root(c.slide).getAttribute('showMasterSp') === '0', hideMaster = hideAll || root(c.lay).getAttribute('showMasterSp') === '0';
-  const common = async (part, cur) => { X.part = part; X.cur = cur; for (const s of shapesOf(xf(part.doc, 'spTree'))) if (!phOf(s)) await ppNode(X, ctx, s, G); };
-  if (!hideMaster) await common(c.mas, 'master');
-  if (!hideAll) await common(c.lay, 'layout');
-  const px0 = ctx.getImageData(0, 0, cv.width, cv.height).data;
-  X.part = c.slide; X.cur = 'slide';
-  for (const s of shapesOf(xf(c.slide.doc, 'spTree'))) await ppNode(X, ctx, s, G);
+  const tmpl = [];                                  // the master's and layout's own shapes (not placeholders): [part, cur, shape]
+  if (!hideMaster) for (const s of shapesOf(xf(c.mas.doc, 'spTree'))) if (!phOf(s)) tmpl.push([c.mas, 'master', s]);
+  if (!hideAll) for (const s of shapesOf(xf(c.lay.doc, 'spTree'))) if (!phOf(s)) tmpl.push([c.lay, 'layout', s]);
+  const draw = async ([part, cur, s], cx, only = null) => { X.part = part; X.cur = cur; X.only = only; try { await ppNode(X, cx, s, G); } finally { X.only = null; } };
+  for (const t of tmpl) await draw(t, ctx, 'text');
+  const own = shapesOf(xf(c.slide.doc, 'spTree')), backdrops = [];
+  for (let i = 0; i < own.length; i++) {
+    X.part = c.slide; X.cur = 'slide';
+    if (await ppBackdrop(X, own, i)) backdrops.push([c.slide, 'slide', own[i]]); else await draw([c.slide, 'slide', own[i]], ctx);
+  }
+  const light = X.light; X.light = null;
+  // the design that stays: what pale words lie on, then the background if any of them lie on nothing else
+  const keep = [...tmpl.map(t => [...t, 'art']), ...backdrops].filter(([, , s]) => { const b = ppXfrm(s); return b && light.some(p => inBox([b.x, b.y, b.x + b.w, b.y + b.h], p)); });
+  const keepBg = light.some(p => !keep.some(([, , s]) => { const b = ppXfrm(s); return inBox([b.x, b.y, b.x + b.w, b.y + b.h], p); }));
+  const out = canvas(), o = out.getContext('2d', {willReadFrequently: true});
+  o.fillStyle = '#fff'; o.fillRect(0, 0, out.width, out.height);
+  // background: the slide's, else the layout's, else the master's
+  if (keepBg) for (const [part, cur] of [[c.slide, 'slide'], [c.lay, 'layout'], [c.mas, 'master']]) {
+    const bg = bgOf(part); if (!bg || (bg.localName === 'bgPr' && !fillIn(bg))) continue;
+    X.part = part; X.cur = cur; let fill = fillIn(bg), ph = null;
+    if (bg.localName === 'bgRef') { const i = xn(bg, 'idx'); ph = ppColor(X, bg); fill = i > 1000 ? c.theme.bgs[i - 1001] : c.theme.fills[i - 1]; }
+    o.setTransform(S, 0, 0, S, 0, 0); const p = new Path2D(); p.rect(0, 0, D.W, D.H);
+    await ppFill(X, o, fill, p, D.W, D.H, ph); break;
+  }
+  for (const k of keep) await draw(k.slice(0, 3), o, k[3]);
+  o.setTransform(1, 0, 0, 1, 0, 0);
+  const px0 = o.getImageData(0, 0, out.width, out.height).data;
+  o.drawImage(cv, 0, 0); cv.width = cv.height = 0;
   const groups = X.groups.sort((a, b) => (Math.abs(a.y - b.y) < 14 ? a.x - b.x : a.y - b.y));
-  // rows with nothing of this slide's own on them (what the layout and master draw doesn't count): where a note can open the page up
-  const px = ctx.getImageData(0, 0, cv.width, cv.height).data;
+  // rows with nothing of this slide's own on them (what the design draws doesn't count): where a note can open the page up
+  const px = o.getImageData(0, 0, out.width, out.height).data;
   const inked = i => Math.abs(px[i] - px0[i]) + Math.abs(px[i + 1] - px0[i + 1]) + Math.abs(px[i + 2] - px0[i + 2]) > 60;
-  const gaps = blankGaps(cv, S, inked);
+  const gaps = blankGaps(out, S, inked);
   const items = groups.flatMap(g => g.items);
   if (!gaps.length && items.length) {             // a picture behind everything: the gaps are between the lines of words instead
     const lines = [...new Map(items.map(i => [Math.round(i[2]), i])).values()].sort((a, b) => a[2] - b[2]);
@@ -4043,7 +4124,7 @@ async function ppRender(D, path, n){
     if (D.H - prev >= 3) gaps.push([+prev.toFixed(1), +D.H.toFixed(1)]);
   }
   for (const r of [{path}, ...Object.values(c.slide.rels)]) if (!/^(slideLayout|slideMaster|theme)$/.test(r.type || '')) D.xml.delete(r.path);        // what only this slide used (its charts, diagrams) is let go
-  return {cv, S, W: D.W, H: D.H, items: items.map(i => i.map(v => typeof v === 'number' ? +v.toFixed(1) : v)), gaps};
+  return {cv: out, S, W: D.W, H: D.H, items: items.map(i => i.map(v => typeof v === 'number' ? +v.toFixed(1) : v)), gaps};
 }
 
 // ----- charts: bars, lines, areas, pies and scatter plots drawn plainly from the numbers saved in the file -----
@@ -4155,55 +4236,115 @@ async function readPdf(buf, name){
   const pdf = await pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false, cMapUrl: lib + 'cmaps/', cMapPacked: true, standardFontDataUrl: lib + 'standard_fonts/'}).promise;
   const OPS = pdfjsLib.OPS, mul = pdfjsLib.Util.transform, n = pdf.numPages;
 
-  // first look: the same picture (as many pixels across and down) in the same place on many pages, at the edge of the page,
-  // is template artwork (a logo, a footer). A picture in the body of the page is content, even when it comes back slide after slide.
-  // A scanned page (handwritten notes, a photo, a PDF saved from this page) is one picture as big as the page with no words
-  // you can see on top of it, only maybe hidden ones from text recognition: that picture is the page, not a background.
-  const placed = [], seen = {}, scans = [];
+  // First look at each page, in the order it is drawn: where each picture goes (as far as it is clipped to), and the words you
+  // can see that are drawn after it on top of it, with their size and colour. A scanned page (handwritten notes, a photo, a PDF
+  // saved from this page) is one picture as big as the page with no words you can see after it, only maybe hidden ones from
+  // text recognition: that picture is the page, not a background.
+  const pages = [], scans = [], sizes = [];
   const TEXT = new Set([OPS.showText, OPS.showSpacedText, OPS.nextLineShowText, OPS.nextLineSetSpacingShowText]);
+  const IMAGE = new Set([OPS.paintImageXObject, OPS.paintInlineImageXObject, OPS.paintImageMaskXObject]);
+  const FILL = new Set([OPS.fill, OPS.eoFill, OPS.fillStroke, OPS.eoFillStroke, OPS.closeFillStroke, OPS.closeEOFillStroke]);
   for (let p = 1; p <= n; p++) {
     away(home); toast(`Reading ${name}: checking page ${p} of ${n}`);
-    const page = await pdf.getPage(p), vp = page.getViewport({scale: 1}), ops = await page.getOperatorList();
-    const keys = new Set(); let ctm = [1, 0, 0, 1, 0, 0], mode = 0, big = false, words = false, annot = 0; const stack = [];
+    const page = await pdf.getPage(p), vp = page.getViewport({scale: 1}), ops = await page.getOperatorList(), W = vp.width, H = vp.height;
+    sizes.push([W, H]);
+    const pics = [], runs = [], groups = [], fills = [], open = [], stack = [], I = [1, 0, 0, 1, 0, 0];
+    let ctm = I, clip = null, mode = 0, fill = [0, 0, 0], stroke = [0, 0, 0], fs = 0, lead = 0, tm = I, lm = I, path = null, annot = 0, masked = false;
+    // a box on the page (top-left origin, in points) from a box in the current drawing space
+    const boxOf = (m, x0, y0, x1, y1) => { const q = [[x0, y0], [x1, y0], [x0, y1], [x1, y1]].map(([x, y]) => vp.convertToViewportPoint(m[0]*x + m[2]*y + m[4], m[1]*x + m[3]*y + m[5]));
+      return {l: Math.min(...q.map(a => a[0])), r: Math.max(...q.map(a => a[0])), t: Math.min(...q.map(a => a[1])), b: Math.max(...q.map(a => a[1]))}; };
+    const cut = b => clip ? {l: Math.max(b.l, clip.l), r: Math.min(b.r, clip.r), t: Math.max(b.t, clip.t), b: Math.min(b.b, clip.b)} : b;
+    const state = () => [ctm, clip, mode, fill, stroke, fs, lead];
+    const back = s => { if (s) [ctm, clip, mode, fill, stroke, fs, lead] = s; };
+    const move = (x, y) => { lm = mul(lm, [1, 0, 0, 1, x, y]); tm = lm; };
+    // (raw: the box it is drawn in, to know it again while the page is drawn; b: the part of it that shows)
+    const picture = (k, raw, px) => { const b = cut(raw); if (b.r - b.l < 0.5 || b.b - b.t < 0.5) return; const q = {k, b, raw, px: px.map(Math.round).join('x')}; pics.push(q); if (open.length) groups[open[0]].pics.push(q); };
     for (let k = 0; k < ops.fnArray.length; k++) {
       const fn = ops.fnArray[k], a = ops.argsArray[k];
-      if (fn === OPS.save) stack.push([ctm, mode]);
-      else if (fn === OPS.restore) [ctm, mode] = stack.pop() || [ctm, mode];
+      if (fn === OPS.save) stack.push(state());
+      else if (fn === OPS.restore) back(stack.pop());
       else if (fn === OPS.transform) ctm = mul(ctm, a);
-      else if (fn === OPS.paintFormXObjectBegin) { stack.push([ctm, mode]); if (a[0]) ctm = mul(ctm, a[0]); }
-      else if (fn === OPS.paintFormXObjectEnd) [ctm, mode] = stack.pop() || [ctm, mode];
+      else if (fn === OPS.paintFormXObjectBegin) { stack.push(state()); if (a[0]) ctm = mul(ctm, a[0]); }
+      else if (fn === OPS.paintFormXObjectEnd) back(stack.pop());
+      // a transparency group is drawn on a canvas of its own and brought back whole: it can stand for the picture inside it
+      else if (fn === OPS.beginGroup) { const g = a[0], m = g.matrix ? mul(ctm, g.matrix) : ctm, bb = g.bbox || [0, 0, 0, 0]; const gb = boxOf(m, bb[0], bb[1], bb[2], bb[3]), raw = {l: Math.max(0, gb.l), t: Math.max(0, gb.t), r: Math.min(W, gb.r), b: Math.min(H, gb.b)}; groups.push({k, raw, b: cut(raw), mask: !!g.smask, pics: [], words: false}); open.push(groups.length - 1); }
+      else if (fn === OPS.endGroup) { const g = groups[open.pop()]; if (g) g.end = k; }
+      else if (fn === OPS.setGState) { if (a[0]?.some?.(e => e[0] === 'SMask' && e[1])) masked = true; }
+      else if (fn === OPS.constructPath) path = a[2];
+      else if ((fn === OPS.clip || fn === OPS.eoClip) && path && isFinite(path[0])) { const b = boxOf(ctm, path[0], path[2], path[1], path[3]); clip = clip ? cut(b) : b; }
       else if (fn === OPS.setTextRenderingMode) mode = a[0];
+      else if (fn === OPS.setFillRGBColor) fill = [a[0], a[1], a[2]];
+      else if (fn === OPS.setStrokeRGBColor) stroke = [a[0], a[1], a[2]];
+      else if (fn === OPS.setFont) fs = a[1];
+      else if (fn === OPS.setLeading) lead = a[0];
+      else if (fn === OPS.beginText) tm = lm = I;
+      else if (fn === OPS.setTextMatrix) tm = lm = a.length >= 6 ? a.slice(0, 6) : a[0];
+      else if (fn === OPS.moveText) move(a[0], a[1]);
+      else if (fn === OPS.setLeadingMoveText) { lead = -a[1]; move(a[0], a[1]); }
+      else if (fn === OPS.nextLine) move(0, -lead);
       else if (fn === OPS.beginAnnotation) annot++;
       else if (fn === OPS.endAnnotation) annot--;
-      // (modes 3 and 7 draw nothing: text recognition's hidden words. A comment or text box typed onto the scan doesn't count either)
-      else if (TEXT.has(fn) && mode !== 3 && mode !== 7 && !annot) words = true;
-      else if (fn === OPS.paintImageXObject || fn === OPS.paintInlineImageXObject || fn === OPS.paintImageMaskXObject) {
-        const pts = [[0,0],[1,0],[0,1],[1,1]].map(([x, y]) => vp.convertToViewportPoint(ctm[0]*x + ctm[2]*y + ctm[4], ctm[1]*x + ctm[3]*y + ctm[5]));
-        const b = {l: Math.min(...pts.map(q => q[0])), r: Math.max(...pts.map(q => q[0])), t: Math.min(...pts.map(q => q[1])), b: Math.max(...pts.map(q => q[1]))};
-        const px = fn === OPS.paintImageXObject ? a.slice(1, 3) : [a[0].width, a[0].height];
-        if (b.r < vp.width * 0.2 || b.l > vp.width * 0.8 || b.b < vp.height * 0.2 || b.t > vp.height * 0.8) keys.add(boxKey(b) + ',' + px.join('x'));
-        if (isBackground(b.l, b.t, b.r, b.b, vp.width, vp.height)) { big = true; words = false; }      // (words under it are covered up)
+      else if (TEXT.has(fn)) {
+        if (fn === OPS.nextLineShowText || fn === OPS.nextLineSetSpacingShowText) move(0, -lead);
+        const glyphs = [...(a[a.length - 1] || [])]; let w = 0, chars = 0;
+        for (const g of glyphs) if (typeof g === 'number') w -= g / 1000 * fs; else if (g) { w += (g.width || 0) / 1000 * fs; if ((g.unicode || '').trim()) chars++; }
+        // (modes 3 and 7 draw nothing: text recognition's hidden words. A comment or text box typed onto the page doesn't count either)
+        if (chars && mode !== 3 && mode !== 7 && !annot) {
+          const m = mul(ctm, tm), size = Math.abs(fs) * Math.hypot(m[2], m[3]), [x0, y0] = vp.convertToViewportPoint(m[4], m[5]), [x1, y1] = vp.convertToViewportPoint(m[0] * w + m[4], m[1] * w + m[5]);
+          const c = mode === 1 || mode === 5 ? stroke : fill;
+          runs.push({k, x: (x0 + x1) / 2, y: (y0 + y1) / 2 - size * 0.35, size, chars, light: 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2] > 185});
+          if (open.length) groups[open[0]].words = true;
+        }
+        tm = mul(tm, [1, 0, 0, 1, w, 0]);
       }
+      // a big filled shape behind the slide (a coloured background, a band, a header bar), left out unless pale words lie on it
+      else if (FILL.has(fn) && path && isFinite(path[0])) { const b = boxOf(ctm, path[0], path[2], path[1], path[3]); if (isBackground(b.l, b.t, b.r, b.b, W, H)) fills.push({k, b}); path = null; }
+      else if (IMAGE.has(fn)) picture(k, boxOf(ctm, 0, 0, 1, 1), fn === OPS.paintImageXObject ? a.slice(1, 3) : [a[0].width, a[0].height]);
+      // the same small picture many times over (tiles of a background): each tile is a picture
+      else if (fn === OPS.paintImageXObjectRepeat) for (let i = 0; i + 1 < a[3].length; i += 2) picture(k, boxOf(mul(ctm, [a[1], 0, 0, a[2], a[3][i], a[3][i + 1]]), 0, 0, 1, 1), [a[1], a[2]]);
     }
-    keys.forEach(k => (seen[k] ||= []).push(p));
-    placed.push(keys);
-    scans.push(big && !words);
+    // a picture made of tiles drawn one after another, edge to edge (touching, hardly overlapping, together filling their
+    // box), is looked at as one picture
+    let pieces = [];
+    const area = b => Math.max(0, b.r - b.l) * Math.max(0, b.b - b.t);
+    const meet = (a, b, d) => ({l: Math.max(a.l, b.l) - d, r: Math.min(a.r, b.r) + d, t: Math.max(a.t, b.t) - d, b: Math.min(a.b, b.b) + d});
+    for (const q of pics) {
+      const last = pieces[pieces.length - 1];
+      if (last && !runs.some(r => r.k > last.end && r.k < q.k) && last.all.some(o => { const m = meet(o.b, q.b, 2); return m.r > m.l && m.b > m.t; })
+        && last.all.every(o => area(meet(o.b, q.b, 0)) < area(q.b) * 0.05)) {
+        last.b = {l: Math.min(last.b.l, q.b.l), r: Math.max(last.b.r, q.b.r), t: Math.min(last.b.t, q.b.t), b: Math.max(last.b.b, q.b.b)}; last.area += area(q.b); last.end = q.k; last.all.push(q);
+      } else pieces.push({b: q.b, k: q.k, end: q.k, area: area(q.b), all: [q]});
+    }
+    pieces = pieces.flatMap(g => g.all.length < 2 || g.area >= area(g.b) * 0.9 ? [g] : g.all.map(q => ({b: q.b, k: q.k, end: q.k, area: area(q.b), all: [q]})));
+    // what lies on top of each: the words drawn after it inside it, the biggest words on the page (the title) among them or not,
+    // and whether they are pale (a fifth of them, or the title: white words on a dark photo, which would vanish on white paper)
+    const title = Math.max(0, ...runs.map(r => r.size));
+    const over = (b, k) => runs.filter(r => r.k > k && r.x >= b.l - 1 && r.x <= b.r + 1 && r.y >= b.t - 1 && r.y <= b.b + 1);
+    const pale = on => { const all = on.reduce((s, r) => s + r.chars, 0), light = on.reduce((s, r) => s + (r.light ? r.chars : 0), 0); return all > 0 && (light * 5 >= all || on.some(r => r.light && r.size >= title * 0.9)); };
+    for (const g of [...pieces, ...groups]) {
+      const on = over(g.b, g.end ?? g.k);
+      Object.assign(g, {under: on.reduce((s, r) => s + r.chars, 0), titled: on.some(r => r.size >= title * 0.9), light: pale(on)});
+      if (g.all) g.all.forEach(q => { q.piece = g; q.under = over(q.b, q.k).length; });
+    }
+    pages.push({pics, pieces, shades: fills.filter(f => pale(over(f.b, f.k))), groups: groups.filter(g => !g.mask && !g.words && g.pics.length && !(masked && g.b.r - g.b.l > W * 0.95 && g.b.b - g.b.t > H * 0.95))});
+    scans.push(pics.some(q => isBig(q.piece.b.l, q.piece.b.t, q.piece.b.r, q.piece.b.b, W, H) && !runs.some(r => r.k > q.k)));
   }
-  // on many pages, and not only on a run of slides in a row (a calculation built up step by step) unless that is half the document
-  const limit = n >= 3 ? Math.max(2, Math.ceil(n * 0.3)) : Infinity;
-  const template = k => { const s = seen[k]; return s.length >= limit && (s.length >= n / 2 || s[s.length - 1] - s[0] >= s.length); };
+  const marks = pages.map(g => g.pics.map(q => ({...q.b, k: q.px, under: q.under, q})));
+  markTemplates(marks, sizes[0][0], sizes[0][1]);
+  marks.flat().forEach(m => m.q.template = !!m.template);
 
   for (let p = 1; p <= n; p++) {
     away(home); toast(`Reading ${name}: page ${p} of ${n}`);
     const page = await pdf.getPage(p);
     const S = 2, v = page.getViewport({scale: S}), W = v.width / S, H = v.height / S;
-    const repeated = [...placed[p - 1]].filter(template).map(k => k.split(',').slice(0, 4).map(Number));
+    const plan = pdfPlan(pages[p - 1], W, H);
     // the page on a canvas of its own, without its backgrounds (big pictures are kept on a scanned page)
     const draw = async keepPictures => {
       const cv = document.createElement('canvas'); cv.width = v.width; cv.height = v.height;
       const ctx = cv.getContext('2d', {willReadFrequently: true});
       ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
-      const left = skipBackgrounds(ctx, S, W, H, repeated, keepPictures);
+      plan.forEach(e => e.used = false);
+      const left = skipBackgrounds(ctx, S, W, H, plan, keepPictures);
       await page.render({canvasContext: ctx, viewport: v, background: 'rgba(0,0,0,0)'}).promise;
       return {cv, ctx, left};
     };
@@ -4212,19 +4353,21 @@ async function readPdf(buf, name){
     // a big picture was left out and next to nothing is left (a scan with a small stamp or watermark in words on it): draw it after all
     if (!scan && left.pictures && nearlyBlank(px)) {
       cv.width = cv.height = 0; scan = true;
-      ({cv, ctx} = await draw(true));
+      ({cv, ctx, left} = await draw(true));
       px = ctx.getImageData(0, 0, cv.width, cv.height).data;
     }
     const bgKey = paperOf(px);
     const inked = i => Math.abs(px[i] - bgKey[0]) + Math.abs(px[i+1] - bgKey[1]) + Math.abs(px[i+2] - bgKey[2]) > 60;
-    // solid bands along the sides (and thin ones along top or bottom): paint them out
+    // solid bands along the sides (and thin ones along top or bottom): paint them out, but not on a side that a picture kept
+    // on the page reaches along half its length (a graph or a screenshot out to the edge of the slide, a scanned page)
     const colInk = x => { let c = 0, t = 0; for (let y = 0; y < cv.height; y += 4) { t++; if (inked((y * cv.width + x) * 4)) c++; } return c / t; };
     const rowInk = y => { let c = 0, t = 0; for (let x = 0; x < cv.width; x += 4) { t++; if (inked((y * cv.width + x) * 4)) c++; } return c / t; };
+    const reach = side => left.kept.some(b => side === 'l' ? b.l <= W * 0.12 && b.b - b.t > H / 2 : side === 'r' ? b.r >= W * 0.88 && b.b - b.t > H / 2 : side === 't' ? b.t <= H * 0.06 && b.r - b.l > W / 2 : b.b >= H * 0.94 && b.r - b.l > W / 2);
     ctx.fillStyle = `rgb(${bgKey.join(',')})`;
-    let L = 0; while (L < cv.width * 0.12 && colInk(L) > 0.8) L++;
-    let R = cv.width - 1; while (R > cv.width * 0.88 && colInk(R) > 0.8) R--;
-    let T = 0; while (T < cv.height * 0.06 && rowInk(T) > 0.8) T++;
-    let B = cv.height - 1; while (B > cv.height * 0.94 && rowInk(B) > 0.8) B--;
+    let L = 0; while (!reach('l') && L < cv.width * 0.12 && colInk(L) > 0.8) L++;
+    let R = cv.width - 1; while (!reach('r') && R > cv.width * 0.88 && colInk(R) > 0.8) R--;
+    let T = 0; while (!reach('t') && T < cv.height * 0.06 && rowInk(T) > 0.8) T++;
+    let B = cv.height - 1; while (!reach('b') && B > cv.height * 0.94 && rowInk(B) > 0.8) B--;
     if (L > 0 && L < cv.width * 0.12) ctx.fillRect(0, 0, L + 2, cv.height);
     if (R < cv.width - 1 && R > cv.width * 0.88) ctx.fillRect(R - 2, 0, cv.width - R + 2, cv.height);
     if (T > 0 && T < cv.height * 0.06) ctx.fillRect(0, 0, cv.width, T + 2);
@@ -4315,29 +4458,48 @@ function blankGaps(cv, S, inked, paper = false){
   }
   return gaps;
 }
-const boxKey = b => [b.l, b.t, b.r, b.b].map(x => Math.round(x / 4) * 4).join(',');
 
-// Leave out page backgrounds, edge banners and repeated template pictures while the page is drawn
-// (keepPictures: a scanned page, whose big picture is the page itself). Says how many big pictures it left out.
-function skipBackgrounds(ctx, S, W, H, repeated, keepPictures = false){
-  const left = {pictures: 0};
+// What to leave out of a PDF page, from the first look at it: for each picture (and each transparency group holding nothing
+// but pictures) its box and 'template' (left out even on a scanned page), 'drop', 'flat' (left out if it is only flat colour)
+// or 'keep'. Left out: template artwork; a band along an edge; a big picture with words on top of it when the page's title is
+// among them (a background behind the slide) or the picture is flat colour. Kept: any picture with pale words on it (they
+// would vanish on white paper), and every other picture, however big: a graph, a diagram, a screenshot, a photo with no words on it.
+function pdfPlan(pg, W, H){
+  const verdict = (b, g, template) => g.light ? 'keep' : template ? 'template' : isBand(b.l, b.t, b.r, b.b, W, H) ? 'drop'
+    : g.under && isBig(b.l, b.t, b.r, b.b, W, H) ? (g.titled ? 'drop' : 'flat') : 'keep';
+  const plan = pg.pics.map(q => {
+    const g = q.piece, template = g.all.filter(t => t.template).length * 2 > g.all.length;
+    return {b: q.raw, v: verdict(g.b, g, template), big: isBig(g.b.l, g.b.t, g.b.r, g.b.b, W, H)};
+  });
+  for (const g of pg.groups) plan.push({b: g.raw, group: true, v: verdict(g.b, g, g.pics.every(q => q.template)), big: isBig(g.b.l, g.b.t, g.b.r, g.b.b, W, H)});
+  for (const f of pg.shades) plan.push({b: f.b, fill: true, v: 'keep'});          // (a big filled shape with pale words on it)
+  return plan;
+}
+// Leave out page backgrounds, edge banners and template pictures while the page is drawn, as the plan says (keepPictures: a
+// scanned page, whose big picture is the page itself). Says how many big pictures it left out, and the boxes of those it kept.
+function skipBackgrounds(ctx, S, W, H, plan = [], keepPictures = false){
+  const left = {pictures: 0, kept: []};
   const devBox = pts => { const m = ctx.getTransform(); const q = pts.map(([x, y]) => [(m.a*x + m.c*y + m.e) / S, (m.b*x + m.d*y + m.f) / S]);
     return {l: Math.min(...q.map(a => a[0])), r: Math.max(...q.map(a => a[0])), t: Math.min(...q.map(a => a[1])), b: Math.max(...q.map(a => a[1]))}; };
-  const isRepeat = b => repeated.some(r => Math.abs(r[0] - b.l) < 6 && Math.abs(r[1] - b.t) < 6 && Math.abs(r[2] - b.r) < 6 && Math.abs(r[3] - b.b) < 6);
+  const near = (e, b) => Math.abs(e.b.l - b.l) < 3 && Math.abs(e.b.t - b.t) < 3 && Math.abs(e.b.r - b.r) < 3 && Math.abs(e.b.b - b.b) < 3;
   const drawImage = ctx.drawImage.bind(ctx);
   // pdf.js draws a transparency group, or drawing under a soft mask, on a canvas of its own and brings it back whole at 0,0:
-  // that holds the page itself, text and all, so it is only left out when it is a template picture
+  // that holds the page itself, text and all, so it is only left out when the first look found a group of pictures there
   ctx.drawImage = function(img, ...a){
     try {
       let dx, dy, dw, dh;
       if (a.length >= 8) [dx, dy, dw, dh] = a.slice(4, 8); else if (a.length >= 4) [dx, dy, dw, dh] = a; else { dx = a[0]; dy = a[1]; dw = img.width; dh = img.height; }
       const b = devBox([[dx, dy], [dx + dw, dy], [dx, dy + dh], [dx + dw, dy + dh]]), layer = a.length < 3 && !dx && !dy;
-      if (isRepeat(b)) return;
-      if (!layer && !keepPictures && isBackground(b.l, b.t, b.r, b.b, W, H)) { left.pictures++; return; }
+      const e = plan.find(e => !e.used && !!e.group === layer && near(e, b));
+      if (e) {
+        e.used = true;
+        if (e.v === 'template' || (!keepPictures && (e.v === 'drop' || (e.v === 'flat' && flatPicture(img))))) { if (e.v !== 'template' && e.big) left.pictures++; return; }
+      } else if (!layer && !keepPictures && isBand(b.l, b.t, b.r, b.b, W, H)) return;
+      if (!layer || e) left.kept.push(b);
     } catch {}
     return drawImage(img, ...a);
   };
-  // big filled shapes behind the slide (coloured backgrounds and side bands)
+  // big filled shapes behind the slide (coloured backgrounds, side bands, header bars), unless pale words lie on them
   let pb = null;
   const grow = (x, y) => { const b = devBox([[x, y]]); pb = pb ? {l: Math.min(pb.l, b.l), r: Math.max(pb.r, b.r), t: Math.min(pb.t, b.t), b: Math.max(pb.b, b.b)} : b; };
   for (const fnName of ['moveTo', 'lineTo']) { const f = ctx[fnName].bind(ctx); ctx[fnName] = (x, y) => { grow(x, y); return f(x, y); }; }
@@ -4347,7 +4509,7 @@ function skipBackgrounds(ctx, S, W, H, repeated, keepPictures = false){
   const begin = ctx.beginPath.bind(ctx); ctx.beginPath = () => { pb = null; return begin(); };
   const fill = ctx.fill.bind(ctx);
   ctx.fill = (...a) => {
-    if (!(a[0] instanceof Path2D) && pb && isBackground(pb.l, pb.t, pb.r, pb.b, W, H)) return;
+    if (!(a[0] instanceof Path2D) && pb && isBackground(pb.l, pb.t, pb.r, pb.b, W, H)) { if (!plan.some(e => e.fill && near(e, pb))) return; left.kept.push(pb); }
     return fill(...a);
   };
   return left;
@@ -4808,20 +4970,73 @@ function mergeStrips(parent){
   }
 }
 
-// background and decoration: covers most of the slide, or a big/stretched strip touching an edge
+// background and decoration by its place alone: covers most of the slide, or a big strip or a band at an edge (filled shapes)
 function isBackground(x0, y0, x1, y1, W, H){
-  const w = x1 - x0, h = y1 - y0; if (w <= 0 || h <= 0) return true;
-  const area = (w * h) / (W * H), stretch = Math.max(w / h, h / w);
-  const edge = x0 <= W * 0.01 || x1 >= W * 0.99 || y0 <= H * 0.01 || y1 >= H * 0.99;
-  return area > 0.6 || (edge && (area > 0.2 || stretch > 4));
+  return x1 - x0 <= 0 || y1 - y0 <= 0 || isBig(x0, y0, x1, y1, W, H) || isBand(x0, y0, x1, y1, W, H);
 }
-// template artwork: the same picture in the same place on many slides
-function dropRepeats(cards){
-  if (cards.length < 3) return;
-  const count = {};
-  cards.forEach(c => new Set([...c.querySelectorAll('img[data-k]')].map(i => i.dataset.k)).forEach(k => count[k] = (count[k] || 0) + 1));
-  const limit = Math.max(2, Math.ceil(cards.length * 0.3));
-  cards.forEach(c => c.querySelectorAll('img[data-k]').forEach(i => { if (count[i.dataset.k] >= limit) i.remove(); }));
+// big: most of the page, or a big part of it reaching an edge. A big picture is only a background when words lie on top of it
+function isBig(x0, y0, x1, y1, W, H){
+  const w = x1 - x0, h = y1 - y0; if (w <= 0 || h <= 0) return false;
+  const area = (w * h) / (W * H), edge = x0 <= W * 0.01 || x1 >= W * 0.99 || y0 <= H * 0.01 || y1 >= H * 0.99;
+  return area > 0.6 || (edge && area > 0.2);
+}
+// a band along a side: a long thin strip touching an edge, or one running most of the way along a side within 3% of it
+// (a coloured header bar set in a little from the edges)
+function isBand(x0, y0, x1, y1, W, H){
+  const w = x1 - x0, h = y1 - y0; if (w <= 0 || h <= 0) return false;
+  if (Math.max(w / h, h / w) <= 4) return false;
+  if (x0 <= W * 0.01 || x1 >= W * 0.99 || y0 <= H * 0.01 || y1 >= H * 0.99) return true;
+  return w > h ? w > W * 0.7 && (y0 <= H * 0.03 || y1 >= H * 0.97) : h > H * 0.7 && (x0 <= W * 0.03 || x1 >= W * 0.97);
+}
+// a picture that is flat colour (a gradient, a tint, a soft texture), not detail: under 0.3% of it is a sharp edge, looked at
+// up to 800 pixels across (a graph's thinnest line, a label, a photo or a screenshot all have far more)
+function flatPicture(img){
+  try {
+    const w0 = img?.naturalWidth || img?.width, h0 = img?.naturalHeight || img?.height; if (!w0 || !h0) return false;
+    const k = Math.min(1, 800 / Math.max(w0, h0)), w = Math.max(2, Math.round(w0 * k)), h = Math.max(2, Math.round(h0 * k));
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const c = cv.getContext('2d', {willReadFrequently: true}); c.drawImage(img, 0, 0, w, h);
+    const d = c.getImageData(0, 0, w, h).data; cv.width = cv.height = 0;
+    const lum = i => d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11 + (255 - d[i + 3]);
+    let sharp = 0;
+    for (let y = 0; y < h - 1; y++) for (let x = 0, i = y * w * 4; x < w - 1; x++, i += 4) { const v = lum(i); if (Math.abs(v - lum(i + 4)) > 30 || Math.abs(v - lum(i + w * 4)) > 30) sharp++; }
+    return sharp < (w - 1) * (h - 1) * 0.003;
+  } catch { return false; }
+}
+// A picture on a slide is its background when it is a band along an edge, or big with the slide's words on top of it: its
+// title among them (or, on a slide with no title, most of its words). on: the shapes with words drawn on top of it (after it);
+// said: all the slide's shapes with words ({phType}). A big picture with no words on it (a graph, a screenshot, a photo) is content.
+function ppBehind(l, t, r, b, W, H, on, said){
+  if (isBand(l, t, r, b, W, H)) return true;
+  if (!on.length || !isBig(l, t, r, b, W, H)) return false;
+  const title = s => /^(title|ctrTitle)$/.test(s.phType || '');
+  return said.some(title) ? on.some(title) : on.length * 2 > said.length;
+}
+// Template artwork: the same picture (k: the same file, or as many pixels across and down) in about the same place (within 2%
+// of the page) on many pages. pages: for each page its pictures, {k, l, t, r, b, under: words lie on top of it}; marks each
+// picture that is template artwork (template: true).
+function markTemplates(pages, W, H){
+  const n = pages.length, groups = [];
+  pages.forEach((pics, p) => pics.forEach(q => {
+    let g = groups.find(g => g.k === q.k && Math.abs(g.l - q.l) < W * 0.02 && Math.abs(g.r - q.r) < W * 0.02 && Math.abs(g.t - q.t) < H * 0.02 && Math.abs(g.b - q.b) < H * 0.02);
+    if (!g) groups.push(g = {k: q.k, l: q.l, t: q.t, r: q.r, b: q.b, pages: [], under: false, all: []});
+    if (g.pages[g.pages.length - 1] !== p) g.pages.push(p);
+    g.under ||= !!q.under; g.all.push(q);
+  }));
+  for (const g of groups) {
+    const edge = g.r < W * 0.2 || g.l > W * 0.8 || g.b < H * 0.2 || g.t > H * 0.8;
+    if (templateRun(g.pages, n, edge, g.under)) g.all.forEach(q => q.template = true);
+  }
+}
+// At the edge of the page (a logo, a footer): on 30% of the pages, and not only on a run of pages in a row (a calculation
+// built up step by step) unless that is half the document. In the body of the page (a watermark, a logo in the middle): only
+// with words on top of it, on 60% of the pages, and not only on a run in a row unless that is nearly all of them. A graph
+// shown slide after slide while it is built up has no words on it and is content, however often it comes back.
+function templateRun(pages, n, edge, under){
+  if (n < 3) return false;
+  const c = pages.length, gap = pages[c - 1] - pages[0] >= c;
+  if (edge) return c >= Math.max(2, Math.ceil(n * 0.3)) && (c >= n / 2 || gap);
+  return under && c >= Math.max(3, Math.ceil(n * 0.6)) && (gap || c >= n * 0.8);
 }
 // ---------- Word ----------
 // a library from the internet; if it fails, it is asked for once more, past any saved copy (which could be a broken download)
