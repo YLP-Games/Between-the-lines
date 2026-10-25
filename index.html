@@ -1741,6 +1741,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
 <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
 <symbol id="i-focus" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
 <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+<symbol id="i-file-in" viewBox="0 0 24 24"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></symbol>
 <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h8"/><path d="M8 17h5"/></symbol>
 <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
 <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
@@ -1943,8 +1944,9 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       </div><span class="cap">Annotate</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row">
-        <button class="btn" id="addPageBtn" title="Add a blank page after the current page (the one you last clicked)"><svg class="i"><use href="#i-page-add"/></svg>Blank page after</button>
-        <button class="btn" id="addHereBtn" title="Add another file to the end of this notebook, instead of opening it as a new one"><svg class="i"><use href="#i-file"/></svg>Add a file here</button>
+        <button class="btn" id="addPageBtn" title="Add a blank page after the current page (the one you last clicked)"><svg class="i"><use href="#i-page-add"/></svg>Page after</button>
+        <button class="btn" id="addFileAfterBtn" title="Add a file (PDF, PowerPoint, Word or a picture) after the current page (the one you last clicked), between it and the next page"><svg class="i"><use href="#i-file-in"/></svg>File after</button>
+        <button class="btn" id="addHereBtn" title="Add another file to the end of this notebook, instead of opening it as a new one"><svg class="i"><use href="#i-file"/></svg>File at end</button>
       </div><span class="cap">Pages</span></div>
       <span class="sep"></span>
       <p class="tip">On a PDF page, point between two lines and press “+ Add here” for a note (right-click it for a sticky note or an equation). In a note, type / for the same options.</p>
@@ -2117,7 +2119,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
     <section>
       <h3>How to use it</h3>
       <ul class="howto">
-        <li><b>Open</b> a PDF, PowerPoint (.pptx) or Word (.docx) file, or drop one anywhere on the page. Each file becomes its own <b>notebook</b> in the sidebar; <b>Insert › Add a file here</b> adds one to the notebook you're in instead.</li>
+        <li><b>Open</b> a PDF, PowerPoint (.pptx) or Word (.docx) file, or drop one anywhere on the page. Each file becomes its own <b>notebook</b> in the sidebar; <b>Insert › File at end</b> adds one to the end of the notebook you're in instead, and <b>Insert › File after</b> puts it right after the current page.</li>
         <li>PowerPoint files open as the slides look: each slide is a page with its text you can select, and you write between the lines as on a PDF. Complex animations and SmartArt may still differ; for an exact copy, save the slides as a PDF (File › Save as › PDF) and open that. Choose <b>Editable text</b> under <b>Open PowerPoint as</b> (View tab, or below) to rebuild the slides as text you can type inside instead. The presenter’s speaker notes go on each slide’s side page (<b>View › Side notes</b>), unless <b>PowerPoint speaker notes on side pages</b> is off below.</li>
         <li>Word files keep their fonts, colours, tables, headers and pictures as editable text. A few pictures (old EMF or WMF drawings, for example) may not come through: save the file as a PDF and open that, or add the picture with Insert › Picture, video or sound.</li>
         <li>On a PDF page, point at a spot and press <b>+ Add here</b> to add a note there (the page opens up between the lines). <b>Right-click</b> the button (press and hold on a touch screen) to pick <b>Note</b>, <b>Sticky note</b> or <b>Equation</b>. On other pages, click where you want to write. In a note, type <b>/</b> for the same choices.</li>
@@ -3258,10 +3260,19 @@ document.addEventListener('focusout', e => {
 });
 
 /* ================= reading files ================= */
+// a file's pages go at the end of the notebook, or with "File after" in front of whatever followed that page
+// (the next page, or the next file's heading), so they show up in their place while the file is read
+let pagesBefore = null;
+const putPage = el => { if (pagesBefore?.isConnected) pagesBefore.before(el); else main.append(el); };
+// what comes after a page (and its side page) in the notebook, in whatever layout it is shown: null at the end
+function nextAfterPage(card){
+  const all = [...main.querySelectorAll('.slide, .file-head, .pptx-tip')].filter(e => !e.closest('.sidewrap') && !(card.dataset.pid && e.classList.contains('cont') && e.dataset.pid === card.dataset.pid));
+  return all[all.indexOf(card) + 1] || null;
+}
 function slideCard(){
   const s = document.createElement('section'); s.className = 'slide';
   s.innerHTML = `<div class="content"></div>`;
-  main.append(s); return s;
+  putPage(s); return s;
 }
 const isLight = hex => { const n = parseInt(hex, 16); const r = n >> 16, g = (n >> 8) & 255, b = n & 255; return (0.299*r + 0.587*g + 0.114*b) > 215; };
 const px = pt => Math.round(Math.max(12, Math.min(44, pt)));
@@ -4521,7 +4532,7 @@ async function addPageCard(cv, S, W, H, gaps, items, quality = 0.88, home = curI
   card.style.setProperty('--pg', `url(${pic ? await addAsset(pic) : cv.toDataURL('image/jpeg', quality)})`);
   card.dataset.text = JSON.stringify(items);
   card.append(makeStrip(card, 0, H));
-  away(home); main.append(card);
+  away(home); putPage(card);
   return card;
 }
 // the paper's colour: the most common colour on the page
@@ -4774,7 +4785,7 @@ function markPage(on, del){
 const delBtn = $('#delPageBtn');
 let removeTimer = null;
 function resetRemove(){ clearTimeout(removeTimer); delBtn.querySelector('span').textContent = 'Remove page'; delBtn.classList.remove('sure'); }
-for (const [b, del] of [[$('#addPageBtn'), false], [delBtn, true]]) {
+for (const [b, del] of [[$('#addPageBtn'), false], [$('#addFileAfterBtn'), false], [delBtn, true]]) {
   b.addEventListener('mouseenter', () => markPage(true, del)); b.addEventListener('focus', () => markPage(true, del));
   b.addEventListener('mouseleave', () => { if (!delBtn.classList.contains('sure')) markPage(false); }); b.addEventListener('blur', () => markPage(false));
 }
@@ -5306,12 +5317,22 @@ async function gifAnimated(blob){
 }
 
 // open files (from Open, the sidebar, or dropped on the page): each file becomes its own notebook,
-// unless "Add a file here" was used (or the notebook you're in is still empty)
+// unless "File at end" was used (or the notebook you're in is still empty). here can also be a page: "File after"
+// puts the files right after it, as "Page after" does with a blank page, and the rest of the file that page is in gets its heading again
 async function openFiles(picked, here = false){
   if (!picked.length) return;
   toast(`Opening ${picked.length > 1 ? picked.length + ' files' : '“' + picked[0].name + '”'}…`);
   await Promise.race([ready, new Promise(r => setTimeout(r, 4000))]);      // start-up should long be done; never wait on it for ever
   let hadPages = !!main.querySelector('.slide'), first = null;
+  const after = here?.isConnected ? here : null, nth = after ? [...main.querySelectorAll('.slide')].indexOf(after) + 1 : 0;
+  let cont = null, added = 0, saidNotes = false;
+  if (after) {
+    await flushSave(); hist.hold = true;              // (the whole insert is one step for Back)
+    pagesBefore = nextAfterPage(after);
+    const own = [...main.querySelectorAll('.file-head')].filter(h => after.compareDocumentPosition(h) & Node.DOCUMENT_POSITION_PRECEDING).pop();
+    if (own && pagesBefore?.classList.contains('slide')) { cont = own.cloneNode(true); pagesBefore.before(cont); pagesBefore = cont; }
+  }
+  try {
   for (const f of picked) {
     const ext = f.name.split('.').pop().toLowerCase(), notebook = ext === 'html' || ext === 'htm';
     const read = notebook ? null : {pptx: readPptx, pdf: readPdf, docx: readDocx, md: readMarkdown, markdown: readMarkdown, txt: readMarkdown}[ext] || (isPicture(f, ext) ? readImage : null);
@@ -5330,29 +5351,37 @@ async function openFiles(picked, here = false){
     }
     const head = document.createElement('h2'), home = curId; head.className = 'file-head';
     head.textContent = f.name.replace(/\.[^.]+$/, '').replace(/_+/g, ' ').trim();
-    main.append(head);
+    putPage(head);
+    const stop = pagesBefore, hasPages = () => (head.nextElementSibling || null) !== stop;      // (what came after: nothing, or the page after "File after")
     try {
       const buf = read === readImage ? null : await f.arrayBuffer(); away(home);
       const said = await (read === readImage ? readImage(f, home) : read(buf, f.name));
-      if (ext === 'pptx' && head.nextElementSibling && pref.get('pptx-tip') !== 'off' && tipsOn()) head.after(pptxTip(pptxMode(), f));
-      first ??= head;
-      toast(ext === 'pptx' && said ? PPTX_NOTES_SAID : ''); saveSoon();
+      if (ext === 'pptx' && hasPages() && pref.get('pptx-tip') !== 'off' && tipsOn()) head.after(pptxTip(pptxMode(), f));
+      first ??= head; if (hasPages()) added++;
+      saidNotes = ext === 'pptx' && !!said;
+      toast(saidNotes ? PPTX_NOTES_SAID : ''); saveSoon();
     } catch (err) {
       if (err.moved) { toast(`Stopped opening “${f.name}” because you switched to another notebook.`); return; }
       console.error(err); toast(`“${f.name}” couldn't be read${err?.message ? ` (${err.message})` : ''}. Try saving it as a PDF and opening that.`);
-      if (!head.nextElementSibling) head.remove();
+      if (!hasPages()) head.remove();
     }
+  }
+  } finally {
+    pagesBefore = null;
+    if (after) { hist.hold = false; if (cont && !added) cont.remove(); }
   }
   if (!main.children.length) showEmpty();
   paginateView();
   saveSoon();
   if (hadPages && first?.isConnected) first.scrollIntoView({block: 'start', behavior: smoothScroll()});
+  if (after && added && !saidNotes) toast(`Added after page ${nth}. Press Back (Ctrl+Z) to take it out again.`);
 }
-let addHere = false;             // the next file picked is added to this notebook
+let addHere = false;             // the next file picked is added to this notebook (true: at the end; a page: right after that page)
 $('#file').onchange = e => { const picked = [...e.target.files]; e.target.value = ''; openFiles(picked, addHere); addHere = false; };
 const pickFiles = here => { addHere = here; $('#file').click(); };
 $('#openBtn').onclick = () => pickFiles(false);
 $('#addHereBtn').onclick = () => pickFiles(true);
+$('#addFileAfterBtn').onclick = () => { markPage(false); pickFiles(currentCard() || true); };
 main.addEventListener('click', e => { if (e.target.closest('[data-open]')) pickFiles(false); });
 const smoothScroll = () => matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
 
@@ -7155,13 +7184,14 @@ const hist = {stack: [], i: -1, keys: new Map(), blobs: new Map()};
 const packDoc = d => d.replace(/data:[^"'&)\s]{1500,}/g, u => { let k = hist.keys.get(u); if (!k) { k = '@@media' + hist.keys.size + '@@'; hist.keys.set(u, k); hist.blobs.set(k, u); } return k; });
 const unpackDoc = d => d.replace(/@@media\d+@@/g, k => hist.blobs.get(k) || k);
 function snapshot(doc){
+  if (hist.hold) return;                          // (a file going in after a page is saved as it comes, but is one step)
   const d = packDoc(doc);
   if (d === hist.stack[hist.i]) return;
   hist.stack.length = hist.i + 1; hist.stack.push(d);
   if (hist.stack.length > 100) hist.stack.shift();
   hist.i = hist.stack.length - 1; updateUndoBtns();
 }
-function resetHistory(doc){ hist.stack = []; hist.i = -1; snapshot(doc); }
+function resetHistory(doc){ hist.stack = []; hist.i = -1; hist.hold = false; snapshot(doc); }
 function updateUndoBtns(){ $('#undoBtn').disabled = reading || hist.i <= 0; $('#redoBtn').disabled = reading || hist.i >= hist.stack.length - 1; }
 function stepHistory(by){
   if (reading) return;
@@ -11185,6 +11215,9 @@ const CK_ACTIONS = [
   {id: 'table', label: 'Insert table', ico: 'table', words: 'grid rows columns cells', ok: () => !reading, run: () => wtAdd('table')},
   {id: 'journal', label: 'Insert journal entry', ico: 'journal', words: 'accounting debit credit dr cr ledger je', ok: () => !reading, run: () => wtAdd('journal')},
   {id: 'templates', label: 'Templates…', ico: 'library', words: 'template gallery formulas formula library subjects ready-made layouts', ok: () => !reading, run: () => tplOpen()},
+  {id: 'blankafter', label: 'Blank page after this page', ico: 'page-add', words: 'insert add empty blank page between', ok: () => ckPages() && !reading, run: ckClick('#addPageBtn')},
+  {id: 'fileafter', label: 'Insert a file after this page', ico: 'file-in', words: 'add pdf powerpoint pptx word docx picture image pages between insert here', ok: () => ckPages() && !reading, run: ckClick('#addFileAfterBtn')},
+  {id: 'addhere', label: 'Add a file to the end of this notebook', ico: 'file', words: 'insert append pdf powerpoint pptx word docx picture image pages here', ok: () => !reading, run: ckClick('#addHereBtn')},
 ];
 const ck = {open: false, beside: false, k: 0, items: [], key: null, prev: null, pages: null, cache: new Map(), loading: false, load: Promise.resolve(), mx: 0, my: 0};
 const ckScrim = Object.assign(document.createElement('div'), {className: 'ckscrim', hidden: true});
