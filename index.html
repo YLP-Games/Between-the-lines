@@ -695,10 +695,10 @@ body.focus .peekzone{display:none}
 .favstar[aria-pressed="true"] .i{fill:currentColor}
 /* a favourite swatch shows a × badge in its corner while you point at it or tab to it */
 .fvw{position:relative;display:inline-flex;flex:none}
-.favx{position:absolute;top:-2px;right:-2px;z-index:1;width:15px;height:15px;padding:0;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--pencil);border-radius:50%;background:var(--surface);color:var(--ink);font:700 12px/1 var(--ui);cursor:pointer;opacity:0;pointer-events:none;transition:opacity .12s}
-.fvw:focus-within .favx{opacity:1;pointer-events:auto}
-@media (any-hover:hover){.fvw:hover .favx{opacity:1;pointer-events:auto}}      /* (a finger presses and holds a favourite to remove it instead) */
-.favx:hover{background:var(--danger);border-color:var(--danger);color:var(--surface)}
+.favx,.hfx{position:absolute;top:-2px;right:-2px;z-index:1;width:15px;height:15px;padding:0;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--pencil);border-radius:50%;background:var(--surface);color:var(--ink);font:700 12px/1 var(--ui);cursor:pointer;opacity:0;pointer-events:none;transition:opacity .12s}
+.fvw:focus-within :is(.favx,.hfx){opacity:1;pointer-events:auto}
+@media (any-hover:hover){.fvw:hover :is(.favx,.hfx){opacity:1;pointer-events:auto}}      /* (a finger presses and holds a favourite to remove it instead) */
+:is(.favx,.hfx):hover{background:var(--danger);border-color:var(--danger);color:var(--surface)}
 .chippop .favx{top:-6px;right:-6px}
 /* New notes (in Help & settings) */
 .newrow{display:flex;align-items:center;gap:8px;margin:0 0 8px}
@@ -971,9 +971,47 @@ body.on-mark .strip,body.on-mark .tl{cursor:pointer}
 }
 @media (max-width:640px){.drawbar input[type=range]{width:110px}}
 /* selecting words on a page: the bar with highlight colours and Comment */
-.annobar{z-index:52;display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:12px;font:15px var(--ui);box-sizing:border-box;max-width:calc(100vw - 16px)}
+.annobar{z-index:52;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:5px 8px;border-radius:12px;font:15px var(--ui);box-sizing:border-box;max-width:calc(100vw - 16px)}
+@media (max-width:640px){.annobar .asep{display:none}.annobar .aacts{flex-basis:100%}.annobar .hwrap{flex:1 1 0}}      /* on a phone Comment and Link go on a second row */
 .hdot{flex:none;width:26px;height:26px;padding:0;border-radius:50%;border:1.5px solid var(--pencil);background:var(--c);cursor:pointer}
-.hdots{display:flex;flex-wrap:wrap;gap:6px}
+/* the colours scroll sideways in one row (your favourites first); the arrows show when there are more that way */
+.hwrap{flex:0 1 auto;min-width:96px;max-width:290px;display:flex;align-items:center}
+.hdots{flex:0 1 auto;min-width:0;display:flex;align-items:center;gap:6px;padding:5px 4px;overflow-x:auto;overscroll-behavior-x:contain;scroll-behavior:smooth;scrollbar-width:none}
+.hdots::-webkit-scrollbar{display:none}
+.hwrap.more-l .hdots{-webkit-mask-image:linear-gradient(90deg,transparent,#000 34px);mask-image:linear-gradient(90deg,transparent,#000 34px)}
+.hwrap.more-r .hdots{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent)}
+.hwrap.more-l.more-r .hdots{-webkit-mask-image:linear-gradient(90deg,transparent,#000 34px,#000 calc(100% - 34px),transparent);mask-image:linear-gradient(90deg,transparent,#000 34px,#000 calc(100% - 34px),transparent)}
+.hsl{flex:none;visibility:hidden;width:20px;height:20px;padding:0;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--line-strong);border-radius:50%;background:var(--surface);color:var(--ink);cursor:pointer}
+.hsl .i{width:13px;height:13px}
+.hsl[data-dir="-1"] .i{transform:scaleX(-1)}
+.hwrap.more-l .hsl[data-dir="-1"],.hwrap.more-r .hsl[data-dir="1"]{visibility:visible}
+.hfsep{flex:none;width:1.5px;align-self:stretch;margin:2px 1px;background:var(--line-strong)}
+.hfvw .hfx{top:-5px;right:-5px}
+/* any colour of your own (a rainbow until it is the colour in use), and the star that keeps it */
+.annobar input[type=color]{flex:none;width:28px;height:28px;padding:0;border:1.5px solid var(--pencil);border-radius:50%;overflow:hidden;background:none;cursor:pointer}
+.annobar input[type=color]::-webkit-color-swatch-wrapper{padding:2px}
+.annobar input[type=color]::-webkit-color-swatch{border:0;border-radius:50%}
+.annobar input[type=color]::-moz-color-swatch{border:0;border-radius:50%}
+.annobar input[type=color]:not(.on)::-webkit-color-swatch{background:conic-gradient(#ffa8a8,#ffe066,#a7e3a1,#a5d8ff,#d0bfff,#ffa8a8)!important}
+.annobar input[type=color]:not(.on)::-moz-color-swatch{background:conic-gradient(#ffa8a8,#ffe066,#a7e3a1,#a5d8ff,#d0bfff,#ffa8a8)!important}
+.annobar input[type=color].on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)} /* taste-skill-ignore: a ring marking the colour picked */
+.annobar .favstar{flex:none}
+.aacts{display:flex;align-items:center;gap:6px}
+.annopop .hcrow{flex-wrap:nowrap;gap:4px}
+.annopop .hcrow .hwrap{flex:1 1 0;max-width:none}
+.annopop .hcrow[hidden]{display:none}
+.annopop input[type=color]{flex:none;width:28px;height:28px;padding:0;border:1.5px solid var(--pencil);border-radius:50%;overflow:hidden;background:none;cursor:pointer}
+.annopop input[type=color]::-webkit-color-swatch-wrapper{padding:2px}
+.annopop input[type=color]::-webkit-color-swatch{border:0;border-radius:50%}
+.annopop input[type=color]::-moz-color-swatch{border:0;border-radius:50%}
+.annopop input[type=color]:not(.on)::-webkit-color-swatch{background:conic-gradient(#ffa8a8,#ffe066,#a7e3a1,#a5d8ff,#d0bfff,#ffa8a8)!important}
+.annopop input[type=color]:not(.on)::-moz-color-swatch{background:conic-gradient(#ffa8a8,#ffe066,#a7e3a1,#a5d8ff,#d0bfff,#ffa8a8)!important}
+.annopop input[type=color].on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)} /* taste-skill-ignore: a ring marking the colour picked */
+/* a line to a side note can be clicked: a wide, invisible stroke along it */
+.sidelines .sh{fill:none;stroke:transparent;stroke-width:14px;pointer-events:stroke;cursor:pointer}
+body.drawing .sidelines .sh{pointer-events:none}
+.linepop .ldots{flex-basis:100%}
+.linepop .ldots .lbl{flex-basis:100%}
 /* the colour of the line from a highlight to its side note: "Same as highlight" shows a wheel of highlight colours */
 .ldot{flex:none;width:22px;height:22px;padding:0;border-radius:50%;border:2px solid var(--surface);outline:1.5px solid var(--line-strong);background:var(--c);cursor:pointer}
 .ldot[data-lc="hl"]{background:conic-gradient(#ffe066 0 25%,#ffa8a8 0 50%,#a5d8ff 0 75%,#a7e3a1 0)}
@@ -1581,7 +1619,15 @@ main.reading .cd-lang::after,main.pdfpaper .cd-lang::after{content:""}
   .sw::before{width:22px;height:22px}
   .chippop .cc,.hdot{width:44px;height:44px;padding:9px;border:none;background-clip:content-box!important}
   .chippop .cc[aria-pressed="true"],.hdot[aria-pressed="true"]{box-shadow:none;outline:2px solid var(--accent);outline-offset:-5px}
-  .hdots{display:grid;grid-template-columns:repeat(4,44px);gap:0}
+  .hdots{gap:0;padding:0}
+  .hwrap{min-width:132px;max-width:264px}
+  .hsl{display:none!important}
+  :is(.annobar,.annopop) input[type=color]{width:44px;height:44px;border:none;padding:9px;background-clip:content-box}
+  :is(.annobar,.annopop) input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+  :is(.annobar,.annopop) input[type=color]::-webkit-color-swatch{border:1.5px solid var(--pencil)}
+  :is(.annobar,.annopop) input[type=color].on{box-shadow:none;outline:2px solid var(--accent);outline-offset:-5px}
+  .annobar .favstar{min-width:44px;height:44px}
+  .hfvw .hfx{top:2px;right:2px}
   .ldot{width:40px;height:40px;border-width:9px;outline-offset:-9px}
   .ldot[aria-pressed="true"]{outline-offset:-7px}
   .chippop .row{max-width:240px}
@@ -8476,7 +8522,8 @@ main.addEventListener('touchstart', e => {
 }, {passive: false});
 
 // ---------- highlights and comments ----------
-const HL_COLORS = [['#ffe066', 'Yellow'], ['#ffc078', 'Orange'], ['#ffa8a8', 'Red'], ['#ffc9de', 'Pink'], ['#d0bfff', 'Purple'], ['#a5d8ff', 'Blue'], ['#96f2d7', 'Teal'], ['#a7e3a1', 'Green']];
+const HL_COLORS = [['#ffe066', 'Yellow'], ['#ffd8a8', 'Peach'], ['#ffc078', 'Orange'], ['#ffa8a8', 'Red'], ['#ffc9de', 'Pink'], ['#eebefa', 'Mauve'], ['#d0bfff', 'Purple'], ['#bac8ff', 'Indigo'],
+  ['#a5d8ff', 'Blue'], ['#99e9f2', 'Cyan'], ['#96f2d7', 'Teal'], ['#a7e3a1', 'Green'], ['#d8f5a2', 'Lime'], ['#e9d8c4', 'Sand'], ['#dee2e6', 'Grey']];
 let hlCol = inkHex(pref.get('hl-colour'), '#ffe066');
 const newMarkId = () => 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const quoteOf = t => { t = (t || '').replace(/\s+/g, ' ').trim(); return t.length > 300 ? t.slice(0, 300) : t; };
@@ -8646,9 +8693,80 @@ main.addEventListener('mousemove', e => {
 // ---------- the bar that shows when you select words ----------
 const annoBar = document.createElement('div');
 annoBar.id = 'annoBar'; annoBar.className = 'pop annobar'; annoBar.hidden = true; annoBar.setAttribute('role', 'toolbar'); annoBar.setAttribute('aria-label', 'Highlight the selected words');
-annoBar.innerHTML = '<span class="hdots">' + HL_COLORS.map(([c, n]) => `<button type="button" class="hdot" data-c="${c}" style="--c:${c}" title="${n}: highlight the selected words" aria-label="${n} highlight"></button>`).join('') + '</span>' +
-  `<span class="asep"></span><button type="button" class="btn" data-cm title="Comment: highlight the selected words and write a comment on them">${icon('comment')}Comment</button>`;
+// a row of highlight colours that scrolls sideways (your favourites first), then Any colour: here, and in a highlight's pop-up to change its colour
+const hlRowHtml = what => `<span class="hwrap"><button type="button" class="hsl" data-dir="-1" tabindex="-1" aria-hidden="true" title="More colours">${icon('right')}</button><span class="hdots" role="group" aria-label="Highlight colours" data-what="${what}"></span><button type="button" class="hsl" data-dir="1" tabindex="-1" aria-hidden="true" title="More colours">${icon('right')}</button></span>` +
+  `<input type="color" class="hpick" aria-label="Any highlight colour" title="Any colour: ${what} in a colour of your own">`;
+annoBar.innerHTML = hlRowHtml('highlight the selected words') +
+  `<button type="button" class="btn favstar" data-hstar aria-pressed="false">${icon('star')}</button>` +
+  `<span class="asep"></span><span class="aacts"><button type="button" class="btn" data-cm title="Comment: highlight the selected words and write a comment on them">${icon('comment')}Comment</button></span>`;
 document.body.append(annoBar);
+// your favourite highlight colours (kept apart from the text colours: a highlight wants a light colour), first in the row
+let hlFavs = [].concat(pref.json('hl-favs', [])).filter(c => /^#[0-9a-f]{6}$/i.test(c));
+const hDots = annoBar.querySelector('.hdots'), hPick = annoBar.querySelector('.hpick'), hStar = annoBar.querySelector('[data-hstar]');
+const hlName = c => (HL_COLORS.find(h => h[0] === c) || [0, c])[1];
+// fill a row with its colours, cur marked as the one in use
+function hlFill(row, cur){
+  const d = row.querySelector('.hdots'), p = row.querySelector('.hpick'), what = d.dataset.what;
+  const dot = (c, n, fav) => `<button type="button" class="hdot${fav ? ' hfav' : ''}" data-c="${c}" style="--c:${c}" title="${n}: ${what}${fav ? ' · right-click (or press and hold) to remove from your favourites' : ''}" aria-label="${fav ? 'Favourite ' : ''}${n} highlight" aria-pressed="${c === cur}"></button>`;
+  d.innerHTML = hlFavs.map(c => `<span class="fvw hfvw">${dot(c, hlName(c), true)}<button type="button" class="hfx" data-hx="${c}" title="Remove ${c} from your favourite highlights" aria-label="Remove favourite highlight ${c}">×</button></span>`).join('') +
+    (hlFavs.length ? '<span class="hfsep"></span>' : '') + HL_COLORS.map(([c, n]) => dot(c, n)).join('');
+  p.value = cur; p.classList.toggle('on', !(HL_COLORS.some(h => h[0] === cur) || hlFavs.includes(cur)));
+  hlScrollUi(d);
+}
+function renderHlBar(){
+  hlFill(annoBar, hlCol);
+  const on = hlFavs.includes(hlCol);
+  hStar.setAttribute('aria-pressed', on);
+  hStar.title = on ? 'Favourite: press to remove this highlight colour from your favourites' : 'Favourite: keep this highlight colour at the front of the row';
+  hStar.setAttribute('aria-label', on ? 'Remove this highlight colour from your favourites' : 'Save this highlight colour to your favourites');
+}
+// the arrows (and faded ends) show only when there are more colours that way
+function hlScrollUi(d){
+  const l = d.scrollLeft, max = d.scrollWidth - d.clientWidth;
+  d.parentElement.classList.toggle('more-l', l > 2); d.parentElement.classList.toggle('more-r', l < max - 2);
+}
+// the colour in use, scrolled into view (without moving the page)
+function hlShowCur(d){
+  const b = d.querySelector('.hdot[aria-pressed="true"]');
+  if (b) {
+    const x = b.getBoundingClientRect().left - d.getBoundingClientRect().left + d.scrollLeft, w = d.clientWidth;
+    d.style.scrollBehavior = 'auto';
+    if (x < d.scrollLeft + 4 || x + b.offsetWidth > d.scrollLeft + w - 4) d.scrollLeft = x - (w - b.offsetWidth) / 2;
+    d.style.scrollBehavior = '';
+  }
+  hlScrollUi(d);
+}
+// in every row: the arrows, a mouse wheel scrolling sideways, and taking a favourite away (its ×, right-click, or press and hold on a touch screen)
+let hlHeld = false;
+function hlWire(row){
+  const d = row.querySelector('.hdots');
+  d.addEventListener('scroll', () => hlScrollUi(d), {passive: true});
+  d.addEventListener('wheel', e => {
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || d.scrollWidth <= d.clientWidth) return;
+    e.preventDefault(); d.scrollLeft += e.deltaY;
+  }, {passive: false});
+  row.addEventListener('click', e => {
+    const b = e.target.closest('.hsl, .hfx'); if (!b) return;
+    e.stopImmediatePropagation();
+    if (b.dataset.hx) hlFavRemove(b.dataset.hx); else d.scrollLeft += b.dataset.dir * d.clientWidth * .7;
+  });
+  row.addEventListener('contextmenu', e => { const b = e.target.closest('.hfav'); if (b) { e.preventDefault(); hlFavRemove(b.dataset.c); } });
+  row.addEventListener('pointerdown', e => {
+    const b = e.target.closest('.hfav'); if (!b || e.pointerType === 'mouse') return;
+    const t = setTimeout(() => { hlHeld = true; hlFavRemove(b.dataset.c); setTimeout(() => { hlHeld = false; }, 800); }, 600);
+    const stop = () => { clearTimeout(t); removeEventListener('pointerup', stop); removeEventListener('pointercancel', stop); removeEventListener('pointermove', far); };
+    const far = ev => { if (Math.hypot(ev.clientX - e.clientX, ev.clientY - e.clientY) > 8) stop(); };
+    addEventListener('pointerup', stop); addEventListener('pointercancel', stop); addEventListener('pointermove', far);
+  });
+}
+hlWire(annoBar);
+function hlFavAdd(c){
+  if (hlFavs.includes(c)) return;
+  if (hlFavs.length >= 16) { toast('You have 16 favourite highlights: right-click one (or press and hold) to remove it first.'); return; }
+  hlFavs.unshift(c); pref.setJson('hl-favs', hlFavs); renderHlBar(); hlShowCur(hDots); annoColRow(); toast('Saved to your favourite highlights.');
+}
+function hlFavRemove(c){ hlFavs = hlFavs.filter(x => x !== c); pref.setJson('hl-favs', hlFavs); renderHlBar(); annoColRow(); toast('Removed from your favourite highlights.'); }
+renderHlBar();
 let barRange = null;
 function hideAnnoBar(){ annoBar.hidden = true; barRange = null; }
 function checkSelection(){
@@ -8657,8 +8775,7 @@ function checkSelection(){
   const r = sel.getRangeAt(0);
   if (!selTarget(r)) return hideAnnoBar();
   barRange = r.cloneRange();
-  annoBar.querySelectorAll('.hdot').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === hlCol));
-  annoBar.hidden = false; hideGap();
+  annoBar.hidden = false; hideGap(); renderHlBar(); hlShowCur(hDots);
   const sr = r.getBoundingClientRect(), w = annoBar.offsetWidth, h = annoBar.offsetHeight, top0 = appbar.classList.contains('barhidden') || focusMode ? 8 : appbar.getBoundingClientRect().bottom + 4;
   let top = sr.top - h - 10;
   if (top < top0) top = Math.min(sr.bottom + 10, visH() - h - 8);
@@ -8667,17 +8784,29 @@ function checkSelection(){
 }
 document.addEventListener('pointerup', e => { if (!e.target.closest?.('.annobar, .annopop')) setTimeout(checkSelection, 0); });
 document.addEventListener('keyup', e => { if (e.shiftKey && /^(Arrow|Home$|End$|Page)/.test(e.key) && !e.target.closest?.('input, textarea, .mine')) checkSelection(); });
-document.addEventListener('selectionchange', () => { if (annoBar.hidden) return; const s = getSelection(); if (!s.rangeCount || s.isCollapsed) hideAnnoBar(); });
+document.addEventListener('selectionchange', () => { if (annoBar.hidden || hlPicking) return; const s = getSelection(); if (!s.rangeCount || s.isCollapsed) hideAnnoBar(); });
 addEventListener('scroll', () => { hideAnnoBar(); if (annoCur && !annoPopRaf) annoPopRaf = requestAnimationFrame(placeAnnoPop); }, {passive: true});
 addEventListener('resize', () => { hideAnnoBar(); placeAnnoPop(); });
-annoBar.addEventListener('mousedown', e => e.preventDefault());
+annoBar.addEventListener('mousedown', e => { if (e.target !== hPick) e.preventDefault(); });
 annoBar.addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b || !barRange) return;
+  const b = e.target.closest('button'); if (!b) return;
+  if ('hstar' in b.dataset) { hlFavs.includes(hlCol) ? hlFavRemove(hlCol) : hlFavAdd(hlCol); return; }
+  if (b.classList.contains('hfav') && hlHeld) { hlHeld = false; return; }
+  if (!barRange) return;
   if (b.dataset.c) { hlCol = b.dataset.c; pref.set('hl-colour', hlCol); }
   const made = makeHighlight(barRange, hlCol);
   if (made && 'cm' in b.dataset) openAnnoPop(made.card, made.id, true);
   else if (made && 'side' in b.dataset) sideLinkNew(made.card, made.id);
 });
+// any colour: the words are highlighted once you have picked it (the bar stays while its picker is open)
+let hlPicking = null;
+for (const ev of ['pointerdown', 'focus']) hPick.addEventListener(ev, () => { if (barRange) hlPicking = barRange; });
+hPick.addEventListener('change', () => {
+  const r = hlPicking; hlPicking = null;
+  hlCol = hPick.value.toLowerCase(); pref.set('hl-colour', hlCol);
+  if (r) makeHighlight(r, hlCol); else renderHlBar();
+});
+hPick.addEventListener('blur', () => setTimeout(() => { hlPicking = null; }, 300));
 
 // ---------- the comment on a highlight ----------
 const annoPop = document.createElement('div');
@@ -8687,6 +8816,37 @@ annoPop.innerHTML = '<div class="aq"></div><textarea rows="3" placeholder="Add a
   `<div class="arow"><button type="button" class="btn" data-a="resolve"></button><button type="button" class="btn danger" data-a="remove" title="Remove highlight: take away the highlight and its comment">${icon('trash')}Remove highlight</button></div>`;
 document.body.append(annoPop);
 const annoTa = annoPop.querySelector('textarea');
+// the highlight's colour, changed right here
+const hcRow = document.createElement('div');
+hcRow.className = 'arow hcrow'; hcRow.innerHTML = hlRowHtml('colour this highlight');
+annoPop.querySelector('.aq').after(hcRow);
+hlWire(hcRow);
+function annoColRow(){
+  const h = annoCur && annoGet(annoCur.card, annoCur.id);
+  hcRow.hidden = reading || !h;
+  if (!hcRow.hidden) { hlFill(hcRow, annoColor(h)); hlShowCur(hcRow.querySelector('.hdots')); }
+}
+function annoSetColor(card, id, col){
+  const h = annoGet(card, id); if (!h) return;
+  if (h.kind === 'pdf') { h.it.c = col; setInk(card, inkItems(card)); }
+  else h.pcs.forEach(m => m.style.setProperty('--ac', col));
+  hlCol = col; pref.set('hl-colour', col);
+  sideDraw(); saveSoon();
+}
+hcRow.addEventListener('click', e => {
+  const b = e.target.closest('.hdot'); if (!b || !annoCur) return;
+  if (b.classList.contains('hfav') && hlHeld) { hlHeld = false; return; }
+  annoSetColor(annoCur.card, annoCur.id, b.dataset.c); showAnnoPop();
+});
+// (Any colour goes to the highlight it was opened for, even if clicking away has closed the pop-up)
+const hcPick = hcRow.querySelector('.hpick');
+let hcFor = null;
+for (const ev of ['pointerdown', 'focus']) hcPick.addEventListener(ev, () => { if (annoCur) hcFor = annoCur; });
+hcPick.addEventListener('change', () => {
+  const to = hcFor || annoCur; hcFor = null; if (!to) return;
+  annoSetColor(to.card, to.id, hcPick.value.toLowerCase());
+  if (annoCur) showAnnoPop();
+});
 let annoCur = null, annoPopRaf = 0;      // annoCur: the highlight whose pop-up is open
 function closeAnnoPop(){ annoPop.hidden = true; annoCur = null; }
 function placeAnnoPop(){
@@ -8714,7 +8874,7 @@ function showAnnoPop(){
   if (cm) { res.innerHTML = icon(cm.done ? 'reopen' : 'check') + (cm.done ? 'Reopen' : 'Resolve'); res.title = cm.done ? 'Reopen: list this comment again' : 'Resolve: this comment is dealt with, so it leaves the Notes list'; }
   const rm = annoPop.querySelector('[data-a=remove]'); rm.hidden = reading || annoCur.fresh;
   annoPop.querySelector('.arow:last-child').hidden = res.hidden && rm.hidden;
-  sideAnnoRow();
+  annoColRow(); sideAnnoRow();
   annoPop.hidden = false; placeAnnoPop();
 }
 function openAnnoPop(card, id, fresh){
@@ -8734,7 +8894,7 @@ function saveAnnoPop(){
   if (h && !reading && t !== (cm ? cm.text : '')) annoSetCm(card, id, t, cm && cm.done);
   closeAnnoPop();
 }
-annoPop.addEventListener('mousedown', e => { if (!e.target.closest('textarea')) e.preventDefault(); });
+annoPop.addEventListener('mousedown', e => { if (!e.target.closest('textarea, input')) e.preventDefault(); });
 annoPop.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || !annoCur) return;
   const {card, id} = annoCur, h = annoGet(card, id), cm = h && annoCm(h);
@@ -8936,7 +9096,8 @@ function sideDraw(){
         out.push(
           svgEl('path', {class: 'sl' + hot, 'data-id': g.id, d: `M${g.x1} ${g.y1}C${cx1} ${cy1} ${cx2} ${cy2} ${g.x2} ${g.y2}`, stroke: g.col}),
           svgEl('circle', {class: 'sd' + hot, cx: g.x1, cy: g.y1, r: 3, fill: g.col}),
-          svgEl('path', {class: 'sa' + hot, d: `M${g.x2} ${g.y2}l-10 -5.5v11z`, fill: g.col}));
+          svgEl('path', {class: 'sa' + hot, d: `M${g.x2} ${g.y2}l-10 -5.5v11z`, fill: g.col}),
+          svgEl('path', {class: 'sh', 'data-id': g.id, d: `M${g.x1} ${g.y1}C${cx1} ${cy1} ${cx2} ${cy2} ${g.x2} ${g.y2}`}));
       }
     }
   }
@@ -9018,32 +9179,58 @@ function sideLink(box, id){
   if (box.dataset.link !== id) box.removeAttribute('data-lc');
   box.dataset.link = id; saveSoon(); sideSoon();
 }
-// the highlight's pop-up: link it to a note on the side page, go to the note, or unlink
+// the highlight's pop-up: link it to a note on the side page (once linked, clicking the line gives Go to side note, Unlink and its colour)
 const sideRow = document.createElement('div');
 sideRow.className = 'arow'; sideRow.hidden = true;
 annoPop.querySelector('.arow:last-child').before(sideRow);
 function sideAnnoRow(){
   const card = annoCur?.card, sp = card && sideShown() && sideOf(card), box = sp && sp.querySelector(`:scope > .notebox[data-link="${CSS.escape(annoCur.id)}"]`);
-  sideRow.hidden = !sp || (reading && !box);
-  if (sideRow.hidden) return;
-  sideRow.innerHTML = box
-    ? `<button type="button" class="btn" data-a="sidego" title="Go to side note: scroll to the note linked to these words">${icon('link')}Go to side note</button>` + (reading ? '' : `<button type="button" class="btn" data-a="unlink" title="Unlink: keep the note and the highlight, but take the line away">${icon('unlink')}Unlink</button>` +
-      `<span class="ldots" role="group" aria-label="Line colour"><span class="lbl">Line</span>${lineDots(lineOf(box), 'the colour of this line')}</span>`)
-    : `<button type="button" class="btn" data-a="sidepick" title="Link to a side note: then click a note on the side page to join it to these words">${icon('link')}Link to a side note…</button>`;
+  sideRow.hidden = !sp || reading || !!box;
+  if (!sideRow.hidden) sideRow.innerHTML = `<button type="button" class="btn" data-a="sidepick" title="Link to a side note: then click a note on the side page to join it to these words">${icon('link')}Link to a side note…</button>`;
 }
 annoPop.addEventListener('click', e => {
-  const d = e.target.closest('.ldot'), box = d && annoCur && sideOf(annoCur.card)?.querySelector(`:scope > .notebox[data-link="${CSS.escape(annoCur.id)}"]`);
-  if (box) {                                                  // this line's own colour (the setting's colour: it follows the setting again)
-    if (d.dataset.lc === lineDefault()) box.removeAttribute('data-lc'); else box.dataset.lc = d.dataset.lc;
-    sideRow.querySelectorAll('.ldot').forEach(x => x.setAttribute('aria-pressed', x === d));
-    sideDraw(); saveSoon(); return;
-  }
-  const b = e.target.closest('[data-a="sidego"], [data-a="unlink"], [data-a="sidepick"]'); if (!b || !annoCur) return;
+  if (!e.target.closest('[data-a="sidepick"]') || !annoCur) return;
   const {card, id} = annoCur;
-  if (b.dataset.a === 'unlink') { sideUnlinkId(id); showAnnoPop(); toast('Unlinked. The note and the highlight are both still there.'); return; }
-  saveAnnoPopKeep();
-  if (b.dataset.a === 'sidego') { const box = sideOf(card)?.querySelector(`:scope > .notebox[data-link="${CSS.escape(id)}"]`); closeAnnoPop(); if (box) jumpToNote(box); }
-  else { closeAnnoPop(); sidePickStart(card, id); }
+  saveAnnoPopKeep(); closeAnnoPop(); sidePickStart(card, id);
+});
+// ---------- clicking a line: go to its note, unlink it, or give it a colour of its own ----------
+const linePop = document.createElement('div');
+linePop.id = 'linePop'; linePop.className = 'pop annopop linepop'; linePop.hidden = true; linePop.setAttribute('role', 'dialog'); linePop.setAttribute('aria-label', 'Line to side note');
+document.body.append(linePop);
+let lineCur = null;           // the note whose line's pop-up is open
+function closeLinePop(){ linePop.hidden = true; lineCur = null; }
+function openLinePop(box, x, y){
+  const card = sideSlide(box.parentElement), h = card && annoGet(card, box.dataset.link); if (!h) return;
+  closeAnnoPop(); hideAnnoBar(); lineCur = box;
+  linePop.style.setProperty('--c', annoColor(h));
+  linePop.innerHTML = '<div class="aq"></div>' +
+    `<div class="arow"><button type="button" class="btn" data-a="sidego" title="Go to side note: scroll to the note at the end of this line">${icon('link')}Go to side note</button>` +
+    (reading ? '' : `<button type="button" class="btn" data-a="unlink" title="Unlink: keep the note and the highlight, but take the line away">${icon('unlink')}Unlink</button>`) + '</div>' +
+    (reading ? '' : `<div class="arow"><span class="ldots" role="group" aria-label="Line colour"><span class="lbl">Line colour</span>${lineDots(lineOf(box), 'the colour of this line')}</span></div>`);
+  linePop.querySelector('.aq').textContent = '“' + annoQuote(h) + '”';
+  linePop.hidden = false;
+  const w = linePop.offsetWidth, ht = linePop.offsetHeight;
+  linePop.style.left = Math.max(8, Math.min(innerWidth - w - 8, x - w / 2)) + 'px';
+  linePop.style.top = (y + 14 + ht < visH() - 8 ? y + 14 : Math.max(8, y - ht - 14)) + 'px';
+}
+linePop.addEventListener('mousedown', e => e.preventDefault());
+linePop.addEventListener('click', e => {
+  const box = lineCur, d = e.target.closest('.ldot'), b = e.target.closest('[data-a]'); if (!box) return;
+  if (d) {                                                    // this line's own colour (the setting's colour: it follows the setting again)
+    if (d.dataset.lc === lineDefault()) box.removeAttribute('data-lc'); else box.dataset.lc = d.dataset.lc;
+    linePop.querySelectorAll('.ldot').forEach(x => x.setAttribute('aria-pressed', x === d));
+    sideDraw(); saveSoon();
+  } else if (b?.dataset.a === 'sidego') { closeLinePop(); jumpToNote(box); }
+  else if (b?.dataset.a === 'unlink') { sideUnlinkId(box.dataset.link); closeLinePop(); toast('Unlinked. The note and the highlight are both still there.'); }
+});
+document.addEventListener('pointerdown', e => { if (lineCur && !linePop.contains(e.target)) closeLinePop(); }, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && lineCur) { e.stopPropagation(); closeLinePop(); } }, true);
+addEventListener('scroll', () => { if (lineCur) closeLinePop(); }, {passive: true});
+// pointing at a line makes it bold too; clicking it opens its pop-up
+sideSvg.addEventListener('pointermove', e => { const id = e.target.closest?.('.sh')?.dataset.id; if (id && id !== sideHover) { sideHover = id; sideDrawSoon(); } });
+sideSvg.addEventListener('click', e => {
+  const id = e.target.closest?.('.sh')?.dataset.id, box = id && main.querySelector(`.sidepage > .notebox[data-link="${CSS.escape(id)}"]`);
+  if (box) { e.stopPropagation(); openLinePop(box, e.clientX, e.clientY); }
 });
 // (keep what was typed in the comment box before the pop-up changes)
 function saveAnnoPopKeep(){
@@ -9196,7 +9383,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sideBgPop
 addEventListener('resize', () => { if (!sideBgPop.hidden) placeSideBg(); });
 addEventListener('scroll', () => { if (!sideBgPop.hidden) placeSideBg(); }, {passive: true});
 // the bar that shows when you select words: one more choice
-annoBar.insertAdjacentHTML('beforeend', `<button type="button" class="btn" data-side title="Link to side note: highlight the selected words and open a note beside them on the side page, joined by a line">${icon('link')}Link to side note</button>`);
+annoBar.querySelector('.aacts').insertAdjacentHTML('beforeend', `<button type="button" class="btn" data-side title="Link to side note: highlight the selected words and open a note beside them on the side page, joined by a line">${icon('link')}Link to side note</button>`);
 sidePaintUi();
 
 // ================= split view: a second notebook to read, beside the one you write in =================

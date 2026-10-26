@@ -173,7 +173,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   await dragOver(w1);
   ok((await page.evaluate(() => getSelection().toString())).trim().length > 3, 'dragging across a line selects its words');
   ok(await page.isVisible('#annoBar'), 'the bar shows when you let go');
-  ok(await page.locator('#annoBar .hdot').count() === 8 && (await page.textContent('#annoBar')).includes('Comment'), 'with eight colours and Comment');
+  ok(await page.locator('#annoBar .hdot').count() === 15 && (await page.textContent('#annoBar')).includes('Comment'), 'with fifteen colours and Comment');
   const bb = await page.locator('#annoBar').boundingBox();
   ok(bb.y + bb.height <= w1.y + 2 && Math.abs(bb.x + bb.width / 2 - (w1.x + w1.w / 2)) < w1.w, 'it sits just above the selection');
   ok(await page.locator('.gappill').count() === 0, 'and the add-note pill stays away');
