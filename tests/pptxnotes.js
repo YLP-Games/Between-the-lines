@@ -9,7 +9,7 @@ const APP = process.env.APP || path.resolve(__dirname, '..', 'index.html');
 const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok  ' + m); };
 
 // fid-rich.pptx (4 slides) with notes pages: slide 1 has two paragraphs (one word bold) and a slide number, header and slide picture placeholder;
-// slide 2 has none; slide 3 has an empty notes page; slide 4 has a bulleted line
+// slide 2 has none; slide 3 has an empty notes page; slide 4 has notes like a lecturer's: a line, a blank line, a paragraph, a lead-in, and bullets (PowerPoint's and typed ones, with and without bold)
 const P = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"';
 const shape = (id, type, body) => `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${type} ${id}"/><p:cNvSpPr/><p:nvPr><p:ph type="${type}"${type === 'body' ? ' idx="1"' : ''}/></p:nvPr></p:nvSpPr><p:spPr/>${body == null ? '' : `<p:txBody><a:bodyPr/><a:lstStyle/>${body}</p:txBody>`}</p:sp>`;
 const notesXml = shapes => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:notes ${P}><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>${shapes}</p:spTree></p:cSld></p:notes>`;
@@ -17,7 +17,7 @@ const NOTES = {
   1: notesXml(shape(2, 'sldImg') + shape(3, 'body', '<a:p><a:r><a:t>Start with the </a:t></a:r><a:r><a:rPr b="1"/><a:t>kinked</a:t></a:r><a:r><a:t> demand curve.</a:t></a:r></a:p><a:p><a:endParaRPr/></a:p><a:p><a:r><a:t>Then ask the class about price wars.</a:t></a:r></a:p>') +
     shape(4, 'sldNum', '<a:p><a:fld id="{1}" type="slidenum"><a:t>SLIDENUM7</a:t></a:fld></a:p>') + shape(5, 'hdr', '<a:p><a:r><a:t>HEADERX</a:t></a:r></a:p>')),
   3: notesXml(shape(2, 'sldImg') + shape(3, 'body', '<a:p><a:endParaRPr/></a:p><a:p><a:r><a:t>   </a:t></a:r></a:p>')),
-  4: notesXml(shape(2, 'sldImg') + shape(3, 'body', '<a:p><a:pPr><a:buChar char="•"/></a:pPr><a:r><a:t>Remember the quiz on Friday</a:t></a:r></a:p>')),
+  4: notesXml(shape(2, 'sldImg') + shape(3, 'body', '<a:p><a:r><a:t>95% chance that losses will not exceed 2.97%</a:t></a:r></a:p><a:p><a:endParaRPr/></a:p><a:p><a:r><a:t>By plotting daily returns into a histogram, the distribution of returns can be observed.</a:t></a:r></a:p><a:p><a:r><a:t>Key limitations of Historical Simulation include:</a:t></a:r></a:p><a:p><a:pPr><a:buChar char="•"/></a:pPr><a:r><a:t>High Data Dependency: Requires a large amount of data.</a:t></a:r></a:p><a:p><a:r><a:t>- Reliance on Past Patterns: Assumes past behaviour will repeat.</a:t></a:r></a:p><a:p><a:pPr><a:buChar char="•"/></a:pPr><a:r><a:rPr b="1"/><a:t>Given</a:t></a:r><a:r><a:t>: the author’s bold stays, </a:t></a:r><a:r><a:rPr i="1"/><a:t>italic</a:t></a:r><a:r><a:t> and </a:t></a:r><a:r><a:rPr u="sng"/><a:t>underlined</a:t></a:r><a:r><a:t> too</a:t></a:r></a:p><a:p><a:pPr><a:buChar char="•"/></a:pPr><a:r><a:t>Remember the quiz on Friday</a:t></a:r></a:p><a:p><a:r><a:t>-2.97% is not a bullet</a:t></a:r></a:p><a:p><a:r><a:t>* This is a long sentence that only reaches its colon much later on: no bold</a:t></a:r></a:p>')),
 };
 async function makeDeck(){
   const z = await JSZip.loadAsync(fs.readFileSync(path.join(__dirname, 'fid-rich.pptx')));
@@ -63,12 +63,26 @@ async function makeDeck(){
   ok(n[0][0].includes('Start with the kinked demand curve.') && n[0][0].includes('Then ask the class about price wars.') && /curve\.\n+Then/.test(n[0][0]), 'slide 1’s note has both paragraphs, on lines of their own');
   ok(!n[0][0].includes('SLIDENUM7') && !n[0][0].includes('HEADERX'), 'without the slide number or header');
   ok(await page.evaluate(() => sideOf(document.querySelector('.pagecard')).querySelector('.mine b')?.textContent === 'kinked'), 'bold words stay bold');
-  ok(n[3][0].includes('Remember the quiz on Friday') && n[3][0].startsWith('•'), 'slide 4’s bulleted line keeps its bullet');
+  ok(n[3][0].split('\n').includes('• Remember the quiz on Friday'), 'slide 4’s bulleted line keeps its bullet');
   ok((await sideOn()).join() === 'true,true,true', 'Side notes turned on by itself');
   ok((await page.textContent('#toast')).includes('speaker notes are on the side pages'), 'and a message says where the notes are');
   const geo = await page.evaluate(() => { const sp = sideOf(document.querySelector('.pagecard')), b = sp.querySelector('.notebox'), r = sp.getBoundingClientRect(), q = b.getBoundingClientRect(), z = zoomOf(sp) || 1; return {dx: (q.left - r.left) / z, dy: (q.top - r.top) / z, w: b.offsetWidth, sw: sp.clientWidth, right: q.right <= r.right + 1, floating: b.classList.contains('floating'), sid: sp.dataset.for === document.querySelector('.pagecard').dataset.sid}; });
   ok(geo.floating && geo.sid && geo.dx < 60 && geo.dy < 60 && geo.right, `the note sits at the top left of slide 1’s own side page (${Math.round(geo.dx)}, ${Math.round(geo.dy)})`);
-  ok(geo.w === Math.round(Math.min(280, Math.max(150, geo.sw * .62))), 'as wide as a side note you add (' + geo.w + 'px)');
+  ok(geo.dx < 12 && geo.dy < 14 && geo.w >= geo.sw - 24, `across the whole side page, from its top (${Math.round(geo.dx)}, ${Math.round(geo.dy)}, ${geo.w} of ${geo.sw}px)`);
+
+  // ---- formatted like printed notes: plain black Arial, the paragraphs and blank lines kept, a • for each bullet, bold terms ----
+  const fmt = await page.evaluate(() => {
+    const el = sideOf(document.querySelectorAll('#main .pagecard')[3]).querySelector('.mine'), cs = getComputedStyle(el);
+    return {font: cs.fontFamily, size: cs.fontSize, color: cs.color, lines: [...el.children].map(d => d.innerHTML), b: [...el.querySelectorAll('b')].map(x => x.textContent), i: [...el.querySelectorAll('i')].map(x => x.textContent), u: [...el.querySelectorAll('u')].map(x => x.textContent)};
+  });
+  ok(/^"?Arial/.test(fmt.font) && fmt.size === '16px' && fmt.color === 'rgb(0, 0, 0)', `in plain black print, not handwriting (${fmt.font}, ${fmt.size}, ${fmt.color})`);
+  const L = fmt.lines;
+  ok(L[0].startsWith('95% chance') && L[1] === '<br>' && L[2].startsWith('By plotting') && L[3] === 'Key limitations of Historical Simulation include:', 'the paragraphs keep their own lines, with the blank line between: ' + L.slice(0, 4).join(' | '));
+  ok(L[4] === '• <b>High Data Dependency</b>: Requires a large amount of data.', 'a PowerPoint bullet becomes “• ” with its term in bold: ' + L[4]);
+  ok(L[5] === '• <b>Reliance on Past Patterns</b>: Assumes past behaviour will repeat.', 'a line typed with “- ” becomes a • bullet too: ' + L[5]);
+  ok(L[6] === '• <b>Given</b>: the author’s bold stays, <i>italic</i> and <u>underlined</u> too', 'bold, italic and underline from the notes are kept, and no more bold added: ' + L[6]);
+  ok(L[7] === '• Remember the quiz on Friday' && L[8] === '-2.97% is not a bullet' && L[9] === '• This is a long sentence that only reaches its colon much later on: no bold', 'a bullet without a term stays as it is, “-2.97%” is no bullet: ' + L.slice(7).join(' | '));
+  ok(fmt.b.join() === 'High Data Dependency,Reliance on Past Patterns,Given' && fmt.i.join() === 'italic' && fmt.u.join() === 'underlined', 'and nothing else is bold, italic or underlined');
   await page.click('#notesBtn').catch(() => {}); await page.waitForTimeout(400);
   ok((await page.textContent('#noteList')).includes('Side note') && (await page.textContent('#noteList')).includes('kinked'), 'the Notes list shows them as side notes');
   await page.screenshot({path: path.join(OUT, 'pptxnotes-look.png')});
@@ -89,12 +103,14 @@ async function makeDeck(){
     const sp = sideOf(document.querySelector('.pagecard')), c = sp.querySelector('.note-chip');
     const x = document.createElement('canvas').getContext('2d', {willReadFrequently: true});      // (a mixed colour reads back as color(srgb …))
     const lum = s => { x.clearRect(0, 0, 1, 1); x.fillStyle = s; x.fillRect(0, 0, 1, 1); const [r, g, b] = x.getImageData(0, 0, 1, 1).data; return 0.299 * r + 0.587 * g + 0.114 * b; };
-    const out = {dark: sp.classList.contains('dark'), ring: lum(getComputedStyle(c).borderTopColor), paper: lum(getComputedStyle(sp).backgroundColor)};
-    sideSet({bg: was}); out.back = lum(getComputedStyle(c).borderTopColor);
+    const words = () => lum(getComputedStyle(sp.querySelector('.mine')).color);
+    const out = {dark: sp.classList.contains('dark'), ring: lum(getComputedStyle(c).borderTopColor), paper: lum(getComputedStyle(sp).backgroundColor), words: words()};
+    sideSet({bg: was}); out.back = lum(getComputedStyle(c).borderTopColor); out.wordsBack = words();
     return out;
   });
   ok(dark.dark && dark.ring - dark.paper > 60, `on a dark side page the black icon's ring is light enough to see (ring ${Math.round(dark.ring)} on paper ${Math.round(dark.paper)})`);
-  ok(dark.back < 40, 'and dark again on light paper');
+  ok(dark.words - dark.paper > 120, `and the note's black words turn light there (${Math.round(dark.words)} on ${Math.round(dark.paper)})`);
+  ok(dark.back < 40 && dark.wordsBack === 0, 'both dark again on light paper');
   await page.evaluate(() => { const b = sideOf(document.querySelector('.pagecard')).querySelector('.notebox'); setCollapsed(b, false); });
   // it's an icon colour like any other: you can change it, and the Notes panel filters by it
   const filt = await page.evaluate(() => {

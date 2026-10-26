@@ -1031,6 +1031,7 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none!importa
 main.side-on .sidepage{display:block}
 .sidepage.dark{color:#ece6d6;--sp-line:rgba(236,230,214,.17)}
 .sidepage.dark .mine[style*="rgb(31, 79, 209)"]{color:#a9c4ff!important}
+.sidepage.dark .mine[style*="color: rgb(0, 0, 0)"]{color:#ece6d6!important}      /* (black words, as speaker notes come, are light on dark paper) */
 /* the paper: plain, lined, squared or dotted (the small previews in the Background pop-up use the same patterns) */
 :is(.sidepage,.sidebg .pv)[data-pat="lined"]{background-image:linear-gradient(transparent 31px,var(--sp-line) 31px);background-size:100% 32px;background-position:0 38px}
 :is(.sidepage,.sidebg .pv)[data-pat="grid"]{background-image:linear-gradient(var(--sp-line) 1px,transparent 1px),linear-gradient(90deg,var(--sp-line) 1px,transparent 1px);background-size:24px 24px}
@@ -3412,7 +3413,7 @@ async function readPptx(buf, name, mode = pptxMode()){
   return said;
 
   // the slide's speaker notes (the text of its notes page: not the slide's picture there, nor its number, header, footer or date) go on its
-  // side page, as one side note at the top left, a line for each paragraph
+  // side page, as one side note across its top in plain black print, a line for each paragraph and a • for each bullet
   async function speakerNotes(path, card){
     if (!notesOn || !card) return;
     const rd = await xml(path.replace(/([^/]+)$/, '_rels/$1.rels'));
@@ -3423,18 +3424,25 @@ async function readPptx(buf, name, mode = pptxMode()){
       const ph = find(sh, 'ph'); if (!ph || (ph.getAttribute('type') || 'body') !== 'body') continue;
       let num = 0;
       for (const p of kids(find(sh, 'txBody'), 'p')) {
-        const pPr = kid(p, 'pPr'); let html = '';
+        const pPr = kid(p, 'pPr'); let html = '', text = '', styled = false;
         for (const c of p.children) {
-          if (c.localName === 'br') { html += '<br>'; continue; }
+          if (c.localName === 'br') { html += '<br>'; text += '\n'; continue; }
           if (c.localName !== 'r' && c.localName !== 'fld') continue;
           const t = kid(c, 't')?.textContent || ''; if (!t) continue;
-          const pr = kid(c, 'rPr'); let h = esc(t);
+          const pr = kid(c, 'rPr'), u = pr?.getAttribute('u'); let h = esc(t);
           if (pr?.getAttribute('b') === '1') h = `<b>${h}</b>`;
           if (pr?.getAttribute('i') === '1') h = `<i>${h}</i>`;
-          html += h;
+          if (u && u !== 'none') h = `<u>${h}</u>`;
+          if (h !== esc(t) && t.trim()) styled = true;
+          html += h; text += t;
         }
-        if (!html.replace(/<br>/g, '').trim()) { lines.push(''); continue; }
-        const bul = kid(pPr, 'buNone') ? '' : kid(pPr, 'buAutoNum') ? (++num) + '. ' : kid(pPr, 'buChar') ? '• ' : '';
+        if (!text.trim()) { lines.push(''); continue; }
+        // a bullet is PowerPoint's own, or a line typed starting with •, -, * or – (its mark becomes the •)
+        let bul = kid(pPr, 'buNone') ? '' : kid(pPr, 'buAutoNum') ? (++num) + '. ' : kid(pPr, 'buChar') ? '• ' : '';
+        if (!bul && /^\s*[•●▪◦*–-]\s+\S/.test(text)) { bul = '• '; html = html.replace(/^((?:<[^>]+>)*)\s*[•●▪◦*–-]\s+/, '$1'); }
+        else if (bul) html = html.replace(/^((?:<[^>]+>)*)\s+/, '$1');
+        // "• Term: what it means", written without any bold: the term is made bold
+        if (bul === '• ' && !styled) html = html.replace(/^([^:<]*[^\s:<]):(?=\s)/, (m, t) => t.length > 60 ? m : `<b>${t}</b>:`);
         lines.push('\u00a0'.repeat(4 * +(pPr?.getAttribute('lvl') || 0)) + bul + html);
       }
     }
@@ -3446,7 +3454,8 @@ async function readPptx(buf, name, mode = pptxMode()){
     const {box, el} = makeBox();
     box.classList.add('floating'); box.dataset.spk = '1';                     // (until you change it: see reopenPptx)
     setChipColor(box, SPK_CHIP, true);                                         // a black pencil icon, to tell them from your own notes
-    box.style.width = sideWidth(sp) + 'px'; box.dataset.px = (30 / SIDE_W).toFixed(4); box.dataset.py = 24;
+    box.style.width = SIDE_W - 16 + 'px'; box.dataset.px = (6 / SIDE_W).toFixed(4); box.dataset.py = 8;      // as wide as the side page, at its top (a narrower page shows it narrower)
+    el.style.fontFamily = fontCss('Arial'); el.style.fontSize = '16px'; el.style.color = '#000000';           // plain print, not handwriting
     el.innerHTML = lines.map(l => `<div>${l || '<br>'}</div>`).join('');
     sp.append(box); gripTitles(box); card.after(sp);
     said++;
