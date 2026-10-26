@@ -707,6 +707,26 @@ body.focus .peekzone{display:none}
 .newrow.uifont{justify-content:space-between;margin:12px 0 0}
 .newrow .lbl{font-size:15px}
 .settings .seg .btn{font-size:15px}
+/* Box presets (in Help & settings): each one a small card, its name written in its own font, colour and bold / italic / underline */
+#bPreset{width:140px}
+.presets{display:flex;flex-direction:column;gap:8px;margin:0 0 8px}
+.preset{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px;border:1.5px solid var(--line-strong);border-radius:var(--wob)}
+.preset .pname{flex:1 1 120px;min-width:0;height:34px;box-sizing:border-box;padding:0 8px;background:var(--surface);border:1.5px solid var(--pencil);border-radius:var(--wob);overflow:hidden;text-overflow:ellipsis}
+.preset .pc{display:inline-flex;align-items:center;gap:3px;font-size:13px;color:var(--muted)}
+.preset .pc .i{width:15px;height:15px}
+.preset .pfmt{display:flex;align-items:center;gap:4px;flex-basis:100%}
+.preset .pfont{flex:1 1 0;width:0;min-width:80px}
+.preset .psize{width:58px;height:32px;box-sizing:border-box;flex:none;font:inherit;font-size:15px;color:var(--ink);background:var(--surface-2);border:1.5px solid var(--pencil);border-radius:var(--wob);padding:0 6px}
+.preset .tg{min-width:32px;height:32px;padding:0;font-family:Georgia,serif;font-size:16px} /* taste-skill-ignore: B, I and U drawn as the style they stand for */
+.preset .x{flex:none;border:none;background:transparent;padding:2px 8px;border-radius:999px;font-size:17px;line-height:1;color:var(--muted);cursor:pointer}
+.preset .x:hover{background:var(--danger);color:var(--danger-ink)}
+.preset .tag{font-size:12px;color:var(--muted)}
+.presetacts{display:flex;flex-wrap:wrap;gap:6px}
+@media (pointer:coarse){      /* fingertip-sized */
+  #bPresetEdit{height:44px!important}
+  .preset :is(.pname,.psize,.pfont){height:44px}
+  .preset .x{min-width:40px;min-height:40px}
+}
 /* the plain font for the buttons, menus and labels (notes keep their own font) */
 :root[data-ui-font="clean"]{--ui:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--display:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 /* the sizes were chosen for Patrick Hand, which is small: keep the plain font the same apparent size (and the notes as they are) */
@@ -1975,6 +1995,11 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
     </div>
 
     <div class="panel" role="tabpanel" id="panel-box" aria-labelledby="tab-box" data-edit hidden>
+      <div class="grp"><div class="row" style="gap:6px">
+        <select id="bPreset" aria-label="Preset" title="Preset: a font, size, text colour and pencil icon colour in one go, for the note you're in, the selected notes, or new notes"></select>
+        <button class="btn outline" id="bPresetEdit" style="height:30px" title="Edit presets: change them, add your own or remove them (in Help &amp; settings)">Edit</button>
+      </div><span class="cap">Presets</span></div>
+      <span class="sep"></span>
       <div class="grp"><div class="row" style="gap:8px">
         <label class="chk" for="bOutline"><input type="checkbox" id="bOutline" checked> Outline</label>
         <input type="color" id="bBorder" value="#9aa3b2" aria-label="Outline colour" title="Outline colour">
@@ -2225,6 +2250,15 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
           <button class="btn" type="button" data-pick="hand" aria-pressed="true" title="Handwritten: the sketchy look for buttons and menus">Handwritten</button>
           <button class="btn" type="button" data-pick="clean" aria-pressed="false" title="Clean: a plain, easy-to-read font for buttons and menus">Clean</button>
         </div>
+      </div>
+    </section>
+    <section id="presetSec">
+      <h3>Box presets</h3>
+      <p class="sethint">A preset gives a note its font, size, bold, italic or underline, text colour and pencil icon colour in one go: pick one on the Box tab. Notes you've already styled keep their look when you change a preset. PowerPoint speaker notes arrive as Speaker notes.</p>
+      <div class="presets" id="presetList"></div>
+      <div class="presetacts">
+        <button type="button" class="btn outline" id="presetAdd" title="New preset: from the note you're in (or the style for new notes)">+ New preset</button>
+        <button type="button" class="btn outline" id="presetReset" title="Reset: go back to the four starting presets (yours are removed)"><span>Reset</span></button>
       </div>
     </section>
     <section>
@@ -2847,6 +2881,7 @@ function makeNote(tag){
   const el = document.createElement(tag);
   el.className = 'mine'; el.contentEditable = 'true'; spellAttrs(el);
   el.style.fontFamily = fontCss(style.font); el.style.fontSize = style.size + 'px'; el.style.color = style.color;
+  if (style.b) el.style.fontWeight = '700'; if (style.i) el.style.fontStyle = 'italic'; if (style.u) el.style.textDecoration = 'underline';     // (from a preset)
   return el;
 }
 // bring a note box in front of all others (e.g. pinned or floating notes on the same page)
@@ -3469,10 +3504,9 @@ async function readPptx(buf, name, mode = pptxMode()){
     const sp = document.createElement('aside'); sp.className = 'sidepage'; sp.dataset.for = sideSid(card);
     const {box, el} = makeBox();
     box.classList.add('floating'); box.dataset.spk = '1';                     // (until you change it: see reopenPptx)
-    setChipColor(box, SPK_CHIP, true);                                         // a black pencil icon, to tell them from your own notes
     box.style.width = SIDE_W - 16 + 'px'; box.dataset.px = (6 / SIDE_W).toFixed(4); box.dataset.py = 8;      // as wide as the side page, at its top (a narrower page shows it narrower)
-    el.style.fontFamily = fontCss('Arial'); el.style.fontSize = '16px'; el.style.color = '#000000';           // plain print, not handwriting
     el.innerHTML = lines.map(l => `<div>${l || '<br>'}</div>`).join('');
+    presetTo(box, spkPreset(), true);              // the Speaker notes preset: plain black print with a black pencil icon, to tell them from your own notes
     sp.append(box); gripTitles(box); card.after(sp);
     said++;
   }
@@ -6117,6 +6151,7 @@ function showBox(b){
   $('#bFill').value = b.fill && b.fill.startsWith('#') ? b.fill : '#fff8c4';
   $('#bNoFill').setAttribute('aria-pressed', !b.fill);
   $('#bChip').value = b.chip && b.chip.startsWith('#') ? b.chip : CHIP;
+  document.dispatchEvent(new Event('boxchange'));      // the Presets list follows it
 }
 // `to`: the note (or selected notes) a colour picker was opened for, else the note you're in; with neither, the style for new notes
 function setBox(kind, value, to){
@@ -7270,7 +7305,7 @@ $('#dictAddForm').addEventListener('submit', e => {
   toast(words.length === 1 ? `“${words[0]}” added to your dictionary.` : `${words.length} words added to your dictionary.`);
 });
 $('#favManage').addEventListener('click', e => { const b = e.target.closest('button[data-c]'); if (b) removeFav(b.dataset.c); });
-function openSettings(fromKeys){ renderDict(); renderFavManage(); fillPrefs(); renderDrive(); renderOd(); settingsBox.hidden = false; helpBtn.setAttribute('aria-expanded', 'true'); if (fromKeys) $('#setClose').focus(); }
+function openSettings(fromKeys){ renderDict(); renderFavManage(); fillPrefs(); renderPresets(); renderDrive(); renderOd(); settingsBox.hidden = false; helpBtn.setAttribute('aria-expanded', 'true'); if (fromKeys) $('#setClose').focus(); }
 function closeSettings(back){ if (settingsBox.hidden) return; settingsBox.hidden = true; helpBtn.setAttribute('aria-expanded', 'false'); if (back) helpBtn.focus(); }
 // a click with detail 0 came from the keyboard (Enter or Space)
 helpBtn.onclick = e => settingsBox.hidden ? openSettings(e.detail === 0) : closeSettings();
@@ -9671,10 +9706,142 @@ newSize.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDef
 fromNote.onclick = () => {
   const n = noteActive(); if (!n) { fillPrefs(); toast('Click inside a note first.'); return; }
   const s = savedRange && n.contains(savedRange.commonAncestorContainer) ? styleAt(savedRange, n) : noteStyle(n);
-  Object.assign(style, {font: s.font, size: s.size, color: s.color}); saveSoon(); fillPrefs();
+  const l = lookOf(n.closest('.notebox'));
+  Object.assign(style, {font: s.font, size: s.size, color: s.color, b: l.b, i: l.i, u: l.u}); saveSoon(); fillPrefs(); paintPreset();
   toast('New notes will start in this style.');
 };
 document.addEventListener('selectionchange', () => { if (!settingsBox.hidden) fillPrefs(); });
+
+// Box presets: a note's font, size, bold / italic / underline, text colour and pencil icon colour, all at once. The Box tab gives one to
+// the note you're in, the selected notes, or new notes; Help & settings › Box presets changes them. They are kept on this device.
+const PRESETS0 = [
+  {id: 'mine', name: 'My notes', font: 'Caveat', size: 24, color: '#1f4fd1', chip: CHIP},
+  {id: 'key', name: 'Important', font: 'Caveat', size: 24, color: '#c62828', b: true, chip: '#ef5350'},
+  {id: 'ask', name: 'Question', font: 'Caveat', size: 24, color: '#7b1fa2', chip: '#ab47bc'},
+  {id: 'spk', name: 'Speaker notes', font: 'Arial', size: 16, color: '#000000', chip: SPK_CHIP},      // (how a PowerPoint file's speaker notes arrive: it can't be removed)
+];
+const hexOk = c => /^#[0-9a-f]{6}$/i.test(c || '');
+const presetClean = p => ({id: String(p.id || 'p' + Date.now().toString(36)), name: String(p.name || '').trim().slice(0, 40) || 'Preset', font: String(p.font || 'Caveat'),
+  size: Math.min(200, Math.max(4, Math.round((+p.size || 24) * 2) / 2)), color: hexOk(p.color) ? p.color.toLowerCase() : '#1f4fd1', b: !!p.b, i: !!p.i, u: !!p.u, chip: hexOk(p.chip) ? p.chip.toLowerCase() : CHIP});
+const loadPresets = () => [].concat(pref.json('box-presets', null) || PRESETS0).filter(p => p && typeof p === 'object').map(presetClean);
+let presets = loadPresets();
+const spkPreset = () => presets.find(p => p.id === 'spk') || presetClean(PRESETS0[3]);
+function savePresets(){ pref.setJson('box-presets', presets); paintPreset(); }
+// how a note looks as a whole: its own font, size, colour and bold / italic / underline (not a few words in it), and its icon colour
+function lookOf(box){
+  const m = box.querySelector(':scope > .mine'), w = m?.style.fontWeight;
+  return {...(m ? noteStyle(m) : style), b: w === 'bold' || +w >= 600, i: m?.style.fontStyle === 'italic', u: /underline/.test(m?.style.textDecoration || ''), chip: chipOf(box)};
+}
+const newLook = () => ({...style, b: !!style.b, i: !!style.i, u: !!style.u, chip: boxStyle.chip || CHIP});
+const sameLook = (p, s) => p.font === s.font && p.size === +s.size && p.color === (s.color || '').toLowerCase() && p.b === !!s.b && p.i === !!s.i && p.u === !!s.u && p.chip === (s.chip || CHIP).toLowerCase();
+// the whole note takes the preset (bold or coloured words inside it keep their bold, but not their own font, size or colour)
+function presetTo(box, p, arriving){
+  const m = box.querySelector(':scope > .mine');
+  if (m) {
+    styleWhole(m, 'font', p.font); styleWhole(m, 'size', p.size); styleWhole(m, 'color', p.color);
+    m.style.fontWeight = p.b ? '700' : ''; m.style.fontStyle = p.i ? 'italic' : ''; m.style.textDecoration = p.u ? 'underline' : '';
+    markLists(m);
+  }
+  setChipColor(box, p.chip, true);
+  if (!arriving) box.removeAttribute('data-spk');       // (a speaker note you've changed is yours: see reopenPptx)
+}
+function usePreset(p){
+  const boxes = multi.size ? [...multi] : noteActive() ? [active.closest('.notebox')] : [];
+  if (boxes.length) boxes.forEach(b => presetTo(b, p));
+  else {
+    Object.assign(style, {font: p.font, size: p.size, color: p.color, b: p.b, i: p.i, u: p.u});
+    boxStyle.chip = p.chip; pref.setJson('box-style', boxStyle);
+    toast(`New notes will start as ${p.name}.`);
+  }
+  const m = boxes[0]?.querySelector(':scope > .mine');
+  showStyle(m ? noteStyle(m) : style); showBox(boxes[0] ? boxOf(boxes[0]) : boxStyle);
+  saveSoon();
+}
+// the Box tab's list shows the preset the note (every selected note, or new notes) looks like, or Custom
+function paintPreset(){
+  const sel = $('#bPreset'), boxes = multi.size ? [...multi] : noteActive() ? [active.closest('.notebox')] : null;
+  const looks = boxes ? boxes.map(lookOf) : [newLook()], hit = presets.find(p => looks.every(l => sameLook(p, l)));
+  const opts = '<option value="" disabled>Custom</option>' + presets.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+  if (sel.dataset.opts !== opts) { sel.innerHTML = opts; sel.dataset.opts = opts; }
+  sel.value = hit ? hit.id : '';
+  const to = multi.size ? `the ${multi.size} selected note${multi.size > 1 ? 's' : ''}` : boxes ? 'the note you\'re in' : 'new notes';
+  sel.title = `Preset for ${to}: a font, size, text colour and pencil icon colour in one go` + (hit ? '' : ' (Custom: it looks like none of them)');
+}
+$('#bPreset').onchange = e => { const p = presets.find(x => x.id === e.target.value); if (p) usePreset(p); else paintPreset(); };
+$('#bPresetEdit').onclick = e => { openSettings(e.detail === 0); $('#presetSec').scrollIntoView({block: 'start'}); };
+for (const ev of ['stylechange', 'boxchange']) document.addEventListener(ev, paintPreset);
+addEventListener('storage', e => { if (e.key === 'box-presets') { presets = loadPresets(); paintPreset(); if (!settingsBox.hidden) renderPresets(); } });      // (changed in another tab)
+paintPreset();
+
+// Help & settings › Box presets: a card for each, its name written in its own look
+const nameLook = p => `font-family:${fontCss(p.font)};font-size:${Math.min(22, Math.max(13, p.size))}px;color:${p.color};font-weight:${p.b ? 700 : 400};font-style:${p.i ? 'italic' : 'normal'};text-decoration:${p.u ? 'underline' : 'none'}`;
+function renderPresets(){
+  $('#presetList').innerHTML = presets.map(p => `<div class="preset" data-id="${esc(p.id)}">
+    <input class="pname" value="${esc(p.name)}" maxlength="40" aria-label="Preset name" title="Name: how the preset is listed on the Box tab" style="${esc(nameLook(p))}">
+    <label class="pc" title="Text colour">Text <input type="color" class="pcolor" value="${p.color}" aria-label="Text colour for ${esc(p.name)}"></label>
+    <label class="pc" title="Pencil icon colour: the colour of the note's icon when it is minimised">${icon('pen')}<input type="color" class="pchip" value="${p.chip}" aria-label="Pencil icon colour for ${esc(p.name)}"></label>
+    ${p.id === 'spk' ? '' : `<button type="button" class="x" title="Remove this preset" aria-label="Remove the preset ${esc(p.name)}">×</button>`}
+    <div class="pfmt"><select class="pfont" aria-label="Font for ${esc(p.name)}" title="Font">${$('#font').innerHTML}</select>
+      <input class="psize" type="number" min="4" max="200" step="1" inputmode="decimal" value="${p.size}" aria-label="Text size for ${esc(p.name)}" title="Text size (4 to 200)">
+      <button type="button" class="btn outline tg" data-k="b" aria-pressed="${p.b}" title="Bold" aria-label="Bold"><b>B</b></button><button type="button" class="btn outline tg" data-k="i" aria-pressed="${p.i}" title="Italic" aria-label="Italic"><i>I</i></button><button type="button" class="btn outline tg" data-k="u" aria-pressed="${p.u}" title="Underline" aria-label="Underline"><u>U</u></button>
+      ${p.id === 'spk' ? '<span class="tag">PowerPoint</span>' : ''}</div></div>`).join('');
+  $('#presetList').querySelectorAll('.preset').forEach(c => { c.querySelector('.pfont').value = presetById(c).font; });
+}
+const presetById = el => presets.find(p => p.id === el.closest('.preset')?.dataset.id);
+// a change is kept at once; the card's name shows the new look
+function presetEdit(e){
+  const p = presetById(e.target); if (!p) return;
+  const t = e.target, card = t.closest('.preset');
+  if (t.classList.contains('pname')) { if (e.type === 'change') { p.name = t.value.trim().slice(0, 40) || 'Preset'; t.value = p.name; } else if (t.value.trim()) p.name = t.value.trim(); }
+  else if (t.classList.contains('pcolor')) p.color = t.value.toLowerCase();
+  else if (t.classList.contains('pchip')) p.chip = t.value.toLowerCase();
+  else if (t.classList.contains('pfont')) p.font = t.value;
+  else if (t.classList.contains('psize')) {
+    const v = Math.round(parseFloat(t.value) * 2) / 2;
+    if (e.type === 'change') { p.size = isFinite(v) ? Math.min(200, Math.max(4, v)) : p.size; t.value = p.size; } else if (v >= 4 && v <= 200) p.size = v; else return;
+  } else return;
+  card.querySelector('.pname').style.cssText = nameLook(p);
+  savePresets();
+}
+$('#presetList').addEventListener('input', presetEdit);
+$('#presetList').addEventListener('change', presetEdit);
+$('#presetList').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('.pname, .psize')) { e.preventDefault(); e.target.blur(); } });
+$('#presetList').addEventListener('click', e => {
+  const b = e.target.closest('button'), p = b && presetById(b); if (!p) return;
+  if (b.classList.contains('x')) {
+    const i = presets.indexOf(p); presets.splice(i, 1); savePresets(); renderPresets();
+    toast(`Removed the preset ${p.name}.`);
+    const xs = $('#presetList').querySelectorAll('.x'); (xs[Math.min(i, xs.length - 1)] || $('#presetAdd')).focus();
+    return;
+  }
+  const k = b.dataset.k; if (!k) return;
+  p[k] = !p[k]; b.setAttribute('aria-pressed', p[k]);
+  b.closest('.preset').querySelector('.pname').style.cssText = nameLook(p);
+  savePresets();
+});
+// + New preset: the look of the note you're in (or of new notes), to change from there
+$('#presetAdd').onclick = () => {
+  if (presets.length >= 12) { toast('You have 12 presets: remove one first.'); return; }
+  const box = multi.size ? [...multi][0] : noteActive()?.closest('.notebox'), l = box ? lookOf(box) : newLook();
+  let n = presets.length + 1; while (presets.some(p => p.name === 'Preset ' + n)) n++;
+  const p = presetClean({...l, id: 'p' + Date.now().toString(36), name: 'Preset ' + n});
+  presets.push(p); savePresets(); renderPresets();
+  const nm = $('#presetList').querySelector(`.preset[data-id="${p.id}"] .pname`); nm.focus(); nm.select();
+  toast(box ? 'New preset made from the note you\'re in. Name it here.' : 'New preset made from the style for new notes. Name it here.');
+};
+let presetResetTimer = null;
+$('#presetReset').onclick = () => {
+  const b = $('#presetReset'), s = b.querySelector('span');
+  clearTimeout(presetResetTimer);
+  if (!b.classList.contains('sure')) {
+    b.classList.add('sure'); s.textContent = 'Reset presets? Click again';
+    presetResetTimer = setTimeout(() => { b.classList.remove('sure'); s.textContent = 'Reset'; }, 3000);
+    return;
+  }
+  b.classList.remove('sure'); s.textContent = 'Reset';
+  presets = PRESETS0.map(presetClean); savePresets(); renderPresets();
+  toast('Presets are back to the four you started with.');
+};
 
 // Interface font: Handwritten (the default) or Clean (set at start-up, near the top)
 const paintUiFont = () => $('#uiFonts').querySelectorAll('[data-pick]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pick === (document.documentElement.dataset.uiFont || 'hand')));
