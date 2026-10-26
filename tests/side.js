@@ -271,6 +271,22 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   w2 = await wordsAt(2, 'identical products');
   await page.mouse.click(w2.x + w2.w * 0.75, w2.y + w2.h * 0.5); await page.waitForTimeout(300);
   ok(await page.isVisible('#annoPop [data-a=unlink]') && await page.isVisible('#annoPop [data-a=sidego]') && !(await page.locator('#annoPop [data-a=sidepick]').count()), 'now the pop-up offers Go to side note and Unlink');
+  // the line's own colour, and the setting for every line
+  const strokeOf = id => page.evaluate(id => document.querySelector(`svg.sidelines path.sl[data-id="${id}"]`)?.getAttribute('stroke'), id);
+  const firstCol = await strokeOf(hid), secondCol = await strokeOf(items[1].id);
+  ok(await page.locator('#annoPop .ldot').count() === 9 && await page.getAttribute('#annoPop .ldot[data-lc="hl"]', 'aria-pressed') === 'true', 'it offers nine line colours, Same as highlight picked');
+  await page.click('#annoPop .ldot[data-lc="#c62828"]'); await page.waitForTimeout(200);
+  ok(await strokeOf(items[1].id) === '#c62828' && await second.getAttribute('data-lc') === '#c62828' && await page.getAttribute('#annoPop .ldot[data-lc="#c62828"]', 'aria-pressed') === 'true', 'Red makes this line red');
+  ok(await strokeOf(hid) === firstCol, 'and leaves the other line as it was');
+  ok(await page.locator('#setLine .ldot').count() === 9 && await page.getAttribute('#setLine .ldot[data-lc="hl"]', 'aria-pressed') === 'true', 'Settings: lines are the same colour as their highlight to begin with');
+  await page.evaluate(() => document.querySelector('#setLine .ldot[data-lc="#1971c2"]').click()); await page.waitForTimeout(200);
+  ok(await strokeOf(hid) === '#1971c2' && await strokeOf(items[1].id) === '#c62828', 'Blue in Settings colours every line without its own colour');
+  ok(await page.evaluate(() => localStorage.getItem('side-line')) === '#1971c2', 'and is remembered');
+  await page.evaluate(() => document.querySelector('#setLine .ldot[data-lc="hl"]').click()); await page.waitForTimeout(200);
+  ok(await strokeOf(hid) === firstCol, 'Same as highlight puts it back');
+  await page.click('#annoPop .ldot[data-lc="hl"]'); await page.waitForTimeout(200);
+  ok(await strokeOf(items[1].id) === secondCol && await second.getAttribute('data-lc') === null, 'and this line follows its highlight again');
+  await page.click('#annoPop .ldot[data-lc="#2b8a3e"]'); await page.waitForTimeout(200);
   // go to
   await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(200);
   await page.click('#annoPop [data-a=sidego]'); await page.waitForTimeout(700);
@@ -280,7 +296,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   w2 = await wordsAt(2, 'identical products');
   await page.mouse.click(w2.x + w2.w * 0.75, w2.y + w2.h * 0.5); await page.waitForTimeout(300);
   await page.click('#annoPop [data-a=unlink]'); await page.waitForTimeout(400);
-  ok(await second.getAttribute('data-link') === null && (await lines()).length === 1, 'Unlink takes the line away');
+  ok(await second.getAttribute('data-link') === null && await second.getAttribute('data-lc') === null && (await lines()).length === 1, 'Unlink takes the line (and its colour) away');
   ok(await second.count() === 1 && (await ink(2)).length === 2, 'the note and the highlight are both still there');
   ok(await page.isVisible('#annoPop [data-a=sidepick]'), 'and it can be linked again');
   await page.keyboard.press('Escape'); await page.waitForTimeout(800);
