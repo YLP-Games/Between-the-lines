@@ -122,6 +122,41 @@ async function makeDeck(){
   });
   ok(filt.includes('Black') && filt.includes('Blue'), 'you can change it, and the Notes panel’s colour filter lists Black: ' + filt.join(', '));
 
+  // ---- only speaker notes are black: notes you make keep the usual icon colour, even right after you've been in a speaker note ----
+  const spkMine = page.locator('.sidepage .notebox[data-spk] .mine').first();
+  const intoSpeaker = async () => { await spkMine.scrollIntoViewIfNeeded(); await spkMine.click(); await page.waitForTimeout(200); };
+  const clickAway = async () => { await page.mouse.click(700, 880); await page.waitForTimeout(200); };
+  await intoSpeaker();
+  ok(await page.inputValue('#bChip') === '#263238', 'in a speaker note, the Box tab shows its black icon colour');
+  await clickAway();
+  ok(await page.evaluate(() => !noteActive()) && await page.inputValue('#bChip') === '#ffd54a', 'clicking away shows the colour for new notes again (yellow)');
+  const made = await page.evaluate(() => {
+    const s = document.querySelectorAll('#main .pagecard');
+    addNoteToPage('a note from the Notes panel');
+    const st = s[1].querySelector('.strip'); insertAt(st, (+st.dataset.y0 + +st.dataset.y1) / 2);      // + Add here
+    sideAddBox(sideOf(s[0]), 40, 300, 200);                                                           // a click on a side page
+    addSticky(s[2], 100, 100, 'a sticky note');
+    const mine = [...document.querySelectorAll('#main .notebox:not([data-spk])')], out = {mine: mine.map(chipOf), spk: [...document.querySelectorAll('#main .notebox[data-spk]')].map(chipOf)};
+    mine.forEach(b => b.remove()); return out;
+  });
+  ok(made.mine.length === 4 && made.mine.every(c => c === '#ffd54a'), 'notes you add (Notes panel, + Add here, side page, sticky) get the usual yellow icon: ' + made.mine.join());
+  ok(made.spk.join() === '#263238,#263238', 'while the speaker notes stay black');
+  // a colour picker opened on a speaker note and closed by clicking away (as on an iPad) colours that note, never new notes
+  await intoSpeaker();
+  await page.dispatchEvent('#bChip', 'pointerdown');
+  await clickAway();
+  await page.evaluate(() => { const i = document.getElementById('bChip'); i.value = '#ef5350'; i.dispatchEvent(new Event('input', {bubbles: true})); });
+  let race = await page.evaluate(() => ({spk: chipOf(document.querySelector('.sidepage .notebox[data-spk]')), nb: boxStyle.chip, saved: pref.json('box-style', {}).chip || '#ffd54a', fresh: chipOf(makeBox().box)}));
+  ok(race.spk === '#ef5350' && race.nb === '#ffd54a' && race.saved === '#ffd54a' && race.fresh === '#ffd54a', `Box tab icon colour sent after clicking away goes to the speaker note, not to new notes (${JSON.stringify(race)})`);
+  await page.evaluate(() => { const b = document.querySelector('.sidepage .notebox[data-spk]'); setChipColor(b, SPK_CHIP, true); setCollapsed(b, true); const c = b.querySelector('.note-chip').getBoundingClientRect(); openChipPop(b, c.left, c.top); });
+  await page.dispatchEvent('.chippop input', 'pointerdown');
+  await clickAway();
+  ok(await page.evaluate(() => chipPop.hidden), 'clicking away closes the pencil icon’s colour menu');
+  await page.evaluate(() => { const i = chipPop.querySelector('input'); i.value = '#42a5f5'; i.dispatchEvent(new Event('input', {bubbles: true})); });
+  race = await page.evaluate(() => ({spk: chipOf(document.querySelector('.sidepage .notebox[data-spk]')), nb: boxStyle.chip, saved: pref.json('box-style', {}).chip || '#ffd54a'}));
+  ok(race.spk === '#42a5f5' && race.nb === '#ffd54a' && race.saved === '#ffd54a', `and so does its “Any colour” picker (${JSON.stringify(race)})`);
+  await page.evaluate(() => { const b = document.querySelector('.sidepage .notebox[data-spk]'); setChipColor(b, SPK_CHIP, true); setCollapsed(b, false); saveSoon(); });
+
   // ---- opened again the other way, from the tip: the notes come along (they aren't counted as your writing) ----
   const swap = page.locator('.pptx-tip button', {hasText: 'editable text'});
   if (await swap.count()) {
@@ -172,6 +207,15 @@ async function makeDeck(){
   // ---- on again from Ctrl+K ----
   await page.evaluate(() => CK_ACTIONS.find(a => a.id === 'pptxnotes').run());
   ok(await page.evaluate(() => pptxNotesOn()) && await page.isChecked('#setPptxNotes'), 'Ctrl+K’s action turns it back on');
+
+  // ---- a browser where the bug above already made black the colour for new notes: it goes back to yellow, once ----
+  await page.evaluate(() => { localStorage.setItem('box-style', JSON.stringify({outline: true, border: '#9aa3b2', fill: '', chip: '#263238'})); localStorage.removeItem('spk-chip-fixed'); });
+  await page.reload(); await page.waitForTimeout(2000);
+  ok(await page.evaluate(() => boxStyle.chip === CHIP && pref.json('box-style', {}).chip === CHIP && chipOf(makeBox().box) === CHIP), 'black left as the colour for new notes goes back to yellow');
+  await page.evaluate(() => { openChipPop(null, 100, 100); pickChip('#263238'); closeChipPop(); });
+  await page.reload(); await page.waitForTimeout(2000);
+  ok(await page.evaluate(() => boxStyle.chip === '#263238'), 'but Black chosen for new notes after that stays');
+  await page.evaluate(() => localStorage.removeItem('box-style'));
 
   await browser.close();
   ok(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.join(' | ') : ''));

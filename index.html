@@ -2684,7 +2684,7 @@ document.addEventListener('selectionchange', () => {
   if (el && !el.closest('#bView')) { active = el; savedRange = r.cloneRange(); showStyle(styleAt(r, el)); const nb = el.closest('.notebox'); if (nb) showBox(boxOf(nb)); $('#indentSize').value = el.style.getPropertyValue('--ind').trim() || '1.4em'; }
 });
 document.addEventListener('mousedown', e => {
-  if (e.target.closest('#bView') || !e.target.closest('.mine, .notebox, .gappill, header, .fpanel, .mediabar, .chippop, .spellmenu, .multibar, .settings, .tplbox, .tmenu')) { active = null; savedRange = null; showStyle(style); }      // (the notebook beside is read only: clicking in it leaves the note you were in)
+  if (e.target.closest('#bView') || !e.target.closest('.mine, .notebox, .gappill, header, .fpanel, .mediabar, .chippop, .spellmenu, .multibar, .settings, .tplbox, .tmenu')) { active = null; savedRange = null; showStyle(style); if (!multi.size) showBox(boxStyle); }      // (the notebook beside is read only: clicking in it leaves the note you were in)
 });
 function noteStyle(el){
   return {font: el.style.fontFamily.split(',')[0].replace(/"/g,'').trim() || style.font,
@@ -6075,6 +6075,8 @@ const CHIP = '#ffd54a';            // the usual yellow pencil icon
 const SPK_CHIP = '#263238';        // a PowerPoint file's speaker notes get the Black one (you can change it as on any note)
 let boxStyle = {outline: true, border: '#9aa3b2', fill: '', chip: CHIP};
 Object.assign(boxStyle, pref.json('box-style', {}));
+// (for a while a colour picker opened on a speaker note could pass its black on to new notes, see setBox: once, they go back to the usual yellow)
+if (pref.get('spk-chip-fixed') !== '1') { if (boxStyle.chip === SPK_CHIP) { boxStyle.chip = CHIP; pref.setJson('box-style', boxStyle); } pref.set('spk-chip-fixed', '1'); }
 function applyBoxVars(box, b){
   box.classList.toggle('no-outline', !b.outline);
   box.style.setProperty('--nb-border', b.border);
@@ -6100,12 +6102,14 @@ function showBox(b){
   $('#bNoFill').setAttribute('aria-pressed', !b.fill);
   $('#bChip').value = b.chip && b.chip.startsWith('#') ? b.chip : CHIP;
 }
-function setBox(kind, value){
-  if (multi.size) {               // outline / fill / icon colour for every selected note
+// `to`: the note (or selected notes) a colour picker was opened for, else the note you're in; with neither, the style for new notes
+function setBox(kind, value, to){
+  if (to ? to.multi && multi.size : multi.size) {               // outline / fill / icon colour for every selected note
     multi.forEach(bx => { const b = boxOf(bx); if (kind === 'outline') b.outline = value; if (kind === 'border') { b.border = value; b.outline = true; } if (kind === 'fill') b.fill = value; if (kind === 'chip') b.chip = value; applyBoxVars(bx, b); });
     showBox(boxOf([...multi][0])); saveSoon(); return;
   }
-  const box = noteActive() ? active.closest('.notebox') : null;
+  const box = to ? to.box : noteActive() ? active.closest('.notebox') : null;
+  if (box && !box.isConnected) return;
   const b = box ? boxOf(box) : boxStyle;
   if (kind === 'outline') b.outline = value;
   if (kind === 'border') { b.border = value; b.outline = true; }
@@ -6116,10 +6120,14 @@ function setBox(kind, value){
   showBox(b); saveSoon();
 }
 $('#bOutline').onchange = e => setBox('outline', e.target.checked);
-$('#bBorder').oninput = e => setBox('border', e.target.value);
-$('#bFill').oninput = e => setBox('fill', e.target.value);
+// a colour picker can still send its colour after you've clicked away from the note (which closes it, on an iPad too): the colour goes to
+// the note it was opened for, never to new notes
+const boxFor = {};
+for (const id of ['bBorder', 'bFill', 'bChip']) for (const ev of ['pointerdown', 'focus']) $('#' + id).addEventListener(ev, () => { boxFor[id] = {box: noteActive()?.closest('.notebox') || null, multi: multi.size > 0}; });
+$('#bBorder').oninput = e => setBox('border', e.target.value, boxFor.bBorder);
+$('#bFill').oninput = e => setBox('fill', e.target.value, boxFor.bFill);
 $('#bNoFill').onclick = () => setBox('fill', '');
-$('#bChip').oninput = e => setBox('chip', e.target.value);
+$('#bChip').oninput = e => setBox('chip', e.target.value, boxFor.bChip);
 showBox(boxStyle);
 
 // right-click (or press and hold) a minimised note's pencil icon to colour it
@@ -6138,7 +6146,7 @@ function markChip(){
   chipPop.querySelector('input').value = cur;
 }
 function openChipPop(box, x, y, from){
-  chipBox = box; chipFrom = from || box?.querySelector(':scope > .note-chip') || null;
+  chipBox = box; chipFrom = from || box?.querySelector(':scope > .note-chip') || null; chipFor = undefined;
   chipPop.querySelector('.ttl').textContent = box ? (box.classList.contains('collapsed') ? 'Icon colour' : 'Icon colour for this note') : 'Icon colour for new notes';
   chipPop.querySelector('[data-all]').hidden = !box;
   renderFavs(); markChip();
@@ -6163,9 +6171,9 @@ function followChip(){
 }
 let chipMulti = false;
 function closeChipPop(){ chipPop.hidden = true; chipBox = null; chipFrom = null; chipMulti = false; }
-function pickChip(c){
-  if (chipMulti && multi.size) { multi.forEach(b => setChipColor(b, c, true)); saveSoon(); markChip(); return; }
-  if (chipBox) { setChipColor(chipBox, c); if (active && chipBox.contains(active)) showBox(boxOf(chipBox)); }
+function pickChip(c, to = {box: chipBox, multi: chipMulti}){
+  if (to.multi && multi.size) { multi.forEach(b => setChipColor(b, c, true)); saveSoon(); markChip(); return; }
+  if (to.box) { if (!to.box.isConnected) return; setChipColor(to.box, c); if (active && to.box.contains(active)) showBox(boxOf(to.box)); }
   else { boxStyle.chip = c; pref.setJson('box-style', boxStyle); if (!noteActive()) showBox(boxStyle); }
   markChip();
 }
@@ -6181,7 +6189,10 @@ chipPop.addEventListener('click', e => {
     if (!active) showBox(boxStyle); toast('New notes will get this icon colour.'); closeChipPop();
   }
 });
-chipPop.querySelector('input').addEventListener('input', e => pickChip(e.target.value));
+// (its "Any colour" picker sends to the note it was opened for, even once clicking away has closed the menu: see boxFor)
+let chipFor;
+for (const ev of ['pointerdown', 'focus']) chipPop.querySelector('input').addEventListener(ev, () => { if (!chipPop.hidden) chipFor = {box: chipBox, multi: chipMulti}; });
+chipPop.querySelector('input').addEventListener('input', e => pickChip(e.target.value, chipFor));
 document.addEventListener('mousedown', e => { if (!chipPop.hidden && !chipPop.contains(e.target) && e.target !== chipFrom) closeChipPop(); });
 // Icon colours in the Box tab: for the note you're in, or for new notes
 $('#favChipBtn').onclick = e => {
