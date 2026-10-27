@@ -242,6 +242,10 @@ main > .file-head.headx-on,.sheet > .file-head.headx-on{text-decoration:line-thr
 .bul{display:inline-block;min-width:1.2em}
 .blankpage{aspect-ratio:16/9;max-width:100%;display:flex;flex-direction:column}
 .blankpage > .content{flex:1}
+/* an inserted page's own paper (Page background, from the palette in its corner): a colour, and the side pages' patterns */
+.blankpage{--sp-line:rgba(47,43,36,.14)}
+.blankpage.darkpaper{--card-ink:#ece6d6;--sp-line:rgba(236,230,214,.17)}
+.blankpage.darkpaper .mine[style*="color: rgb(0, 0, 0)"]{color:#ece6d6!important}
 .slide.target-page{outline:3px solid var(--accent);outline-offset:3px}
 .slide.target-page.target-del{outline-color:var(--danger)}
 /* PDF pages: the real page as a picture, opened up in strips where notes go */
@@ -1106,9 +1110,9 @@ main.side-on .sidepage{display:block}
 .sidepage.dark .mine[style*="rgb(31, 79, 209)"]{color:#a9c4ff!important}
 .sidepage.dark .mine[style*="color: rgb(0, 0, 0)"]{color:#ece6d6!important}      /* (black words, as speaker notes come, are light on dark paper) */
 /* the paper: plain, lined, squared or dotted (the small previews in the Background pop-up use the same patterns) */
-:is(.sidepage,.sidebg .pv)[data-pat="lined"]{background-image:linear-gradient(transparent 31px,var(--sp-line) 31px);background-size:100% 32px;background-position:0 38px}
-:is(.sidepage,.sidebg .pv)[data-pat="grid"]{background-image:linear-gradient(var(--sp-line) 1px,transparent 1px),linear-gradient(90deg,var(--sp-line) 1px,transparent 1px);background-size:24px 24px}
-:is(.sidepage,.sidebg .pv)[data-pat="dots"]{background-image:radial-gradient(var(--sp-line) 1.3px,transparent 1.8px);background-size:22px 22px;background-position:11px 11px}
+:is(.sidepage,.sidebg .pv,.blankpage)[data-pat="lined"]{background-image:linear-gradient(transparent 31px,var(--sp-line) 31px);background-size:100% 32px;background-position:0 38px}
+:is(.sidepage,.sidebg .pv,.blankpage)[data-pat="grid"]{background-image:linear-gradient(var(--sp-line) 1px,transparent 1px),linear-gradient(90deg,var(--sp-line) 1px,transparent 1px);background-size:24px 24px}
+:is(.sidepage,.sidebg .pv,.blankpage)[data-pat="dots"]{background-image:radial-gradient(var(--sp-line) 1.3px,transparent 1.8px);background-size:22px 22px;background-position:11px 11px}
 .sidepage::before{content:attr(data-label);display:none;position:absolute;left:12px;top:7px;font:13px var(--ui);opacity:.6;pointer-events:none}
 .sidepage .g-float{display:none}
 .sidepage > .notebox.floating{max-width:calc(100% - 8px)}
@@ -1739,7 +1743,7 @@ html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;text-
   main.side-on:not(.side-split) > .slide{break-after:avoid}
   main.paged > :not(:last-child){break-after:page}
   main,main *{-webkit-print-color-adjust:exact;print-color-adjust:exact}      /* pictures of the pages, paper colours and highlights are backgrounds, which a printer leaves out unless asked */
-  .slide:not([style*="background"]){background:#fff}
+  .slide:not([style*="background"]){background-color:#fff}
   .slide,.slide.target-page{box-shadow:none;outline:none}
   .slide{border:1px solid #bbb!important;border-radius:0!important}      /* (a fine frame where several slides share a printed page; a printed sheet is the page itself) */
   .sheet,.sheet > .slide{border:0!important}
@@ -4889,6 +4893,34 @@ function pageShape(ref){
   const r = ref.getBoundingClientRect();         // a text page (Word, PowerPoint as text): its shape as it is shown
   return r.width > 0 && r.height > 0 ? `${Math.round(r.width)} / ${Math.round(Math.min(Math.max(r.height, r.width * 0.4), r.width * 2.5))}` : '';
 }
+// and its paper: a PDF page's is the most common colour in its picture (white, cream, a dark slide), a text page's its own
+// background (a coloured PowerPoint slide); a page with neither shows the theme's card colour, as a blank page does
+function paperColour(ref){
+  if (!ref?.matches?.('.slide')) return Promise.resolve('');
+  if (!ref.classList.contains('pagecard')) {
+    const c = ref.style.backgroundColor || ref.style.background ? getComputedStyle(ref).backgroundColor : '';      // (as '#rrggbb', or '' for the theme's colour)
+    return Promise.resolve(c && !/^rgba\(.*,\s*0\)$/.test(c) ? toHex(c) : '');
+  }
+  const url = ref.style.getPropertyValue('--pg').match(/url\(["']?(.*?)["']?\)$/)?.[1];
+  if (!url) return Promise.resolve('#ffffff');
+  return new Promise(res => {
+    const im = new Image();
+    im.onload = () => {
+      const cv = document.createElement('canvas'), w = cv.width = 160, h = cv.height = Math.max(1, Math.round(160 * im.naturalHeight / im.naturalWidth) || 90);
+      const ctx = cv.getContext('2d'); ctx.drawImage(im, 0, 0, w, h);
+      try { res(toHex(paperOf(ctx.getImageData(0, 0, w, h).data).join())); } catch { res('#ffffff'); } finally { cv.width = 0; }
+    };
+    im.onerror = () => res('#ffffff'); im.src = url;
+  });
+}
+// paint a blank page's paper ('' gives it back the theme's colour); on dark paper the words are light, as on a dark side page
+function paintPaper(page, c){
+  c = /^#[0-9a-f]{6}$/i.test(c || '') ? c.toLowerCase() : '';
+  if (c) { page.dataset.bg = c; page.style.backgroundColor = c; page.style.setProperty('--card', c); }
+  else { delete page.dataset.bg; page.style.removeProperty('background-color'); page.style.removeProperty('--card'); }
+  const n = parseInt(c.slice(1) || 'ffffff', 16);
+  page.classList.toggle('darkpaper', 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) < 128);
+}
 function blankPage(like){
   const s = document.createElement('section'); s.className = 'slide blankpage';
   const shape = pageShape(like); if (shape) s.style.aspectRatio = shape;
@@ -4896,8 +4928,13 @@ function blankPage(like){
   const {box, el} = makeBox(); content.append(box);
   return {page: s, note: el};
 }
+// the new page looks like the page it goes after (else the last page, for one added at the end): its shape, its paper and its pattern
 function addPageAfter(card){
   const {page, note} = blankPage(card);
+  const ref = card || [...main.querySelectorAll('.slide')].pop();
+  if (ref?.classList.contains('pagecard')) paintPaper(page, '#ffffff');       // (at once, so it is not cream for a moment in the dark theme; the picture's own colour follows)
+  if (ref?.classList.contains('blankpage') && ref.dataset.pat) page.dataset.pat = ref.dataset.pat;
+  paperColour(ref).then(c => { if (c && page.isConnected) { paintPaper(page, c); saveSoon(); } });
   if (card) (sideOf(card) || card).after(page);
   else { main.querySelector('.welcome')?.remove(); main.append(page); }
   if (LAYOUTS[layout]) paginateView();
@@ -7546,7 +7583,7 @@ function renderPages(){
   const list = pageList, slides = main.querySelectorAll('.slide');
   if (!slides.length) { pagesSig = null; list.innerHTML = '<li class="sideempty">Open a file and its pages show up here.</li>'; return; }
   const sig = [...main.querySelectorAll('.file-head, .slide')].map(el => el.classList.contains('file-head') ? 'H' + el.textContent
-    : `${pageTitle(el)}\u0001${[...el.querySelectorAll('.notebox')].filter(hasContent).length}\u0001${el.style.getPropertyValue('--pg').slice(-48)}`).join('\u0002');
+    : `${pageTitle(el)}\u0001${[...el.querySelectorAll('.notebox')].filter(hasContent).length}\u0001${el.style.getPropertyValue('--pg').slice(-48)}\u0001${el.style.backgroundColor}`).join('\u0002');
   if (sig === pagesSig && list.children.length) { trackPage(); return; }
   pagesSig = sig;
   const frag = document.createDocumentFragment();
@@ -7560,6 +7597,7 @@ function renderPages(){
     if (el.classList.contains('pagecard')) { th.classList.add('img'); th.style.setProperty('--pg', el.style.getPropertyValue('--pg')); th.style.aspectRatio = `${el.dataset.w} / ${el.dataset.h}`; }
     else {
       if (el.classList.contains('blankpage') && el.style.aspectRatio) th.style.aspectRatio = el.style.aspectRatio;
+      if (el.classList.contains('blankpage') && el.style.backgroundColor) th.style.background = el.style.backgroundColor;
       const t = document.createElement('b'); t.textContent = title.slice(0, 80);
       th.append(t, (el.querySelector('.content')?.textContent || '').replace(/\s+/g, ' ').trim().slice(title.length, title.length + 160));
     }
@@ -9416,6 +9454,86 @@ document.addEventListener('mousedown', e => { if (!sideBgPop.hidden && !sideBgPo
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sideBgPop.hidden) { e.stopPropagation(); const f = sideBgFrom; closeSideBg(); if (!(f === sideCorner && sideByMouse)) f?.focus(); } }, true);
 addEventListener('resize', () => { if (!sideBgPop.hidden) placeSideBg(); });
 addEventListener('scroll', () => { if (!sideBgPop.hidden) placeSideBg(); }, {passive: true});
+
+// ---------- an inserted page's background: its own colour and pattern, from a palette button in its corner (as a side page has) ----------
+const pageBgPop = document.createElement('div');
+pageBgPop.id = 'pageBgPop'; pageBgPop.className = 'pop sidebg'; pageBgPop.hidden = true; pageBgPop.setAttribute('role', 'dialog'); pageBgPop.setAttribute('aria-labelledby', 'pageBgTitle');
+pageBgPop.innerHTML = '<h2 id="pageBgTitle">Page background</h2><p>The paper of this inserted page</p><button type="button" class="btn outline" id="pageBgLike" title="Take the colour of the page before it (a PDF page\'s paper, a coloured slide\'s colour)">Match the page before</button><h3>Colour</h3><div class="sws">' +
+  SIDE_BGS.map(([c, n]) => `<button type="button" class="sw" data-c="${c}" style="--c:${c}" title="${n}" aria-label="${n}" aria-pressed="false"></button>`).join('') +
+  '</div><label class="cust"><input type="color" id="pageCustom" aria-label="Custom colour"> Custom colour</label><h3>Pattern</h3><div class="pats">' +
+  SIDE_PATS.map(([p, n]) => `<button type="button" class="btn outline pat" data-pat="${p}" title="${n}" aria-pressed="false"><span class="pv" data-pat="${p}"></span>${n}</button>`).join('') + '</div>';
+document.body.append(pageBgPop);
+const pageCorner = document.createElement('button');
+pageCorner.type = 'button'; pageCorner.id = 'pageBgCorner'; pageCorner.className = 'btn sidecorner'; pageCorner.hidden = true;
+pageCorner.setAttribute('aria-haspopup', 'dialog'); pageCorner.setAttribute('aria-expanded', 'false'); pageCorner.setAttribute('aria-label', 'Page background');
+pageCorner.title = 'Page background: change the colour and pattern of this inserted page'; pageCorner.innerHTML = icon('palette');
+document.body.append(pageCorner);
+let pageBgFor = null, pageCornerPg = null, pageTouchT = 0;
+function pageBgPaint(){
+  const p = pageBgFor; if (!p) return;
+  const bg = p.dataset.bg || '', pat = p.dataset.pat || 'plain', shown = bg || paperColourNow(p);
+  pageBgPop.querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', b.dataset.c === bg));
+  pageBgPop.querySelectorAll('.pat').forEach(b => b.setAttribute('aria-pressed', b.dataset.pat === pat));
+  pageBgPop.querySelectorAll('.pv').forEach(v => { v.style.setProperty('--pvbg', shown); v.classList.toggle('dark', sideDark(shown)); });
+  const cu = $('#pageCustom'); if (cu.value !== shown) cu.value = shown;
+}
+const paperColourNow = p => toHex(getComputedStyle(p).backgroundColor);
+function pageBgSet(change){
+  const p = pageBgFor; if (!p?.isConnected) return;
+  if ('bg' in change) paintPaper(p, change.bg);
+  if ('pat' in change) { if (change.pat === 'plain') delete p.dataset.pat; else p.dataset.pat = change.pat; }
+  pageBgPaint(); saveSoon();
+}
+// the corner of the part of the page you can see; the button is clear until the pointer is near it, the page is tapped, or it is focused
+function pageCornerBox(p){
+  if (!p?.isConnected || reading) return null;
+  const r = p.getBoundingClientRect(), top = Math.max(r.top, appbar.getBoundingClientRect().bottom), right = Math.min(r.right, innerWidth) - 8;
+  return top + 40 > Math.min(r.bottom, innerHeight - 34) || right - r.left < 60 ? null : {top: top + 6, right};
+}
+function pageCornerPlace(){
+  const b = pageCornerBox(pageCornerPg);
+  if (!b) { pageCorner.hidden = true; pageCorner.classList.remove('near'); return; }
+  pageCorner.hidden = false;
+  pageCorner.style.top = b.top + 'px'; pageCorner.style.left = (b.right - pageCorner.offsetWidth) + 'px';
+}
+function pageCornerHide(){ if (!pageBgPop.hidden) return; pageCornerPg = null; clearTimeout(pageTouchT); pageCornerPlace(); }
+function placePageBg(){
+  const w = pageBgPop.offsetWidth, a = pageCorner.hidden ? pageBgFor?.getBoundingClientRect() : pageCorner.getBoundingClientRect();
+  pageBgPop.style.left = Math.max(8, Math.min(innerWidth - w - 8, a ? a.right - w : innerWidth - w - 16)) + 'px';
+  pageBgPop.style.top = Math.max(8, Math.min(innerHeight - pageBgPop.offsetHeight - 8, a ? (pageCorner.hidden ? Math.max(a.top, appbar.getBoundingClientRect().bottom) : a.bottom) + 6 : 80)) + 'px';
+}
+function openPageBg(p){
+  pageBgFor = p; pageCornerPg = p; pageCornerPlace(); pageBgPaint();
+  pageBgPop.hidden = false; placePageBg(); pageCorner.setAttribute('aria-expanded', 'true');
+}
+function closePageBg(){ pageBgPop.hidden = true; pageCorner.setAttribute('aria-expanded', 'false'); pageCornerHide(); }
+pageCorner.onclick = e => { e.stopPropagation(); if (!pageBgPop.hidden) closePageBg(); else if (pageCornerPg) openPageBg(pageCornerPg); };
+document.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'mouse' || e.buttons || !pageBgPop.hidden) return;
+  const onBtn = e.target === pageCorner || pageCorner.contains(e.target), p = e.target.closest?.('.blankpage') || (onBtn ? pageCornerPg : null);
+  if (!p) { if (pageCornerPg) pageCornerHide(); return; }
+  if (p !== pageCornerPg) { pageCornerPg = p; pageCornerPlace(); }
+  const b = pageCornerBox(p);
+  pageCorner.classList.toggle('near', onBtn || !!b && e.clientX >= b.right - 120 && e.clientX <= b.right + 8 && e.clientY >= b.top - 6 && e.clientY <= b.top + 74);
+});
+document.addEventListener('pointerdown', e => {
+  if (e.target.closest?.('#pageBgCorner, #pageBgPop')) return;
+  if (!pageBgPop.hidden) closePageBg();
+  const p = e.pointerType !== 'mouse' && e.target.closest?.('.blankpage');
+  if (p) { pageCornerPg = p; pageCornerPlace(); pageCorner.classList.add('near'); clearTimeout(pageTouchT); pageTouchT = setTimeout(() => { if (pageBgPop.hidden) pageCorner.classList.remove('near'); }, 3500); }
+}, true);
+addEventListener('scroll', () => { if (pageCornerPg) { pageCornerPlace(); if (!pageBgPop.hidden) placePageBg(); } }, {passive: true, capture: true});
+addEventListener('resize', () => { if (pageCornerPg) { pageCornerPlace(); if (!pageBgPop.hidden) placePageBg(); } });
+pageBgPop.addEventListener('click', e => {
+  const sw = e.target.closest('.sw'), pt = e.target.closest('.pat');
+  if (sw) pageBgSet({bg: sw.dataset.c}); else if (pt) pageBgSet({pat: pt.dataset.pat});
+  else if (e.target.closest('#pageBgLike')) {
+    const all = [...main.querySelectorAll('.slide')], i = all.indexOf(pageBgFor), p = pageBgFor;
+    paperColour(all[i - 1] || all[i + 1]).then(c => { if (pageBgFor === p) pageBgSet({bg: c}); });
+  }
+});
+$('#pageCustom').addEventListener('input', e => pageBgSet({bg: e.target.value}));
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !pageBgPop.hidden) { e.stopPropagation(); closePageBg(); } }, true);
 // the bar that shows when you select words: one more choice
 annoBar.querySelector('.aacts').insertAdjacentHTML('beforeend', `<button type="button" class="btn" data-side title="Link to side note: highlight the selected words and open a note beside them on the side page, joined by a line">${icon('link')}Link to side note</button>`);
 sidePaintUi();
@@ -11761,6 +11879,8 @@ const CK_ACTIONS = [
   {id: 'journal', label: 'Insert journal entry', ico: 'journal', words: 'accounting debit credit dr cr ledger je', ok: () => !reading, run: () => wtAdd('journal')},
   {id: 'templates', label: 'Templates…', ico: 'library', words: 'template gallery formulas formula library subjects ready-made layouts', ok: () => !reading, run: () => tplOpen()},
   {id: 'blankafter', label: 'Blank page after this page', ico: 'page-add', words: 'insert add empty blank page between', ok: () => ckPages() && !reading, run: ckClick('#addPageBtn')},
+  {id: 'pagebg', label: 'Inserted page background', ico: 'palette', words: 'blank page paper colour color pattern lined grid dots match white cream dark', ok: () => !reading && !!main.querySelector('.blankpage'),
+    run: () => { const c = currentCard(); if (c?.classList.contains('blankpage')) openPageBg(c); else toast('Click an inserted blank page first.'); }},
   {id: 'fileafter', label: 'Insert a file after this page', ico: 'file-in', words: 'add pdf powerpoint pptx word docx picture image pages between insert here', ok: () => ckPages() && !reading, run: ckClick('#addFileAfterBtn')},
   {id: 'addhere', label: 'Add a file to the end of this notebook', ico: 'file', words: 'insert append pdf powerpoint pptx word docx picture image pages here', ok: () => !reading, run: ckClick('#addHereBtn')},
 ];
