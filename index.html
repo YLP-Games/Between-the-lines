@@ -1065,7 +1065,8 @@ body.on-mark .strip,body.on-mark .tl{cursor:pointer}
 .annopop input[type=color].on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)} /* taste-skill-ignore: a ring marking the colour picked */
 /* a line to a side note can be clicked: a wide, invisible stroke along it */
 .sidelines .sh{fill:none;stroke:transparent;stroke-width:14px;pointer-events:stroke;cursor:pointer}
-body.drawing .sidelines .sh{pointer-events:none}
+/* lines let the pointer through while drawing, while you drag to select words, and when Clickable lines is off */
+body:is(.drawing,.pressing,.lines-still) .sidelines .sh{pointer-events:none}
 .linepop .ldots{flex-basis:100%}
 .linepop .ldots .lbl{flex-basis:100%}
 /* the colour of the line from a highlight to its side note: "Same as highlight" shows a wheel of highlight colours */
@@ -2139,6 +2140,10 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <div class="grp"><div class="row">
         <label class="chk" for="autoAlign" title="Auto-align notes: a new note between the lines lines up with the left edge of the note above or below it, when that is close"><input type="checkbox" id="autoAlign" checked> Auto-align notes</label>
       </div><span class="cap">New notes</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row">
+        <label class="chk" for="bLineClick" title="Clickable lines: click a line to a side note for its colour, Go to side note and Unlink. Off: the lines let clicks through, so the words under them are easy to select"><input type="checkbox" id="bLineClick" checked> Clickable lines</label>
+      </div><span class="cap">Lines</span></div>
     </div>
 
     <div class="panel" role="tabpanel" id="panel-review" aria-labelledby="tab-review" data-edit hidden>
@@ -2391,8 +2396,11 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
     </section>
     <section>
       <h3>Side note lines</h3>
-      <p class="sethint">The colour of the line that joins a highlight to its side note. Same as highlight follows each highlight's colour; any line can still have its own colour (click its highlight).</p>
+      <p class="sethint">The colour of the line that joins a highlight to its side note. Same as highlight follows each highlight's colour; any line can still have its own colour (click the line).</p>
       <div class="ldots" id="setLine" role="group" aria-label="Line colour"></div>
+      <label class="chk setchk" for="setLineClick"><input type="checkbox" id="setLineClick" checked> Clickable lines</label>
+      <p class="sethint">Click a line for its colour, Go to side note and Unlink. Off: lines let clicks through, so words under them are easy to select (also in the Box tab). One line can let clicks through on its own, from its pop-up.</p>
+      <button type="button" class="btn outline" id="setLineAll" title="Make every line in this notebook clickable again, including the ones set to let clicks through">Make every line clickable again</button>
     </section>
     <section id="proofSec">
       <h3>Grammar and autocorrect</h3>
@@ -9475,7 +9483,22 @@ function linkAdd(box, id){ const l = linksOf(box); if (!l.includes(id)) box.data
 function linkDrop(box, id){
   const l = linksOf(box).filter(x => x !== id);
   if (l.length) box.dataset.link = l.join(' '); else box.removeAttribute('data-link');
-  lineSet(box, id, null);
+  lineSet(box, id, null); lineStill(box, id, false);
+}
+// a line that lets clicks through (from its pop-up): data-ls on its note holds the ids of those lines
+const isStill = (box, id) => (box.dataset.ls || '').split(' ').includes(id);
+function lineStill(box, id, on){
+  const l = (box.dataset.ls || '').split(' ').filter(x => x && x !== id);
+  if (on) l.push(id);
+  if (l.length) box.dataset.ls = l.join(' '); else box.removeAttribute('data-ls');
+}
+// Clickable lines (Box tab and Settings): off, no line catches the pointer
+const lineClickOn = () => pref.get('line-click', '1') !== '0';
+function setLineClick(on){
+  pref.set('line-click', on ? '1' : '0');
+  document.body.classList.toggle('lines-still', !on);
+  for (const id of ['#bLineClick', '#setLineClick']) { const c = $(id); if (c) c.checked = on; }
+  if (!on) closeLinePop();
 }
 const lineDots = (cur, what) => LINE_COLORS.map(([c, n]) => `<button type="button" class="ldot" data-lc="${c}"${c === 'hl' ? '' : ` style="--c:${c}"`} title="${n}: ${what}" aria-label="${n}" aria-pressed="${c === cur}"></button>`).join('');
 const sideSid = s => s.dataset.sid || (s.dataset.sid = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
@@ -9645,7 +9668,7 @@ function sideDraw(){
           svgEl('path', {class: 'sl' + hot, 'data-id': g.id, d: `M${g.x1} ${g.y1}C${cx1} ${cy1} ${cx2} ${cy2} ${g.x2} ${g.y2}`, stroke: g.col}),
           svgEl('circle', {class: 'sd' + hot, cx: g.x1, cy: g.y1, r: 3, fill: g.col}),
           svgEl('path', {class: 'sa' + hot, d: `M${g.x2} ${g.y2}l-10 -5.5v11z`, fill: g.col}));
-        if (hd) { const hit = svgEl('path', {class: 'sh', 'data-id': g.id, d: hd}); sideHitBox.set(hit, box); out.push(hit); }
+        if (hd && !isStill(box, id)) { const hit = svgEl('path', {class: 'sh', 'data-id': g.id, d: hd}); sideHitBox.set(hit, box); out.push(hit); }
       }
     }
   }
@@ -9751,7 +9774,8 @@ function openLinePop(box, id, x, y){
   linePop.style.setProperty('--c', st.col);
   linePop.innerHTML = '<div class="aq"></div>' +
     `<div class="arow"><button type="button" class="btn" data-a="sidego" title="Go to side note: scroll to the note at the end of this line">${icon('link')}Go to side note</button>` +
-    (reading ? '' : `<button type="button" class="btn" data-a="unlink" title="Unlink: keep both notes (or the note and the highlight), but take the line away">${icon('unlink')}Unlink</button>`) + '</div>' +
+    (reading ? '' : `<button type="button" class="btn" data-a="unlink" title="Unlink: keep both notes (or the note and the highlight), but take the line away">${icon('unlink')}Unlink</button>` +
+      `<button type="button" class="btn" data-a="still" title="Let clicks through: this line stays, but no longer catches the pointer, so the words under it are easy to select (Help & settings › Make every line clickable again undoes it)">${icon('select')}Let clicks through</button>`) + '</div>' +
     (reading ? '' : `<div class="arow"><span class="ldots" role="group" aria-label="Line colour"><span class="lbl">Line colour</span>${lineDots(lineOf(box, id), 'the colour of this line')}</span></div>`);
   linePop.querySelector('.aq').textContent = '“' + st.quote() + '”';
   linePop.hidden = false;
@@ -9769,10 +9793,25 @@ linePop.addEventListener('click', e => {
     sideDraw(); saveSoon();
   } else if (b?.dataset.a === 'sidego') { closeLinePop(); jumpToNote(box); }
   else if (b?.dataset.a === 'unlink') { linkDrop(box, id); sideDraw(); saveSoon(); closeLinePop(); toast('Unlinked. The note and the highlight are both still there.'); }
+  else if (b?.dataset.a === 'still') { lineStill(box, id, true); sideDraw(); saveSoon(); closeLinePop(); toast('This line lets clicks through now. Help & settings › Make every line clickable again brings it back.'); }
 });
 document.addEventListener('pointerdown', e => { if (lineCur && !linePop.contains(e.target)) closeLinePop(); }, true);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && lineCur) { e.stopPropagation(); closeLinePop(); } }, true);
 addEventListener('scroll', () => { if (lineCur) closeLinePop(); }, {passive: true});
+// while a button is held down (dragging to select words, say), the lines let the pointer through
+document.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse' && !e.target.closest?.('.sh')) document.body.classList.add('pressing'); }, true);
+for (const ev of ['pointerup', 'pointercancel', 'blur']) addEventListener(ev, () => document.body.classList.remove('pressing'), true);
+// Clickable lines, from the Box tab or Settings; and every line clickable again
+$('#bLineClick').onchange = e => setLineClick(e.target.checked);
+$('#setLineClick').onchange = e => setLineClick(e.target.checked);
+$('#setLineAll').onclick = () => {
+  const bs = main.querySelectorAll('.notebox[data-ls]');
+  bs.forEach(b => b.removeAttribute('data-ls'));
+  if (!lineClickOn()) setLineClick(true);
+  sideDraw(); if (bs.length) saveSoon();
+  toast('Every line can be clicked again.');
+};
+setLineClick(lineClickOn());
 // pointing at a line makes it bold too; clicking it opens its pop-up
 sideSvg.addEventListener('pointermove', e => { const id = e.target.closest?.('.sh')?.dataset.id; if (id && id !== sideHover) { sideHover = id; sideDrawSoon(); } });
 sideSvg.addEventListener('click', e => {
@@ -12357,6 +12396,7 @@ const CK_ACTIONS = [
   {id: 'tooltips', label: 'Button tooltips on or off', ico: 'help', words: 'hover pop up labels help', run: () => setTooltips(!qtipsOn())},
   {id: 'sidehover', label: 'Open sidebar on hover on or off', ico: 'hide-left', words: 'sidebar peek left edge point mouse hover automatically show hidden settings', run: () => setSideHover(!sideHoverOn())},
   {id: 'autoalign', label: 'Auto-align notes on or off', ico: 'nalign-left', words: 'align line up box left edge tidy', run: () => setAutoAlign(!autoAlignOn())},
+  {id: 'lineclick', label: 'Clickable lines on or off', ico: 'spline', words: 'side note lines arrows click select pointer through box settings', run: () => { setLineClick(!lineClickOn()); toast(lineClickOn() ? 'Lines can be clicked.' : 'Lines let clicks through.'); }},
   {id: 'pptxnotes', label: 'PowerPoint speaker notes on side pages on or off', ico: 'sidepage', words: 'pptx slides presenter speaker notes side pages settings', run: () => setPptxNotes(!pptxNotesOn())},
   {id: 'hlpreset', label: 'Highlight shortcuts on or off', ico: 'sidepage', words: 'highlight colour preset side note shortcut match green pencil', run: () => setHlPreset(!hlPresetOn())},
   {id: 'pdf', label: 'Download PDF', ico: 'download', words: 'save export print', ok: ckPages, run: ckDownload('pdf')},

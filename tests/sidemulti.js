@@ -108,6 +108,38 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   await page.click('#undoBtn'); await page.waitForTimeout(600);
   ok((await note('Second note').getAttribute('data-link')).split(' ').sort().join() === [h1, h2].sort().join() && (await lines()).length === 3, 'Back brings both lines back');
 
+  // Clickable lines: off (Box tab), lines let the pointer through; Settings follows
+  await away(); await page.waitForTimeout(300);
+  const hitAt = q => page.evaluate(q => document.elementsFromPoint(q.x, q.y).some(e => e.matches?.('svg.sidelines .sh')), q);
+  ls = await lines();
+  const mid = ls[0].mid;
+  ok(await hitAt(mid), 'a line catches the pointer to begin with');
+  await page.click('#tab-box'); await page.waitForTimeout(200);
+  ok(await page.isVisible('#bLineClick') && await page.isChecked('#bLineClick'), 'the Box tab has Clickable lines, on');
+  await page.click('#bLineClick'); await page.waitForTimeout(200);
+  ok(!(await hitAt(mid)) && await page.evaluate(() => document.body.classList.contains('lines-still')), 'turned off, the lines let the pointer through');
+  ok(!(await page.evaluate(() => document.getElementById('setLineClick').checked)) && await page.evaluate(() => localStorage.getItem('line-click')) === '0', 'Settings shows it off too, and it is remembered');
+  await page.mouse.click(mid.x, mid.y); await page.waitForTimeout(300);
+  ok(!(await page.isVisible('#linePop')), 'clicking where a line is opens nothing');
+  await page.evaluate(() => document.getElementById('setLineClick').click()); await page.waitForTimeout(200);
+  ok(await hitAt(mid) && await page.isChecked('#bLineClick'), 'Settings turns it back on (and the Box tab follows)');
+  // dragging to select words passes over the lines
+  await page.mouse.move(mid.x - 60, mid.y + 30); await page.mouse.down();
+  await page.mouse.move(mid.x, mid.y, {steps: 4});
+  ok(!(await hitAt(mid)) && await page.evaluate(() => document.body.classList.contains('pressing')), 'while the button is held down (selecting words) the lines let the pointer through');
+  await page.mouse.up(); await page.waitForTimeout(150);
+  ok(await hitAt(mid) && !(await page.evaluate(() => document.body.classList.contains('pressing'))), 'and catch it again once it is let go');
+  await away();
+  // one line lets clicks through, from its pop-up
+  ls = await lines();
+  const n0 = await page.locator('svg.sidelines path.sh').count(), one = ls[0];
+  await page.mouse.move(one.mid.x, one.mid.y, {steps: 3}); await page.mouse.click(one.mid.x, one.mid.y); await page.waitForTimeout(300);
+  ok(await page.isVisible('#linePop [data-a=still]'), 'a line\'s pop-up offers Let clicks through');
+  await page.click('#linePop [data-a=still]'); await page.waitForTimeout(300);
+  ok(await page.locator('svg.sidelines path.sh').count() === n0 - 1 && (await lines()).length === ls.length && !(await hitAt(one.mid)), 'that line stays, but lets clicks through');
+  ok(await page.locator('.notebox[data-ls]').count() === 1, '(kept with its note)');
+  await page.evaluate(() => document.getElementById('setLineAll').click()); await page.waitForTimeout(300);
+  ok(await page.locator('svg.sidelines path.sh').count() === n0 && await page.locator('.notebox[data-ls]').count() === 0, 'Make every line clickable again (Settings) brings it back');
   ok(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.join(' | ') : ''));
   await browser.close();
 })().catch(e => { console.error(e); process.exit(1); });
