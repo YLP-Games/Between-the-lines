@@ -11,6 +11,7 @@ const GREEN = '#a7e3a1', BLUE = '#a5d8ff';
 
 (async () => {
   const {browser, page, errors} = await open(APP);
+  await page.evaluate(() => localStorage.setItem('link-match', 'none'));      // (Link to side note: no question, both keep their colours)
   await page.waitForTimeout(500);
   await page.setInputFiles('#file', path.join(__dirname, 'lecture.pdf'));
   await page.waitForFunction(() => document.querySelectorAll('.pagecard').length >= 6, null, {timeout: 60000});
@@ -77,7 +78,7 @@ const GREEN = '#a7e3a1', BLUE = '#a5d8ff';
 
   await sideNote('identical products', GREEN, 'Green note');
   await page.click('#tab-box'); await page.waitForTimeout(200);
-  ok(await page.$eval('#bPreset', s => s.value) === 'key', 'a new note for a green highlight is Important (the Box tab says so)');
+  ok(await page.evaluate(() => sameLook(presets.find(p => p.id === 'key'), lookOf(active.closest('.notebox')))), 'a new note for a green highlight is Important');
   await away();
   l = await look('Green note');
   ok(l.color === '#c62828' && l.cs === 'rgb(198, 40, 40)' && l.b && +l.fw >= 600 && l.chip === '#ef5350', 'its words are red and bold, its pencil icon red');

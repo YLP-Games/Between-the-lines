@@ -43,23 +43,23 @@ async function makeDeck(){
   const leave = async () => { await page.mouse.click(5, 700); await page.waitForTimeout(300); };
   // the note you're in (or the last note made): its look, as the presets see it
   const look = sel => page.evaluate(s => { const b = s ? document.querySelector(s) : active.closest('.notebox'); const l = lookOf(b), m = b.querySelector('.mine'); return {...l, cs: getComputedStyle(m).color, fw: getComputedStyle(m).fontWeight}; }, sel);
-  const picked = () => page.$eval('#bPreset', s => s.value);
-  const optNames = () => page.$$eval('#bPreset option', o => o.map(x => x.textContent));
+  const picked = () => page.evaluate(() => { const bs = multi.size ? [...multi] : noteActive() ? [active.closest('.notebox')] : null, ls = bs ? bs.map(lookOf) : [newLook()]; return presets.find(p => ls.every(l => sameLook(p, l)))?.id || ''; });
+  const optNames = () => page.evaluate(() => ['Custom', ...presets.map(p => p.name)]);
+  const pick = id => page.evaluate(id => usePreset(presets.find(p => p.id === id)), id);      // (no list in the Box tab now: presets style new notes, speaker notes and Highlight shortcuts)
   const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem('box-presets') || 'null'));
   const card = id => `#presetList .preset[data-id="${id}"]`;
   const setVal = (sel, v) => page.evaluate(([s, v]) => { const i = document.querySelector(s); i.value = v; i.dispatchEvent(new Event('input', {bubbles: true})); i.dispatchEvent(new Event('change', {bubbles: true})); }, [sel, v]);
 
   // ================= 1. the Box tab =================
   await page.click('#tab-box'); await page.waitForTimeout(200);
-  ok(await page.isVisible('#bPreset') && await page.isVisible('#bPresetEdit'), 'the Box tab has a Presets list and an Edit button');
+  ok(!(await page.$('#bPreset')) && !(await page.$('#bPresetEdit')), 'the Box tab has no presets list (they are in Help & settings)');
   ok((await optNames()).join() === 'Custom,My notes,Important,Question,Speaker notes', 'four presets to start with: ' + (await optNames()).join(', '));
   ok(await picked() === 'mine', 'with no note, it shows the preset new notes look like (My notes)');
-  ok((await page.getAttribute('#bPreset', 'title')).includes('new notes'), 'and its tip says it is for new notes');
 
   await newNote(0, 0.5, 'Oligopoly');
   await page.click('#tab-box'); await page.waitForTimeout(150);
-  ok(await picked() === 'mine' && (await page.getAttribute('#bPreset', 'title')).includes('the note you\'re in'), 'in a new note it shows My notes, for the note you\'re in');
-  await page.selectOption('#bPreset', 'key'); await page.waitForTimeout(250);
+  ok(await picked() === 'mine', 'a new note looks like My notes');
+  await pick('key'); await page.waitForTimeout(250);
   let l = await look();
   ok(l.color === '#c62828' && l.b && l.fw === '700' && l.font === 'Caveat' && l.size === 24, `Important makes the note red and bold (${l.color}, ${l.fw})`);
   ok(l.chip.toLowerCase() === '#ef5350', 'and its pencil icon red');
@@ -68,7 +68,7 @@ async function makeDeck(){
   await page.keyboard.type(' markets'); await page.waitForTimeout(800);
   ok((await page.evaluate(() => active.textContent)) === 'Oligopoly markets', 'and can keep typing in it');
   // a few words in their own colour lose it, but bold words stay bold
-  await page.selectOption('#bPreset', 'ask'); await page.waitForTimeout(200);
+  await pick('ask'); await page.waitForTimeout(200);
   l = await look();
   ok(l.color === '#7b1fa2' && !l.b && l.fw === '400' && l.chip.toLowerCase() === '#ab47bc', 'Question: purple, not bold, a purple icon');
   // Back undoes it
@@ -79,17 +79,17 @@ async function makeDeck(){
   // ================= 2. new notes =================
   await leave(); await page.click('#tab-box'); await page.waitForTimeout(150);
   ok(await picked() === 'mine', 'out of the note, the list shows new notes again');
-  await page.selectOption('#bPreset', 'ask'); await page.waitForTimeout(200);
+  await pick('ask'); await page.waitForTimeout(200);
   ok((await page.textContent('#toast')).includes('New notes will start as Question.'), 'with no note, a preset is for new notes and says so');
   await newNote(1, 0.5, 'Why?');
   l = await look();
   ok(l.color === '#7b1fa2' && l.chip.toLowerCase() === '#ab47bc' && !l.b, 'a new note starts as Question, with a purple icon');
   await leave();
-  await page.selectOption('#bPreset', 'key'); await page.waitForTimeout(150);
+  await pick('key'); await page.waitForTimeout(150);
   await newNote(2, 0.5, 'Key');
   l = await look();
   ok(l.b && l.fw === '700' && l.color === '#c62828', 'and as Important, new notes start bold');
-  await leave(); await page.selectOption('#bPreset', 'mine'); await page.waitForTimeout(150);
+  await leave(); await pick('mine'); await page.waitForTimeout(150);
 
   // ================= 3. several selected notes =================
   await page.locator('.pagecard').nth(0).scrollIntoViewIfNeeded();
@@ -98,15 +98,15 @@ async function makeDeck(){
   const nSel = await page.evaluate(() => multi.size);
   ok(nSel >= 2, `Select all picks the page's notes (${nSel})`);
   ok(await picked() === '', 'notes that look different show Custom');
-  await page.selectOption('#bPreset', 'spk'); await page.waitForTimeout(200);
+  await pick('spk'); await page.waitForTimeout(200);
   const all = await page.evaluate(() => [...multi].map(b => { const l = lookOf(b); return l.font + l.size + l.color + l.chip; }));
   ok(all.every(x => x === 'Arial16#000000#263238'), 'a preset styles every selected note: ' + all.join(' | '));
   ok(await picked() === 'spk', 'and the list shows it');
   await page.keyboard.press('Escape'); await leave();
 
   // ================= 4. Help & settings › Box presets =================
-  await page.click('#tab-box'); await page.click('#bPresetEdit'); await page.waitForTimeout(300);
-  ok(await page.isVisible('#settings') && await page.isVisible('#presetSec'), 'Edit opens Help & settings at Box presets');
+  await page.evaluate(() => { openSettings(); document.getElementById('presetSec').scrollIntoView({block: 'start'}); }); await page.waitForTimeout(300);
+  ok(await page.isVisible('#settings') && await page.isVisible('#presetSec'), 'Help & settings has Box presets');
   ok(await page.locator('#presetList .preset').count() === 4, 'a card for each preset');
   ok(await page.locator(card('spk') + ' .x').count() === 0 && await page.locator(card('key') + ' .x').count() === 1, 'Speaker notes can\'t be removed; the others can');
   ok(await page.$eval(card('key') + ' .pname', e => getComputedStyle(e).fontWeight === '700' && getComputedStyle(e).color === 'rgb(198, 40, 40)' && /Caveat/.test(getComputedStyle(e).fontFamily)), 'each name is written in its own look');
@@ -140,7 +140,7 @@ async function makeDeck(){
   await page.click('#tab-box'); await page.waitForTimeout(100);
   l = await look();
   ok(l.color === '#c62828' && l.size === 24 && await picked() === '', 'a note styled before keeps its look (it shows Custom now)');
-  await page.selectOption('#bPreset', 'key'); await page.waitForTimeout(200);
+  await pick('key'); await page.waitForTimeout(200);
   l = await look();
   ok(l.color === '#0b7a3e' && l.size === 30 && l.i && l.b && l.font === 'Kalam' && l.chip === '#123456', 'and picking Key point gives it the changed preset');
   // + New preset, from the note you're in
@@ -170,7 +170,7 @@ async function makeDeck(){
 
   // ================= 6. kept after a reload, and Reset =================
   await page.reload(); await page.waitForTimeout(1200);
-  ok((await page.$$eval('#bPreset option', o => o.map(x => x.textContent))).join() === 'Custom,My notes,Key point,Question,Speaker notes', 'the presets are kept after a reload');
+  ok((await optNames()).join() === 'Custom,My notes,Key point,Question,Speaker notes', 'the presets are kept after a reload');
   await page.click('#helpBtn'); await page.waitForTimeout(250);
   await page.click('#presetReset'); await page.waitForTimeout(100);
   ok((await page.textContent('#presetReset')).includes('Click again') && (await stored()).find(p => p.id === 'key').name === 'Key point', 'Reset asks you to click again first');

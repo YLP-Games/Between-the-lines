@@ -757,7 +757,6 @@ body.focus .peekzone{display:none}
 .newrow .lbl{font-size:15px}
 .settings .seg .btn{font-size:15px}
 /* Box presets (in Help & settings): each one a small card, its name written in its own font, colour and bold / italic / underline */
-#bPreset{width:140px}
 .presets{display:flex;flex-direction:column;gap:8px;margin:0 0 8px}
 .preset{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px;border:1.5px solid var(--line-strong);border-radius:var(--wob)}
 .preset .pname{flex:1 1 120px;min-width:0;height:34px;box-sizing:border-box;padding:0 8px;background:var(--surface);border:1.5px solid var(--pencil);border-radius:var(--wob);overflow:hidden;text-overflow:ellipsis}
@@ -778,7 +777,6 @@ body.focus .peekzone{display:none}
 .presets.hloff .phl{opacity:.6}
 .presetacts{display:flex;flex-wrap:wrap;gap:6px}
 @media (pointer:coarse){      /* fingertip-sized */
-  #bPresetEdit{height:44px!important}
   .preset :is(.pname,.psize,.pfont){height:44px}
   .preset .x{min-width:40px;min-height:40px}
 }
@@ -1069,6 +1067,17 @@ body.on-mark .strip,body.on-mark .tl{cursor:pointer}
 body:is(.drawing,.pressing,.lines-still) .sidelines .sh{pointer-events:none}
 .linepop .ldots{flex-basis:100%}
 .linepop .ldots .lbl{flex-basis:100%}
+/* Link to side note: which colours match, each with a little picture of it */
+.linkask{width:min(300px,calc(100vw - 16px));gap:4px}
+.linkask .lkt{font-size:13px;color:var(--muted)}
+.linkask .btn.lkopt{justify-content:flex-start;gap:10px;height:auto;min-height:38px;padding:4px 8px;text-align:left;white-space:normal}
+.lkpv{flex:none;display:inline-flex;align-items:center;gap:5px;padding:3px 6px;border-radius:6px;background:#fffdf7;border:1px solid var(--line-strong)}
+.lkpv mark{padding:0 3px;border-radius:2px;color:#2b2b2b;font:12px var(--ui)}
+.lkpv .lkpen{width:10px;height:10px;border-radius:50%}
+.lkpv em{font-style:normal;font-size:17px;line-height:1}
+.linkask .lkrem{margin-top:4px;font-size:13px;flex-wrap:wrap}
+.lkhint{color:var(--muted)}
+.settings .lkset{margin-top:10px}
 /* the colour of the line from a highlight to its side note: "Same as highlight" shows a wheel of highlight colours */
 .ldot{flex:none;width:22px;height:22px;padding:0;border-radius:50%;border:2px solid var(--surface);outline:1.5px solid var(--line-strong);background:var(--c);cursor:pointer}
 .ldot[data-lc="hl"]{background:conic-gradient(#ffe066 0 25%,#ffa8a8 0 50%,#a5d8ff 0 75%,#a7e3a1 0)}
@@ -2104,11 +2113,6 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
     </div>
 
     <div class="panel" role="tabpanel" id="panel-box" aria-labelledby="tab-box" data-edit hidden>
-      <div class="grp"><div class="row" style="gap:6px">
-        <select id="bPreset" aria-label="Preset" title="Preset: a font, size, text colour and pencil icon colour in one go, for the note you're in, the selected notes, or new notes"></select>
-        <button class="btn outline" id="bPresetEdit" style="height:30px" title="Edit presets: change them, add your own or remove them (in Help &amp; settings)">Edit</button>
-      </div><span class="cap">Presets</span></div>
-      <span class="sep"></span>
       <div class="grp"><div class="row" style="gap:8px">
         <label class="chk" for="bOutline"><input type="checkbox" id="bOutline" checked> Outline</label>
         <input type="color" id="bBorder" value="#9aa3b2" aria-label="Outline colour" title="Outline colour">
@@ -2400,6 +2404,8 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <div class="ldots" id="setLine" role="group" aria-label="Line colour"></div>
       <label class="chk setchk" for="setLineClick"><input type="checkbox" id="setLineClick" checked> Clickable lines</label>
       <p class="sethint">Click a line for its colour, Go to side note and Unlink. Off: lines let clicks through, so words under them are easy to select (also in the Box tab). One line can let clicks through on its own, from its pop-up.</p>
+      <div class="newrow lkset"><span class="lbl" id="linkMatchLbl">Link to side note</span><select id="setLinkMatch" aria-labelledby="linkMatchLbl" title="What Link to side note does with the colours: ask each time, or always one way"><option value="ask">Ask each time</option><option value="note">Note matches the highlight</option><option value="hl">Highlight matches the note</option><option value="none">Keep both as they are</option></select></div>
+      <p class="sethint">Note matches the highlight: its words and pencil icon take the highlight's colour (deeper, to read). Highlight matches the note: the highlight takes the colour of the note's words, and so does its pencil icon.</p>
       <button type="button" class="btn outline" id="setLineAll" title="Make every line in this notebook clickable again, including the ones set to let clicks through">Make every line clickable again</button>
     </section>
     <section id="proofSec">
@@ -9310,10 +9316,11 @@ annoBar.addEventListener('click', e => {
   if ('hstar' in b.dataset) { hlFavs.includes(hlCol) ? hlFavRemove(hlCol) : hlFavAdd(hlCol); return; }
   if (b.classList.contains('hfav') && hlHeld) { hlHeld = false; return; }
   if (!barRange) return;
+  if ('side' in b.dataset && linkMatch() === 'ask') { openLinkAsk(b); return; }
   if (b.dataset.c) { hlCol = b.dataset.c; pref.set('hl-colour', hlCol); }
   const made = makeHighlight(barRange, hlCol);
   if (made && 'cm' in b.dataset) openAnnoPop(made.card, made.id, true);
-  else if (made && 'side' in b.dataset) sideLinkNew(made.card, made.id);
+  else if (made && 'side' in b.dataset) sideLinkNew(made.card, made.id, linkMatch());
 });
 // any colour: the words are highlighted once you have picked it (the bar stays while its picker is open)
 let hlPicking = null;
@@ -9343,12 +9350,12 @@ function annoColRow(){
   hcRow.hidden = reading || !h;
   if (!hcRow.hidden) { hlFill(hcRow, annoColor(h)); hlShowCur(hcRow.querySelector('.hdots')); }
 }
-function annoSetColor(card, id, col){
+function annoSetColor(card, id, col, keep){
   const h = annoGet(card, id); if (!h) return;
   const was = annoColor(h);
   if (h.kind === 'pdf') { h.it.c = col; setInk(card, inkItems(card)); }
   else h.pcs.forEach(m => m.style.setProperty('--ac', col));
-  hlCol = col; pref.set('hl-colour', col);
+  if (!keep) { hlCol = col; pref.set('hl-colour', col); }      // (keep: not the colour in use for the next highlight)
   hlPresetFollow(id, was, col);
   sideDraw(); saveSoon();
 }
@@ -9732,14 +9739,65 @@ function sideFree(sp, x, y, w){
   return y;
 }
 // highlight the words and open a note beside them on the side page, joined by a line, with the cursor in it
-function sideLinkNew(card, id){
+function sideLinkNew(card, id, match){
   const sp = sideShown() && sideOf(card), m = sp && markRect(card, id);
   if (!sp || !m) { toast('Turn on Side notes in the View tab first.'); return; }
   sideUnlinkId(id);
   const r = sp.getBoundingClientRect(), w = sideWidth(sp), x = Math.max(30, Math.min(40, sp.clientWidth - w - 10)), z = zoomOf(sp) || 1;
-  hlPresetTo(sideAddBox(sp, x, sideFree(sp, x, (m.top + m.height / 2 - r.top) / z - 24, w), w, id), id);
+  const box = sideAddBox(sp, x, sideFree(sp, x, (m.top + m.height / 2 - r.top) / z - 24, w), w, id);
+  hlPresetTo(box, id); linkMatchTo(card, id, box, match);
   saveSoon();
 }
+// ---------- Link to side note: the note's colours and the highlight's, matched one way or the other ----------
+// note: the note's words and pencil icon take the highlight's colour (a deeper shade, to read it); hl: the highlight takes the colour of the note's words (a light tint), and its icon too
+const LINK_MATCH = [['note', 'Note matches the highlight', 'its words and pencil icon take the highlight\'s colour'], ['hl', 'Highlight matches the note', 'the highlight takes the colour of the note\'s words, and so does its pencil icon'], ['none', 'Keep both as they are', 'the note starts in the style for new notes']];
+const linkMatch = () => LINK_MATCH.some(m => m[0] === pref.get('link-match')) ? pref.get('link-match') : 'ask';
+// a colour to read words in, from a light highlight colour (its hue, deeper); and a light highlight from a colour of words
+function hlInk(c){
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(inkHex(c, '#ffe066').slice(i, i + 2), 16) / 255), mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  const h = !d ? 0 : mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4, s = Math.max(.45, d ? d / (1 - Math.abs(mx + mn - 1)) : 0), l = Math.min(.36, (mx + mn) / 2);
+  const k = n => (n + h * 2) % 12, a = (d ? s : 0) * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+  return '#' + [0, 8, 4].map(n => Math.round(f(n) * 255).toString(16).padStart(2, '0')).join('');
+}
+const hlTint = c => '#' + [1, 3, 5].map(i => Math.round(parseInt(inkHex(c, '#1f4fd1').slice(i, i + 2), 16) * .35 + 255 * .65).toString(16).padStart(2, '0')).join('');
+function linkMatchTo(card, id, box, match){
+  const h = annoGet(card, id), m = box?.querySelector(':scope > .mine'); if (!h || !m || !['note', 'hl'].includes(match)) return;
+  if (match === 'note') { const c = hlInk(annoColor(h)); styleWhole(m, 'color', c); markLists(m); setChipColor(box, c, true); }
+  else { const c = toHex(getComputedStyle(m).color); setChipColor(box, c, true); annoSetColor(card, id, hlTint(c), true); }
+  if (noteActive()?.closest('.notebox') === box) { showStyle(noteStyle(m)); showBox(boxOf(box)); }
+}
+// the choice, when Help & settings says Ask each time: under the button, with what each one looks like
+const linkAsk = document.createElement('div');
+linkAsk.id = 'linkAsk'; linkAsk.className = 'pop annopop linkask'; linkAsk.hidden = true; linkAsk.setAttribute('role', 'dialog'); linkAsk.setAttribute('aria-label', 'Link to side note: match the colours');
+document.body.append(linkAsk);
+let linkAskRange = null;
+function openLinkAsk(from){
+  linkAskRange = barRange.cloneRange();
+  const words = style.color || '#1f4fd1', look = {note: [hlCol, hlInk(hlCol)], hl: [hlTint(words), words], none: [hlCol, words]};
+  linkAsk.innerHTML = '<div class="lkt">Link to side note</div>' + LINK_MATCH.map(([k, n, t]) =>
+    `<button type="button" class="btn lkopt" data-m="${k}" title="${n}: ${t}"><span class="lkpv" aria-hidden="true"><mark style="background:${look[k][0]}">words</mark><i class="lkpen" style="background:${look[k][1]}"></i><em style="color:${look[k][1]};font-family:${esc(fontCss(style.font || 'Caveat'))}">Aa</em></span>${n}</button>`).join('') +
+    '<label class="chk lkrem"><input type="checkbox" data-remember> Always do this <span class="lkhint">(Help &amp; settings changes it)</span></label>';
+  linkAsk.hidden = false;
+  const r = from.getBoundingClientRect(), w = linkAsk.offsetWidth, ht = linkAsk.offsetHeight;
+  linkAsk.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.right - w)) + 'px';
+  linkAsk.style.top = (r.bottom + 8 + ht < visH() - 8 ? r.bottom + 8 : Math.max(8, r.top - ht - 8)) + 'px';
+}
+function closeLinkAsk(){ linkAsk.hidden = true; linkAskRange = null; }
+linkAsk.addEventListener('mousedown', e => { if (!e.target.closest('input, label')) e.preventDefault(); });
+linkAsk.addEventListener('click', e => {
+  const b = e.target.closest('.lkopt'); if (!b || !linkAskRange) return;
+  const match = b.dataset.m, r = linkAskRange;
+  if (linkAsk.querySelector('[data-remember]').checked) { pref.set('link-match', match); $('#setLinkMatch').value = match; }
+  closeLinkAsk();
+  const made = makeHighlight(r, hlCol);
+  if (made) sideLinkNew(made.card, made.id, match);
+});
+document.addEventListener('pointerdown', e => { if (!linkAsk.hidden && !linkAsk.contains(e.target)) closeLinkAsk(); }, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !linkAsk.hidden) { e.stopPropagation(); closeLinkAsk(); } }, true);
+addEventListener('scroll', () => { if (!linkAsk.hidden) closeLinkAsk(); }, {passive: true});
+// Help & settings: ask each time, or always one way
+$('#setLinkMatch').value = linkMatch();
+$('#setLinkMatch').onchange = e => pref.set('link-match', e.target.value);
 function sideUnlinkId(id){
   let any = false;
   main.querySelectorAll(`.notebox[data-link~="${CSS.escape(id)}"]`).forEach(b => { linkDrop(b, id); any = true; });
@@ -10649,7 +10707,8 @@ function usePreset(p){
 }
 // the Box tab's list shows the preset the note (every selected note, or new notes) looks like, or Custom
 function paintPreset(){
-  const sel = $('#bPreset'), boxes = multi.size ? [...multi] : noteActive() ? [active.closest('.notebox')] : null;
+  const sel = $('#bPreset'); if (!sel) return;      // (the Box tab has no presets list now)
+  const boxes = multi.size ? [...multi] : noteActive() ? [active.closest('.notebox')] : null;
   const looks = boxes ? boxes.map(lookOf) : [newLook()], hit = presets.find(p => looks.every(l => sameLook(p, l)));
   const opts = '<option value="" disabled>Custom</option>' + presets.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
   if (sel.dataset.opts !== opts) { sel.innerHTML = opts; sel.dataset.opts = opts; }
@@ -10657,8 +10716,6 @@ function paintPreset(){
   const to = multi.size ? `the ${multi.size} selected note${multi.size > 1 ? 's' : ''}` : boxes ? 'the note you\'re in' : 'new notes';
   sel.title = `Preset for ${to}: a font, size, text colour and pencil icon colour in one go` + (hit ? '' : ' (Custom: it looks like none of them)');
 }
-$('#bPreset').onchange = e => { const p = presets.find(x => x.id === e.target.value); if (p) usePreset(p); else paintPreset(); };
-$('#bPresetEdit').onclick = e => { openSettings(e.detail === 0); $('#presetSec').scrollIntoView({block: 'start'}); };
 for (const ev of ['stylechange', 'boxchange']) document.addEventListener(ev, paintPreset);
 addEventListener('storage', e => { if (e.key === 'box-presets') { presets = loadPresets(); paintPreset(); if (!settingsBox.hidden) renderPresets(); } });      // (changed in another tab)
 paintPreset();

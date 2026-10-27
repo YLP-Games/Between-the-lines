@@ -10,6 +10,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
 
 (async () => {
   const {browser, page, errors} = await open(APP);
+  await page.evaluate(() => localStorage.setItem('link-match', 'none'));      // (Link to side note: no question, both keep their colours)
   await page.waitForTimeout(500);
   await page.setInputFiles('#file', path.join(__dirname, 'lecture.pdf'));
   await page.waitForFunction(() => document.querySelectorAll('.pagecard').length >= 6, null, {timeout: 60000});
