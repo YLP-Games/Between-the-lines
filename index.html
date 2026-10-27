@@ -433,6 +433,8 @@ main.reading .mine:empty::before{content:none}
 main.reading .slide img.blk{cursor:auto}
 /* spell check */
 ::highlight(spell){text-decoration:underline wavy #e53935;text-decoration-thickness:1.5px;text-underline-offset:2px;text-decoration-skip-ink:none}
+::highlight(grammar){text-decoration:underline double #2f6fdb;text-decoration-thickness:1px;text-underline-offset:3px;text-decoration-skip-ink:none}
+::highlight(review){background-color:rgba(255,200,40,.5)}
 
 /* ================= start screen ================= */
 .welcome{width:100%;max-width:1040px;margin:28px auto 0;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:44px 52px;align-items:start}
@@ -493,6 +495,49 @@ main.reading .slide img.blk{cursor:auto}
 .spellmenu button.sug{font-weight:600}
 .spellmenu .none{padding:7px 10px;color:var(--muted);font-style:italic}
 .spellmenu hr{border:none;height:6px;margin:0}
+.spellmenu .gmsg{padding:6px 10px 4px;font-size:12.5px;color:var(--muted)}
+/* the Editor (Review tab): every mistake in the notebook, one at a time */
+.editor{z-index:22;top:calc(var(--appbar-h) + 10px);right:calc(var(--gutter-r, 12px) + 4px);width:min(330px, calc(100vw - 24px));max-height:calc(100dvh - var(--appbar-h) - var(--status-h) - 20px);display:flex;flex-direction:column;box-sizing:border-box;font:14px var(--ui);overflow:hidden}
+.editor .edhead{display:flex;align-items:center;gap:8px;padding:10px 8px 6px 14px}
+.editor .edhead h2{margin:0;font:700 18px var(--display)}
+.editor .edhead .count{font-size:12px;color:var(--muted)}
+.editor .edhead .btn{min-width:28px;height:28px;padding:0;margin-left:auto}
+.editor .edcats{display:flex;flex-wrap:wrap;gap:4px;padding:0 12px 8px}
+.editor .edcat{all:unset;display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;border:1px solid var(--line-strong);font-size:12.5px;cursor:pointer}
+.editor .edcat b{font-weight:700}
+.editor .edcat[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.editor .edcat:focus-visible,.editor .edlist button:focus-visible,.editor .edsugs button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.editor .edcard{margin:0 12px;padding:10px 12px;border:1.5px solid var(--line-strong);border-radius:var(--wob, 8px);background:var(--surface-2)}
+.editor .edkind{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.editor .edkind::before,.editor .edk{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#e53935;flex:none}
+.editor [data-k="grammar"]::before,.editor .edk[data-k="grammar"]{background:#2f6fdb}
+.editor [data-k="punct"]::before,.editor .edk[data-k="punct"]{background:#8e5bd1}
+.editor .edmsg{margin:4px 0 6px;font-weight:600}
+.editor .edctx{margin:0 0 8px;font-size:13px;color:var(--muted);line-height:1.45;overflow-wrap:anywhere}
+.editor .edctx mark{white-space:pre-wrap;background:rgba(255,200,40,.5);color:var(--ink);border-radius:2px;padding:0 1px}
+.editor .edsugs{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
+.editor .edsugs button{all:unset;box-sizing:border-box;padding:6px 10px;border-radius:6px;background:var(--surface);border:1px solid var(--line);font-weight:600;cursor:pointer;overflow-wrap:anywhere}
+.editor .edsugs button:hover{background:var(--hover)}
+.editor .edsugs .none{font-size:13px;color:var(--muted);font-style:italic}
+.editor .edacts{display:flex;flex-wrap:wrap;gap:4px}
+.editor .edacts .btn{height:28px;font-size:13px;padding:0 8px}
+.editor .ednav{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:8px;font-size:12.5px;color:var(--muted)}
+.editor .ednav .btn{height:28px;font-size:13px;padding:0 8px}
+.editor .edempty{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;text-align:center}
+.editor .edempty .i{width:26px;height:26px;color:var(--ok)}
+.editor .edempty span{font-size:12.5px;color:var(--muted)}
+.editor .edlist{list-style:none;margin:8px 0 0;padding:0 8px;overflow:auto;flex:1 1 auto;min-height:0}
+.editor .edlist button{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;font-size:13px;cursor:pointer}
+.editor .edlist button:hover{background:var(--hover)}
+.editor .edlist button.on{background:var(--accent-soft)}
+.editor .edlist .edw{font-weight:600;white-space:pre;overflow:hidden;text-overflow:ellipsis;max-width:45%}
+.editor .edlist .edm{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.editor .edfoot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:8px 12px 10px;border-top:1px solid var(--line);margin-top:6px}
+.editor .edfoot .btn{height:30px;font-size:13.5px}
+@media (max-width:640px){.editor{left:8px;right:8px;width:auto;top:auto;bottom:calc(var(--status-h) + 8px + env(safe-area-inset-bottom,0px));max-height:55dvh}}
+.autoopts{margin:2px 0 8px 24px;display:flex;flex-direction:column;gap:2px}
+.autoopts .setchk{font-size:13.5px}
+.autoopts.off{opacity:.55}
 /* colour menu for a minimised note's pencil icon */
 .chippop{z-index:46;display:flex;flex-direction:column;gap:6px;padding:10px;font-size:12px}
 .chippop .ttl{font-weight:600}
@@ -1750,7 +1795,9 @@ html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;text-
   .sheet,.sheet > .slide{border:0!important}
   .mine,.notebox:hover > .mine{box-shadow:none!important}
   .mine:empty::before,.tpl [data-ph]:empty::before,.jrnl .j-acct[data-ph]:empty::before{content:none}
-  ::highlight(spell){text-decoration:none}
+  ::highlight(spell),::highlight(grammar){text-decoration:none}
+  ::highlight(review){background-color:transparent}
+  .editor{display:none!important}
   .tpl :is(.tui,.sv-ui,.ce-in,.hnd){display:none}
   .tpl-fc .ans{filter:none!important}
   .tpl-fc .fc-a::after{display:none!important}
@@ -1849,6 +1896,8 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
 <symbol id="i-type" viewBox="0 0 24 24"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></symbol>
 <symbol id="i-comment" viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/></symbol>
 <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-spellcheck" viewBox="0 0 24 24"><path d="m3 15 4-10 4 10M4.6 11h4.8M13 15l3 3 6-7"/></symbol>
+<symbol id="i-wand" viewBox="0 0 24 24"><path d="m4 20 11-11M14 4l.9 2.1L17 7l-2.1.9L14 10l-.9-2.1L11 7l2.1-.9zM19 12l.6 1.4 1.4.6-1.4.6L19 16l-.6-1.4L17 14l1.4-.6z"/></symbol>
 <symbol id="i-reopen" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
 <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="5" r="2.1" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="2.1" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="2.1" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="2.1" fill="currentColor" stroke="none"/><circle cx="9" cy="19" r="2.1" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="2.1" fill="currentColor" stroke="none"/></symbol>
 <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m2 12 9.17 4.17a2 2 0 0 0 1.66 0L22 12"/><path d="m2 17 9.17 4.17a2 2 0 0 0 1.66 0L22 17"/></symbol>
@@ -1925,6 +1974,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <button class="tab" role="tab" id="tab-home" data-tab="home" data-edit aria-selected="true" aria-controls="panel-home">Home</button>
       <button class="tab" role="tab" id="tab-insert" data-tab="insert" data-edit aria-selected="false" aria-controls="panel-insert" tabindex="-1">Insert</button>
       <button class="tab" role="tab" id="tab-box" data-tab="box" data-edit aria-selected="false" aria-controls="panel-box" tabindex="-1">Box</button>
+      <button class="tab" role="tab" id="tab-review" data-tab="review" data-edit aria-selected="false" aria-controls="panel-review" tabindex="-1">Review</button>
       <button class="tab" role="tab" id="tab-view" data-tab="view" aria-selected="false" aria-controls="panel-view" tabindex="-1">View</button>
       <span class="spacer"></span>
       <button class="btn" id="ribbonFold" aria-label="Show tabs only" title="Show tabs only (click a tab to open its tools)"><svg class="i" style="width:16px;height:16px"><use href="#i-up"/></svg></button>
@@ -2091,6 +2141,16 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       </div><span class="cap">New notes</span></div>
     </div>
 
+    <div class="panel" role="tabpanel" id="panel-review" aria-labelledby="tab-review" data-edit hidden>
+      <div class="grp"><div class="row">
+        <button class="btn" id="editorBtn" aria-pressed="false" title="Editor (F7): go through every spelling, grammar and punctuation mistake in your notes, and fix them one at a time or all at once"><svg class="i"><use href="#i-spellcheck"/></svg>Editor</button>
+      </div><span class="cap">Proofing</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row">
+        <button class="btn" id="grammarBtn" aria-pressed="true" title="Check grammar: grammar slips (could of, a apple, the the) and punctuation (a space before a comma) get a blue line; right-click one for the fix"><svg class="i"><use href="#i-check"/></svg>Check grammar</button>
+        <button class="btn" id="autoBtn" aria-pressed="false" title="Autocorrect: fix slips such as “teh” as soon as you finish the word. Press Backspace straight after to put back what you typed. More choices in Help &amp; settings"><svg class="i"><use href="#i-wand"/></svg>Autocorrect</button>
+      </div><span class="cap">As you type</span></div>
+    </div>
     <div class="panel" role="tabpanel" id="panel-view" aria-labelledby="tab-view" hidden>
       <div class="grp"><div class="row">
         <select id="layout" aria-label="Page layout" title="Page layout on screen and in the PDF">
@@ -2278,6 +2338,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
         <dt><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>F</kbd></dt><dd>Focus mode on or off</dd>
         <dt><kbd>Ctrl</kbd> <kbd>K</kbd> / <kbd>Ctrl</kbd> <kbd>P</kbd></dt><dd>Search notebooks, pages and notes, and run actions</dd>
         <dt><kbd>/</kbd></dt><dd>In a note: add an equation, table or journal entry, or turn it into a sticky note</dd>
+        <dt><kbd>F7</kbd></dt><dd>Editor: go through every spelling, grammar and punctuation mistake</dd>
         <dt><kbd>Esc</kbd></dt><dd>Close a menu or end a selection</dd>
       </dl>
     </section>
@@ -2332,6 +2393,20 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <h3>Side note lines</h3>
       <p class="sethint">The colour of the line that joins a highlight to its side note. Same as highlight follows each highlight's colour; any line can still have its own colour (click its highlight).</p>
       <div class="ldots" id="setLine" role="group" aria-label="Line colour"></div>
+    </section>
+    <section id="proofSec">
+      <h3>Grammar and autocorrect</h3>
+      <label class="chk setchk" for="setGrammar"><input type="checkbox" id="setGrammar" checked> Check grammar and punctuation</label>
+      <p class="sethint">Slips such as “could of”, “a apple”, “the the” or a space before a comma get a blue line: right-click one for the fix. The <b>Editor</b> on the Review tab (F7) lists every mistake in your notes.</p>
+      <label class="chk setchk" for="setAuto"><input type="checkbox" id="setAuto"> Autocorrect as you type</label>
+      <p class="sethint">Fixes a slip as soon as you finish the word. Press Backspace straight after to put back what you typed (it then leaves that word alone).</p>
+      <div class="autoopts" id="autoOpts">
+        <label class="chk setchk" for="acTypos"><input type="checkbox" id="acTypos" data-ac="typos"> Common typos (teh → the, dont → don't)</label>
+        <label class="chk setchk" for="acI"><input type="checkbox" id="acI" data-ac="i"> A lone “i” becomes “I”</label>
+        <label class="chk setchk" for="acCaps"><input type="checkbox" id="acCaps" data-ac="caps"> Capital letter at the start of a sentence</label>
+        <label class="chk setchk" for="acTwo"><input type="checkbox" id="acTwo" data-ac="two"> TWo INitial CApitals</label>
+        <label class="chk setchk" for="acSpell"><input type="checkbox" id="acSpell" data-ac="spell"> Any other misspelt word: spell check's first suggestion</label>
+      </div>
     </section>
     <section>
       <h3>Custom dictionary <span class="count" id="dictCount"></span></h3>
@@ -6648,6 +6723,7 @@ $('#readBtn').onclick = () => {
   pref.set('study-mode', reading ? '1' : '0');
   if (reading) { if (document.activeElement?.closest?.('.mine')) document.activeElement.blur(); active = null; savedRange = null; hideGap(); closeInsMenu(); clearMediaSel(); fPanel.hidden = true; }
   applyReadMode(); spellAll();
+  if (reading && ed.open) setEditor(false);
   if (reading) hint('Study mode: nothing can be changed by accident. You can still open and minimise notes.'); else toast('');
 };
 
@@ -6673,6 +6749,13 @@ const ignoredWords = new Set();
 const spellHl = canHighlight ? new Highlight() : null;
 if (spellHl) CSS.highlights.set('spell', spellHl);
 const spellRanges = new Map();          // note -> [{range, word}]
+// grammar and punctuation slips get a blue double line (the same way); the Editor's current mistake is lit up
+const gramHl = canHighlight ? new Highlight() : null, reviewHl = canHighlight ? new Highlight() : null;
+if (gramHl) { CSS.highlights.set('grammar', gramHl); CSS.highlights.set('review', reviewHl); }
+const gramRanges = new Map();           // note -> [{range, word, at, g}]
+const proofOnce = new Set(), gramIgnored = new Set();      // Ignore (this one) and Ignore all, for this visit
+const ed = {open: false, list: [], i: 0, cat: 'all', timer: 0, sug: new Map()};     // the Editor
+function grammarOn(){ return pref.get('grammar', '1') !== '0'; }
 // until our words are ready (and whenever they can't be used: an older browser, no internet for the first download), or if you chose
 // Device, the browser's own spell check does the job, so checking never pauses
 function nativeSpell(){ return spellLang !== 'off' && !spellDict; }
@@ -6847,13 +6930,17 @@ function wordOk(w){
 const SPELL_TOK = /[A-Za-zÀ-ÖØ-öø-ÿ]+(?:['’-][A-Za-zÀ-ÖØ-öø-ÿ]+)*/g;
 const SPELL_SKIP = /(?:https?:\/\/|www\.)[^\s<>"]+|[\w.+-]{1,64}@[\w-]{1,63}(?:\.[\w-]{1,63}){1,5}|[@#][\w-]+|[A-Za-z]{1,40}(?:\.[A-Za-z]{1,40}){1,6}/g;
 const SPELL_EXT = /^(com|org|net|edu|gov|ac|co|uk|za|io|us|au|nz|ca|de|fr|pdf|docx?|txt|csv|xlsx?|pptx?|png|jpe?g|gif|svg|md|json|js|ts|py|java|html?|css|xml|zip|mp[34]|heic|ipynb|rtf|odt|key|pages|numbers)$/i;
-function spellScan(text){
-  const out = [], skip = [];
+function spellSkips(text){
+  const skip = [];
   for (const m of text.matchAll(SPELL_SKIP)) {
     const p = m[0].split('.');
     if (/^[A-Za-z]+(?:\.[A-Za-z]+)+$/.test(m[0]) && !(p.some(x => x.length < 3) || SPELL_EXT.test(p[p.length - 1]))) continue;
     skip.push([m.index, m.index + m[0].length]);
   }
+  return skip;
+}
+function spellScan(text){
+  const out = [], skip = spellSkips(text);
   for (const m of text.matchAll(SPELL_TOK)) {
     const at = m.index, end = at + m[0].length, w = m[0].replace(/’/g, "'");
     if (/[\d_]/.test(text[at - 1] || '') || /[\d_]/.test(text[end] || '') || skip.some(([a, b]) => at < b && end > a)) continue;
@@ -6863,6 +6950,112 @@ function spellScan(text){
     parts.forEach((p, i) => { if (p.length > 1 && !(i < parts.length - 1 && SPELL_PRE.has(p.toLowerCase())) && !wordOk(p)) out.push({w: p, at: o, len: p.length}); o += p.length + 1; });
   }
   return out;
+}
+// ---- grammar and punctuation: plain rules that are nearly always right (could of, a apple, the the, i think, a space before a comma...).
+// Each slip is {kind: 'grammar' | 'punct', rule, at, len, msg, fixes, end}; "end" is as far as the words it looked at go (it isn't marked while
+// you are still typing there). Lines, pictures and equations are a line break in the text (proofText), so nothing is joined across them.
+const GL = 'A-Za-zÀ-ÖØ-öø-ÿ', GS = '[ \\u00a0]+', GB = `(?<![${GL}'’-])`, GE = `(?![${GL}'’-])`;
+const G_ABBR = new Set('eg ie etc vs cf al approx dr mr mrs ms prof st no nos fig figs eq eqs ch sec secs vol pp p ca inc ltd co dept esp min max est jr sr viz resp ed eds ref refs jan feb mar apr jun jul aug sep sept oct nov dec mon tue wed thu fri sat sun'.split(' '));
+const G_NOTART = new Set('is are was were be been am and or of in on at to if as has had have do does did will can may must equal equals times plus minus over than then not so but by for from with into per vs nor yet th'.split(' '));      // after "a" these make it a letter, as in maths
+const G_ANCONS = /^(uni(?:corn|form|fi|lateral|on|que|son|t|vers|cycl|code)|us(?:e|ual|ur|ing)|uran|uro|uti|utop|uter|eu|ewe|one(?!rous)|once|ubiq|ukr)/, G_ANVOW = /^(hour|honest|honou?r|heir)/, G_ANSKIP = /^(herb|histor|hotel|habitual)/;
+const G_REPEAT = new Set('had that is bye ha haha no yes very so bla blah tsk dum knock chop go there'.split(' '));      // fine twice: "what it is is", "had had"
+const G_ISTOP = new Set('is in and or from to th equals runs ranges goes has was j k n'.split(' ')), G_IPREV = new Set('for each index where let row column element term item all entry vector'.split(' '));     // "for i in", "where i is": a letter
+const G_PNAME = {',': 'a comma', ';': 'a semicolon', '.': 'a full stop', '!': 'an exclamation mark', '?': 'a question mark'};
+const capFirst = s => s.charAt(0).toUpperCase() + s.slice(1);
+const likeCase = (o, r) => o.length > 1 && o === o.toUpperCase() && /[A-Z]{2}/.test(o) ? r.toUpperCase() : /^[A-Z]/.test(o) ? capFirst(r) : r;
+const G_AFTERMODAL = `(?:does|did|do|will|would|could|should|can|may|might|must|shall|to|let|lets|make|makes|made|help|helps|nor|doesn['’]t|didn['’]t|won['’]t|wouldn['’]t|couldn['’]t|shouldn['’]t|can['’]t|cannot)`;
+// [pattern, flags, rule, m => [message, ...fixes] or null]: the whole match is replaced by a fix
+const G_RULES = [
+  [`${GB}(could|should|would|must|might)${GS}of${GE}`, 'gi', 'of', m => [`“${m[1].toLowerCase()} have”, not “${m[1].toLowerCase()} of”`, m[1] + ' have']],
+  [`${GB}(your)${GS}welcome${GE}`, 'gi', 'your', m => ['“You’re welcome” (you are)', likeCase(m[1], "you're") + ' welcome']],
+  [`${GB}(it)['’]s${GS}own${GE}`, 'gi', 'itsown', m => ['“Its own”: its, with no apostrophe, means belonging to it', likeCase(m[1], 'its') + ' own']],
+  [`${GB}(its)${GS}(a|an|the|not|been|going|also|so|because|about|always|never|really|getting|gonna)${GE}`, 'gi', 'its', m => ['“It’s” (it is, it has) rather than “its”', likeCase(m[1], "it's") + ' ' + m[2]]],
+  [`${GB}(their)${GS}(is|are|was|were)${GE}`, 'gi', 'their', m => [`“There ${m[2].toLowerCase()}”, not “their ${m[2].toLowerCase()}”`, likeCase(m[1], 'there') + ' ' + m[2]]],
+  [`${GB}(more|less|better|worse|rather|other|greater|fewer|bigger|smaller|higher|lower|larger|faster|slower|longer|shorter|easier|harder|older|younger)${GS}then${GE}`, 'gi', 'than', m => ['Use “than” to compare', m[1] + ' than']],
+  [`${GB}(he|she|it)${GS}don['’]t${GE}`, 'gi', 'agree', m => [`“${m[1]} doesn't”, not “${m[1]} don't”`, m[1] + " doesn't"]],
+  [`${GB}(I|we|they|you)${GS}doesn['’]t${GE}`, 'gi', 'agree', m => [`“${m[1]} don't”, not “${m[1]} doesn't”`, (m[1] === 'i' ? 'I' : m[1]) + " don't"]],
+  [`${GB}(we|they|you)${GS}was${GE}`, 'gi', 'agree', m => [`“${m[1]} were”, not “${m[1]} was”`, m[1] + ' were']],
+  [`(?<!${GB}${G_AFTERMODAL}${GS})${GB}(he|she|it)${GS}have${GE}`, 'gi', 'agree', m => [`“${m[1]} has”, not “${m[1]} have”`, m[1] + ' has']],
+  [`${GB}(is|are|was|were|be|been|am|isn['’]t|aren['’]t|wasn['’]t|weren['’]t|i['’]m|you['’]re|we['’]re|they['’]re)${GS}suppose${GS}to${GE}`, 'gi', 'suppose', m => ['“Supposed to”', m[1] + ' supposed to']],
+  [`${GB}for${GS}all${GS}intensive${GS}purposes${GE}`, 'gi', 'phrase', m => ['The saying is “for all intents and purposes”', likeCase(m[0], 'for all intents and purposes')]],
+  [`${GB}(a|an|the)${GS}(an|the)${GE}`, 'g', 'articles', m => m[1] === m[2] ? null : ['Two articles in a row', m[1], m[2]]],
+  [`${GB}([Bb]etween)${GS}you${GS}and${GS}I${GE}`, 'g', 'me', m => ['“Between you and me”', m[0].slice(0, -1) + 'me']],
+].map(([src, fl, rule, f]) => ({re: new RegExp(src, fl), rule, f}));
+const G_RE = {
+  rep: new RegExp(`${GB}([${GL}]+)${GS}\\1${GE}`, 'gi'),
+  art: new RegExp(`${GB}(an?|An?)${GS}([${GL}][${GL}'’-]*)`, 'g'),
+  i: new RegExp(`(?<![${GL}\\d_'’.(\\-/\\\\])i(['’](?:m|ve|ll|d))?(?![${GL}\\d_'’.)\\-=/\\\\])`, 'g'),
+  inext: new RegExp(`${GS}([${GL}]+)`, 'y'),
+  cap: new RegExp(`([.!?])["”’)]*[ \\u00a0]+([a-zà-öø-ÿ][${GL}'’]*)`, 'g'),
+  spb: new RegExp(`(?<=[${GL})\\]"”’])([ \\u00a0]+)([,;!?]|\\.(?![.\\d${GL}]))(?=[ \\u00a0\\n"”’]|$)`, 'g'),
+  spa: new RegExp(`(?<=[${GL}]{2})([,;!?])(?=[${GL}]{2})`, 'g'),
+  spd: /(?<=[a-z]{2})\.(?=[A-Z][a-z])/g,
+  dbl: /(?<=\S)[  ]{2}(?=\S)/g,
+};
+// a sentence starts at i: after . ! ? : or a line break, or at the very start
+function sentStart(t, i){
+  const b = t.slice(Math.max(0, i - 12), i);
+  return /[.!?:\n]["”’)]*[  "“‘(]*$/.test(b) || i <= 12 && /^[\s"“‘(]*$/.test(b);
+}
+function grammarScan(t){
+  const out = [], skip = spellSkips(t);
+  const add = (at, len, kind, rule, msg, fixes, end) => { if (!skip.some(([a, b]) => at < b && at + len > a)) out.push({kind, rule, at, len, msg, fixes, end: end ?? at + len}); };
+  for (const r of G_RULES) for (const m of t.matchAll(r.re)) {
+    const f = r.f(m); if (!f) continue;
+    const curly = m[0].includes('’') && !m[0].includes("'");          // keep the apostrophe you type with
+    add(m.index, m[0].length, 'grammar', r.rule, f[0], f.slice(1).map(s => curly ? s.replace(/'/g, '’') : s));
+  }
+  for (const m of t.matchAll(G_RE.rep)) if (!G_REPEAT.has(m[1].toLowerCase())) add(m.index, m[0].length, 'grammar', 'repeat', 'Repeated word', [m[1]]);
+  for (const m of t.matchAll(G_RE.art)) {
+    const a = m[1], w = m[2], lw = w.toLowerCase();
+    if (w.length < 2 || w === w.toUpperCase() || /[A-Z]/.test(w.slice(1)) || G_NOTART.has(lw) || G_ANSKIP.test(lw)) continue;
+    if (a[0] === 'A' && !sentStart(t, m.index)) continue;           // Part A, Grade A
+    const vowel = /^[aeiou]/.test(lw) ? !G_ANCONS.test(lw) : G_ANVOW.test(lw);
+    if (vowel === (a.length === 2)) continue;
+    add(m.index, a.length, 'grammar', 'an', vowel ? `“an” before a vowel sound (“${w}”)` : `“a” before a consonant sound (“${w}”)`, [vowel ? a + 'n' : a[0]], m.index + m[0].length);
+  }
+  for (const m of t.matchAll(G_RE.i)) {
+    let end;
+    if (!m[1]) {
+      G_RE.inext.lastIndex = m.index + 1; const nx = G_RE.inext.exec(t);
+      const pw = t.slice(Math.max(0, m.index - 20), m.index).match(/([A-Za-z]+)[  ]+$/);
+      if (!nx || G_ISTOP.has(nx[1].toLowerCase()) || pw && G_IPREV.has(pw[1].toLowerCase())) continue;
+      end = m.index + 1 + nx[0].length;
+    }
+    add(m.index, m[0].length, 'grammar', 'i', '“I” is always a capital', ['I' + (m[1] || '')], end);
+  }
+  for (const m of t.matchAll(G_RE.cap)) {
+    const p = m.index, w = m[2];
+    if (w.length < 2 || /[A-Z]/.test(w) || t[p + m[0].length] === '.') continue;      // iPhone, e.g.
+    if (m[1] === '.') {
+      if (t[p - 1] === '.' || /\d/.test(t[p - 1] || '')) continue;      // an ellipsis, or a number (1. 2.5)
+      const tok = t.slice(Math.max(0, p - 15), p).match(/([A-Za-z.]+)$/);
+      if (tok && (tok[1].includes('.') || tok[1].length === 1 || G_ABBR.has(tok[1].toLowerCase()))) continue;     // etc. Dr. U.S. J. Smith
+    }
+    add(p + m[0].length - w.length, w.length, 'grammar', 'cap', 'Start a sentence with a capital letter', [capFirst(w)]);
+  }
+  for (const m of t.matchAll(G_RE.spb)) add(m.index, m[0].length, 'punct', 'spb', `No space before ${G_PNAME[m[2]]}`, [m[2]]);
+  for (const m of t.matchAll(G_RE.spa)) add(m.index, 1, 'punct', 'spa', `Add a space after ${G_PNAME[m[1]]}`, [m[1] + ' ']);
+  for (const m of t.matchAll(G_RE.spd)) add(m.index, 1, 'punct', 'spa', 'Add a space after a full stop', ['. ']);
+  for (const m of t.matchAll(G_RE.dbl)) add(m.index, 2, 'punct', 'dbl', 'Two spaces between words', [' ']);
+  out.sort((a, b) => a.at - b.at || a.len - b.len);
+  return out.filter((x, k) => !k || x.at !== out[k - 1].at || x.len !== out[k - 1].len);
+}
+// the note's text with a line break wherever noteText put a space between lines, pictures or equations
+function proofText(text, parts){
+  let o = '', p = 0;
+  for (const [s, n] of parts) { if (s > p) o += '\n'.repeat(s - p); o += n.data; p = s + n.data.length; }
+  return text.length > p ? o + '\n'.repeat(text.length - p) : o;
+}
+// (Ignore remembers a slip by the few letters round it, so changes elsewhere in the note don't bring it back)
+const onceKey = (t, at, len) => t.slice(Math.max(0, at - 6), at) + '\u0001' + t.substr(at, len) + '\u0001' + t.slice(at + len, at + len + 6);
+// every mistake in a note's text, spelling and grammar, in order (less the ones you ignored)
+function proofIssues(t){
+  const out = [];
+  if (spellDict) for (const x of spellScan(t)) out.push({kind: 'spelling', rule: 'spell', at: x.at, len: x.len, word: x.w, msg: 'Possible spelling mistake'});
+  if (grammarOn()) for (const g of grammarScan(t)) if (!gramIgnored.has(g.rule + '\u0001' + t.substr(g.at, g.len).toLowerCase())) out.push(g);
+  for (const x of out) { x.text = t.substr(x.at, x.len); x.key = onceKey(t, x.at, x.len); }
+  return out.filter(x => !proofOnce.has(x.key)).sort((a, b) => a.at - b.at || a.len - b.len);
 }
 // the note's text as one string (so words split by bold/italic still count as one), with a map back to the text nodes
 function noteText(note){
@@ -6888,24 +7081,31 @@ function posAt(parts, i, end){
   const [start, node] = parts[lo]; return [node, Math.min(node.data.length, i - start)];
 }
 function spellNote(note, all){
-  spellRanges.delete(note);
-  if (!spellDict || reading || !note.isConnected) return;
+  spellRanges.delete(note); gramRanges.delete(note);
+  if (!(spellDict || grammarOn()) || reading || !note.isConnected) return;
   const {text, parts} = noteText(note); if (!parts.length) return;
   const sel = getSelection(), typing = !all && document.activeElement === note && sel.rangeCount && sel.isCollapsed ? sel.getRangeAt(0) : null;
-  const found = [];
-  for (const x of spellScan(text)) {
+  const found = [], gram = [];
+  for (const x of proofIssues(proofText(text, parts))) {
     const r = document.createRange();
     try { r.setStart(...posAt(parts, x.at, false)); r.setEnd(...posAt(parts, x.at + x.len, true)); } catch { continue; }
     // the word you are still typing isn't marked until you move on from it
-    if (typing && r.comparePoint(typing.startContainer, typing.startOffset) === 0) continue;
-    found.push({range: r, word: x.w, at: x.at});
+    if (typing) {
+      const c = x.end > x.at + x.len ? document.createRange() : r;
+      try { if (c !== r) { c.setStart(r.startContainer, r.startOffset); c.setEnd(...posAt(parts, x.end, true)); } if (c.comparePoint(typing.startContainer, typing.startOffset) === 0) continue; } catch {}
+    }
+    if (x.kind === 'spelling') found.push({range: r, word: x.word, at: x.at});
+    else gram.push({range: r, word: x.text, at: x.at, g: x});
   }
   if (found.length) spellRanges.set(note, found);
+  if (gram.length) gramRanges.set(note, gram);
 }
 function paintSpell(){
   if (!spellHl) return;
-  spellHl.clear();
+  spellHl.clear(); gramHl.clear();
   for (const [note, list] of spellRanges) { if (!note.isConnected) { spellRanges.delete(note); continue; } list.forEach(x => spellHl.add(x.range)); }
+  for (const [note, list] of gramRanges) { if (!note.isConnected) { gramRanges.delete(note); continue; } list.forEach(x => gramHl.add(x.range)); }
+  edSoon();
 }
 const spellQueue = new Set(); let spellTimer = null, spellAllTimer = null;
 function spellSoon(note){ spellQueue.add(note); clearTimeout(spellTimer); spellTimer = setTimeout(() => { spellQueue.forEach(n => spellNote(n)); spellQueue.clear(); paintSpell(); }, 350); }
@@ -6913,12 +7113,12 @@ function spellAllSoon(){ clearTimeout(spellAllTimer); spellAllTimer = setTimeout
 function spellAll(){
   clearTimeout(spellAllTimer);
   main.querySelectorAll('.mine').forEach(spellAttrs);
-  spellRanges.clear();
-  if (spellDict && !reading && spellLang !== 'off') main.querySelectorAll('.mine').forEach(n => spellNote(n));
+  spellRanges.clear(); gramRanges.clear();
+  if ((spellDict && spellLang !== 'off' || grammarOn()) && !reading) main.querySelectorAll('.mine').forEach(n => spellNote(n));
   paintSpell();
 }
 // moving the cursor off a word you just typed marks it if it is misspelt
-document.addEventListener('selectionchange', () => { if (spellDict && noteActive()) spellSoon(active); });
+document.addEventListener('selectionchange', () => { if ((spellDict || grammarOn()) && noteActive()) spellSoon(active); });
 const spellSel = $('#spellLang'); spellSel.value = spellLang;
 const spellDocLang = () => spellLang === 'off' ? 'en' : spellLang === 'device' ? navigator.language || 'en' : spellLang;
 spellSel.onchange = () => {
@@ -6935,6 +7135,7 @@ let spellHitNow = null;
 function spellHit(note, x, y){
   spellNote(note, true); paintSpell();          // include the word the cursor is in (right-clicking puts it there)
   for (const h of spellRanges.get(note) || []) for (const r of h.range.getClientRects()) if (x >= r.left - 1 && x <= r.right + 1 && y >= r.top - 2 && y <= r.bottom + 2) return {word: h.word, at: h.at, note};
+  for (const h of gramRanges.get(note) || []) for (const r of h.range.getClientRects()) if (x >= r.left - 1 && x <= r.right + 1 && y >= r.top - 2 && y <= r.bottom + 2) return {word: h.word, at: h.at, note, g: h.g};
   return null;
 }
 // find the marked word again right now: the page may have been re-laid out (or edited) since the menu opened,
@@ -6942,7 +7143,9 @@ function spellHit(note, x, y){
 function hitRange(hit){
   if (!hit.note.isConnected) return null;
   const {text, parts} = noteText(hit.note); if (!parts.length) return null;
-  const re = new RegExp('(^|[^A-Za-zÀ-ÖØ-öø-ÿ\'’])(' + hit.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/'/g, "['’]") + ')(?![A-Za-zÀ-ÖØ-öø-ÿ])', 'g');
+  const body = hit.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/'/g, "['’]");
+  // (a grammar slip can start or end with a space or a comma, so it is found as it is, nearest where it was)
+  const re = hit.g ? new RegExp('()(' + body.replace(/[ \u00a0]/g, '[ \\u00a0]') + ')', 'g') : new RegExp('(^|[^A-Za-zÀ-ÖØ-öø-ÿ\'’])(' + body + ')(?![A-Za-zÀ-ÖØ-öø-ÿ])', 'g');
   let best = null;
   for (const m of text.matchAll(re)) { const at = m.index + m[1].length; if (!best || Math.abs(at - hit.at) < Math.abs(best - hit.at)) best = at; }
   if (best === null) return null;
@@ -6970,6 +7173,12 @@ function fixWord(hit, w){
 function openSpellMenu(hit, x, y){
   spellHitNow = hit; spellAt = {x, y};
   const btn = (cls, label, act) => { const b = document.createElement('button'); b.type = 'button'; b.tabIndex = -1; b.className = cls; b.textContent = label; b.dataset.act = act; b.setAttribute('role', 'menuitem'); return b; };
+  if (hit.g) {           // a grammar slip: what's wrong, its fixes and Ignore
+    spellMenu.replaceChildren(Object.assign(document.createElement('div'), {className: 'gmsg', textContent: hit.g.msg}), ...hit.g.fixes.map(w => { const b = btn('sug', w.trim() ? w : '“' + w + '”', 'fix'); b.dataset.w = w; return b; }),
+      document.createElement('hr'), btn('', 'Ignore', 'ignore'));
+    spellMenu.hidden = false; placeSpellMenu(x, y);
+    return;
+  }
   spellMenu.replaceChildren(Object.assign(document.createElement('div'), {className: 'none', textContent: 'Looking for suggestions…'}));
   spellMenu.append(document.createElement('hr'), btn('', `Add “${hit.word}” to dictionary`, 'add'), btn('', 'Ignore', 'ignore'));
   spellMenu.hidden = false; placeSpellMenu(x, y);
@@ -6996,6 +7205,7 @@ function spellAct(b){
   else {
     const lw = hit.word.toLowerCase();
     if (b.dataset.act === 'add') { userWords.add(lw); saveUserWords(); toast(`“${hit.word}” added to your dictionary.`); }
+    else if (hit.g) proofOnce.add(hit.g.key);
     else ignoredWords.add(lw);
     spellCache = new Map(); spellAll();
     hit.note.focus({preventScroll: true});
@@ -7036,14 +7246,14 @@ function followSpellMenu(){
   spellAt = {x: q.left + Math.min(q.width / 2, 20), y: q.bottom}; placeSpellMenu(spellAt.x, spellAt.y);
 }
 main.addEventListener('contextmenu', e => {
-  if (!spellDict || reading) return;
+  if (!(spellDict || grammarOn()) || reading) return;
   const note = e.target.closest('.mine'); if (!note) return;
   const hit = spellHit(note, e.clientX, e.clientY); if (!hit) return;   // not on a marked word: the browser's usual menu
   e.preventDefault(); openSpellMenu(hit, e.clientX, e.clientY);
 });
 // on a touch screen, tapping a marked word shows the suggestions
 main.addEventListener('pointerup', e => {
-  if (e.pointerType === 'mouse' || !spellDict || reading) return;
+  if (e.pointerType === 'mouse' || !(spellDict || grammarOn()) || reading) return;
   const note = e.target.closest('.mine'); if (!note) return;
   const x = e.clientX, y = e.clientY;
   setTimeout(() => { if (getSelection().isCollapsed) { const hit = spellHit(note, x, y); if (hit) openSpellMenu(hit, x, y + 10); } }, 250);
@@ -7162,11 +7372,247 @@ main.addEventListener('focusin', e => {
   const note = e.target.closest?.('.mine'); if (!note || reading) return;
   const native = nativeSpell(); spellAttrs(note);
   if (native) { note.spellcheck = false; void note.offsetHeight; note.spellcheck = true; }     // wakes the browser's checker for this box
-  else if (spellDict) { spellNote(note); paintSpell(); }
-  else loadSpell();
+  else if (!spellDict) loadSpell();
+  if (spellDict || grammarOn()) { spellNote(note); paintSpell(); }
 });
 document.documentElement.lang = spellDocLang();
 loadSpell();                 // start straight away; the browser checks spelling until it's ready
+
+// ================= Editor (Review tab, F7): every spelling, grammar and punctuation mistake in your notes, one at a time =================
+// Like Word's Editor: the mistake is lit up on the page with its suggestions; Ignore, Ignore all, Add to dictionary, Change all, and Fix all.
+// It keeps up as you type. Fixes go in like typing, so Back undoes them.
+const ED_KIND = {spelling: 'Spelling', grammar: 'Grammar', punct: 'Punctuation'};
+const edPane = document.createElement('aside');
+edPane.className = 'pop editor'; edPane.id = 'editorPane'; edPane.hidden = true; edPane.setAttribute('aria-label', 'Editor');
+edPane.innerHTML = `<div class="edhead"><h2>Editor</h2><span class="count" id="edCount"></span><button type="button" class="btn" id="edClose" aria-label="Close the Editor" title="Close (Esc)"><svg class="i"><use href="#i-x"/></svg></button></div>
+  <div class="edcats" id="edCats" role="group" aria-label="Show one kind of mistake"></div>
+  <div class="edcard" id="edCard" aria-live="polite"></div>
+  <ol class="edlist" id="edList" aria-label="Every mistake"></ol>
+  <div class="edfoot"><button type="button" class="btn outline" id="edFixAll" title="Fix all: give every mistake in the list its first suggestion (Back puts them back)"><svg class="i"><use href="#i-check"/></svg>Fix all</button><label class="chk" for="edAuto"><input type="checkbox" id="edAuto"> Autocorrect as you type</label></div>`;
+document.body.append(edPane);
+const edEl = s => edPane.querySelector(s);
+function edCollect(){
+  const out = []; let ni = 0;
+  if (reading) return out;
+  for (const note of main.querySelectorAll('.mine')) {
+    ni++;
+    if (!note.getClientRects().length) continue;          // hidden notes
+    const {text, parts} = noteText(note); if (!parts.length) continue;
+    for (const x of proofIssues(proofText(text, parts))) { x.note = note; x.ni = ni; out.push(x); }
+  }
+  return out;
+}
+const edShown = () => ed.cat === 'all' ? ed.list : ed.list.filter(x => x.kind === ed.cat);
+const edHit = x => ({note: x.note, word: x.text, at: x.at, g: true});        // (found again exactly as it was typed)
+function edFixes(x){
+  if (x.kind !== 'spelling') return x.fixes;
+  if (!spellDict) return [];
+  if (ed.sugFor !== spellDict) { ed.sug.clear(); ed.sugFor = spellDict; }
+  if (!ed.sug.has(x.word)) ed.sug.set(x.word, spellSuggest(spellDict, x.word));
+  return ed.sug.get(x.word);
+}
+// look again; keep: stay on the mistake you were at (or the next one, once it's fixed or ignored)
+function edRefresh(keep){
+  const cur = keep ? edShown()[ed.i] : null;
+  ed.list = edCollect();
+  const f = edShown();
+  if (cur) { const j = f.findIndex(x => x.ni > cur.ni || x.ni === cur.ni && x.at >= cur.at); ed.i = j < 0 ? 0 : j; }
+  ed.i = Math.max(0, Math.min(ed.i, f.length - 1));
+  edRender();
+}
+function edSoon(){ if (!ed.open) return; clearTimeout(ed.timer); ed.timer = setTimeout(() => edRefresh(true), 250); }
+function edWhy(){
+  if (!main.querySelector('.mine')) return 'Write some notes, and any mistakes in them show up here.';
+  if (!spellDict && (spellLang === 'off' || spellLang === 'device')) return `Spelling is ${spellLang === 'off' ? 'off' : 'left to your device'} (View tab), so only grammar is checked here.`;
+  if (!spellDict && canHighlight) return 'The spelling dictionary is still loading…';
+  return 'Your notes look good.';
+}
+const edShow = s => s.trim() ? s : '“' + s + '”';          // a fix that is only a space
+function edRender(){
+  const f = edShown(), n = {all: ed.list.length, spelling: 0, grammar: 0, punct: 0};
+  for (const x of ed.list) n[x.kind]++;
+  edEl('#edCount').textContent = ed.list.length ? `${ed.list.length} to look at` : '';
+  edEl('#edCats').innerHTML = Object.entries({all: 'All', ...ED_KIND}).map(([k, l]) => `<button type="button" class="edcat" data-cat="${k}" aria-pressed="${ed.cat === k}">${l} <b>${n[k]}</b></button>`).join('');
+  edEl('#edFixAll').disabled = !f.length;
+  const card = edEl('#edCard'), list = edEl('#edList');
+  if (!f.length) {
+    card.innerHTML = `<div class="edempty"><svg class="i"><use href="#i-check"/></svg><b>${ed.list.length ? 'None of this kind' : 'No mistakes found'}</b><span>${esc(edWhy())}</span></div>`;
+    list.replaceChildren(); edLight(null); return;
+  }
+  const x = f[ed.i], fixes = edFixes(x), {text, parts} = noteText(x.note), t = proofText(text, parts);
+  const a = Math.max(0, x.at - 50), b = Math.min(t.length, x.at + x.len + 50), flat = s => s.replace(/\s+/g, ' ');
+  const same = x.kind === 'spelling' ? ed.list.filter(y => y.kind === 'spelling' && y.text === x.text).length : 0;
+  card.innerHTML = `<div class="edkind" data-k="${x.kind}">${ED_KIND[x.kind]}</div><p class="edmsg">${esc(x.msg)}</p>
+    <p class="edctx">${a ? '…' : ''}${esc(flat(t.slice(a, x.at)))}<mark>${esc(x.text)}</mark>${esc(flat(t.slice(x.at + x.len, b)))}${b < t.length ? '…' : ''}</p>
+    <div class="edsugs" role="group" aria-label="Suggestions">${fixes.length ? fixes.map((w, k) => `<button type="button" data-fix="${k}" title="Change it to ${esc(edShow(w))}">${esc(edShow(w))}</button>`).join('') : '<span class="none">No suggestions</span>'}</div>
+    <div class="edacts">${same > 1 && fixes.length ? `<button type="button" class="btn outline" data-act="all" title="Change all: every “${esc(x.text)}” in your notes becomes “${esc(fixes[0])}”">Change all (${same})</button>` : ''}<button type="button" class="btn outline" data-act="once" title="Ignore: leave this one as it is">Ignore</button><button type="button" class="btn outline" data-act="ignore" title="Ignore all: leave ${x.kind === 'spelling' ? 'this word' : 'this'} alone everywhere until you close the app">Ignore all</button>${x.kind === 'spelling' ? `<button type="button" class="btn outline" data-act="add" title="Add to dictionary: “${esc(x.word)}” is never marked again">Add to dictionary</button>` : ''}</div>
+    <div class="ednav"><button type="button" class="btn" data-nav="-1" title="Previous mistake">‹ Previous</button><span>${ed.i + 1} of ${f.length}</span><button type="button" class="btn" data-nav="1" title="Next mistake">Next ›</button></div>`;
+  list.innerHTML = f.slice(0, 400).map((y, j) => `<li><button type="button" data-j="${j}"${j === ed.i ? ' class="on" aria-current="true"' : ''}><span class="edk" data-k="${y.kind}"></span><span class="edw">${esc(edShow(y.text))}</span><span class="edm">${esc(y.kind === 'spelling' ? 'Spelling' : '→ ' + edShow(y.fixes[0]))}</span></button></li>`).join('');
+  edLight(x);
+}
+// light up the mistake on the page (and bring it into view)
+function edLight(x, scroll){
+  if (!reviewHl) return;
+  reviewHl.clear();
+  const r = x && hitRange(edHit(x)); if (!r) return;
+  reviewHl.add(r);
+  if (!scroll) return;
+  let q = r.getBoundingClientRect();
+  if (q.top > 70 && q.bottom < visH() - 60 && q.height) return;
+  (r.startContainer.nodeType === 3 ? r.startContainer.parentElement : r.startContainer).scrollIntoView({block: 'center'});
+  q = r.getBoundingClientRect();
+  if (q.top < 70 || q.bottom > visH() - 60) scrollBy(0, q.top - innerHeight / 2);
+}
+function setEditor(on, focus){
+  if (on && reading) { toast('Study mode is on: go back to editing to fix mistakes.'); on = false; }
+  ed.open = on; edPane.hidden = !on;
+  $('#editorBtn').setAttribute('aria-pressed', on);
+  if (!on) { clearTimeout(ed.timer); reviewHl?.clear(); return; }
+  if (!spellDict) loadSpell();
+  ed.i = 0; edRefresh(false); edLight(edShown()[0], true);
+  if (focus) (edEl('.edsugs button') || edEl('#edClose')).focus({preventScroll: true});
+}
+// after a change: the lines on the page and the list catch up, and a keyboard user stays in the Editor
+function edDone(kb){
+  spellAll(); edRefresh(true); edLight(edShown()[ed.i], true);
+  if (kb) (edEl('.edsugs button') || edEl('[data-nav="1"]') || edEl('#edClose')).focus({preventScroll: true});
+}
+function edFixAll(kb){
+  let n = 0;
+  for (const x of edShown().slice().reverse()) {          // last first, so the places of the earlier ones stay right
+    const w = edFixes(x)[0]; if (w === undefined) continue;
+    fixWord(edHit(x), w); n++;
+  }
+  ed.i = 0;
+  toast(n ? `Fixed ${n} mistake${n === 1 ? '' : 's'}. Back (Ctrl+Z) puts ${n === 1 ? 'it' : 'them'} back.` : 'None of these has a suggestion to use.');
+  edDone(kb);
+}
+edPane.addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });      // the cursor stays in your note
+edPane.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const f = edShown(), x = f[ed.i], kb = e.detail === 0;          // (Enter or Space on a button)
+  if (b.id === 'edClose') { setEditor(false); return; }
+  if (b.dataset.cat) { ed.cat = b.dataset.cat; ed.i = 0; edRender(); edLight(edShown()[0], true); return; }
+  if (b.dataset.j) { ed.i = +b.dataset.j; edRender(); edLight(f[ed.i], true); if (kb) edEl('.edsugs button')?.focus(); return; }
+  if (b.dataset.nav) { if (f.length) { ed.i = (ed.i + +b.dataset.nav + f.length) % f.length; edRender(); edLight(f[ed.i], true); if (kb) edEl(`[data-nav="${b.dataset.nav}"]`)?.focus(); } return; }
+  if (b.id === 'edFixAll') { edFixAll(kb); return; }
+  if (!x) return;
+  if (b.dataset.fix) fixWord(edHit(x), edFixes(x)[+b.dataset.fix]);
+  else if (b.dataset.act === 'all') {
+    const w = edFixes(x)[0], all = ed.list.filter(y => y.kind === 'spelling' && y.text === x.text);
+    all.reverse().forEach(y => fixWord(edHit(y), w));
+    toast(`Changed ${all.length} × “${x.text}” to “${w}”.`);
+  }
+  else if (b.dataset.act === 'once') proofOnce.add(x.key);
+  else if (b.dataset.act === 'ignore') { if (x.kind === 'spelling') { ignoredWords.add(x.word.toLowerCase()); spellCache = new Map(); } else gramIgnored.add(x.rule + '\u0001' + x.text.toLowerCase()); }
+  else if (b.dataset.act === 'add') { userWords.add(x.word.toLowerCase()); saveUserWords(); toast(`“${x.word}” added to your dictionary.`); }
+  else return;
+  edDone(kb);
+});
+$('#editorBtn').onclick = e => setEditor(!ed.open, e.detail === 0);
+document.addEventListener('keydown', e => {
+  if (e.key === 'F7' && !e.ctrlKey && !e.altKey && !e.metaKey) { e.preventDefault(); setEditor(!ed.open, true); }
+  else if (e.key === 'Escape' && ed.open && edPane.contains(document.activeElement)) { e.preventDefault(); setEditor(false); }
+});
+
+// ---- Check grammar, and Autocorrect (Review tab; more choices in Help & settings)
+const AC_DEF = {typos: 1, i: 1, caps: 1, two: 1, spell: 0};
+const acOn = () => pref.get('autocorrect', '0') === '1', acOpt = k => pref.get('ac-' + k, AC_DEF[k] ? '1' : '0') === '1';
+function proofUi(){
+  const g = grammarOn(), a = acOn();
+  $('#grammarBtn').setAttribute('aria-pressed', g); $('#setGrammar').checked = g;
+  $('#autoBtn').setAttribute('aria-pressed', a); $('#setAuto').checked = a; edEl('#edAuto').checked = a;
+  document.querySelectorAll('#autoOpts [data-ac]').forEach(c => { c.checked = acOpt(c.dataset.ac); c.disabled = !a; });
+  $('#autoOpts').classList.toggle('off', !a);
+}
+function setGrammar(on){ pref.set('grammar', on ? '1' : '0'); proofUi(); spellAll(); if (ed.open) edRefresh(true); }
+function setAuto(on){
+  pref.set('autocorrect', on ? '1' : '0'); proofUi();
+  if (on) hint('Autocorrect is on: slips such as “teh” are put right when you finish the word. Press Backspace straight after to put back what you typed.');
+}
+$('#grammarBtn').onclick = () => setGrammar(!grammarOn());
+$('#setGrammar').onchange = e => setGrammar(e.target.checked);
+$('#autoBtn').onclick = () => setAuto(!acOn());
+$('#setAuto').onchange = edEl('#edAuto').onchange = e => setAuto(e.target.checked);
+document.querySelectorAll('#autoOpts [data-ac]').forEach(c => { c.onchange = () => pref.set('ac-' + c.dataset.ac, c.checked ? '1' : '0'); });
+proofUi();
+// Autocorrect: as you finish a word (a space or punctuation after it) a slip is put right, as in Word. Backspace straight after puts back
+// what you typed, and that word is left alone from then on.
+const AC_TYPOS = new Map(('teh:the hte:the taht:that thsi:this tihs:this adn:and nad:and wiht:with whcih:which wich:which jsut:just knwo:know konw:know waht:what ' +
+  'woudl:would coudl:could shoudl:should becuase:because becasue:because beacuse:because thier:their freind:friend recieve:receive recieved:received recieves:receives recieving:receiving ' +
+  'beleive:believe beleif:belief acheive:achieve wierd:weird peice:piece sieze:seize neice:niece hieght:height foriegn:foreign yeild:yield ' +
+  'dont:don\'t doesnt:doesn\'t didnt:didn\'t cant:can\'t isnt:isn\'t arent:aren\'t wasnt:wasn\'t werent:weren\'t havent:haven\'t hasnt:hasn\'t hadnt:hadn\'t ' +
+  'wouldnt:wouldn\'t couldnt:couldn\'t shouldnt:shouldn\'t im:I\'m ive:I\'ve youre:you\'re youve:you\'ve theyre:they\'re theyve:they\'ve weve:we\'ve thats:that\'s whats:what\'s ' +
+  'theres:there\'s wouldve:would\'ve couldve:could\'ve shouldve:should\'ve alot:a_lot definately:definitely definatly:definitely seperate:separate seperately:separately ' +
+  'occured:occurred occurence:occurrence occuring:occurring untill:until tommorow:tomorrow tomorow:tomorrow tommorrow:tomorrow accomodate:accommodate begining:beginning beggining:beginning ' +
+  'calender:calendar enviroment:environment existance:existence goverment:government independant:independent neccessary:necessary necesary:necessary noticable:noticeable ' +
+  'occassion:occasion posession:possession publically:publicly realy:really recomend:recommend refered:referred relevent:relevant succesful:successful sucessful:successful ' +
+  'suprise:surprise truely:truly arguement:argument basicly:basically concious:conscious finaly:finally happend:happened immediatly:immediately knowlege:knowledge ' +
+  'libary:library lenght:length strenght:strength mispell:misspell persue:pursue prefered:preferred rember:remember remeber:remember sentance:sentence similiar:similar ' +
+  'sincerly:sincerely tounge:tongue writting:writing abscence:absence accross:across agressive:aggressive apparantly:apparently appearence:appearance buisness:business ' +
+  'catagory:category comming:coming commited:committed completly:completely dissapear:disappear dissapoint:disappoint embarass:embarrass excercise:exercise ' +
+  'experiance:experience familar:familiar grammer:grammar intresting:interesting interupt:interrupt maintainance:maintenance millenium:millennium oppurtunity:opportunity ' +
+  'paralel:parallel probaly:probably pronounciation:pronunciation questionaire:questionnaire religous:religious rythm:rhythm speach:speech temperture:temperature ' +
+  'tendancy:tendency therfore:therefore threshhold:threshold visable:visible withold:withhold').split(' ').map(p => { const [a, b] = p.split(':'); return [a, b.replace(/_/g, ' ')]; }));
+const acNoFix = new Set();
+let acLast = null, acBusy = false;
+const acAbbr = pre => { const m = pre.match(/([A-Za-z.]+)\.["”’)]*\s+$/); return !!m && (m[1].includes('.') || m[1].length === 1 || G_ABBR.has(m[1].toLowerCase())); };
+// what a word just typed should become (null: leave it); pre is the text before it in its line, sep the character typed after it
+function acWord(w, pre, sep){
+  const lw = w.toLowerCase(); if (acNoFix.has(lw)) return null;
+  let f = w;
+  if (acOpt('typos') && AC_TYPOS.has(lw) && (w === lw || w === capFirst(lw) || w === w.toUpperCase())) f = likeCase(w, AC_TYPOS.get(lw));
+  else if (acOpt('spell') && spellDict && w === lw && w.length > 3 && !wordOk(w)) { const s = spellSuggest(spellDict, w, 1)[0]; if (s && !s.includes(' ')) f = s; }
+  if (sep !== '.' && sep !== "'" && sep !== '’') {           // (i.e. e.g. and i'm are still being typed)
+    if (acOpt('i') && /^i(['’](m|ve|ll|d))?$/.test(f)) f = 'I' + f.slice(1);
+    if (acOpt('two') && /^[A-Z]{2}[a-z]+$/.test(f) && !/^[A-Z]{2}s$/.test(f) && (!spellDict || wordOk(f[0] + f.slice(1).toLowerCase()))) f = f[0] + f.slice(1).toLowerCase();
+    if (acOpt('caps') && /^[a-zà-öø-ÿ][a-zà-öø-ÿ'’]*$/.test(f) && (f.length > 1 || f === 'a') && (/^[\s"“‘(]*$/.test(pre) || /[.!?]["”’)]*\s+$/.test(pre) && !acAbbr(pre))) f = capFirst(f);
+  }
+  return f === w ? null : f;
+}
+main.addEventListener('input', e => {
+  if (acBusy) return;
+  acLast = null;
+  if (!acOn() || reading || e.isComposing || e.inputType !== 'insertText' || !e.data || !/^[\s.,;:!?)\]"”'’]$/.test(e.data)) return;
+  const note = e.target.closest?.('.mine'), sel = getSelection(); if (!note || !sel.rangeCount || !sel.isCollapsed) return;
+  const node = sel.anchorNode, off = sel.anchorOffset;
+  if (!node || node.nodeType !== 3 || !note.contains(node) || off < 2 || node.parentElement.closest('.katex, .formula, code, pre, a')) return;
+  const sep = node.data[off - 1]; if (sep !== e.data && !(/\s/.test(e.data) && /\s/.test(sep))) return;
+  const m = node.data.slice(0, off - 1).match(/[A-Za-zÀ-ÖØ-öø-ÿ]+(?:['’][A-Za-zÀ-ÖØ-öø-ÿ]+)?$/); if (!m) return;
+  const w = m[0], start = off - 1 - w.length;
+  // the text before it in its line: to tell a new sentence, and to leave web addresses, file names and the middle of a word alone
+  const blk = node.parentElement.closest('li, p, div, h1, h2, h3, h4, h5, h6, td, th, blockquote'), r = document.createRange();
+  r.setStart(blk && note.contains(blk) ? blk : note, 0); r.setEnd(node, start);
+  const pre = r.toString();
+  if (/[\w@/\\:.'’–-]$/.test(pre) || /(https?:|www\.)\S*$/.test(pre)) return;
+  const fix = acWord(w, pre, sep); if (!fix) return;
+  const rr = document.createRange(); rr.setStart(node, start); rr.setEnd(node, off);
+  sel.removeAllRanges(); sel.addRange(rr);
+  acBusy = true;
+  let done = false;
+  try { done = document.execCommand('insertText', false, fix + sep); } catch {} finally { acBusy = false; }
+  if (!done) {
+    node.replaceData(start, off - start, fix + sep);
+    const c = document.createRange(); c.setStart(node, start + fix.length + 1); sel.removeAllRanges(); sel.addRange(c);
+    spellSoon(note); saveSoon();
+  }
+  acLast = {w, fix};
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Backspace' || !acLast || e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+  const sel = getSelection(), node = sel.anchorNode, off = sel.anchorOffset, {w, fix} = acLast;
+  acLast = null;
+  if (!sel.isCollapsed || !node || node.nodeType !== 3 || !node.parentElement.closest('.mine')) return;
+  const start = off - fix.length - 1;
+  if (start < 0 || node.data.slice(start, off - 1) !== fix) return;
+  e.preventDefault(); e.stopPropagation();
+  acNoFix.add(w.toLowerCase());
+  const r = document.createRange(); r.setStart(node, start); r.setEnd(node, off); sel.removeAllRanges(); sel.addRange(r);
+  acBusy = true;
+  let done = false;
+  try { done = document.execCommand('insertText', false, w); } catch {} finally { acBusy = false; }
+  if (!done) { node.replaceData(start, off - start, w); const c = document.createRange(); c.setStart(node, start + w.length); sel.removeAllRanges(); sel.addRange(c); saveSoon(); }
+}, true);
 
 // ================= Select all: every note on the current page, to restyle, move or delete together =================
 const multi = new Set();
