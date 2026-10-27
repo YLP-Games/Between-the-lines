@@ -721,6 +721,12 @@ body.focus .peekzone{display:none}
 .preset .x{flex:none;border:none;background:transparent;padding:2px 8px;border-radius:999px;font-size:17px;line-height:1;color:var(--muted);cursor:pointer}
 .preset .x:hover{background:var(--danger);color:var(--danger-ink)}
 .preset .tag{font-size:12px;color:var(--muted)}
+/* the highlight colour a preset is joined to (Highlight shortcuts): a dot of that colour, then the list */
+.preset .phl{display:flex;align-items:center;gap:6px;flex-basis:100%;font-size:13px;color:var(--muted)}
+.preset .phl select{flex:1 1 0;width:0;min-width:80px}
+.preset .phdot{flex:none;width:18px;height:18px;border-radius:50%;background:var(--c);border:1.5px solid var(--line-strong)}
+.preset .phdot.none{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--line-strong) 3px 4px)}
+.presets.hloff .phl{opacity:.6}
 .presetacts{display:flex;flex-wrap:wrap;gap:6px}
 @media (pointer:coarse){      /* fingertip-sized */
   #bPresetEdit{height:44px!important}
@@ -2302,6 +2308,8 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
     <section id="presetSec">
       <h3>Box presets</h3>
       <p class="sethint">A preset gives a note its font, size, bold, italic or underline, text colour and pencil icon colour in one go: pick one on the Box tab. Notes you've already styled keep their look when you change a preset. PowerPoint speaker notes arrive as Speaker notes.</p>
+      <label class="chk setchk" for="setHlPreset"><input type="checkbox" id="setHlPreset"> Highlight shortcuts</label>
+      <p class="sethint">Join a preset to a highlight colour (Highlight, on its card below). With this on, a side note you link to a highlight of that colour takes that preset: say, green text and a green pencil icon for green highlights.</p>
       <div class="presets" id="presetList"></div>
       <div class="presetacts">
         <button type="button" class="btn outline" id="presetAdd" title="New preset: from the note you're in (or the style for new notes)">+ New preset</button>
@@ -8829,9 +8837,11 @@ function annoColRow(){
 }
 function annoSetColor(card, id, col){
   const h = annoGet(card, id); if (!h) return;
+  const was = annoColor(h);
   if (h.kind === 'pdf') { h.it.c = col; setInk(card, inkItems(card)); }
   else h.pcs.forEach(m => m.style.setProperty('--ac', col));
   hlCol = col; pref.set('hl-colour', col);
+  hlPresetFollow(id, was, col);
   sideDraw(); saveSoon();
 }
 hcRow.addEventListener('click', e => {
@@ -9191,7 +9201,7 @@ function sideLinkNew(card, id){
   if (!sp || !m) { toast('Turn on Side notes in the View tab first.'); return; }
   sideUnlinkId(id);
   const r = sp.getBoundingClientRect(), w = sideWidth(sp), x = Math.max(30, Math.min(40, sp.clientWidth - w - 10)), z = zoomOf(sp) || 1;
-  sideAddBox(sp, x, sideFree(sp, x, (m.top + m.height / 2 - r.top) / z - 24, w), w, id);
+  hlPresetTo(sideAddBox(sp, x, sideFree(sp, x, (m.top + m.height / 2 - r.top) / z - 24, w), w, id), id);
   saveSoon();
 }
 function sideUnlinkId(id){
@@ -9201,7 +9211,7 @@ function sideUnlinkId(id){
   return any;
 }
 // one more line: a highlight can go to several notes, and a note can have several highlights
-function sideLink(box, id){ linkAdd(box, id); saveSoon(); sideSoon(); }
+function sideLink(box, id){ const first = !linksOf(box).length; linkAdd(box, id); if (first) hlPresetTo(box, id); saveSoon(); sideSoon(); }
 // the highlight's pop-up: link it to a note on the side page, or another one (clicking a line gives Go to side note, Unlink and its colour)
 const sideRow = document.createElement('div');
 sideRow.className = 'arow'; sideRow.hidden = true;
@@ -9933,11 +9943,30 @@ const PRESETS0 = [
 ];
 const hexOk = c => /^#[0-9a-f]{6}$/i.test(c || '');
 const presetClean = p => ({id: String(p.id || 'p' + Date.now().toString(36)), name: String(p.name || '').trim().slice(0, 40) || 'Preset', font: String(p.font || 'Caveat'),
-  size: Math.min(200, Math.max(4, Math.round((+p.size || 24) * 2) / 2)), color: hexOk(p.color) ? p.color.toLowerCase() : '#1f4fd1', b: !!p.b, i: !!p.i, u: !!p.u, chip: hexOk(p.chip) ? p.chip.toLowerCase() : CHIP});
+  size: Math.min(200, Math.max(4, Math.round((+p.size || 24) * 2) / 2)), color: hexOk(p.color) ? p.color.toLowerCase() : '#1f4fd1', b: !!p.b, i: !!p.i, u: !!p.u, chip: hexOk(p.chip) ? p.chip.toLowerCase() : CHIP, hl: hexOk(p.hl) ? p.hl.toLowerCase() : null});
 const loadPresets = () => [].concat(pref.json('box-presets', null) || PRESETS0).filter(p => p && typeof p === 'object').map(presetClean);
 let presets = loadPresets();
 const spkPreset = () => presets.find(p => p.id === 'spk') || presetClean(PRESETS0[3]);
 function savePresets(){ pref.setJson('box-presets', presets); paintPreset(); }
+// Highlight shortcuts: a preset can be joined to a highlight colour (p.hl). With the setting on, a side note linked to a highlight of that colour takes
+// the preset: when it is made from the highlight, or joined to it as its first link. A note that still looks like its old colour's preset follows the highlight to a new colour.
+const hlPresetOn = () => pref.get('hl-preset') === '1';
+const hlPresetFor = c => hlPresetOn() && c ? presets.find(p => p.hl === c.toLowerCase()) || null : null;
+function hlPresetTo(box, id){
+  const card = sideSlide(box.parentElement), h = card && annoGet(card, id), p = h && hlPresetFor(annoColor(h));
+  if (!p) return null;
+  presetTo(box, p);
+  if (noteActive()?.closest('.notebox') === box) { showStyle(noteStyle(box.querySelector(':scope > .mine'))); showBox(boxOf(box)); }
+  return p;
+}
+function hlPresetFollow(id, from, to){
+  const p0 = hlPresetFor(from), p1 = hlPresetFor(to); if (!p0 || !p1 || p0 === p1) return;
+  main.querySelectorAll(`.sidepage > .notebox[data-link~="${CSS.escape(id)}"]`).forEach(b => { if (linksOf(b).length === 1 && sameLook(p0, lookOf(b))) presetTo(b, p1); });
+}
+function setHlPreset(on){
+  pref.set('hl-preset', on ? '1' : '0'); $('#setHlPreset').checked = on; $('#presetList').classList.toggle('hloff', !on);
+  toast(!on ? 'Highlight shortcuts are off: side notes keep the style for new notes.' : presets.some(p => p.hl) ? 'Highlight shortcuts are on: a side note takes the preset of its highlight\'s colour.' : 'Highlight shortcuts are on. Now join a preset to a highlight colour (Highlight, on its card).');
+}
 // how a note looks as a whole: its own font, size, colour and bold / italic / underline (not a few words in it), and its icon colour
 function lookOf(box){
   const m = box.querySelector(':scope > .mine'), w = m?.style.fontWeight;
@@ -9995,9 +10024,14 @@ function renderPresets(){
     <div class="pfmt"><select class="pfont" aria-label="Font for ${esc(p.name)}" title="Font">${$('#font').innerHTML}</select>
       <input class="psize" type="number" min="4" max="200" step="1" inputmode="decimal" value="${p.size}" aria-label="Text size for ${esc(p.name)}" title="Text size (4 to 200)">
       <button type="button" class="btn outline tg" data-k="b" aria-pressed="${p.b}" title="Bold" aria-label="Bold"><b>B</b></button><button type="button" class="btn outline tg" data-k="i" aria-pressed="${p.i}" title="Italic" aria-label="Italic"><i>I</i></button><button type="button" class="btn outline tg" data-k="u" aria-pressed="${p.u}" title="Underline" aria-label="Underline"><u>U</u></button>
-      ${p.id === 'spk' ? '<span class="tag">PowerPoint</span>' : ''}</div></div>`).join('');
-  $('#presetList').querySelectorAll('.preset').forEach(c => { c.querySelector('.pfont').value = presetById(c).font; });
+      ${p.id === 'spk' ? '<span class="tag">PowerPoint</span>' : ''}</div>
+    <div class="phl"><span class="phdot${p.hl ? '' : ' none'}" style="--c:${p.hl || 'transparent'}"></span>Highlight<select class="phlsel" aria-label="Highlight colour for ${esc(p.name)}" title="Highlight shortcut: side notes linked to a highlight of this colour take this preset (with Highlight shortcuts on)">${hlPresetOpts(p)}</select></div></div>`).join('');
+  $('#presetList').querySelectorAll('.preset').forEach(c => { const p = presetById(c); c.querySelector('.pfont').value = p.font; c.querySelector('.phlsel').value = p.hl || ''; });
+  $('#setHlPreset').checked = hlPresetOn(); $('#presetList').classList.toggle('hloff', !hlPresetOn());
 }
+// the six highlight colours, your favourite ones, and the preset's own; one another preset has is marked with its name
+const hlPresetOpts = p => '<option value="">None</option>' + [...HL_COLORS.map(h => h[0]), ...hlFavs, ...(p.hl ? [p.hl] : [])].filter((c, i, a) => a.indexOf(c) === i)
+  .map(c => { const o = presets.find(x => x !== p && x.hl === c); return `<option value="${c}">${esc(hlName(c) === c ? 'Your colour ' + c : hlName(c))}${o ? ' · ' + esc(o.name) : ''}</option>`; }).join('');
 const presetById = el => presets.find(p => p.id === el.closest('.preset')?.dataset.id);
 // a change is kept at once; the card's name shows the new look
 function presetEdit(e){
@@ -10007,6 +10041,15 @@ function presetEdit(e){
   else if (t.classList.contains('pcolor')) p.color = t.value.toLowerCase();
   else if (t.classList.contains('pchip')) p.chip = t.value.toLowerCase();
   else if (t.classList.contains('pfont')) p.font = t.value;
+  else if (t.classList.contains('phlsel')) {                 // (a highlight colour goes to one preset: another that had it lets it go)
+    if (e.type !== 'change') return;
+    const c = t.value || null, was = c && presets.find(x => x !== p && x.hl === c);
+    if (was) was.hl = null;
+    p.hl = c; savePresets(); renderPresets();
+    $('#presetList').querySelector(`.preset[data-id="${CSS.escape(p.id)}"] .phlsel`).focus();
+    toast(!c ? `${p.name} is no longer joined to a highlight colour.` : `Side notes on ${hlName(c) === c ? 'your ' + c : hlName(c).toLowerCase()} highlights now take ${p.name}${was ? ` (not ${was.name})` : ''}.` + (hlPresetOn() ? '' : ' Turn on Highlight shortcuts to use it.'));
+    return;
+  }
   else if (t.classList.contains('psize')) {
     const v = Math.round(parseFloat(t.value) * 2) / 2;
     if (e.type === 'change') { p.size = isFinite(v) ? Math.min(200, Math.max(4, v)) : p.size; t.value = p.size; } else if (v >= 4 && v <= 200) p.size = v; else return;
@@ -10096,6 +10139,8 @@ function setPptxNotes(on){
 }
 $('#setPptxNotes').checked = pptxNotesOn();
 $('#setPptxNotes').onchange = e => setPptxNotes(e.target.checked);
+$('#setHlPreset').checked = hlPresetOn();
+$('#setHlPreset').onchange = e => setHlPreset(e.target.checked);
 // Settings › Side note lines: the colour of every line that has none of its own
 const paintLineSet = () => { const c = lineDefault(); $('#setLine').innerHTML = lineDots(c, 'the colour of the lines to side notes') + `<span class="lbl">${LINE_COLORS.find(l => l[0] === c)?.[1] || 'Custom'}</span>`; };
 paintLineSet();
@@ -11702,6 +11747,7 @@ const CK_ACTIONS = [
   {id: 'sidehover', label: 'Open sidebar on hover on or off', ico: 'hide-left', words: 'sidebar peek left edge point mouse hover automatically show hidden settings', run: () => setSideHover(!sideHoverOn())},
   {id: 'autoalign', label: 'Auto-align notes on or off', ico: 'nalign-left', words: 'align line up box left edge tidy', run: () => setAutoAlign(!autoAlignOn())},
   {id: 'pptxnotes', label: 'PowerPoint speaker notes on side pages on or off', ico: 'sidepage', words: 'pptx slides presenter speaker notes side pages settings', run: () => setPptxNotes(!pptxNotesOn())},
+  {id: 'hlpreset', label: 'Highlight shortcuts on or off', ico: 'sidepage', words: 'highlight colour preset side note shortcut match green pencil', run: () => setHlPreset(!hlPresetOn())},
   {id: 'pdf', label: 'Download PDF', ico: 'download', words: 'save export print', ok: ckPages, run: ckDownload('pdf')},
   {id: 'file', label: 'Download notebook file', ico: 'download', words: 'save export html backup', ok: ckPages, run: ckDownload('notebook')},
   {id: 'md', label: 'Download notes as Markdown', ico: 'download', words: 'save export md text notion', ok: ckPages, run: ckDownload('markdown')},
