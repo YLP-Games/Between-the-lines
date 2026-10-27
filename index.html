@@ -1115,6 +1115,7 @@ main.side-on .sidepage{display:block}
 :is(.sidepage,.sidebg .pv,.blankpage)[data-pat="dots"]{background-image:radial-gradient(var(--sp-line) 1.3px,transparent 1.8px);background-size:22px 22px;background-position:11px 11px}
 .sidepage::before{content:attr(data-label);display:none;position:absolute;left:12px;top:7px;font:13px var(--ui);opacity:.6;pointer-events:none}
 .sidepage .g-float{display:none}
+.sidepage .g-link,body:not(.side-visible) .nbar .g-link{display:none}      /* (a note on the slide links to the side page; a side note doesn't) */
 .sidepage > .notebox.floating{max-width:calc(100% - 8px)}
 .sidepage > .notebox.floating.collapsed > .note-chip{left:calc(4px + var(--ci, 0) * 23px)}
 .sidepage.dark .notebox.collapsed > .note-chip{border-color:color-mix(in srgb, var(--chip,#ffd54a) 45%, #d4cdbb)}      /* (on dark paper the icon's ring is light, like the notes' corner mark, so a black icon still shows) */
@@ -3095,6 +3096,7 @@ function gripTitles(box){
   t('pin', box.classList.contains('pinned') ? 'Unpin: let this note be minimised again' : 'Pin: keep this note open');
   t('float', box.classList.contains('floating') ? 'Put this note back between the lines' : 'Float this note on top of the page, so it can sit beside the text');
   t('min', 'Minimise this note to a small pencil icon');
+  t('link', 'Link to side note: then click a note on the side page (or a blank spot for a new one) to join this note to it with a line');
   t('e', 'Drag to change the width'); t('w', 'Drag to change the width'); t('s', 'Drag to change the height'); t('n', 'Drag to change the height');
   for (const d of ['se', 'sw', 'ne', 'nw']) t(d, 'Drag to resize');
 }
@@ -3111,6 +3113,7 @@ function addGrips(box){
   const bar = document.createElement('span'); bar.className = 'nbar'; bar.setAttribute('aria-hidden', 'true'); box.append(bar);
   grip('pin', 'pin', bar);
   if (!inline) grip('float', 'layers', bar);
+  grip('link', 'link', bar);
   grip('min', 'minimize', bar);
   const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'note-chip'; chip.title = 'Show this note'; chip.innerHTML = icon('pen');
   box.append(chip);
@@ -3196,11 +3199,12 @@ main.addEventListener('pointerdown', e => {
   const g = e.target.closest('.grip'); if (!g) return;
   const kind = g.dataset.dir;
   if (reading && !['min', 'pin'].includes(kind)) return;
-  if (['pin', 'float', 'min'].includes(kind)) {           // buttons: act on the press, and ignore the click that follows
+  if (['pin', 'float', 'min', 'link'].includes(kind)) {           // buttons: act on the press, and ignore the click that follows
     e.preventDefault(); e.stopPropagation(); swallow();
     const box = g.closest('.notebox');
     if (kind === 'pin') togglePin(box);
     else if (kind === 'float') toggleFloat(box);
+    else if (kind === 'link') noteLinkStart(box);
     else { if (box.contains(document.activeElement)) document.activeElement.blur(); setCollapsed(box, true); afterNotesToggle(); }
     return;
   }
@@ -9103,7 +9107,7 @@ function sideLayout(){
       else if (!size && sp.previousElementSibling !== s) s.after(sp);
       sideStyle(sp);
       sp.dataset.label = 'Page ' + (i + 1); sp.setAttribute('aria-label', 'Side notes for page ' + (i + 1));
-      for (const b of sp.querySelectorAll(':scope > .notebox[data-link]')) for (const id of linksOf(b)) if (!annoGet(s, id)) linkDrop(b, id);   // its highlight is gone
+      for (const b of sp.querySelectorAll(':scope > .notebox[data-link]')) for (const id of linksOf(b)) if (!linkFrom(s, id)) linkDrop(b, id);   // its highlight (or note) is gone
     });
     if (fresh) return paginateView();                                // (new side pages go into the sheets' rows)
     placeFloats(); sideSizes();
@@ -9143,13 +9147,25 @@ new ResizeObserver(sideSoon).observe(main);
 // Only beside the separate column, which stays put while the slides scroll, are they drawn on the screen (.fixed) and again at every scroll.
 const sideSvg = svgEl('svg', {class: 'sidelines', 'aria-hidden': 'true'});
 sideSvg.hidden = true; $('.workspace').append(sideSvg);
-// where a line runs: from the end of the highlight to the left edge of the note
+// what a line starts from: a highlight (h…), or a note on the slide itself (n…: its data-nid, from Link to side note on the note's toolbar)
+const linkNote = (card, id) => id[0] === 'n' ? card.querySelector(`.notebox[data-nid="${CSS.escape(id)}"]`) : null;
+const linkFrom = (card, id) => linkNote(card, id) || annoGet(card, id);
+// where it starts on screen (the end of the highlight, or the right edge of the note, or its pencil icon when minimised), its colour and its words
+function linkStart(card, id){
+  const n = linkNote(card, id);
+  if (n) {
+    const el = n.classList.contains('collapsed') ? n.querySelector(':scope > .note-chip') : n, r = el?.getBoundingClientRect();
+    return r && r.width ? {x: r.right, y: r.top + Math.min(18, r.height / 2), col: chipOf(n), quote: () => quoteOf(noteSummary(n.querySelector(':scope > .mine')))} : null;
+  }
+  const h = annoGet(card, id), m = h && markRect(card, id);
+  return m ? {x: m.right, y: m.top + m.height / 2, col: annoColor(h), quote: () => annoQuote(h)} : null;
+}
+// where a line runs: from its start to the left edge of the note
 function sideGeom(card, box, id){
-  const h = annoGet(card, id); if (!h) return null;
-  const m = markRect(card, id), b = box.getBoundingClientRect();
-  if (!m || !b.width || box.classList.contains('collapsed')) return null;
+  const st = linkStart(card, id), b = box.getBoundingClientRect();
+  if (!st || !b.width || box.classList.contains('collapsed')) return null;
   const lc = lineOf(box, id);
-  return {id, x1: m.right, y1: m.top + m.height / 2, x2: b.left, y2: b.top + Math.min(18, b.height / 2), col: lc === 'hl' ? sideInk(annoColor(h)) : lc};
+  return {id, x1: st.x, y1: st.y, x2: b.left, y2: b.top + Math.min(18, b.height / 2), col: lc === 'hl' ? sideInk(st.col) : lc};
 }
 const sideCurve = g => { const dx = Math.max(30, (g.x2 - g.x1) * .45); return [g.x1 + dx, g.y1, g.x2 - dx, g.y2]; };
 // the part of a line you can point at and click: all of it but the last 40px before the note, which leave the note's own handles free
@@ -9202,13 +9218,14 @@ function sidePaintLines(ctx, card, sp, ox, oy){
   }
   ctx.restore();
 }
-// pointing at a highlight or at its note makes its lines bold
+// pointing at a highlight (or a linked note on the slide) or at its side note makes its lines bold
 main.addEventListener('mousemove', e => {
   if (!sideShown()) return;
   let id = null;
-  const a = e.target.closest?.('mark.anno'), nb = e.target.closest?.('.sidepage .notebox[data-link]');
+  const a = e.target.closest?.('mark.anno'), nb = e.target.closest?.('.sidepage .notebox[data-link]'), own = !nb && e.target.closest?.('.notebox[data-nid]');
   if (a) id = a.dataset.id || null;
   else if (nb) id = nb.dataset.link;
+  else if (own) id = own.dataset.nid;
   else {
     const strip = !drawing && e.target.closest?.('.strip'), card = strip && strip.closest('.pagecard');
     if (card && card.dataset.ink) id = markAt(card, strip, e.clientX, e.clientY)?.id || null;
@@ -9283,14 +9300,14 @@ document.body.append(linePop);
 let lineCur = null;           // the line whose pop-up is open: {box, id}
 function closeLinePop(){ linePop.hidden = true; lineCur = null; }
 function openLinePop(box, id, x, y){
-  const card = sideSlide(box.parentElement), h = card && annoGet(card, id); if (!h) return;
+  const card = sideSlide(box.parentElement), st = card && linkStart(card, id); if (!st) return;
   closeAnnoPop(); hideAnnoBar(); lineCur = {box, id};
-  linePop.style.setProperty('--c', annoColor(h));
+  linePop.style.setProperty('--c', st.col);
   linePop.innerHTML = '<div class="aq"></div>' +
     `<div class="arow"><button type="button" class="btn" data-a="sidego" title="Go to side note: scroll to the note at the end of this line">${icon('link')}Go to side note</button>` +
-    (reading ? '' : `<button type="button" class="btn" data-a="unlink" title="Unlink: keep the note and the highlight, but take the line away">${icon('unlink')}Unlink</button>`) + '</div>' +
+    (reading ? '' : `<button type="button" class="btn" data-a="unlink" title="Unlink: keep both notes (or the note and the highlight), but take the line away">${icon('unlink')}Unlink</button>`) + '</div>' +
     (reading ? '' : `<div class="arow"><span class="ldots" role="group" aria-label="Line colour"><span class="lbl">Line colour</span>${lineDots(lineOf(box, id), 'the colour of this line')}</span></div>`);
-  linePop.querySelector('.aq').textContent = '“' + annoQuote(h) + '”';
+  linePop.querySelector('.aq').textContent = '“' + st.quote() + '”';
   linePop.hidden = false;
   const w = linePop.offsetWidth, ht = linePop.offsetHeight;
   linePop.style.left = Math.max(8, Math.min(innerWidth - w - 8, x - w / 2)) + 'px';
@@ -9331,11 +9348,29 @@ function sidePickStart(card, id){
   toast('Click a note on the side page to join it to these words. Press Esc to cancel.');
 }
 function sidePickEnd(){ sidePick = null; document.body.classList.remove('side-picking'); }
+// Link to side note, on the toolbar of a note on the slide: the note gets an id of its own (data-nid), which its side notes keep in data-link
+function noteLinkStart(box){
+  const card = box.closest('.slide'), sp = card && sideShown() && sideOf(card);
+  if (!sp) { toast('Turn on Side notes in the View tab first.'); return; }
+  if (!hasContent(box)) { toast('Write something in this note first, then link it.'); return; }
+  const id = box.dataset.nid || (box.dataset.nid = 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+  sidePick = {card, id, sp, from: box}; document.body.classList.add('side-picking');
+  sp.scrollIntoView({block: 'nearest', behavior: smoothScroll()});
+  toast('Click a note on the side page to join this note to it, or a blank spot for a new one. Press Esc to cancel.');
+}
 document.addEventListener('mousedown', e => { if (sidePick && e.target.closest?.('.sidepage')) e.preventDefault(); }, true);      // (no cursor in the note you pick)
 document.addEventListener('click', e => {
   if (!sidePick) return;
+  if (sidePick.from && e.target.closest?.('.notebox') === sidePick.from) return;      // (the click after pressing the note's link button)
   const b = e.target.closest?.('.sidepage > .notebox');
-  if (b && b.parentElement === sidePick.sp && hasContent(b)) { e.preventDefault(); e.stopPropagation(); sideLink(b, sidePick.id); sidePickEnd(); toast('Joined. Point at the line, the words or the note to see it clearly.'); }
+  if (b && b.parentElement === sidePick.sp && hasContent(b)) { e.preventDefault(); e.stopPropagation(); const nt = !!sidePick.from; sideLink(b, sidePick.id); sidePickEnd(); toast(nt ? 'Joined. Point at the line or either note to see it clearly.' : 'Joined. Point at the line, the words or the note to see it clearly.'); }
+  else if (sidePick.from && !b && e.target.closest?.('.sidepage') === sidePick.sp) {      // a blank spot: a new side note there, already joined
+    e.preventDefault(); e.stopPropagation();
+    const {sp, id} = sidePick, r = sp.getBoundingClientRect(), w = sideWidth(sp), z = zoomOf(sp) || 1;
+    sidePickEnd();
+    sideAddBox(sp, Math.max(30, Math.min(sp.clientWidth - w - 10, (e.clientX - r.left) / z - 10)), (e.clientY - r.top) / z - 20, w, id);
+    saveSoon();
+  }
   else if (e.target.closest?.('.sidepage')) { e.preventDefault(); e.stopPropagation(); }
   else sidePickEnd();
 }, true);
