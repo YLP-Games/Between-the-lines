@@ -100,13 +100,11 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   const nb3 = await note('Second note').boundingBox();
   await page.mouse.click(nb3.x + nb3.width / 2, nb3.y + nb3.height / 2); await page.waitForTimeout(400);
   ok(await note('Second note').getAttribute('data-link') === `${h2} ${h1}`, 'linked again');
-  await away(); await page.waitForTimeout(1200);
   w = await wordsAt('identical products');
   await page.mouse.click(w.x + w.w * .8, w.y + w.h / 2); await page.waitForTimeout(300);
   await page.click('#annoPop [data-a=remove]'); await page.waitForTimeout(400);
   ok(await note('Second note').getAttribute('data-link') === h1 && (await lines()).length === 2, 'removing the second highlight leaves the note with the first one\'s line');
-  // Back brings it back
-  await page.waitForTimeout(1000);
+  // Back brings it back (straight away: the removal is saved first)
   await page.click('#undoBtn'); await page.waitForTimeout(600);
   ok((await note('Second note').getAttribute('data-link')).split(' ').sort().join() === [h1, h2].sort().join() && (await lines()).length === 3, 'Back brings both lines back');
 

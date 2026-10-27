@@ -5733,11 +5733,18 @@ function saveSoon(){
 }
 let lastStored = {id: null, html: null};     // what was last written for the open notebook, so an unchanged notebook isn't written again
 const sync = {timer: 0, first: 0, busy: false, again: false, gen: 0, err: null, quiet: false, checked: 0};     // keeping a notebook that's in Google Drive or OneDrive up to date there
+let snapping = null;          // a save still taking its Back step (Back waits for it)
 async function saveNow(){
   timer = null;
-  if (db) await assetize();
-  const empty = !!main.querySelector('.welcome'), doc = empty ? '' : currentDoc();
-  snapshot(doc);
+  const snap = (async () => {
+    if (db) await assetize();
+    const empty = !!main.querySelector('.welcome'), doc = empty ? '' : currentDoc();
+    snapshot(doc);
+    return {empty, doc};
+  })();
+  snapping = snap;
+  let empty, doc;
+  try { ({empty, doc} = await snap); } finally { if (snapping === snap) snapping = null; }
   const d = curDoc(); if (!d) return;
   const stored = toStored(doc);
   const name = d.named ? d.name : empty ? 'Untitled' : notebookName(), pages = main.querySelectorAll('.slide').length;
@@ -5754,6 +5761,8 @@ async function saveNow(){
 }
 // save straight away if a save is waiting (e.g. before going Back, or to another notebook)
 function flushSave(){ if (!timer) return Promise.resolve(); clearTimeout(timer); return saveNow(); }
+// before going Back or Forward: a change still waiting to be saved becomes a step of its own first (without waiting for the write itself)
+function snapNow(){ if (timer) { clearTimeout(timer); saveNow(); } return (snapping || Promise.resolve()).catch(() => {}); }
 
 /* ================= download to your device ================= */
 function notebookName(){
@@ -7422,10 +7431,13 @@ function snapshot(doc){
 }
 function resetHistory(doc){ hist.stack = []; hist.i = -1; hist.hold = false; snapshot(doc); }
 function updateUndoBtns(){ $('#undoBtn').disabled = reading || hist.i <= 0; $('#redoBtn').disabled = reading || hist.i >= hist.stack.length - 1; }
-function stepHistory(by){
+// (presses close together go one after another, each a step)
+let histQ = Promise.resolve();
+function stepHistory(by){ histQ = histQ.then(() => stepNow(by)).catch(() => {}); return histQ; }
+async function stepNow(by){
   if (reading) return;
   clearMulti();
-  flushSave();
+  await snapNow();
   const j = hist.i + by; if (j < 0 || j >= hist.stack.length) return;
   hist.i = j;
   const scrollY = window.scrollY;
