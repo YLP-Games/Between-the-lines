@@ -29,63 +29,65 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   };
   const row = () => page.evaluate(() => {
     const d = document.querySelector('#annoBar .hdots'), w = d.parentElement, r = d.getBoundingClientRect(), cur = d.querySelector('.hdot[aria-pressed="true"]')?.getBoundingClientRect();
-    const tops = new Set([...d.querySelectorAll('.hdot')].map(b => Math.round(b.offsetTop)));
+    const tops = new Set([...d.querySelectorAll('.hdot')].map(b => Math.round(b.getBoundingClientRect().top)));
     return {sw: d.scrollWidth, cw: d.clientWidth, l: d.scrollLeft, rows: tops.size, ml: w.classList.contains('more-l'), mr: w.classList.contains('more-r'),
       curIn: !!cur && cur.left >= r.left - 1 && cur.right <= r.right + 1, first: d.querySelector('.hdot')?.dataset.c, favs: [...d.querySelectorAll('.hfav')].map(b => b.dataset.c)};
   });
 
   await select('Perfect');
   ok(await page.isVisible('#annoBar'), 'selecting words shows the bar');
-  ok(await page.locator('#annoBar .hdot').count() === 15, 'with fifteen highlight colours');
+  ok(await page.locator('#annoBar .hdot').count() === 6, 'with the six basic highlight colours');
   let r = await row();
-  ok(r.rows === 1 && r.sw > r.cw + 50, 'in one row that scrolls sideways, not stacked');
-  ok(!r.ml && r.mr && await page.isVisible('#annoBar .hsl[data-dir="1"]') && !(await page.isVisible('#annoBar .hsl[data-dir="-1"]')), 'an arrow (and a faded end) shows there are more to the right');
-  ok(await page.isVisible('#annoBar .hpick') && await page.isVisible('#annoBar [data-hstar]'), 'then Any colour and a star for favourites');
+  ok(r.rows === 1 && r.sw <= r.cw + 1 && !r.ml && !r.mr && !(await page.isVisible('#annoBar .hsl[data-dir="1"]')), 'in one row, all in view (no arrows)');
+  ok(await page.isVisible('#annoBar .hpick') && await page.isVisible('#annoBar [data-hstar]'), 'then Any colour and a star to add colours');
   const bar = await page.locator('#annoBar').boundingBox();
   ok(bar.height < 50, 'the bar stays one line high (' + Math.round(bar.height) + 'px)');
   await page.screenshot({path: path.join(OUT, 'hl-1-bar.png'), clip: {x: bar.x - 10, y: bar.y - 10, width: bar.width + 20, height: bar.height + 20}});
-  // the mouse wheel and the arrows scroll it
+  // any colour
+  await page.evaluate(() => { const p = document.querySelector('#annoBar .hpick'); p.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true})); p.value = '#ff66cc'; p.dispatchEvent(new Event('change', {bubbles: true})); });
+  await page.waitForTimeout(250);
+  let items = await ink(2);
+  ok(items.length === 1 && items[0].c === '#ff66cc' && items[0].t.includes('Perfect'), 'Any colour highlights the words in the colour picked');
+  ok(!(await page.isVisible('#annoBar')), 'and the bar goes');
+  await select('barriers');
+  ok(await page.evaluate(() => document.querySelector('#annoBar .hpick').classList.contains('on')) && await page.getAttribute('#annoBar [data-hstar]', 'aria-pressed') === 'false', 'next time Any colour shows it is in use');
+  // the star adds it to the row
+  await page.click('#annoBar [data-hstar]'); await page.waitForTimeout(150);
+  r = await row();
+  ok(r.first === '#ff66cc' && r.favs.join() === '#ff66cc' && await page.getAttribute('#annoBar [data-hstar]', 'aria-pressed') === 'true' && !(await page.evaluate(() => document.querySelector('#annoBar .hpick').classList.contains('on'))), 'the star adds the colour in use to the front of the row');
+  ok(await page.evaluate(() => localStorage.getItem('hl-favs')) === '["#ff66cc"]', 'and remembers it');
+  ok(await page.isVisible('#annoBar') && (await ink(2)).length === 1, 'without highlighting anything');
+  // with more colours added the row scrolls sideways
+  await page.evaluate(() => ['#d8f5a2', '#99e9f2', '#eebefa', '#ffa8a8', '#e9d8c4', '#dee2e6'].forEach(c => { hlCol = c; hlFavAdd(c); }));
+  await page.waitForTimeout(200);
+  r = await row();
+  ok(r.favs.length === 7 && r.rows === 1 && r.sw > r.cw + 50, 'with more colours added the row scrolls sideways, not stacked');
+  ok(r.mr && await page.isVisible('#annoBar .hsl[data-dir="1"]'), 'an arrow (and a faded end) shows there are more that way');
   const hb = await page.locator('#annoBar .hdots').boundingBox();
+  await page.evaluate(() => { const d = document.querySelector('#annoBar .hdots'); d.style.scrollBehavior = 'auto'; d.scrollLeft = 0; d.style.scrollBehavior = ''; });
   await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2); await page.mouse.wheel(0, 200); await page.waitForTimeout(500);
   r = await row();
   ok(r.l > 50 && r.ml, 'the mouse wheel scrolls the colours sideways');
   ok(await page.isVisible('#annoBar'), 'without hiding the bar');
   await page.click('#annoBar .hsl[data-dir="-1"]'); await page.waitForTimeout(600);
   ok((await row()).l < r.l, 'the left arrow scrolls back');
-  ok((await page.evaluate(() => getSelection().toString())).includes('Perfect'), 'and the words stay selected');
-  // a colour far along the row
-  await page.click('#annoBar .hdot[data-c="#d8f5a2"]'); await page.waitForTimeout(250);
-  let items = await ink(2);
-  ok(items.length === 1 && items[0].c === '#d8f5a2', 'Lime, at the far end, highlights the words');
-  await select('barriers');
-  r = await row();
-  ok(r.curIn, 'next time the colour in use is scrolled into view');
-  // favourites
-  await page.click('#annoBar [data-hstar]'); await page.waitForTimeout(150);
-  r = await row();
-  ok(r.first === '#d8f5a2' && r.favs.join() === '#d8f5a2' && await page.getAttribute('#annoBar [data-hstar]', 'aria-pressed') === 'true', 'the star keeps the colour in use at the front of the row');
-  ok(await page.evaluate(() => localStorage.getItem('hl-favs')) === '["#d8f5a2"]', 'and remembers it');
-  ok(await page.isVisible('#annoBar') && (await ink(2)).length === 1, 'without highlighting anything yet');
-  // any colour
-  await page.evaluate(() => { const p = document.querySelector('#annoBar .hpick'); p.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true})); p.value = '#ff66cc'; p.dispatchEvent(new Event('change', {bubbles: true})); });
-  await page.waitForTimeout(250);
+  ok((await page.evaluate(() => getSelection().toString())).includes('barriers'), 'and the words stay selected');
+  await page.click('#annoBar .hdot[data-c="#d0bfff"]'); await page.waitForTimeout(250);
   items = await ink(2);
-  ok(items.length === 2 && items[1].c === '#ff66cc' && items[1].t.includes('barriers'), 'Any colour highlights the words in the colour picked');
-  ok(!(await page.isVisible('#annoBar')), 'and the bar goes');
+  ok(items.length === 2 && items[1].c === '#d0bfff', 'Purple, at the far end, highlights the words');
   await select('identical');
-  ok(await page.evaluate(() => document.querySelector('#annoBar .hpick').classList.contains('on')) && await page.getAttribute('#annoBar [data-hstar]', 'aria-pressed') === 'false', 'next time Any colour shows it is in use');
-  await page.click('#annoBar [data-hstar]'); await page.waitForTimeout(150);
-  r = await row();
-  ok(r.favs.join() === '#ff66cc,#d8f5a2' && !(await page.evaluate(() => document.querySelector('#annoBar .hpick').classList.contains('on'))), 'the star adds it to the front of the row');
+  ok((await row()).curIn, 'next time the colour in use is scrolled into view');
   await page.screenshot({path: path.join(OUT, 'hl-2-favs.png'), clip: await page.locator('#annoBar').boundingBox()});
-  // remove a favourite: right-click, or its ×
+  // remove an added colour: right-click, or its ×
   await page.click('#annoBar .hfav[data-c="#d8f5a2"]', {button: 'right'}); await page.waitForTimeout(150);
-  ok((await row()).favs.join() === '#ff66cc' && (await ink(2)).length === 2, 'right-clicking a favourite removes it (and highlights nothing)');
-  await page.hover('#annoBar .hfav[data-c="#ff66cc"]'); await page.waitForTimeout(150);
-  await page.click('#annoBar [data-hx="#ff66cc"]'); await page.waitForTimeout(150);
+  ok(!(await row()).favs.includes('#d8f5a2') && (await ink(2)).length === 2, 'right-clicking an added colour removes it (and highlights nothing)');
+  await page.evaluate(() => { const d = document.querySelector('#annoBar .hdots'); d.style.scrollBehavior = 'auto'; d.scrollLeft = 0; d.style.scrollBehavior = ''; });
+  await page.hover('#annoBar .hfav[data-c="#dee2e6"]'); await page.waitForTimeout(150);
+  await page.click('#annoBar [data-hx="#dee2e6"]'); await page.waitForTimeout(150);
   r = await row();
-  ok(r.favs.length === 0 && r.first === '#ffe066' && await page.evaluate(() => localStorage.getItem('hl-favs')) === '[]', 'its × removes it too');
+  ok(!r.favs.includes('#dee2e6') && r.favs.length === 5 && !(await page.evaluate(() => localStorage.getItem('hl-favs'))).includes('dee2e6'), 'its × removes it too');
   ok(await page.isVisible('#annoBar') && (await ink(2)).length === 2, 'the bar is still there for the words');
+  await page.evaluate(() => [...hlFavs].forEach(c => hlFavRemove(c)));
   await page.keyboard.press('Escape');
   ok(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.join(' | ') : ''));
   await browser.close();
@@ -101,9 +103,9 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   await ph.page.evaluate(() => { const t = [...document.querySelectorAll('.pagecard')[2].querySelectorAll('.tl')].find(s => s.textContent.includes('barriers')); const g = document.createRange(); g.selectNodeContents(t); getSelection().removeAllRanges(); getSelection().addRange(g); checkSelection(); });
   await ph.page.waitForTimeout(300);
   const pb = await ph.page.locator('#annoBar').boundingBox();
-  const pr = await ph.page.evaluate(() => { const d = document.querySelector('#annoBar .hdots'); return {sw: d.scrollWidth, cw: d.clientWidth, rows: new Set([...d.querySelectorAll('.hdot')].map(b => Math.round(b.offsetTop))).size, dot: d.querySelector('.hdot').offsetWidth}; });
+  const pr = await ph.page.evaluate(() => { const d = document.querySelector('#annoBar .hdots'); return {sw: d.scrollWidth, cw: d.clientWidth, rows: new Set([...d.querySelectorAll('.hdot')].map(b => Math.round(b.getBoundingClientRect().top))).size, dot: d.querySelector('.hdot').offsetWidth}; });
   ok(pb.x >= 0 && pb.x + pb.width <= 390, 'phone: the bar fits the screen (' + Math.round(pb.width) + 'px)');
-  ok(pr.rows === 1 && pr.sw > pr.cw && pr.dot === 44, 'phone: the colours are one row of fingertip-sized dots you swipe through');
+  ok(pr.rows === 1 && pr.dot === 44, 'phone: the colours are one row of fingertip-sized dots');
   ok(await ph.page.evaluate(() => { const c = document.querySelector('#annoBar [data-cm]').getBoundingClientRect(), d = document.querySelector('#annoBar .hdots').getBoundingClientRect(); return c.top >= d.bottom - 1; }), 'phone: Comment sits on a second row');
   await ph.page.screenshot({path: path.join(OUT, 'hl-3-phone.png'), clip: {x: 0, y: Math.max(0, pb.y - 10), width: 390, height: pb.height + 20}});
   ok(ph.errors.length === 0, 'no page errors');

@@ -273,8 +273,9 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   const before2 = await strokeOf(items[1].id);
   w2 = await wordsAt(2, 'identical products');
   await page.mouse.click(w2.x + w2.w * 0.75, w2.y + w2.h * 0.5); await page.waitForTimeout(300);
-  ok(await page.isVisible('#annoPop') && await shown('#annoPop .hcrow .hdot') === 15 && await page.isVisible('#annoPop .hcrow .hpick'), 'clicking the highlight opens its pop-up, with its colours');
-  ok(await shown('#annoPop [data-a=sidego], #annoPop [data-a=unlink], #annoPop [data-a=sidepick], #annoPop .ldot') === 0, 'and nothing about the line');
+  ok(await page.isVisible('#annoPop') && await shown('#annoPop .hcrow .hdot') === 6 && await page.isVisible('#annoPop .hcrow .hpick'), 'clicking the highlight opens its pop-up, with its colours');
+  ok(await shown('#annoPop [data-a=sidego], #annoPop [data-a=unlink], #annoPop .ldot') === 0, 'and nothing about the line');
+  ok((await page.textContent('#annoPop [data-a=sidepick]')).includes('Link to another side note…'), 'but it can link to another side note');
   ok(await page.getAttribute('#annoPop .hcrow .hdot[data-c="#a5d8ff"]', 'aria-pressed') === 'true', 'its colour is marked');
   await page.click('#annoPop .hcrow .hdot[data-c="#ffc078"]'); await page.waitForTimeout(250);
   ok((await ink(2))[1].c === '#ffc078' && await page.getAttribute('#annoPop .hcrow .hdot[data-c="#ffc078"]', 'aria-pressed') === 'true', 'Orange recolours the highlight');
@@ -294,7 +295,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   const firstCol = await strokeOf(hid), secondCol = await strokeOf(items[1].id);
   ok(await page.locator('#linePop .ldot').count() === 9 && await page.getAttribute('#linePop .ldot[data-lc="hl"]', 'aria-pressed') === 'true', 'it offers nine line colours, Same as highlight picked');
   await page.click('#linePop .ldot[data-lc="#c62828"]'); await page.waitForTimeout(200);
-  ok(await strokeOf(items[1].id) === '#c62828' && await second.getAttribute('data-lc') === '#c62828' && await page.getAttribute('#linePop .ldot[data-lc="#c62828"]', 'aria-pressed') === 'true', 'Red makes this line red');
+  ok(await strokeOf(items[1].id) === '#c62828' && await second.getAttribute('data-lc') === items[1].id + '=#c62828' && await page.getAttribute('#linePop .ldot[data-lc="#c62828"]', 'aria-pressed') === 'true', 'Red makes this line red');
   ok(await strokeOf(hid) === firstCol, 'and leaves the other line as it was');
   ok(await page.locator('#setLine .ldot').count() === 9 && await page.getAttribute('#setLine .ldot[data-lc="hl"]', 'aria-pressed') === 'true', 'Settings: lines are the same colour as their highlight to begin with');
   await page.evaluate(() => document.querySelector('#setLine .ldot[data-lc="#1971c2"]').click()); await page.waitForTimeout(200);
