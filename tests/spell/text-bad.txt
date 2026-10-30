@@ -1,0 +1,16 @@
+# Text with mistakes: the text, then " => ", then the words that should get a red line (comma-separated, in order).
+I definately recieve the seperate letters. => definately,recieve,seperate
+The goverment said the enviroment would improve. => goverment,enviroment
+Prices adjust becuase investors are rational and teh market is efficient. => becuase,teh
+The re-rateing of the sector was non-linear and co-operativ. => rateing,operativ
+We recieved Recieve notes from Tescoo. => recieved,Recieve
+The ecconomy grew; the equilibrum price fell and elasticty was low. => ecconomy,equilibrum,elasticty
+Heteroskedastcity makes the estimates inefficient. => Heteroskedastcity
+Mitocondria produce ATP, and photosythesis needs chlorophyl. => Mitocondria,photosythesis,chlorophyl
+A well-knwon result: the long-trem effect is smaller. => knwon,trem
+Their going to the libary tomorow. => libary,tomorow
+Please email me at someone@example.com about the occured error. => occured
+The investors' reccomendation was ignored by the firm's manegement. => reccomendation,manegement
+It's definately not hedgeing; its speculaton. => definately,hedgeing,speculaton
+Professor Smith's lectures on thermodynamcs were excellant. => thermodynamcs,excellant
+The matrx is singular so the invers does not exist. => matrx,invers

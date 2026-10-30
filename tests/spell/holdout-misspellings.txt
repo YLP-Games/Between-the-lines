@@ -1,0 +1,26 @@
+# A second set of real misspellings (wrong|right), written before the suggestions were tuned and never used to tune them.
+absense|absence adaquate|adequate adolecent|adolescent aggresive|aggressive alchohol|alcohol allegience|allegiance ammount|amount anual|annual anonomous|anonymous apparantly|apparently appropiate|appropriate
+arguements|arguments assesment|assessment atmosphear|atmosphere auxillary|auxiliary bankrupcy|bankruptcy bargan|bargain bouyant|buoyant bureacracy|bureaucracy calander|calendar carrer|career cieling|ceiling
+cirumstance|circumstance comission|commission commited|committed comparitive|comparative competance|competence concensus|consensus conceed|concede congradulate|congratulate consequense|consequence
+contraversial|controversial convinient|convenient correspondance|correspondence curiosty|curiosity decieve|deceive definitley|definitely descripton|description desireable|desirable develpment|development
+dilligent|diligent disipline|discipline discrepency|discrepancy dissapointed|disappointed ecstacy|ecstasy effecient|efficient embarassing|embarrassing enviorment|environment eventualy|eventually
+exilerate|exhilarate existant|existent expecially|especially facilites|facilities familliar|familiar fascinateing|fascinating feasable|feasible forcast|forecast forhead|forehead formallity|formality
+gaurantee|guarantee genious|genius govener|governor gramatical|grammatical harrassment|harassment hieght|height heirarchy|hierarchy horible|horrible hypocracy|hypocrisy identifing|identifying
+imaginery|imaginary immitate|imitate implimentation|implementation inconvienient|inconvenient independance|independence innoculate|inoculate instituion|institution intellegent|intelligent
+interferance|interference interpet|interpret intrduction|introduction irresistable|irresistible jepordy|jeopardy kernal|kernel knowlegde|knowledge lable|label maintaince|maintenance managable|manageable
+marraige|marriage medecine|medicine miniture|miniature mischevious|mischievous mispelling|misspelling noticably|noticeably obediance|obedience occassionally|occasionally oppinion|opinion outragous|outrageous
+overun|overrun paralell|parallel parrallel|parallel particulary|particularly peculier|peculiar percieved|perceived performence|performance perseverence|perseverance personel|personnel phenomenom|phenomenon
+plagerism|plagiarism plagarism|plagiarism posible|possible practicaly|practically preceed|precede prefrence|preference prejudise|prejudice prevelance|prevalence probablly|probably professer|professor
+promiss|promise publicaly|publicly quanity|quantity quizical|quizzical reccurring|recurring refering|referring relavant|relevant resemblence|resemblance resourcful|resourceful restuarant|restaurant
+rhyhm|rhythm ridiculus|ridiculous rythym|rhythm sacreligious|sacrilegious saftey|safety scarcly|scarcely sentance|sentence sergent|sergeant severley|severely shoudl|should simultanious|simultaneous
+speeking|speaking stragety|strategy strenth|strength succesion|succession sufficent|sufficient supprise|surprise suprising|surprising symetry|symmetry synonamous|synonymous tatoo|tattoo temperment|temperament
+tempory|temporary tounament|tournament tradegy|tragedy truthfull|truthful tyrrany|tyranny ultimatly|ultimately undoubtably|undoubtedly unfortunatley|unfortunately unneccessary|unnecessary unusuall|unusual
+usible|usable vaccum|vacuum vengance|vengeance verbage|verbiage versitile|versatile vigourous|vigorous visious|vicious volunter|volunteer wardrope|wardrobe zealos|zealous
+algoritm|algorithm bandwith|bandwidth bioligy|biology calcuation|calculation catalyts|catalyst collaberation|collaboration conclussion|conclusion correllation|correlation cumulitive|cumulative
+deliverible|deliverable differenciate|differentiate dimention|dimension econmics|economics efficeincy|efficiency electrolite|electrolyte entrophy|entropy environmetal|environmental equillibrium|equilibrium
+evalution|evaluation exponentual|exponential fluctation|fluctuation frequancy|frequency funtamental|fundamental genetis|genetics hypothetcial|hypothetical immunolgy|immunology indentify|identify
+inferrence|inference infrastrucure|infrastructure intergration|integration invesment|investment magnatude|magnitude manufacuring|manufacturing mecahnism|mechanism metabolsim|metabolism microsope|microscope
+molcular|molecular multiplicaton|multiplication neurotransmiter|neurotransmitter obserevation|observation oxidaton|oxidation parlimentary|parliamentary pharmaseutical|pharmaceutical
+philosphical|philosophical physicial|physician proffit|profit qualitive|qualitative quantative|quantitative reaserch|research regulaton|regulation replacment|replacement resourse|resource sampel|sample
+signifance|significance simulaton|simulation solutoin|solution stastics|statistics structrual|structural subtration|subtraction sustainabilty|sustainability techniqe|technique terminolgy|terminology
+theorm|theorem thermodyanmics|thermodynamics transcipt|transcript unversity|university variabel|variable vertabrae|vertebrae voltge|voltage

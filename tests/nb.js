@@ -74,8 +74,11 @@ const names = p => p.$$eval('#docList .docbtn .nm', els => els.map(e => e.textCo
   await page.click('#trashBox [data-t=purge]'); await page.click('#trashBox [data-t=purge]'); await page.waitForTimeout(600);
   ok((await page.locator('#trashBox .trashrow').count()) === 0 && (await names(page)).length === 2, 'delete a notebook for ever');
 
-  // hide the sidebar, then peek with the pointer at the left edge
+  // hide the sidebar: the left edge does nothing until Open sidebar on hover is on, then the pointer there peeks it in
   await page.click('#sideHide'); await page.waitForTimeout(300);
+  await page.mouse.move(400, 400); await page.mouse.move(3, 400, {steps: 5}); await page.waitForTimeout(400);
+  ok(!(await page.isVisible('#pagesPanel')), 'the hidden sidebar does not open by itself at the left edge');
+  await page.mouse.move(900, 400, {steps: 5}); await page.evaluate(() => setSideHover(true)); await page.waitForTimeout(200);
   ok(!(await page.isVisible('#pagesPanel')), 'sidebar hides');
   await page.mouse.move(400, 400); await page.mouse.move(3, 400, {steps: 5}); await page.waitForTimeout(400);
   ok(await page.isVisible('#pagesPanel'), 'pointing at the left edge peeks it in');

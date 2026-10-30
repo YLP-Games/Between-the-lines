@@ -19,10 +19,13 @@ const MAP = [
   [/typo-js@1\.2\.4\/typo\.js$/, 'typo-js/typo.js'],
   [/dictionary-en@4\.0\.0\/index\.(aff|dic)$/, m => 'dictionary-en/index.' + m[1]],
   [/dictionary-en-gb@3\.0\.0\/index\.(aff|dic)$/, m => 'dictionary-en-gb/index.' + m[1]],
+  // the UK dictionary (LibreOffice's, by Marco A.G. Pinto) and the common-word lists are saved in tests/dict, so the tests need no internet
+  [/LibreOffice\/dictionaries(@|\/)libreoffice-[\d.]+\/en\/(en_GB\.(aff|dic))$/, m => './dict/' + m[2]],
+  [/wordlist-english@1\.2\.1\/((english|british|american)-words-(10|20|35)\.json)$/, m => './dict/' + m[1]],
 ];
-const TYPES = {js: 'text/javascript', css: 'text/css', aff: 'text/plain', dic: 'text/plain', woff2: 'font/woff2'};
+const TYPES = {js: 'text/javascript', css: 'text/css', aff: 'text/plain', dic: 'text/plain', woff2: 'font/woff2', json: 'application/json'};
 
-async function open(file, {width = 1440, height = 900, colorScheme = 'light', storage, contextOptions = {}} = {}){
+async function open(file, {width = 1440, height = 900, colorScheme = 'light', storage, contextOptions = {}, url} = {}){
   fs.mkdirSync(path.join(__dirname, 'shots'), {recursive: true});
   const browser = await engine.launch(process.env.SHOWBARS && engine === playwright.chromium ? {ignoreDefaultArgs: ['--hide-scrollbars']} : {});
   const context = await browser.newContext({viewport: {width, height}, colorScheme, acceptDownloads: true, ...(storage ? {storageState: storage} : {}), ...contextOptions});
@@ -33,7 +36,7 @@ async function open(file, {width = 1440, height = 900, colorScheme = 'light', st
     for (const [re, rel] of MAP) {
       const m = url.match(re);
       if (m) {
-        const p = path.join(NM, typeof rel === 'function' ? rel(m) : rel);
+        const f = typeof rel === 'function' ? rel(m) : rel, p = f.startsWith('./') ? path.join(__dirname, f) : path.join(NM, f);
         return route.fulfill({status: 200, body: fs.readFileSync(p), contentType: TYPES[p.split('.').pop()] || 'application/octet-stream', headers: {'access-control-allow-origin': '*'}});
       }
     }
@@ -46,7 +49,7 @@ async function open(file, {width = 1440, height = 900, colorScheme = 'light', st
   const page = await context.newPage();
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
-  await page.goto('file://' + file);
+  await page.goto(url || 'file://' + file);
   return {browser, context, page, errors};
 }
 module.exports = {open};
