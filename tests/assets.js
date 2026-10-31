@@ -13,7 +13,7 @@ const blobs = st => Object.values(st).filter(v => v === 'blob').length;
   await page.waitForTimeout(1500);
   let st = await store(page);
   const docKey = Object.keys(st).find(k => k.startsWith('doc:') && st[k] > 100);
-  ok(blobs(st) === 6, 'each PDF page picture is stored once, on its own');
+  ok(blobs(st) === 7, 'each PDF page picture is stored once, on its own, with the PDF itself (to draw pages again sharp when zoomed in)');
   ok(st[docKey] < 60000, `the notebook itself is small (${Math.round(st[docKey] / 1000)} kB)`);
   ok(await page.evaluate(() => !document.querySelector('#main').innerHTML.includes('data:image')), 'the page holds no picture data, only links to the stored pictures');
   // a picture in a note
@@ -23,13 +23,13 @@ const blobs = st => Object.values(st).filter(v => v === 'blob').length;
   await page.click('#tab-insert'); const [fc] = await Promise.all([page.waitForEvent('filechooser'), page.click('#mediaBtn')]); await fc.setFiles(path.join(__dirname, 'pic.png'));
   await page.waitForTimeout(400); await page.mouse.click(5, 700); await page.waitForTimeout(1500);
   st = await store(page);
-  ok(blobs(st) === 7, 'a picture added to a note is stored the same way');
+  ok(blobs(st) === 8, 'a picture added to a note is stored the same way');
   // reload twice (the second time after unused pictures are tidied away)
   for (const n of [1, 2]) {
     await page.reload(); await page.waitForTimeout(2500);
     ok(await pagesShow(page) && await page.locator('.notebox .media img').evaluate(i => i.complete && i.naturalWidth === 160), `reload ${n}: every page and the note's picture show`);
   }
-  ok(blobs(await store(page)) === 7, 'pictures in use are kept');
+  ok(blobs(await store(page)) === 8, 'pictures in use are kept');
   // Back / Forward still work
   await page.click('#tab-home');
   const before = await page.locator('.notebox').count();

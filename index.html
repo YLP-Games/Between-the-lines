@@ -963,6 +963,8 @@ body.reading .ncompose,body.reading #sideAdd{display:none}
 .ink .mk{opacity:.45;mix-blend-mode:multiply}
 .inklive{position:fixed;left:0;top:0;z-index:14;pointer-events:none}      /* the stroke being drawn, over the page (under the bars and drawers) */
 .inklive[hidden]{display:none}
+/* a tablet: pages out of sight aren't laid out or painted (a long PDF scrolls and zooms smoothly; a strip keeps its height from its shape), and the window doesn't bounce */
+@media (pointer:coarse){.strip{content-visibility:auto}html{overscroll-behavior:none}}
 .inkdefs{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
 body.drawing :is(.strip,.sidepage),body.drawing .tl{cursor:crosshair;user-select:none;-webkit-user-select:none}
 body.drawing :is(.strip,.sidepage){touch-action:none}
@@ -2381,6 +2383,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <ul class="howto">
         <li><b>Add to Home Screen:</b> in Safari tap Share, then <b>Add to Home Screen</b>. Between the Lines then opens full screen like an app, and keeps working offline (<b>How to install</b> below shows the steps).</li>
         <li><b>Apple Pencil</b> (and other pens) draws on a PDF page or a side page with the tool from <b>Draw</b>, even when Draw is off. Pressing harder makes the pen and pencil lines thicker, and the Pencil’s eraser end (where it has one) rubs strokes out. Your fingers still scroll, tap and select, and a hand resting on the screen while you write is ignored. A quick tap with the Pencil works like a tap: it shows <b>+ Add here</b>. To draw with a finger, turn on <b>Draw</b>.</li>
+        <li><b>Zoom:</b> pinch the pages (the toolbar stays put), double-tap a slide, or use − and + in the status bar or ⌘+, ⌘− and ⌘0. Tap two fingers for Back, three for Forward.</li>
         <li><b>Scribble:</b> tap inside a note and write with the Pencil; iPadOS turns your handwriting into text (switch it on in Settings › Apple Pencil). The Pencil never draws on top of a note, so you can always write in one.</li>
         <li><b>Press and hold</b> does what right-click does: on <b>+ Add here</b> (sticky note or equation), on a pencil icon’s colours, on a misspelt word (suggestions) and on a notebook in the sidebar. Tap a note to show its handles for moving and resizing.</li>
         <li><b>Tap with two fingers</b> on the page to go <b>Back</b> one step (undo).</li>
@@ -5930,6 +5933,17 @@ function updateTab(){
   const svg = MARK.replace('</svg>', unsaved ? '<circle cx="25" cy="25" r="6" fill="#d93025" stroke="#fff" stroke-width="2"/></svg>' : '</svg>');
   $('#favicon').href = 'data:image/svg+xml,' + encodeURIComponent(svg);
 }
+// After a pen stroke: nothing on the page moved, so nothing is measured or laid out, and the save and the sidebar wait for a pause in the
+// writing (saving in between words would make the next stroke stutter). Going to another app saves straight away (flushSave).
+function saveInk(){
+  setSaveState('saving');
+  clearTimeout(timer); timer = setTimeout(saveNow, 1200);
+  clearTimeout(panelTimer); panelTimer = setTimeout(refreshPanels, 1400);
+}
+// an iPad can close a tab it has put in the background without a word: what is waiting to be saved goes now
+function flushSave(){ if (timer) { clearTimeout(timer); saveNow(true); } }
+document.addEventListener('visibilitychange', () => { if (document.hidden) flushSave(); });
+addEventListener('pagehide', flushSave);
 function saveSoon(){
   placeFloats(); sideSoon();
   paginateSoon(); updateNotesBtn(); panelsSoon();
@@ -5937,11 +5951,14 @@ function saveSoon(){
   clearTimeout(timer);
   timer = setTimeout(saveNow, 500);
 }
+const coarseScreen = matchMedia('(pointer:coarse)').matches; let storageAsked = false;
 let lastStored = {id: null, html: null};     // what was last written for the open notebook, so an unchanged notebook isn't written again
 const sync = {timer: 0, first: 0, busy: false, again: false, gen: 0, err: null, quiet: false, checked: 0};     // keeping a notebook that's in Google Drive or OneDrive up to date there
 let snapping = null;          // a save still taking its Back step (Back waits for it)
-async function saveNow(){
+async function saveNow(now){
+  if (penLive && now !== true) { timer = setTimeout(saveNow, 400); return; }      // (never while the pen is writing)
   timer = null;
+  if (coarseScreen && !storageAsked) { storageAsked = true; navigator.storage?.persist?.().catch(() => {}); }      // (so the browser doesn't clear notebooks to make room)
   const snap = (async () => {
     if (db) await assetize();
     const empty = !!main.querySelector('.welcome'), doc = empty ? '' : currentDoc();
@@ -6234,6 +6251,7 @@ let pageZoom = 1, fitZoom = 1;
 // zoomed in, the PDF pages you can see are drawn again sharp (sharpen, below)
 const sharp = {timer: 0, gen: 0, busy: null, task: null, docs: new Map(), pages: new Map(), live: new Set(), failed: new Set()}, SHARP_MAX = 12e6;     // (pixels in one drawing at most: Safari draws no canvas over 16.7 million)
 const ZOOM_STEPS = [.5, .67, .8, 1, 1.25, 1.5, 2, 2.5, 3], ZOOM_MIN = .5, ZOOM_MAX = 3;
+pageZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, +pref.get('page-zoom', '1') || 1));      // (as you left it: a tablet reloads tabs it put away)
 const pxSize = ([pw, ph]) => [Math.round(pw * 96 / 72), Math.round(ph * 96 / 72)];   // points to screen pixels
 const SHEET_MARGIN = 48;
 // undo the sheets: back to one list of headings and slides, with split slides joined up again
@@ -6420,6 +6438,7 @@ function zoomLive(u, x, y, a){
 function zoomCommit(x, y){
   if (Math.abs(pageZoom - 1) < .06) pageZoom = 1;              // (close to the fit is the fit)
   const a = zoomAnchor(x, y);
+  pref.set('page-zoom', pageZoom);
   hideGap(); relayout(); zoomRestore(a, x, y);
 }
 function setPageZoom(u, x, y){
@@ -6427,7 +6446,7 @@ function setPageZoom(u, x, y){
   if (!main.querySelector('.slide') || Math.abs(u - pageZoom) < .001) return paintZoom();
   if (x == null) [x, y] = zoomMid();
   const a = zoomAnchor(x, y);
-  pageZoom = u; hideGap(); relayout(); zoomRestore(a, x, y);
+  pageZoom = u; pref.set('page-zoom', u); hideGap(); relayout(); zoomRestore(a, x, y);
 }
 function paintZoom(){
   const box = $('#zoomBox'); if (!box) return;
@@ -6440,6 +6459,12 @@ function paintZoom(){
 $('#zoomIn').onclick = () => setPageZoom(ZOOM_STEPS.find(s => s > pageZoom + .01) ?? ZOOM_MAX);
 $('#zoomOut').onclick = () => setPageZoom([...ZOOM_STEPS].reverse().find(s => s < pageZoom - .01) ?? ZOOM_MIN);
 $('#zoomPct').onclick = () => setPageZoom(1);
+// with a keyboard on a tablet, as in its other apps: ⌘+, ⌘− and ⌘0 (a computer keeps them for the browser's own zoom)
+document.addEventListener('keydown', e => {
+  if (!(e.metaKey || e.ctrlKey) || e.altKey || !coarseScreen || !main.querySelector('.slide')) return;
+  const b = e.key === '=' || e.key === '+' ? $('#zoomIn') : e.key === '-' ? $('#zoomOut') : e.key === '0' ? $('#zoomPct') : null;
+  if (b) { e.preventDefault(); b.click(); }
+});
 // pages scrolled sideways in their column: what follows the page as it scrolls (the page counter, bars over the page) follows this too
 main.addEventListener('scroll', () => document.dispatchEvent(new Event('scroll', {bubbles: true})), {passive: true});
 // two fingers on the pages: they zoom and move with the fingers, as in GoodNotes (the Pencil, or a hand resting by it, never pinches)
@@ -9521,7 +9546,7 @@ main.addEventListener('pointerdown', e => {
     if (fingerInk === me) fingerInk = null;
     if (tool === 'er') {
       if (e.pointerType !== 'mouse') erRing.hidden = true;
-      if (erased) { if (save && !dead) { setInkData(card, items); inkShow(card, items); saveSoon(); } else inkShow(card, inkItems(card)); }     // (stopped by a second finger: nothing was erased)
+      if (erased) { if (save && !dead) { setInkData(card, items); inkShow(card, items); saveInk(); } else inkShow(card, inkItems(card)); }     // (stopped by a second finger: nothing was erased)
       return;
     }
     const tap = auto && !far && Date.now() - t0 < 500;                  // (a tap with the pen is not a dot: it can show "+ Add here")
@@ -9531,7 +9556,7 @@ main.addEventListener('pointerdown', e => {
     if (auto) swallow(300);                           // (the click that follows a stroke is not a tap)
     if (!pts.length) return;
     if (card.classList.contains('sidepage')) sideSoon();
-    saveSoon();
+    saveInk();
   };
   const up = ev => { if (ev.pointerId === e.pointerId) end(true); };
   const me = {stop: () => { dead = true; end(false); }};
@@ -13777,11 +13802,12 @@ function hideInstall(){
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && a2El && !a2El.hidden) hideInstall(); });
 addEventListener('load', () => setTimeout(() => { if (a2Due() && settingsBox.hidden) showInstall(true); }, 2500));
-// two fingers tapped on the page together, as in GoodNotes: Back one step. A pinch or a two-finger scroll moves, and a press lasts: neither is a tap
+// two fingers tapped on the page together, as in GoodNotes: Back one step (three fingers: Forward). A pinch or a two-finger scroll moves, and a press lasts: neither is a tap
 let tap2 = null;
 document.addEventListener('touchstart', e => {
   const n = e.touches.length, now = performance.now(), page = !!e.target.closest?.('#main');
-  if (n === 1 || (n === 2 && e.changedTouches.length === 2)) tap2 = page ? {t: now, two: n === 2, at: {}} : null;
+  if (n === 1 || (n > 1 && n < 4 && e.changedTouches.length === n)) tap2 = page ? {t: now, two: n > 1, three: n === 3, at: {}} : null;
+  else if (n === 3 && tap2?.two && now - tap2.t < 150) tap2.three = true;
   else if (n === 2 && tap2 && !tap2.two && page && now - tap2.t < 150) tap2.two = true;
   else tap2 = null;
   if (tap2?.two) { if (handByPen()) tap2 = null; else fingerInk?.stop(); }       // (two fingers don't draw, and a hand resting by the Pencil is no tap)
@@ -13792,8 +13818,9 @@ document.addEventListener('touchmove', e => {
 }, {passive: true});
 document.addEventListener('touchend', e => {
   if (!tap2 || e.touches.length) return;
-  const yes = tap2.two && performance.now() - tap2.t < 300; tap2 = null;
-  if (yes && !reading && hist.i > 0) { stepHistory(-1); toast('Back one step.'); }
+  const three = tap2.three, yes = tap2.two && performance.now() - tap2.t < 300; tap2 = null;
+  if (yes && three) { if (!reading && hist.i < hist.stack.length - 1) { stepHistory(1); toast('Forward one step.'); } }
+  else if (yes && !reading && hist.i > 0) { stepHistory(-1); toast('Back one step.'); }
 }, {passive: true});
 document.addEventListener('touchcancel', () => { tap2 = null; }, {passive: true});
 // installed: PDFs, PowerPoints and Word files can be opened with it from your computer

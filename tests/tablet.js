@@ -81,7 +81,7 @@ const shot = (page, n) => page.screenshot({path: path.join(OUT, n + '.png')});
   let nr = await nb.boundingBox();
   await page.touchscreen.tap(nr.x + nr.width / 2, nr.y + nr.height / 2); await page.waitForTimeout(300);
   ok(await nb.evaluate(n => n.classList.contains('touched')), 'tapping a note shows its handles');
-  const gsz = await nb.locator('.nbar .grip').evaluateAll(gs => gs.map(g => { const q = g.getBoundingClientRect(); return Math.min(q.width, q.height); }));
+  const gsz = await nb.locator('.nbar .grip').evaluateAll(gs => gs.filter(g => getComputedStyle(g).display !== 'none').map(g => { const q = g.getBoundingClientRect(); return Math.min(q.width, q.height); }));      // (the link to a side note is there only with side pages showing)
   ok(gsz.length >= 3 && gsz.every(v => v >= 40), 'its toolbar buttons are 40px or more (' + gsz.map(Math.round) + ')');
   const fl = await nb.locator('.g-float').boundingBox();
   await page.touchscreen.tap(fl.x + fl.width / 2, fl.y + fl.height / 2); await page.waitForTimeout(400);
