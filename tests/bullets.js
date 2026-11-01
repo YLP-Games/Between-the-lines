@@ -18,7 +18,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   const setColor = c => page.evaluate(c => { const i = document.querySelector('#color'); i.value = c; i.dispatchEvent(new Event('input', {bubbles: true})); }, c);
 
   // ---- the whole note selected and coloured ----
-  await page.keyboard.press('Control+a'); await setColor('#2e7d32'); await page.waitForTimeout(200);
+  await page.keyboard.press('ControlOrMeta+a'); await setColor('#2e7d32'); await page.waitForTimeout(200);
   let m = await marks();
   ok(m.every(x => x.c === 'rgb(46, 125, 50)'), 'colouring everything turns the bullets and numbers green too (' + m.map(x => x.c).join(' / ') + ')');
 
@@ -56,7 +56,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   ok(base !== 'rgb(46, 125, 50)', 'and to begin with they were the note colour (' + base + ')');
 
   // ---- clearing: colouring the whole note again sets every bullet to that colour ----
-  await page.locator('.pagecard .mine').last().click(); await page.waitForTimeout(200); await page.keyboard.press('Control+a'); await setColor('#1d1d1d'); await page.waitForTimeout(400);
+  await page.locator('.pagecard .mine').last().click(); await page.waitForTimeout(200); await page.keyboard.press('ControlOrMeta+a'); await setColor('#1d1d1d'); await page.waitForTimeout(400);
   m = await marks();
   ok(m.every(x => x.c === 'rgb(29, 29, 29)'), 'colouring everything again sets every bullet (' + m.map(x => x.c + '/' + x.t).join(' ') + ')');
   await browser.close();

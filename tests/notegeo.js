@@ -187,7 +187,7 @@ const PAD = 48;          // the room a page keeps below its lowest note
   ok(caret !== null && caret <= sb.y, `and the caret stays in sight above the status bar (${caret?.toFixed(0)} <= ${sb.y.toFixed(0)})`);
   await page.screenshot({path: path.join(OUT, 'notegeo-2-blank.png')});
   // a shorter note: the page goes back to its own shape
-  await page.keyboard.press('Control+a'); await page.keyboard.type('Short now'); await page.waitForTimeout(400);
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('Short now'); await page.waitForTimeout(400);
   await away();
   const p2 = await R(bp), q2 = await R(st);
   ok(p2.h < p1.h - 100 && near(p2.b - q2.b, PAD, 2) && near(p2.w, bp0.w), `when the note is short again the page shrinks with it (${p1.h.toFixed(0)} to ${p2.h.toFixed(0)}px tall)`);
@@ -243,11 +243,11 @@ const PAD = 48;          // the room a page keeps below its lowest note
   await hideMain(false); await page.waitForTimeout(500);
   ok(await same() && near((await R(sp)).h, sp1.h, 2), 'shown again, they still match');
   // side notes shorter, then gone: both shrink back together, to the slide's own size
-  await sn.locator('.mine').click(); await page.keyboard.press('Control+a'); await page.keyboard.type('Short side note'); await page.waitForTimeout(500);
+  await sn.locator('.mine').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('Short side note'); await page.waitForTimeout(500);
   await away();
   const sp2 = await R(sp), sl2 = await R(sl), want = Math.max(slm.h, (await R(sn)).b - sp2.y + PAD * sz);
   ok(sl2.h < sl1.h - 60 && await same() && near(sl2.h, want, 3), `shorter again, both shrink back together (${sl2.h.toFixed(0)} and ${sp2.h.toFixed(0)}px; the slide alone is ${slm.h.toFixed(0)})`);
-  await sn.locator('.mine').click(); await page.keyboard.press('Control+a'); await page.keyboard.press('Delete'); await away(); await page.waitForTimeout(300);
+  await sn.locator('.mine').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.press('Delete'); await away(); await page.waitForTimeout(300);
   ok(await sp.locator('.notebox').count() === 0 && await same() && near((await R(sl)).h, slm.h), `with the side note gone, both are back to the slide's own size (${(await R(sl)).h.toFixed(0)}px)`);
   await hideMain(true); await page.waitForTimeout(500);
   ok(await same() && near((await R(sl)).h, sl0.h), `and with the slide's note hidden too, to the size of the slide itself (${(await R(sl)).h.toFixed(0)}px)`);

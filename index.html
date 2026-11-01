@@ -114,6 +114,7 @@ input[type=color]{width:28px;height:28px;padding:0;border:1px solid var(--line-s
 .ribbon.compact .tab[aria-selected="true"]:not(.peeking){font-weight:400;border-bottom-color:transparent;color:var(--muted)}
 .grp{display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:3px;padding:0 4px;flex:none}
 .grp > .row{display:flex;align-items:center;gap:2px;flex:1}
+#panel-view .grp{padding:0 1px}      /* (the fullest tab: so it all fits on a laptop without scrolling) */
 .cap{font-size:11px;color:var(--muted);white-space:nowrap}
 .sep{width:1px;align-self:stretch;background:var(--line);margin:4px 3px;flex:none}
 .tip{display:flex;align-items:center;margin:0;font-size:14px;color:var(--muted);padding:0 8px;max-width:520px;line-height:1.25}
@@ -553,7 +554,7 @@ main.reading .slide img.blk{cursor:auto}
 @media (max-width:640px){.editor{left:8px;right:8px;width:auto;top:auto;bottom:calc(var(--status-h) + 8px + env(safe-area-inset-bottom,0px));max-height:55dvh}}
 .autoopts{margin:2px 0 8px 24px;display:flex;flex-direction:column;gap:2px}
 .autoopts .setchk{font-size:13.5px}
-.autoopts.off{opacity:.55}
+.autoopts.off{opacity:.68}
 /* colour menu for a minimised note's pencil icon */
 .chippop{z-index:46;display:flex;flex-direction:column;gap:6px;padding:10px;font-size:12px}
 .chippop .ttl{font-weight:600}
@@ -790,7 +791,7 @@ body.focus .peekzone{display:none}
 .preset .phl select{flex:1 1 0;width:0;min-width:80px}
 .preset .phdot{flex:none;width:18px;height:18px;border-radius:50%;background:var(--c);border:1.5px solid var(--line-strong)}
 .preset .phdot.none{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--line-strong) 3px 4px)}
-.presets.hloff .phl{opacity:.6}
+.presets.hloff .phl{opacity:.88}
 .presetacts{display:flex;flex-wrap:wrap;gap:6px}
 @media (pointer:coarse){      /* fingertip-sized */
   .preset :is(.pname,.psize,.pfont){height:44px}
@@ -1251,7 +1252,8 @@ body:not(.side-visible) #annoBar [data-side]{display:none}
 .sidecorner:hover{opacity:1;background:var(--hover)}
 @media (prefers-reduced-motion:reduce){.sidecorner{transition:none}}
 .sidecorner .i{width:16px;height:16px}
-@media (pointer:coarse){.sidecorner{width:40px;min-width:40px;height:40px}}
+@media (pointer:coarse){.sidecorner{width:40px;min-width:40px;height:40px}
+  body:has(.notebox.touched) .sidecorner{opacity:0;pointer-events:none}}      /* (it would sit on the handles of a picked note at the top of the page) */
 main.reading .sidepage{cursor:auto}
 
 /* ================= split view: a second notebook to read, beside the one you write in ================= */
@@ -1700,6 +1702,8 @@ main.reading .cd-lang::after,main.pdfpaper .cd-lang::after{content:""}
   :is(.mediabar,.annobar,.annopop,.pptx-tip,.bhead) .btn,.bhead select,.fkeys button,.fhead .btn{min-width:44px;height:44px}
   .fkeys button{min-width:44px}
   .tab{height:44px;padding-inline:16px}
+  @media (max-width:430px){.tab{padding-inline:13px}.tabs{gap:0}}
+  @media (max-width:350px){.tab{padding-inline:9px}}
   :is(select,#size,.newrow input[type=number],.tbtn){height:44px}
   .sw,.chippop .cc,input[type=color],.chippop input[type=color]{width:44px;height:44px}
   .sw::before{width:22px;height:22px}
@@ -5935,15 +5939,38 @@ function updateTab(){
 }
 // After a pen stroke: nothing on the page moved, so nothing is measured or laid out, and the save and the sidebar wait for a pause in the
 // writing (saving in between words would make the next stroke stutter). Going to another app saves straight away (flushSave).
-function saveInk(){
+// Each stroke is still a Back step of its own: what it changed is noted here, and the save works out the steps from it (snapshotInk).
+let inkSteps = [];
+function saveInk(card, before){
+  inkSteps.push({card, before, after: card.dataset.ink || ''}); updateUndoBtns(); inkWaitWrite();
   setSaveState('saving');
   clearTimeout(timer); timer = setTimeout(saveNow, 1200);
   clearTimeout(panelTimer); panelTimer = setTimeout(refreshPanels, 1400);
 }
 // an iPad can close a tab it has put in the background without a word: what is waiting to be saved goes now
-function flushSave(){ if (timer) { clearTimeout(timer); saveNow(true); } }
 document.addEventListener('visibilitychange', () => { if (document.hidden) flushSave(); });
 addEventListener('pagehide', flushSave);
+// A page can be closed with no warning, so each stroke also goes straight into a small record (the write itself is off the main thread), read when the notebook next opens.
+const inkCards = side => [...main.querySelectorAll(side ? '.sidepage' : '.pagecard:not(.sidepage)')];
+let inkWaiting = false, inkBack = 0;
+function inkWaitWrite(){
+  if (!db) return;
+  inkWaiting = true;
+  putAll({'ink-wait': {id: curId, cards: [...new Set(inkSteps.map(s => s.card))].filter(c => c.isConnected).map(c => { const side = c.classList.contains('sidepage'); return [side ? 1 : 0, inkCards(side).indexOf(c), c.dataset.ink || '']; })}});
+}
+function inkWaitClear(){ if (!inkWaiting || inkSteps.length) return; inkWaiting = false; delKey('ink-wait'); }
+async function inkWaitRead(){
+  if (!db) return 0;
+  const w = await get('ink-wait'); let n = 0;
+  if (!w) return 0;
+  delKey('ink-wait');
+  if (w.id === curId) for (const [side, i, raw] of w.cards) {
+    const c = inkCards(side)[i]; if (!c || (c.dataset.ink || '') === raw) continue;
+    if (raw) c.dataset.ink = raw; else delete c.dataset.ink;
+    renderInk(c); n++;
+  }
+  return n;
+}
 function saveSoon(){
   placeFloats(); sideSoon();
   paginateSoon(); updateNotesBtn(); panelsSoon();
@@ -5962,7 +5989,7 @@ async function saveNow(now){
   const snap = (async () => {
     if (db) await assetize();
     const empty = !!main.querySelector('.welcome'), doc = empty ? '' : currentDoc();
-    snapshot(doc);
+    snapshotInk(doc);
     return {empty, doc};
   })();
   snapping = snap;
@@ -5973,17 +6000,17 @@ async function saveNow(now){
   const name = d.named ? d.name : empty ? 'Untitled' : notebookName(), pages = main.querySelectorAll('.slide').length;
   const notes = [...main.querySelectorAll('.notebox')].filter(hasContent).length;
   const same = lastStored.id === d.id && lastStored.html === stored;
-  if (same && d.name === name && d.pages === pages && d.notes === notes) { if (!timer) setSaveState('saved'); return; }
+  if (same && d.name === name && d.pages === pages && d.notes === notes) { inkWaitClear(); if (!timer) setSaveState('saved'); return; }
   Object.assign(d, {name, pages, notes}); if (!same) d.updated = Date.now();
   if (!same && cloudOf(d) && lastStored.id === d.id && !sync.quiet) { d.driveDirty = 1; sync.gen++; }       // (not for the first write after opening it, nor for changes fetched from the cloud)
   const ok = await putAll({...(same ? {} : {['doc:' + d.id]: stored}), docs, cur: curId, style});
-  if (ok) lastStored = {id: d.id, html: stored};
+  if (ok) { lastStored = {id: d.id, html: stored}; inkWaitClear(); }
   if (!timer) setSaveState(ok ? 'saved' : 'error');
   renderDocs();
   if (ok && d.driveDirty) syncSoon();
 }
 // save straight away if a save is waiting (e.g. before going Back, or to another notebook)
-function flushSave(){ if (!timer) return Promise.resolve(); clearTimeout(timer); return saveNow(); }
+function flushSave(){ if (!timer) return Promise.resolve(); clearTimeout(timer); return saveNow(true); }
 // before going Back or Forward: a change still waiting to be saved becomes a step of its own first (without waiting for the write itself)
 function snapNow(){ if (timer) { clearTimeout(timer); saveNow(); } return (snapping || Promise.resolve()).catch(() => {}); }
 
@@ -8240,14 +8267,30 @@ const packDoc = d => d.replace(/data:[^"'&)\s]{1500,}/g, u => { let k = hist.key
 const unpackDoc = d => d.replace(/@@media\d+@@/g, k => hist.blobs.get(k) || k);
 function snapshot(doc){
   if (hist.hold) return;                          // (a file going in after a page is saved as it comes, but is one step)
-  const d = packDoc(doc);
+  pushStep(packDoc(doc));
+}
+function pushStep(d){
   if (d === hist.stack[hist.i]) return;
   hist.stack.length = hist.i + 1; hist.stack.push(d);
   if (hist.stack.length > 100) hist.stack.shift();
   hist.i = hist.stack.length - 1; updateUndoBtns();
 }
-function resetHistory(doc){ hist.stack = []; hist.i = -1; hist.hold = false; snapshot(doc); }
-function updateUndoBtns(){ $('#undoBtn').disabled = reading || hist.i <= 0; $('#redoBtn').disabled = reading || hist.i >= hist.stack.length - 1; }
+// The strokes since the last save, one step each. The document is written out once, and the steps before the last are that text with each
+// stroke's data put back as it was, which takes no time. If a stroke's data can't be told apart (a copy of the page has the same), the older ones stay one step.
+const inkAttr = raw => { if (!raw) return ''; const t = document.createElement('i'); t.dataset.ink = raw; return t.outerHTML.slice(2, -5); };
+function snapshotInk(doc){
+  const steps = inkSteps.slice(-100); inkSteps = [];
+  if (hist.hold || steps.length < 2) return snapshot(doc);
+  let d = packDoc(doc); const docs = [d];
+  for (let k = steps.length - 1; k > 0; k--) {
+    const a = inkAttr(steps[k].after), i = a ? d.indexOf(a) : -1;
+    if (i < 0 || d.indexOf(a, i + 1) >= 0) break;
+    d = d.slice(0, i) + inkAttr(steps[k].before) + d.slice(i + a.length); docs.unshift(d);
+  }
+  docs.forEach(pushStep);
+}
+function resetHistory(doc){ hist.stack = []; hist.i = -1; hist.hold = false; inkSteps = []; snapshot(doc); }
+function updateUndoBtns(){ $('#undoBtn').disabled = reading || (hist.i <= 0 && !inkSteps.length); $('#redoBtn').disabled = reading || hist.i >= hist.stack.length - 1; }
 // (presses close together go one after another, each a step)
 let histQ = Promise.resolve();
 function stepHistory(by){ histQ = histQ.then(() => stepNow(by)).catch(() => {}); return histQ; }
@@ -9546,17 +9589,18 @@ main.addEventListener('pointerdown', e => {
     if (fingerInk === me) fingerInk = null;
     if (tool === 'er') {
       if (e.pointerType !== 'mouse') erRing.hidden = true;
-      if (erased) { if (save && !dead) { setInkData(card, items); inkShow(card, items); saveInk(); } else inkShow(card, inkItems(card)); }     // (stopped by a second finger: nothing was erased)
+      if (erased) { if (save && !dead) { const was = card.dataset.ink || ''; setInkData(card, items); inkShow(card, items); saveInk(card, was); } else inkShow(card, inkItems(card)); }     // (stopped by a second finger: nothing was erased)
       return;
     }
     const tap = auto && !far && Date.now() - t0 < 500;                  // (a tap with the pen is not a dot: it can show "+ Add here")
+    const was = card.dataset.ink || '';
     if (save && !dead && !tap && pts.length) inkAdd(card, {k: tool, c: col, w, p: pts});
     liveEnd();                                        // (in the same frame as the stroke joins the page, so it never blinks)
     if (!save || dead || tap) return;
     if (auto) swallow(300);                           // (the click that follows a stroke is not a tap)
     if (!pts.length) return;
     if (card.classList.contains('sidepage')) sideSoon();
-    saveInk();
+    saveInk(card, was);
   };
   const up = ev => { if (ev.pointerId === e.pointerId) end(true); };
   const me = {stop: () => { dead = true; end(false); }};
@@ -13820,7 +13864,7 @@ document.addEventListener('touchend', e => {
   if (!tap2 || e.touches.length) return;
   const three = tap2.three, yes = tap2.two && performance.now() - tap2.t < 300; tap2 = null;
   if (yes && three) { if (!reading && hist.i < hist.stack.length - 1) { stepHistory(1); toast('Forward one step.'); } }
-  else if (yes && !reading && hist.i > 0) { stepHistory(-1); toast('Back one step.'); }
+  else if (yes && !reading && (hist.i > 0 || inkSteps.length)) { stepHistory(-1); toast('Back one step.'); }
 }, {passive: true});
 document.addEventListener('touchcancel', () => { tap2 = null; }, {passive: true});
 // installed: PDFs, PowerPoints and Word files can be opened with it from your computer
@@ -16268,12 +16312,14 @@ restorePanels();
     }
     revealDoc(curId);
     showDocHtml(db ? await fromStored(await get('doc:' + curId)) : data?.doc || '');
+    inkBack = await inkWaitRead();
   } catch (err) { reportError(err, 'loading your saved notebooks'); }
   requestAnimationFrame(() => {
     try {
       paginateView(); refreshPanels(); restoreBeside();
       resetHistory(main.querySelector('.welcome') ? '' : currentDoc());
       if (db) putAll({docs, cur: curId});
+      if (inkBack) saveSoon();
     } catch (err) { reportError(err, 'showing your notebook'); }
     finally { startUp(); }
     if (db) (window.requestIdleCallback || setTimeout)(() => tidyAssets());

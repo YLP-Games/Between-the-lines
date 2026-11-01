@@ -37,7 +37,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); n++; console.log
     if (hold) await page.waitForTimeout(hold);
     if (release) { await page.mouse.up(); await page.waitForTimeout(250); }
   };
-  const rename = async (row, to) => { await menu(row); await page.click('.docmenu [data-act=rename]'); await page.keyboard.press('Control+A'); await page.keyboard.type(to); await page.keyboard.press('Enter'); await page.waitForTimeout(250); };
+  const rename = async (row, to) => { await menu(row); await page.click('.docmenu [data-act=rename]'); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type(to); await page.keyboard.press('Enter'); await page.waitForTimeout(250); };
   const newBook = async (name, text) => {
     await page.click('#newDocBtn'); await page.waitForTimeout(700);
     await page.keyboard.type(text); await page.waitForTimeout(700);
@@ -69,7 +69,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); n++; console.log
   ok(items.join('|') === 'Rename|New folder inside|New notebook here|Move to…|Delete folder', 'folder menu: ' + items.join(' | '));
   await page.click('.docmenu [data-act=sub]'); await page.waitForTimeout(250);
   ok(await page.evaluate(() => document.activeElement.tagName === 'INPUT'), 'New folder inside starts naming');
-  await page.keyboard.press('Control+A'); await page.keyboard.type('Risk Management'); await page.keyboard.press('Enter'); await page.waitForTimeout(250);
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('Risk Management'); await page.keyboard.press('Enter'); await page.waitForTimeout(250);
   ok(await tree() === 'Archive,Banking[Risk Management],Spare,Lecture 2,Lecture 1', 'Risk Management is inside Banking, which opened to show it: ' + await tree());
   ok((await folderNamed('Risk Management')).parent === (await folderNamed('Banking')).id, 'its parent is saved');
 
@@ -164,7 +164,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); n++; console.log
   ok(await page.evaluate(() => { moveFolder(folders.find(f => f.name === 'Archive').id, folders.find(f => f.name === 'Risk Management').id); return document.getElementById('toast').textContent; }) === 'A folder can’t go inside itself.', 'and a move that would loop is refused with a message');
   ok((await folderNamed('Archive')).parent === null, 'nothing changed');
   // a third level: Banking > Risk Management? Archive > Risk Management > Credit
-  await menu(frow('Risk Management')); await page.click('.docmenu [data-act=sub]'); await page.keyboard.press('Control+A'); await page.keyboard.type('Credit'); await page.keyboard.press('Enter'); await page.waitForTimeout(250);
+  await menu(frow('Risk Management')); await page.click('.docmenu [data-act=sub]'); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('Credit'); await page.keyboard.press('Enter'); await page.waitForTimeout(250);
   ok((await tree()).includes('Archive[Risk Management[Credit'), 'three levels deep: Archive > Risk Management > Credit');
 
   // ---- Esc cancels a drag; empty space and the heading mean top level ----

@@ -117,32 +117,32 @@ const measure = page => page.evaluate(() => {
   await page.keyboard.type('c'); await page.waitForTimeout(100);
   st = await page.evaluate(() => { const r = document.querySelectorAll('.jrnl .j-row')[2]; return r.dataset.s + ':' + r.querySelector('.j-ind').textContent + ':' + r.querySelector('.j-c').textContent; });
   ok(st === 'cr:CR:100', 'typing c makes it CR');
-  await page.keyboard.press('Control+a'); await page.keyboard.type('dr'); await page.waitForTimeout(100);
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('dr'); await page.waitForTimeout(100);
   st = await page.evaluate(() => { const r = document.querySelectorAll('.jrnl .j-row')[2]; return r.dataset.s + ':' + r.querySelector('.j-ind').textContent + ':' + r.querySelector('.j-d').textContent; });
   ok(st === 'dr:DR:100', 'typing dr puts it back to DR');
 
   // ---- the ≠ marker ----
   const diff = () => page.evaluate(() => { const f = document.querySelector('.jrnl .j-foot'); return f.hasAttribute('data-diff') ? getComputedStyle(f, '::after').content : null; });
-  await row(4).locator('.j-amt:not(.off)').click(); await page.keyboard.press('Control+a'); await page.keyboard.type('800'); await page.keyboard.press('Tab');
+  await row(4).locator('.j-amt:not(.off)').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('800'); await page.keyboard.press('Tab');
   ok(await diff() === '"≠ 100"', 'debits 1,900 and credits 1,300 + 800 = 2,000: a tiny "≠ 100" shows beside the description');
   await page.screenshot({path: path.join(OUT, 'journal-diff-light.png'), clip: {x: jb.x - 10, y: jb.y - 10, width: jb.width + 20, height: jb.height + 20}});
-  await row(0).locator('.j-amt:not(.off)').click(); await page.keyboard.press('Control+a'); await page.keyboard.type('1,200,000'); await page.keyboard.press('Tab');
+  await row(0).locator('.j-amt:not(.off)').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('1,200,000'); await page.keyboard.press('Tab');
   ok(await diff() === '"≠ 1,198,400"', 'the difference has thousands separators too');
-  await row(4).locator('.j-amt:not(.off)').click(); await page.keyboard.press('Control+a'); await page.keyboard.press('Backspace'); await page.keyboard.press('Tab');
+  await row(4).locator('.j-amt:not(.off)').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.press('Backspace'); await page.keyboard.press('Tab');
   ok(await diff() === null, 'with an amount still empty, there is no marker');
   await row(4).locator('.j-amt:not(.off)').click(); await page.keyboard.type('700'); await page.keyboard.press('Tab');
-  await row(0).locator('.j-amt:not(.off)').click(); await page.keyboard.press('Control+a'); await page.keyboard.type('1500'); await page.keyboard.press('Tab');
+  await row(0).locator('.j-amt:not(.off)').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('1500'); await page.keyboard.press('Tab');
   ok(await diff() === null, 'balanced again: the marker goes');
 
   // ---- amounts: what can be typed, and how it is tidied ----
   const fmt = await page.evaluate(() => ['1200.5', '(1200)', '-1234567.891', '1,2,3,4', '0012', '.5', '12.', '(1200', 'abc', ''].map(s => jFmt(s)));
   ok(fmt.join('|') === '1,200.5|(1,200)|-1,234,567.891|1,234|12|0.5|12|(1,200)|abc|', `thousands separators, decimals kept, brackets and minus kept (${fmt.join(' ')})`);
   ok(await page.evaluate(() => jNum('(1,200.50)') === -1200.5 && jNum('-3') === -3 && jNum('1,200') === 1200 && jNum('') === null), 'brackets and a minus mean negative');
-  await row(0).locator('.j-amt:not(.off)').click(); await page.keyboard.press('Control+a'); await page.keyboard.type('12a3b#x');
+  await row(0).locator('.j-amt:not(.off)').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('12a3b#x');
   ok(await row(0).locator('.j-amt:not(.off)').textContent() === '123', 'letters and symbols cannot be typed in an amount');
-  await page.keyboard.press('Control+a'); await page.keyboard.type('(1200.50)'); await page.keyboard.press('Tab');
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('(1200.50)'); await page.keyboard.press('Tab');
   ok(await row(0).locator('.j-amt:not(.off)').textContent() === '(1,200.50)', 'a bracketed amount keeps its brackets and decimals');
-  await row(0).locator('.j-amt:not(.off)').click(); await page.keyboard.press('Control+a'); await page.keyboard.type('1500'); await page.keyboard.press('Tab');
+  await row(0).locator('.j-amt:not(.off)').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('1500'); await page.keyboard.press('Tab');
 
 
   // ---- NEW: arrow keys go round the entry like a table ----
@@ -246,8 +246,8 @@ const measure = page => page.evaluate(() => {
   ok(h.z === '0:acct', 'Up on the last line of a wrapped account stays in it (moves up a line)');
   let ups = 1; while (h.z === '0:acct' && ups < 8) { await press('ArrowUp'); h = await here(); ups++; }
   ok(h.z === 'date' && ups === lines, `and on the first line goes to the date (after ${ups} presses for ${lines} lines)`);
-  await go(0, 'acct', 20); await page.keyboard.press('Control+a'); await page.keyboard.type('Cash'); await page.keyboard.press('Tab');
-  await page.keyboard.press('Control+a'); await page.keyboard.type('1500'); await page.keyboard.press('Tab');
+  await go(0, 'acct', 20); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('Cash'); await page.keyboard.press('Tab');
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('1500'); await page.keyboard.press('Tab');
   await page.mouse.click(8, 700);
 
   // ---- save, reload, undo ----
@@ -326,7 +326,7 @@ const measure = page => page.evaluate(() => {
   await j2.locator('.j-desc').click(); await page.keyboard.type('line one'); await page.keyboard.press('Enter');
   ok(!(await j2.locator('.j-desc').innerHTML()).includes('<br') && (await j2.locator('.j-desc').textContent()) === 'line one', 'the description stays on one line');
   // date can be cleared
-  await j2.locator('.j-date').click(); await page.keyboard.press('Control+a'); await page.keyboard.press('Backspace');
+  await j2.locator('.j-date').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.press('Backspace');
   ok(await j2.locator('.j-date').evaluate(d => d.textContent === '' && ['none', 'normal'].includes(getComputedStyle(d, '::before').content)), 'the date can be cleared, and nothing shows in its place (CHANGED: a faint "Date" used to show)');
   await j2.locator('.j-date').click(); await page.keyboard.type('Mon 3 Nov');
   ok(await j2.locator('.j-date').textContent() === 'Mon 3 Nov', 'and edited freely');
@@ -384,7 +384,7 @@ const measure = page => page.evaluate(() => {
   const nJ = () => page.locator('.jrnl').count(), nN = () => page.locator('.notebox').count();
   const before = {j: await nJ(), n: await nN()};
   let E = await mk('ZZempty');
-  await E.locator('.j-date').click(); await page.keyboard.press('Control+a'); await page.keyboard.press('Backspace'); await page.mouse.click(8, 700); await page.waitForTimeout(150);
+  await E.locator('.j-date').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.press('Backspace'); await page.mouse.click(8, 700); await page.waitForTimeout(150);
   const em = await E.evaluate(b => { const q = s => b.querySelector(s), r = e => e.getBoundingClientRect(), cs = (e, p) => getComputedStyle(e, p); const lh = parseFloat(cs(q('.j-acct')).lineHeight);
     return {dateTxt: q('.j-date').textContent, descTxt: q('.j-desc').textContent, vis: b.innerText, dateH: r(q('.j-date')).height, descH: r(q('.j-desc')).height, dateW: r(q('.j-date')).width, descW: r(q('.j-desc')).width, bw: r(b).width, lh,
       ph: [q('.j-date'), q('.j-desc')].map(e => cs(e, '::before').content + cs(e, '::after').content), outline: cs(q('.j-date')).outlineStyle + cs(q('.j-desc')).outlineStyle}; });
@@ -399,15 +399,15 @@ const measure = page => page.evaluate(() => {
   ok(fo.on && fo.style === 'solid' && fo.w === '1px', 'clicking the empty date focuses it, with a faint outline while it is focused');
   await page.keyboard.type('Mon 3 Nov');
   ok(await E.locator('.j-date').textContent() === 'Mon 3 Nov', 'and it can be typed in later');
-  await page.keyboard.press('Control+a'); await page.keyboard.press('Backspace');
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.press('Backspace');
   await E.locator('.j-desc').click(); await page.keyboard.type('Paid in cash');
   ok(await E.locator('.j-desc').textContent() === 'Paid in cash', 'the empty description too');
-  await page.keyboard.press('Control+a'); await page.keyboard.press('Backspace');
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.press('Backspace');
   const fr = await E.locator('.j-foot').boundingBox();
   await page.mouse.click(fr.x + fr.width - 6, fr.y + fr.height / 2); await page.waitForTimeout(80);
   ok(await page.evaluate(() => document.activeElement.classList.contains('j-desc')), 'clicking the empty space on the description line puts you in it');
   await page.mouse.click(8, 700);
-  await E.locator('.j-acct').first().click(); await page.keyboard.press('Control+a'); await page.click('#tab-home'); await page.click('#hlBtn'); await page.waitForTimeout(100);
+  await E.locator('.j-acct').first().click(); await page.keyboard.press('ControlOrMeta+a'); await page.click('#tab-home'); await page.click('#hlBtn'); await page.waitForTimeout(100);
   ok(await E.evaluate(b => !!b.querySelector('.j-acct span[style*="background"]')), 'NEW: the Home highlighter works on the words inside an entry');
   await page.click('#tab-insert'); await page.mouse.click(8, 700);
   // the markup and the exports have none of it
@@ -484,15 +484,15 @@ const measure = page => page.evaluate(() => {
   await page.mouse.click(pk.x, pk.y); await page.keyboard.press('Backspace');
   await gone(E, 'edge + Backspace'); await back(E, 'edge + Backspace');
   // Select all twice inside a field
-  await E.locator('.j-acct').first().click(); await page.keyboard.press('Control+a');
+  await E.locator('.j-acct').first().click(); await page.keyboard.press('ControlOrMeta+a');
   ok(await page.evaluate(() => !jPicked() && getSelection().toString() === 'ZZempty'), 'Select all once selects the field\'s text');
-  await page.keyboard.press('Control+a');
+  await page.keyboard.press('ControlOrMeta+a');
   ok(await page.evaluate(() => !!jPicked()), 'a second time selects the whole entry');
   await page.keyboard.press('Backspace');
   await gone(E, 'Select all twice + Backspace'); await back(E, 'Select all twice + Backspace');
-  await E.locator('.j-acct').first().click(); await page.keyboard.press('Control+a'); await page.keyboard.press('Control+a'); await page.keyboard.press('Delete');
+  await E.locator('.j-acct').first().click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.press('Delete');
   await gone(E, 'Select all twice + Delete'); await back(E, 'Select all twice + Delete');
-  await E.locator('.j-acct').first().click(); await page.keyboard.press('Control+a'); await page.keyboard.press('Delete');
+  await E.locator('.j-acct').first().click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.press('Delete');
   ok(await nJ() === before.j + 1 && await E.count() === 0 && (await page.locator('.jrnl').allTextContents()).every(t => !t.includes('ZZempty')), 'Delete after a single Select all only empties the field (the entry stays)');
   await page.click('#undoBtn'); await page.waitForTimeout(600);
   // an entry in a note with other things in it: the note stays

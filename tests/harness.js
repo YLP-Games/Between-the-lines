@@ -47,6 +47,11 @@ async function open(file, {width = 1440, height = 900, colorScheme = 'light', st
     return route.abort();
   });
   const page = await context.newPage();
+  // on a Mac, Home and End scroll the page instead of moving the cursor: in a text they get the Mac's keys for the same move
+  if (process.platform === 'darwin') {
+    const MOVES = {Home: 'Meta+ArrowLeft', End: 'Meta+ArrowRight', 'Control+Home': 'Meta+ArrowUp', 'Control+End': 'Meta+ArrowDown'}, press = page.keyboard.press.bind(page.keyboard);
+    page.keyboard.press = async (k, o) => press(MOVES[k] && await page.evaluate(() => { const a = document.activeElement; return a && (a.isContentEditable || /^(INPUT|TEXTAREA)$/.test(a.tagName)); }) ? MOVES[k] : k, o);
+  }
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
   await page.goto(url || 'file://' + file);

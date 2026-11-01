@@ -100,7 +100,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   note = await newNote(2);
   await page.keyboard.type('teh cat ');
   ok((await tx(note)).startsWith('teh cat'), 'Autocorrect is off to begin with');
-  await page.keyboard.press('Control+a'); await page.keyboard.press('Delete');
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.press('Delete');
   await page.click('#tab-review'); await page.click('#autoBtn'); await note.click(); await page.waitForTimeout(200);
   ok(await page.evaluate(() => localStorage.getItem('autocorrect') === '1' && document.getElementById('autoBtn').getAttribute('aria-pressed') === 'true'), 'the Autocorrect button turns it on');
   await page.keyboard.type('teh cat dont know. i think so, adn TWo dogs. e.g. this ');

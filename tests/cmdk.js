@@ -29,7 +29,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   await page.keyboard.type('Quokka demand shifts right'); await away();
   await pointAt(3, 0.5);
   await page.click('.gappill'); await page.waitForTimeout(200);
-  await page.keyboard.type('Revenue peaks where '); await page.keyboard.press('Control+b'); await page.keyboard.type('marginal'); await page.keyboard.press('Control+b');
+  await page.keyboard.type('Revenue peaks where '); await page.keyboard.press('ControlOrMeta+b'); await page.keyboard.type('marginal'); await page.keyboard.press('ControlOrMeta+b');
   await page.keyboard.type(' cost meets it'); await away();
   await pointAt(1, 0.5);
   await page.click('.gappill', {button: 'right'}); await page.keyboard.type('eq'); await page.keyboard.press('Enter'); await page.waitForTimeout(400);

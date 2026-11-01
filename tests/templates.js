@@ -21,7 +21,7 @@ const clearNotes = page => page.evaluate(() => { document.querySelectorAll('.not
 (async () => {
   // ---- the ribbon: exactly one new button ----
   // what each ribbon tab had before there were templates
-  const baseCounts = [['panel-home', 22], ['panel-insert', 11], ['panel-box', 9], ['panel-view', 15]];
+  const baseCounts = [['panel-home', 22], ['panel-insert', 11], ['panel-box', 9], ['panel-review', 3], ['panel-view', 16]];
 
   const {browser, page, errors, card} = await start();
   // the buttons the ribbon has with a mouse (Home's "A" colour button is only there on narrow touch screens, in place of the swatches)
@@ -218,7 +218,7 @@ const clearNotes = page => page.evaluate(() => { document.querySelectorAll('.not
 
 
   // ================= the smart blocks =================
-  const fill = async (sel, text, i = 0, commit = true) => { const l = page.locator(sel).nth(i); await l.click(); await page.keyboard.press('Control+a'); if (text === '') await page.keyboard.press('Backspace'); else await page.keyboard.type(text); if (commit) await page.keyboard.press('Tab'); };
+  const fill = async (sel, text, i = 0, commit = true) => { const l = page.locator(sel).nth(i); await l.click(); await page.keyboard.press('ControlOrMeta+a'); if (text === '') await page.keyboard.press('Backspace'); else await page.keyboard.type(text); if (commit) await page.keyboard.press('Tab'); };
   const T = (sel, i = 0) => page.locator(sel).nth(i).textContent();
   const hid = sel => page.locator(sel).first().evaluate(e => e.hidden);
   const fresh = async (subj, name) => { await clearNotes(page); await insertVia(page, subj, name); };
@@ -364,10 +364,10 @@ const clearNotes = page => page.evaluate(() => { document.querySelectorAll('.not
   const st = () => page.$$eval('.sm-r .calc', e => Object.fromEntries(e.map(x => [x.className.match(/sm-(\w+)/)[1], x.textContent])));
   const s1 = await st();
   ok(s1.n === '6' && s1.sum === '108' && s1.mean === '18' && s1.med === '15.5' && s1.mode === 'none' && s1.min === '4' && s1.max === '42' && s1.range === '38' && s1.q1 === '8' && s1.q3 === '23' && s1.sd === '13.4907' && s1.pop === '12.3153', `n 6, mean 18, median 15.5, s 13.4907, σ 12.3153, quartiles 8 and 23 (${JSON.stringify(s1)})`);
-  await page.keyboard.press('Control+a'); await page.keyboard.type('3'); await page.keyboard.press('Enter'); await page.keyboard.type('3'); await page.keyboard.press('Enter'); await page.keyboard.type('7 abc 10');
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('3'); await page.keyboard.press('Enter'); await page.keyboard.type('3'); await page.keyboard.press('Enter'); await page.keyboard.type('7 abc 10');
   const s2b = await st();
   ok(s2b.n === '4' && s2b.mean === '5.75' && s2b.mode === '3' && s2b.med === '5', `numbers on new lines work, words are ignored, the mode shows (${JSON.stringify(s2b)})`);
-  await page.keyboard.press('Control+a'); await page.keyboard.press('Backspace');
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.press('Backspace');
   ok(Object.values(await st()).every(v => v === ''), 'with nothing typed every figure is empty');
   await page.keyboard.type('5');
   const s3b = await st();
@@ -419,7 +419,7 @@ const clearNotes = page => page.evaluate(() => { document.querySelectorAll('.not
   await fresh('Chemistry', 'Chemical equation');
   await page.keyboard.type('2H2 + O2 -> 2H2O');
   ok((await page.innerHTML('.ce-out')).includes('<sub>2</sub>') && (await T('.ce-bal')) === 'balanced ✓' && await page.getAttribute('.ce-bal', 'data-ok') === '1', 'typing in the box formats it live underneath, with a “balanced ✓”');
-  await page.keyboard.press('Control+a'); await page.keyboard.type('2H2 + O2 -> H2O');
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('2H2 + O2 -> H2O');
   ok((await T('.ce-bal')) === 'not balanced' && (await page.getAttribute('.ce-bal', 'title')).includes('left'), 'and says “not balanced” when it isn’t, with the counts in a tooltip');
   await fresh('Chemistry', 'Element lookup');
   const el = q => page.evaluate(q => elLookup(q).html.replace(/<[^>]+>/g, ''), q);
@@ -444,9 +444,9 @@ const clearNotes = page => page.evaluate(() => { document.querySelectorAll('.not
   await type(page, 'Aa'); await tab(page); await type(page, 'Aa');
   ok(await page.locator('.pn-g .pn-c').count() === 9 && (await T('.pn-gr')) === '1 AA : 2 Aa : 1 aa' && (await T('.pn-pr')) === '3 A_ : 1 aa', 'typing the parents fills the grid in and shows both ratios');
   await same('.pn-g .pn-c', '|A|a|A|AA|Aa|a|Aa|aa', 'with gametes along the top and the side');
-  await page.locator('.pn-a').click(); await page.keyboard.press('Control+a'); await page.keyboard.type('AaBb'); await tab(page); await page.keyboard.press('Control+a'); await page.keyboard.type('AaBb');
+  await page.locator('.pn-a').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('AaBb'); await tab(page); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('AaBb');
   ok(await page.locator('.pn-g .pn-c').count() === 25 && (await T('.pn-pr')) === '9 A_B_ : 3 A_bb : 3 aaB_ : 1 aabb', 'dihybrid: 16 offspring cells and the 9 : 3 : 3 : 1 ratio');
-  await page.keyboard.press('Control+a'); await page.keyboard.type('Cc');
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('Cc');
   ok(await page.locator('.pn-g .pn-c').count() === 0 && (await T('.pn-err')).includes('pairs of letters'), 'mismatched parents explain what to write');
 
   // ---- computer science ----
@@ -464,7 +464,7 @@ const clearNotes = page => page.evaluate(() => { document.querySelectorAll('.not
   ok(await page.locator('.tt-g .tt-c').count() === 6 + 8 * 6 && (await T('.tt-g .tt-h.res')) === 'A ∧ (B ∨ ¬C)', 'typing an expression fills the table in');
   await page.click('.tpl-tt [data-act="tf"]');
   ok((await T('.tt-g .tt-c', 6)) === 'T' && (await T('.tpl-tt .tui')) === 'T / F', 'the button switches to T and F');
-  await page.locator('.tt-in').click(); await page.keyboard.press('Control+a'); await page.keyboard.type('A and (');
+  await page.locator('.tt-in').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('A and (');
   ok((await T('.tt-err')).includes('missing') && await page.locator('.tt-g .tt-c').count() === 0, 'a half-typed expression shows what is wrong, not a table');
 
   // ---- code block ----
@@ -529,9 +529,9 @@ const clearNotes = page => page.evaluate(() => { document.querySelectorAll('.not
   ok(s2.s !== s1.s && +s2.s.split(' ')[0] > +s1.s.split(' ')[0] && +s2.s.split(' ')[1] > +s1.s.split(' ')[1], `dragging the supply curve moves it (${s1.s} → ${s2.s})`);
   await page.locator('.tpl-sd svg text.ed[data-e="xl"]').click(); await page.waitForTimeout(100);
   ok(await page.locator('.sv-in').count() === 1, 'clicking an axis name opens a small box to rename it');
-  await page.keyboard.press('Control+a'); await page.keyboard.type('Cups'); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('Cups'); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
   ok(await page.getAttribute('.tpl-sd', 'data-xl') === 'Cups' && (await sd()).labs.includes('Cups') && await page.locator('.sv-in').count() === 0, 'the new name is in the drawing');
-  await page.locator('.tpl-sd svg text.ed[data-e="dl"]').click(); await page.keyboard.press('Control+a'); await page.keyboard.type('D₀'); await page.keyboard.press('Escape'); await page.waitForTimeout(100);
+  await page.locator('.tpl-sd svg text.ed[data-e="dl"]').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('D₀'); await page.keyboard.press('Escape'); await page.waitForTimeout(100);
   ok(!(await sd()).labs.includes('D₀'), 'Esc leaves the name as it was');
   await page.screenshot({path: path.join(OUT, 'tpl-use-supplydemand-shifted.png'), clip: await page.locator('.notebox').first().boundingBox()});
 
@@ -567,7 +567,7 @@ const clearNotes = page => page.evaluate(() => { document.querySelectorAll('.not
     svg.dispatchEvent(new PointerEvent('pointerdown', at(60, 60))); svg.dispatchEvent(new PointerEvent('pointermove', at(90, 80))); svg.dispatchEvent(new PointerEvent('pointermove', at(120, 70))); svg.dispatchEvent(new PointerEvent('pointerup', at(120, 70)));
   });
   ok((await gp()).ink.length === 1, 'a pen (Apple Pencil) always draws on the graph, with Draw on or off');
-  await page.locator('.tpl-axes svg text.ed[data-e="yl"]').click(); await page.keyboard.press('Control+a'); await page.keyboard.type('f(x)'); await page.keyboard.press('Enter');
+  await page.locator('.tpl-axes svg text.ed[data-e="yl"]').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('f(x)'); await page.keyboard.press('Enter');
   ok(await page.getAttribute('.tpl-axes', 'data-yl') === 'f(x)', 'the axis names can be changed');
 
   // ---- free-body diagram ----
@@ -585,7 +585,7 @@ const clearNotes = page => page.evaluate(() => { document.querySelectorAll('.not
   await drag('.tpl-fbd .hnd[data-k="f2"]', 0, -40);
   let f1 = await fb();
   ok(f1.f[2][0] === f0.f[2][0] + 0 && f1.f[2][1] < f0.f[2][1] || f1.f[2][0] !== f0.f[2][0] || f1.f[2][1] !== f0.f[2][1], `dragging an arrow’s tip turns and stretches it (${JSON.stringify(f0.f[2])} → ${JSON.stringify(f1.f[2])})`);
-  await page.locator('.tpl-fbd svg text.ed[data-e="f0"]').click(); await page.keyboard.press('Control+a'); await page.keyboard.type('mg'); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
+  await page.locator('.tpl-fbd svg text.ed[data-e="f0"]').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('mg'); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
   ok((await fb()).f[0][2] === 'mg' && (await fb()).labs.includes('mg'), 'clicking a label renames it (W becomes mg)');
   await page.click('.tpl-fbd [data-act="del"]');
   f1 = await fb();

@@ -39,7 +39,7 @@ const docsOf = p => p.evaluate(async () => (await get('docs')).map(d => ({id: d.
   await page.click('#newDocBtn'); await page.waitForTimeout(800);
   await page.keyboard.type('My own revision notes'); await page.waitForTimeout(900);
   await page.hover('#docList .nb[aria-current] .docrow'); await page.click('#docList .nb[aria-current] .more'); await page.click('.docmenu [data-act=rename]');
-  await page.keyboard.press('Control+A'); await page.keyboard.type('Revision'); await page.keyboard.press('Enter'); await page.waitForTimeout(400);
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('Revision'); await page.keyboard.press('Enter'); await page.waitForTimeout(400);
   ok((await names(page)).join() === 'Revision,week2,lecture', 'three notebooks: Revision, week2 and lecture');
   ok(!(await page.isVisible('#favSec')) && !(await page.isVisible('#favList')), 'no Favourites section until something is a favourite');
   ok(await page.isVisible('#trashBox .trashhead') && (await page.textContent('#trashBox .trashhead')).trim() === 'Trash', 'the Trash is there, with no count while empty');
@@ -72,7 +72,7 @@ const docsOf = p => p.evaluate(async () => (await get('docs')).map(d => ({id: d.
   await page.locator('#pagesPanel').screenshot({path: path.join(OUT, 'trash-1-favourites.png')});
   // renaming a favourite works in place
   await menuOf('week2', '#favList'); await page.click('.docmenu [data-act=rename]');
-  await page.keyboard.press('Control+A'); await page.keyboard.type('week2 slides'); await page.keyboard.press('Enter'); await page.waitForTimeout(300);
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('week2 slides'); await page.keyboard.press('Enter'); await page.waitForTimeout(300);
   ok((await names(page, '#favList')).join() === 'week2 slides', 'a favourite can be renamed in the Favourites list');
   await page.reload(); await page.waitForTimeout(1800);
   ok((await names(page, '#favList')).join() === 'week2 slides' && (await names(page)).join() === 'Revision,lecture', 'favourites are kept after reload');

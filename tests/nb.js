@@ -52,7 +52,7 @@ const names = p => p.$$eval('#docList .docbtn .nm', els => els.map(e => e.textCo
   // rename
   await page.hover('#docList .nb[aria-current] .docrow');
   await page.click('#docList .nb[aria-current] .more'); await page.click('.docmenu [data-act=rename]');
-  await page.keyboard.press('Control+A'); await page.keyboard.type('ECON 101 Lecture 4'); await page.keyboard.press('Enter'); await page.waitForTimeout(400);
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('ECON 101 Lecture 4'); await page.keyboard.press('Enter'); await page.waitForTimeout(400);
   ok((await names(page)).includes('ECON 101 Lecture 4') && (await page.textContent('#docTitle')).includes('ECON 101 Lecture 4'), 'rename a notebook');
   await page.screenshot({path: path.join(OUT, 'nb-1-sidebar.png')});
 

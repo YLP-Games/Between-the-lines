@@ -64,7 +64,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   ok(await tip() === null, 'no tooltip on a quick pass');
   await page.waitForTimeout(450);
   const t1 = await tip();
-  ok(t1 && t1.startsWith('Focus mode') && /Ctrl/.test(t1) && /Hide the toolbar/.test(t1), 'after a brief pause: the name, what it does and its keys');
+  ok(t1 && t1.startsWith('Focus mode') && /Ctrl|⌘/.test(t1) && /Hide the toolbar/.test(t1), 'after a brief pause: the name, what it does and its keys');
   ok(await page.evaluate(() => !document.querySelector('#focusBtn').hasAttribute('title')), "the browser's own tooltip doesn't show as well");
   ok(await page.evaluate(() => document.querySelector('#focusBtn').getAttribute('aria-description')?.startsWith('Focus mode')), 'screen readers still get the description');
   await page.screenshot({path: path.join(OUT, 'tips-2-focus.png'), clip: {x: 700, y: 0, width: 740, height: 200}});
@@ -97,7 +97,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   // in the sidebar and in dark mode
   await page.mouse.move(700, 880); await page.waitForTimeout(700);
   await page.hover('#sideHide'); await page.waitForTimeout(600);
-  ok(/Ctrl/.test(await tip() || ''), 'sidebar buttons too');
+  ok(/Ctrl|⌘/.test(await tip() || ''), 'sidebar buttons too');
   await page.emulateMedia({colorScheme: 'dark'}); await page.waitForTimeout(100);
   await page.screenshot({path: path.join(OUT, 'tips-5-dark.png'), clip: {x: 0, y: 140, width: 500, height: 200}});
 
