@@ -446,6 +446,13 @@ main.reading .mine:empty::before{content:none}
 .media > img,.media > video{display:block;width:100%;height:auto;margin:0!important;max-width:100%}
 .media > audio{display:block;width:100%;min-width:200px}
 .slide .media-sel{outline:3px solid var(--accent)!important;outline-offset:2px}
+/* a picture put on the page (not into a note) is its own box: just the picture, with the box's handles to move, resize and float it */
+.notebox.picbox{user-select:none;-webkit-user-select:none}
+.notebox.picbox > .mine{padding:0!important;border:0!important;background:none!important;box-shadow:none!important;line-height:0;min-height:0;cursor:default;caret-color:transparent}
+.notebox.picbox > .mine::before{content:none!important}
+.picbox > .mine > .media{display:block;width:100%;margin:0}
+.notebox.picbox > .note-chip,.notebox.picbox .g-min,.notebox.picbox .g-link{display:none!important}
+.notebox.picbox.multi-sel > .mine{box-shadow:0 0 0 2px var(--accent),0 0 0 6px rgba(39,71,201,.18)!important} /* taste-skill-ignore: a ring marking selection, not a shadow */
 .slide img.blk:not(.formula){cursor:pointer}
 main.reading .slide img.blk{cursor:auto}
 /* spell check */
@@ -506,6 +513,53 @@ main.reading .slide img.blk{cursor:auto}
 .factions{display:flex;justify-content:flex-end}
 .mediabar{z-index:45;display:flex;flex-wrap:wrap;gap:2px;padding:4px;max-width:calc(100vw - 24px)}
 .mediabar .btn{height:30px;font-size:12px}
+/* Picture Format: a crop, a turn, colours and a frame, all kept on the picture's box (so Reset takes them off and the picture itself is never changed) */
+.media.pf-geo,.media.pf-clip{overflow:hidden}
+.media.pf-geo > img{position:absolute;max-width:none!important}
+.media.pf-in::after{content:"";position:absolute;inset:0;box-shadow:var(--pf-in);border-radius:inherit;pointer-events:none}
+#tab-picture{color:var(--accent)}
+#tab-picture[hidden]{display:none!important}
+#panel-picture .pf-split{display:inline-flex;align-items:center}
+#panel-picture .pf-split > .btn:first-child{padding-right:5px}
+#panel-picture .pf-more{min-width:22px;padding:0 3px}
+#panel-picture .pf-more .chev,.pfpop .chev{width:13px;height:13px;opacity:.7}
+#panel-picture .pf-num{display:inline-flex;align-items:center;gap:2px;font-size:13px;color:var(--muted);margin-left:2px}
+#panel-picture .pf-num input{width:44px;height:28px;box-sizing:border-box;font:inherit;font-size:13px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line-strong);border-radius:6px;padding:0 4px}
+.pf-th{display:inline-flex;flex-direction:column;align-items:center;gap:3px;padding:5px;border:1px solid transparent;border-radius:6px;background:none;color:var(--ink);font:12px var(--ui);cursor:pointer;line-height:1.15;text-align:center}
+.pf-th:hover,.pf-th:focus-visible{border-color:var(--accent);background:var(--accent-soft);outline:none}
+.pf-th[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.pf-pv{position:relative;display:block;width:50px;height:38px;margin:4px;overflow:hidden;background:var(--card)}
+.pf-pv > img{display:block;width:100%;height:100%;object-fit:cover}
+.pf-pv.pf-in::after{content:"";position:absolute;inset:0;box-shadow:var(--pf-in);border-radius:inherit}
+.pfpop{z-index:48;padding:10px 12px;width:max-content;max-width:calc(100vw - 16px);max-height:calc(100vh - 140px);overflow:auto;font:14px var(--ui)}
+.pfpop h4{margin:8px 0 4px;font-size:13px;font-weight:600;color:var(--muted)}
+.pfpop h4:first-child{margin-top:0}
+.pfpop .pf-g{display:grid;grid-template-columns:repeat(var(--n,5),auto);gap:2px;justify-content:start}
+.pfpop .pf-mi{display:flex;align-items:center;gap:8px;width:100%;justify-content:flex-start;height:34px}
+.pfpop .pf-sw{width:24px;height:24px;padding:0;border:1px solid var(--line-strong);border-radius:5px;cursor:pointer}
+.pfpop .pf-sw[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:1px}
+.pfpop .pf-ar{display:inline-block;border:1.5px solid currentColor;border-radius:2px;opacity:.75}
+.pfpop textarea{display:block;width:min(320px,80vw);box-sizing:border-box;font:inherit;color:var(--ink);background:var(--surface-2);border:1px solid var(--line-strong);border-radius:6px;padding:6px 8px;margin:6px 0;resize:vertical}
+.pfpop .pf-note{margin:0;max-width:320px;font-size:13px;color:var(--muted)}
+.pfpop .pf-row{display:flex;justify-content:flex-end;gap:6px;margin-top:6px}
+@media (pointer:coarse){#panel-picture .pf-num input,.pfpop textarea{font-size:16px}}      /* (Safari zooms in on a box with smaller text) */
+.pfcrop{position:fixed;z-index:44;touch-action:none;cursor:move;user-select:none;-webkit-user-select:none}
+.pfcrop > .pf-full{position:absolute;inset:0;overflow:hidden}
+.pfcrop .pf-full > img{position:absolute;max-width:none;pointer-events:none}
+.pfcrop .pf-keep{position:absolute;box-shadow:0 0 0 100vmax rgba(28,28,28,.55);pointer-events:none}
+.pfcrop > .pf-frame{position:absolute;outline:1px dashed rgba(255,255,255,.9);box-shadow:0 0 0 1px rgba(0,0,0,.5)}
+.pfcrop .pf-h{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;touch-action:none}
+.pfcrop .pf-h::before{content:"";position:absolute;background:#111;outline:1.5px solid #fff}
+.pfcrop .pf-h[data-d=n],.pfcrop .pf-h[data-d=s]{left:50%;cursor:ns-resize}
+.pfcrop .pf-h[data-d=e],.pfcrop .pf-h[data-d=w]{top:50%;cursor:ew-resize}
+.pfcrop .pf-h[data-d=n]::before,.pfcrop .pf-h[data-d=s]::before{left:3px;width:18px;height:5px;top:9.5px}
+.pfcrop .pf-h[data-d=e]::before,.pfcrop .pf-h[data-d=w]::before{top:3px;height:18px;width:5px;left:9.5px}
+.pfcrop .pf-h[data-d=n]{top:0}.pfcrop .pf-h[data-d=s]{top:100%}.pfcrop .pf-h[data-d=w]{left:0}.pfcrop .pf-h[data-d=e]{left:100%}
+.pfcrop .pf-h[data-d=nw]{left:0;top:0;cursor:nwse-resize}.pfcrop .pf-h[data-d=ne]{left:100%;top:0;cursor:nesw-resize}.pfcrop .pf-h[data-d=sw]{left:0;top:100%;cursor:nesw-resize}.pfcrop .pf-h[data-d=se]{left:100%;top:100%;cursor:nwse-resize}
+.pfcrop .pf-h:is([data-d=nw],[data-d=ne],[data-d=sw],[data-d=se])::before{width:14px;height:14px;background:none;outline:none;border:0 solid #111;filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff)}
+.pfcrop .pf-h[data-d=nw]::before{left:12px;top:12px;border-width:5px 0 0 5px}.pfcrop .pf-h[data-d=ne]::before{right:12px;top:12px;border-width:5px 5px 0 0}
+.pfcrop .pf-h[data-d=sw]::before{left:12px;bottom:12px;border-width:0 0 5px 5px}.pfcrop .pf-h[data-d=se]::before{right:12px;bottom:12px;border-width:0 5px 5px 0}
+@media (pointer:coarse){.pfcrop .pf-h{width:44px;height:44px;margin:-22px 0 0 -22px}.pfcrop .pf-h[data-d=n]::before,.pfcrop .pf-h[data-d=s]::before{left:13px;top:19.5px}.pfcrop .pf-h[data-d=e]::before,.pfcrop .pf-h[data-d=w]::before{top:13px;left:19.5px}.pfcrop .pf-h[data-d=nw]::before,.pfcrop .pf-h[data-d=sw]::before{left:22px}.pfcrop .pf-h[data-d=ne]::before,.pfcrop .pf-h[data-d=se]::before{right:22px}.pfcrop .pf-h[data-d=nw]::before,.pfcrop .pf-h[data-d=ne]::before{top:22px}.pfcrop .pf-h[data-d=sw]::before,.pfcrop .pf-h[data-d=se]::before{bottom:22px}}
 .spellmenu{z-index:47;min-width:190px;max-width:280px;padding:4px;display:flex;flex-direction:column;font:14px var(--ui)}
 .spellmenu button{all:unset;box-sizing:border-box;padding:7px 10px;border-radius:5px;cursor:pointer;overflow-wrap:anywhere}
 .spellmenu button:hover,.spellmenu button:focus-visible,.spellmenu button.kb{background:var(--hover)}
@@ -1994,6 +2048,22 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
 <symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></symbol>
 <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M8 10H6.5A1.5 1.5 0 0 0 5 11.5v8A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-8a1.5 1.5 0 0 0-1.5-1.5H16"/></symbol>
 <symbol id="i-add-square" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M12 8v8"/><path d="M8 12h8"/></symbol>
+<symbol id="i-crop" viewBox="0 0 24 24"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></symbol>
+<symbol id="i-rotate-cw" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></symbol>
+<symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
+<symbol id="i-flip-h" viewBox="0 0 24 24"><path d="m3 7 5 5-5 5V7"/><path d="m21 7-5 5 5 5V7"/><path d="M12 20v2"/><path d="M12 14v2"/><path d="M12 8v2"/><path d="M12 2v2"/></symbol>
+<symbol id="i-flip-v" viewBox="0 0 24 24"><path d="m17 3-5 5-5-5h10"/><path d="m17 21-5-5-5 5h10"/><path d="M4 12H2"/><path d="M10 12H8"/><path d="M16 12h-2"/><path d="M22 12h-2"/></symbol>
+<symbol id="i-contrast" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 18a6 6 0 0 0 0-12v12z"/></symbol>
+<symbol id="i-droplet" viewBox="0 0 24 24"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></symbol>
+<symbol id="i-sparkles" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/><path d="M5 3v4"/><path d="M3 5h4"/></symbol>
+<symbol id="i-frame" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="10" height="10" rx="1"/></symbol>
+<symbol id="i-shadow" viewBox="0 0 24 24"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M21 7v12a2 2 0 0 1-2 2H7"/></symbol>
+<symbol id="i-alt" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="m5.5 15 2-6 2 6"/><path d="M6.2 13h2.6"/><path d="M12 9v6h2.5"/><path d="M16 9h3.5"/><path d="M17.75 9v6"/></symbol>
+<symbol id="i-swap-pic" viewBox="0 0 24 24"><path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/><path d="m3 16 4-4 3 3"/><circle cx="9" cy="8" r="1.5"/><path d="M14 17a3.5 3.5 0 0 1 6-2.5l1 1"/><path d="M21 12.5v3h-3"/><path d="M21 19a3.5 3.5 0 0 1-6 1.5l-1-1"/></symbol>
+<symbol id="i-styles" viewBox="0 0 24 24"><rect x="2.5" y="4" width="8" height="7" rx="1"/><rect x="13.5" y="4" width="8" height="7" rx="3.5"/><rect x="2.5" y="14" width="8" height="7" rx="1" stroke-dasharray="2 1.5"/><rect x="13.5" y="14" width="8" height="7" rx="1"/><path d="M15 21h7.5v-6"/></symbol>
+<symbol id="i-unlock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></symbol>
+<filter id="pf-sharp1" color-interpolation-filters="sRGB"><feConvolveMatrix order="3" preserveAlpha="true" kernelMatrix="0 -.5 0 -.5 3 -.5 0 -.5 0"/></filter>
+<filter id="pf-sharp2" color-interpolation-filters="sRGB"><feConvolveMatrix order="3" preserveAlpha="true" kernelMatrix="0 -1 0 -1 5 -1 0 -1 0"/></filter>
 </defs></svg>
 
 <header class="appbar" id="appbar">
@@ -2044,6 +2114,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <button class="tab" role="tab" id="tab-box" data-tab="box" data-edit aria-selected="false" aria-controls="panel-box" tabindex="-1">Box</button>
       <button class="tab" role="tab" id="tab-review" data-tab="review" data-edit aria-selected="false" aria-controls="panel-review" tabindex="-1">Review</button>
       <button class="tab" role="tab" id="tab-view" data-tab="view" aria-selected="false" aria-controls="panel-view" tabindex="-1">View</button>
+      <button class="tab" role="tab" id="tab-picture" data-tab="picture" data-edit aria-selected="false" aria-controls="panel-picture" tabindex="-1" hidden title="Picture Format: crop, turn, colour and frame the picture you've selected">Picture Format</button>
       <span class="spacer"></span>
       <button class="btn" id="ribbonFold" aria-label="Show tabs only" title="Show tabs only (click a tab to open its tools)"><svg class="i" style="width:16px;height:16px"><use href="#i-up"/></svg></button>
     </div>
@@ -2145,9 +2216,9 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <div class="grp"><div class="row">
         <button class="btn" id="stickyBtn" title="Stick a sticky note on the current page (drag its tape to move it, even to another page)"><svg class="i"><use href="#i-sticky"/></svg>Sticky note</button>
         <button class="btn" id="fBtn" title="Insert a formula into the note"><svg class="i"><use href="#i-sigma"/></svg>Formula</button>
-        <button class="btn" id="mediaBtn" title="Insert a picture, video or sound into the note (you can also paste or drop them)"><svg class="i"><use href="#i-image"/></svg>Picture, video or sound</button>
+        <button class="btn" id="mediaBtn" title="Insert a picture, video or sound: into the note you're typing in, or else onto the page as its own box that you can move and resize (you can also paste or drop them)"><svg class="i"><use href="#i-image"/></svg>Picture, video or sound</button>
         <input id="mediaFile" type="file" accept="image/*,video/*,audio/*" multiple hidden>
-      </div><span class="cap">Into the note</span></div>
+      </div><span class="cap">Note or page</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row">
         <button class="btn" id="wgBtn" aria-pressed="false" aria-haspopup="dialog" aria-expanded="false" data-tip="Writing guide: a grid, ruled lines or dots over the pages, to help you write in straight lines with a pen. It is only for now: it isn't saved with your notes. Point at the button for its settings (Esc)"><svg class="i"><use href="#i-wguide"/></svg>Writing guide</button>
@@ -2220,6 +2291,42 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
         <button class="btn" id="grammarBtn" aria-pressed="true" title="Check grammar: grammar slips (could of, a apple, the the) and punctuation (a space before a comma) get a blue line; right-click one for the fix"><svg class="i"><use href="#i-check"/></svg>Check grammar</button>
         <button class="btn" id="autoBtn" aria-pressed="false" title="Autocorrect: fix slips such as “teh” as soon as you finish the word. Press Backspace straight after to put back what you typed. More choices in Help &amp; settings"><svg class="i"><use href="#i-wand"/></svg>Autocorrect</button>
       </div><span class="cap">As you type</span></div>
+    </div>
+    <div class="panel" role="tabpanel" id="panel-picture" aria-labelledby="tab-picture" data-edit hidden>
+      <div class="grp"><div class="row">
+        <button class="btn" id="pfCorr" data-pf="corr" aria-haspopup="dialog" aria-expanded="false" title="Corrections: make the picture brighter or darker, with more or less contrast, sharper or softer"><svg class="i"><use href="#i-contrast"/></svg>Corrections</button>
+        <button class="btn" id="pfColor" data-pf="color" aria-haspopup="dialog" aria-expanded="false" title="Colour: more or less colourful, grey, sepia, washed out or tinted one colour"><svg class="i"><use href="#i-palette"/></svg>Colour</button>
+        <button class="btn" id="pfArt" data-pf="art" aria-haspopup="dialog" aria-expanded="false" title="Artistic effects: make the picture look like a pencil sketch, a photocopy, a blur and more"><svg class="i"><use href="#i-sparkles"/></svg>Artistic</button>
+        <button class="btn" id="pfTrans" data-pf="trans" aria-haspopup="dialog" aria-expanded="false" title="Transparency: let the page show through the picture"><svg class="i"><use href="#i-droplet"/></svg>Transparency</button>
+      </div><span class="cap">Adjust</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row">
+        <button class="btn" id="pfChange" title="Change picture: put another picture in its place, keeping this one's size, crop and effects"><svg class="i"><use href="#i-swap-pic"/></svg>Change</button>
+        <span class="pf-split"><button class="btn" id="pfReset" title="Reset picture: take off every crop, turn, colour, effect and frame you added (it keeps its size on the page)"><svg class="i"><use href="#i-restore"/></svg>Reset</button><button class="btn pf-more" id="pfResetMore" data-pf="reset" aria-haspopup="menu" aria-expanded="false" aria-label="More ways to reset" title="Reset picture, or reset picture and size"><svg class="i chev"><use href="#i-down"/></svg></button></span>
+        <button class="btn danger" id="pfRemove" aria-label="Remove picture" title="Remove the picture (Delete; Back, Ctrl+Z, brings it back)"><svg class="i"><use href="#i-trash"/></svg></button>
+        <input id="pfFile" type="file" accept="image/*" hidden>
+      </div><span class="cap">Picture</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row">
+        <button class="btn" id="pfStyles" data-pf="styles" aria-haspopup="dialog" aria-expanded="false" title="Picture styles: frames, shadows and shapes, ready to use (point at one to try it on the picture)"><svg class="i"><use href="#i-styles"/></svg>Styles</button>
+        <button class="btn" id="pfBorder" data-pf="border" aria-haspopup="dialog" aria-expanded="false" title="Picture border: a frame round the picture, its colour and how thick it is"><svg class="i"><use href="#i-frame"/></svg>Border</button>
+        <button class="btn" id="pfFx" data-pf="fx" aria-haspopup="dialog" aria-expanded="false" title="Picture effects: a shadow, a glow, soft edges or rounded corners"><svg class="i"><use href="#i-shadow"/></svg>Effects</button>
+      </div><span class="cap">Picture styles</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row">
+        <button class="btn" id="pfAlt" data-pf="alt" aria-haspopup="dialog" aria-expanded="false" title="Alt text: describe the picture for people who can't see it (screen readers read it out)"><svg class="i"><use href="#i-alt"/></svg>Alt text</button>
+      </div><span class="cap">Accessibility</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row">
+        <button class="btn" id="pfRotate" data-pf="rotate" aria-haspopup="menu" aria-expanded="false" title="Rotate or flip the picture"><svg class="i"><use href="#i-rotate-cw"/></svg>Rotate</button>
+      </div><span class="cap">Arrange</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row">
+        <span class="pf-split"><button class="btn" id="pfCrop" aria-pressed="false" title="Crop: drag the black handles to cut off the edges, and drag the picture to move it in the frame. Enter, Crop again or a click away keeps it; Esc puts it back"><svg class="i"><use href="#i-crop"/></svg>Crop</button><button class="btn pf-more" id="pfCropMore" data-pf="crop" aria-haspopup="dialog" aria-expanded="false" aria-label="Crop to a shape or an aspect ratio" title="Crop to a shape (a circle, a star…) or to an aspect ratio (square, 16:9…)"><svg class="i chev"><use href="#i-down"/></svg></button></span>
+        <label class="pf-num" title="Height of the picture, in centimetres">H<input type="number" id="pfH" min="0.2" max="100" step="0.1" aria-label="Height (cm)"></label>
+        <label class="pf-num" title="Width of the picture, in centimetres">W<input type="number" id="pfW" min="0.2" max="100" step="0.1" aria-label="Width (cm)"></label>
+        <button class="btn" id="pfLock" aria-pressed="true" aria-label="Lock aspect ratio" title="Lock aspect ratio: changing the height changes the width with it, so the picture isn't stretched. Off: you can stretch or squash it"><svg class="i"><use href="#i-lock"/></svg></button>
+      </div><span class="cap">Size (cm)</span></div>
     </div>
     <div class="panel" role="tabpanel" id="panel-view" aria-labelledby="tab-view" hidden>
       <div class="grp"><div class="row">
@@ -3160,6 +3267,7 @@ function caretAt(x, y){
 // minimise a note to a small pencil icon (like a comment in Word), or open it again
 function setCollapsed(box, on){
   if (on && box.classList.contains('pinned')) return;
+  if (on && box.classList.contains('picbox')) return;          // a picture on the page is not a note: hiding notes leaves it showing
   box.classList.toggle('collapsed', on);
   const chip = box.querySelector(':scope > .note-chip');
   if (on && chip) {
@@ -3171,7 +3279,7 @@ function setCollapsed(box, on){
 }
 // Hide notes / Show notes: pinned notes always stay open, so only the others decide what the button does
 function notesBtnMode(){
-  const boxes = [...main.querySelectorAll('.notebox')];
+  const boxes = [...main.querySelectorAll('.notebox:not(.picbox)')];
   if (boxes.some(b => b.classList.contains('collapsed'))) {
     // something is minimised: show everything, unless every unpinned note is already open
     return boxes.some(b => !b.classList.contains('pinned') && !b.classList.contains('collapsed')) ? 'hide' : 'show';
@@ -3190,7 +3298,7 @@ function updateNotesBtn(){
   if (nb.dataset.mode !== mode) { nb.dataset.mode = mode; nb.innerHTML = icon(mode === 'show' ? 'eye' : 'eye-off') + `<span>${mode === 'show' ? 'Show notes' : 'Hide notes'}</span>` + icon('down').replace('class="i"', 'class="i chev"'); }
   if ($('#notesMenu')?.hidden === false) fillNotesMenu();
   // the status bar's count
-  const boxes = [...main.querySelectorAll('.notebox')].filter(hasContent), n = boxes.length;
+  const boxes = [...main.querySelectorAll('.notebox:not(.picbox)')].filter(hasContent), n = boxes.length;
   const pinned = boxes.filter(b => b.classList.contains('pinned')).length, mini = boxes.filter(b => b.classList.contains('collapsed')).length;
   $('#noteInfo').textContent = n ? [`${n} note${n > 1 ? 's' : ''}`, pinned && `${pinned} pinned`, mini && `${mini} minimised`].filter(Boolean).join(' · ') : '';
 }
@@ -3291,6 +3399,11 @@ function gripTitles(box){
   t('link', 'Link to side note: then click a note on the side page (or a blank spot for a new one) to join this note to it with a line');
   t('e', 'Drag to change the width'); t('w', 'Drag to change the width'); t('s', 'Drag to change the height'); t('n', 'Drag to change the height');
   for (const d of ['se', 'sw', 'ne', 'nw']) t(d, 'Drag to resize');
+  if (box.classList.contains('picbox')) {          // a picture keeps its shape, from any edge or corner
+    t('move', 'Drag to move this picture (to another line, or across the page)');
+    t('float', box.classList.contains('floating') ? 'Put this picture back between the lines' : 'Float this picture on top of the page, so it can sit beside the text');
+    for (const d of ['e', 'w', 's', 'n', 'se', 'sw', 'ne', 'nw']) t(d, 'Drag to resize (the picture keeps its shape). Double-click for its own size');
+  }
 }
 // a note box's handles: dots to drag it, a toolbar (pin, float on top, minimise), and resize handles on every edge and corner
 function addGrips(box){
@@ -3336,9 +3449,19 @@ function mediaAt(t){
   if (!['IMG', 'VIDEO', 'AUDIO'].includes(t.tagName) || t.closest('details, .formula, .katex') || t.classList.contains('formula') || !t.closest('.slide')) return null;
   return t;
 }
+// what to make wider or narrower to resize a picture: its own box when it is on the page by itself, else the picture in its note
+function picSizeEl(media){ return media.closest?.('.picbox') || media; }
+// a picture, video or sound put on the page (not into a note) is its own box: the box's handles move, resize and float it, but it holds no words
+function makePicBox(media){
+  const {box, el} = makeBox();
+  box.classList.add('picbox'); el.contentEditable = 'false'; el.spellcheck = false;
+  media.style.width = ''; el.append(media); addGrips(box);
+  return box;
+}
 // after loading: every note gets a box and today's handles (notes saved by older versions too)
 function upgradeNotes(){
   wrapMedia(main);
+  main.querySelectorAll('.picbox > .mine').forEach(el => { el.contentEditable = 'false'; });
   main.querySelectorAll('.mine').forEach(el => {
     if (el.parentElement?.classList.contains('notebox')) return;
     const inline = el.tagName === 'SPAN';
@@ -3388,7 +3511,12 @@ function addBlockNote(after, slide){
 main.addEventListener('pointerdown', e => {
   const chip = e.target.closest('.note-chip');
   if (chip && e.button === 0) return startChipDrag(chip, e);
-  const g = e.target.closest('.grip'); if (!g) return;
+  const g = e.target.closest('.grip');
+  if (!g) {          // a picture on the page by itself can also be dragged by the picture (with a mouse: a finger there scrolls the page)
+    const pb = e.target.closest('.picbox > .mine')?.parentElement;
+    if (pb && e.button === 0 && e.pointerType === 'mouse' && !reading && !drawing) startMove(pb, e.target.closest('.media') || pb.firstElementChild, e);
+    return;
+  }
   const kind = g.dataset.dir;
   if (reading && !['min', 'pin'].includes(kind)) return;
   if (['pin', 'float', 'min', 'link'].includes(kind)) {           // buttons: act on the press, and ignore the click that follows
@@ -3416,7 +3544,7 @@ function startResize(box, g, e){
     hr = {left: l, right: l + (sp.clientWidth - 8) * s, top: hr.top + sp.clientTop * s, bottom: hr.bottom};
   }
   const fm = fl ? null : flowMetrics(box), minL = fl ? hr.left : fm.cL, mt0 = parseFloat(getComputedStyle(box).marginTop) || 0;
-  const minW = 60 * bz, minH = 30 * bz, {xs, ys} = snapTargets(box);
+  const minW = 60 * bz, minH = 30 * bz, {xs, ys} = snapTargets(box), pic = box.classList.contains('picbox'), ar = r.height / r.width || 1;
   let at = {l: r.left, t: r.top}, moved = false, ended = false;
   const was = ['width', 'height', 'minHeight', 'marginLeft', 'marginTop', 'translate'].map(k => [k, box.style[k]]);
   try { g.setPointerCapture(e.pointerId); } catch {}
@@ -3432,8 +3560,14 @@ function startResize(box, g, e){
     if (S) b = Math.max(t + minH, snap(r.bottom + dy, ys, vy));
     if (N) t = Math.max(hr.top, Math.min(b - minH, snap(r.top + dy, ys, vy)));
     moved = true;
+    if (pic) {          // a picture keeps its shape: its width follows the side you drag (from the top or bottom, its height), and its height follows its width
+      let w = (E || W) && (!(N || S) || Math.abs(dx) >= Math.abs(dy) / ar) ? rt - l : (b - t) / ar;
+      w = Math.max(minW, Math.min(W ? r.right - minL : hr.right - r.left, w));
+      box.style.width = Math.round(w / bz) + 'px'; box.style.height = ''; box.style.minHeight = '';
+    } else {
     if (E || W) box.style.width = Math.round((rt - l) / bz) + 'px';
     if (S || N) { box.style.height = ''; box.style.minHeight = Math.round((b - t) / bz) + 'px'; }
+    }
     // a note can't be smaller than its words, so the fixed side is worked out from the size it really has
     const nr = box.getBoundingClientRect(), nl = W ? r.right - nr.width : r.left, nt = N ? r.bottom - nr.height : r.top;
     at = {l: nl, t: nt};
@@ -3470,6 +3604,11 @@ function fitBox(box){
   let right;
   if (box.classList.contains('floating')) { const s = zoomOf(card) || 1; right = card.getBoundingClientRect().left + (card.clientLeft + card.clientWidth - (card.classList.contains('sidepage') ? 8 : 0)) * s; }
   else { const m = flowMetrics(box); right = m.cL + m.contentW; }
+  if (box.classList.contains('picbox')) {          // a picture goes back to its own size (no wider than the page)
+    const k = box.querySelector('.media img, .media video'), nat = k ? k.naturalWidth || k.videoWidth || 480 : 320;
+    box.style.height = ''; box.style.minHeight = ''; box.style.width = Math.max(24, Math.min(nat, Math.floor((right - r.left) / z))) + 'px';
+    placeFloats(); spreadChips(); saveSoon(); placeMediaBar(); return;
+  }
   box.style.height = ''; box.style.width = 'max-content';
   box.style.width = Math.max(60, Math.min(Math.floor((right - r.left) / z), Math.ceil(box.getBoundingClientRect().width / z))) + 'px';
   if (!box.classList.contains('inline')) { box.style.minHeight = ''; box.style.minHeight = Math.ceil(box.getBoundingClientRect().height / z) + 'px'; }
@@ -5250,7 +5389,7 @@ function toggleFloat(box){
   const isPage = card.classList.contains('pagecard'), s = zoomOf(card) || 1;
   const cr = card.getBoundingClientRect(), br = box.getBoundingClientRect();
   if (!box.classList.contains('floating')) {
-    if (!box.style.width || br.width > cr.width * 0.6) box.style.width = Math.round(cr.width * 0.4 / s) + 'px';
+    if (!box.classList.contains('picbox') && (!box.style.width || br.width > cr.width * 0.6)) box.style.width = Math.round(cr.width * 0.4 / s) + 'px';
     box.style.marginLeft = ''; box.style.marginTop = '';
     box.remove(); if (isPage) mergeStrips(card);
     box.classList.add('floating'); card.append(box);
@@ -6027,7 +6166,7 @@ function currentDoc(file = false){
   if (file) c.querySelectorAll('[data-pdfsrc]').forEach(x => { x.removeAttribute('data-pdfsrc'); x.removeAttribute('data-pdf'); });
   c.querySelectorAll('.gapline, .gappill, .welcome, .empty, .cardbar, .pptx-tip, canvas.sharp').forEach(x => x.remove());
   c.querySelectorAll('.media-sel, .target-page, .multi-sel, .flash, .drop-target, .touched, .headx-on').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel', 'flash', 'drop-target', 'touched', 'headx-on'));
-  c.querySelectorAll('.mine').forEach(x => { x.contentEditable = 'true'; });
+  c.querySelectorAll('.mine').forEach(x => { x.contentEditable = x.parentElement?.classList.contains('picbox') ? 'false' : 'true'; });
   c.querySelectorAll('.tpl .rev').forEach(x => x.classList.remove('rev'));
   sideJoin(c);                                  // each side page is stored right after its slide, whichever way it is shown
   flatten(c);
@@ -6095,6 +6234,7 @@ async function paintCard(card, scale, side){
   }
   for (const im of qa('img')) {
     if (im.closest('details:not([open])') || im.classList.contains('gifpic')) continue;          // (a GIF's first frame is in the page's picture already, under the ink)
+    if (im.parentElement?.classList.contains('media') && pfPaint(ctx, im, ox, oy)) continue;       // (a cropped, turned or framed picture of yours)
     const ir = im.getBoundingClientRect(); if (!ir.width || !im.complete) continue;
     try { ctx.drawImage(im, ir.left - ox, ir.top - oy, ir.width, ir.height); } catch {}
   }
@@ -7004,15 +7144,14 @@ $('#mediaFile').onchange = async e => {
   const files = [...e.target.files]; e.target.value = '';
   if (!files.length) return;
   let {note, range} = mediaTarget || {};
-  if (!note || !document.body.contains(note)) {        // no note picked: start one on the current page
+  if (!note || !document.body.contains(note)) {        // not typing in a note: each picture is its own box on the current page
     const card = currentCard(); if (!card) return;
-    const {box, el} = makeBox();
-    if (card.classList.contains('pagecard')) card.append(box); else (card.querySelector('.content') || card).append(box);
-    note = el; range = null;
+    return insertPicBoxes(files, putOnPage(card));
   }
   await insertMediaFiles(files, note, range);
 };
-async function insertMediaFiles(files, note, range){
+// pictures, videos and sound ready to go in: each in its box you click to select (n.nat: how wide it is itself)
+async function mediaNodes(files){
   const nodes = [];
   for (const f of files) {
     const kind = f.type.split('/')[0];
@@ -7022,10 +7161,15 @@ async function insertMediaFiles(files, note, range){
     const wrap = document.createElement('span'); wrap.className = 'media'; wrap.contentEditable = 'false'; wrap.title = 'Click to select (resize or remove)';
     const m = document.createElement(kind === 'image' ? 'img' : kind);
     m.src = url;
-    if (kind === 'image') { m.alt = f.name; m.draggable = false; try { const im = await loadImg(url); wrap.style.width = `min(100%, ${im.naturalWidth}px)`; } catch {} }
+    wrap.nat = kind === 'video' ? 480 : 320;
+    if (kind === 'image') { m.alt = f.name; m.draggable = false; try { const im = await loadImg(url); wrap.nat = im.naturalWidth; wrap.style.width = `min(100%, ${im.naturalWidth}px)`; } catch {} }
     else { m.controls = true; m.preload = 'metadata'; wrap.style.width = kind === 'video' ? 'min(100%, 480px)' : 'min(100%, 320px)'; }
     wrap.append(m); nodes.push(wrap);
   }
+  return nodes;
+}
+async function insertMediaFiles(files, note, range){
+  const nodes = await mediaNodes(files);
   if (!nodes.length) return;
   const frag = document.createDocumentFragment();
   nodes.forEach(n => frag.append(n, document.createTextNode(' ')));
@@ -7037,17 +7181,65 @@ async function insertMediaFiles(files, note, range){
   active = note; savedRange = r.cloneRange();
   updateNotesBtn(); saveSoon(); toast('');
 }
+// pictures put on a page, not into a note: each is its own box (put places the first one; the others follow it), as wide as
+// the picture itself or the page, whichever is less. The last one is selected, ready to resize
+async function insertPicBoxes(files, put){
+  const nodes = await mediaNodes(files);
+  if (!nodes.length) return;
+  let last = null;
+  for (const n of nodes) {
+    const box = makePicBox(n);
+    if (last) last.after(box); else put(box);
+    box.style.width = n.nat + 'px';
+    box.style.width = Math.max(24, Math.floor(box.getBoundingClientRect().width / (zoomOf(box) || 1))) + 'px';      // (no wider than the page: its max-width says how wide that is)
+    last = box;
+  }
+  raise(last); last.scrollIntoView({block: 'nearest'});
+  if (LAYOUTS[layout]) paginateView();
+  selectMedia(last.querySelector('.media'));
+  updateNotesBtn(); saveSoon(); toast('');
+}
+// at the end of a page (or after the picture you have selected on it)
+const putOnPage = card => box => {
+  const sel = mediaSel?.closest('.picbox');
+  if (sel && card.contains(sel)) sel.after(box);
+  else if (card.classList.contains('pagecard')) card.append(box); else (card.querySelector('.content') || card).append(box);
+};
+// between the lines where it was dropped on the page
+const putAtPoint = (slide, x, y) => box => {
+  const strip = document.elementsFromPoint(x, y).map(el => el.closest('.strip')).find(s => s && slide.contains(s));
+  if (strip) return insertBoxAt(slide, gapY(strip, y), box);
+  const above = [...slide.querySelectorAll('.blk, :scope > .strip, .notebox:not(.floating):not(.inline)')].filter(b => !b.parentElement.closest('.notebox') && b.getBoundingClientRect().top < y).pop();
+  if (above) above.after(box); else (slide.querySelector('.content') || slide).prepend(box);
+};
+const mediaFile = f => /^(image|video|audio)\//.test(f.type);
+// files being dragged that are all pictures, videos or sound, over a page you can write on: they will go on that page
+const picDrop = e => !reading && !!e.dataTransfer?.items?.length && [...e.dataTransfer.items].every(i => i.kind === 'file' && mediaFile(i)) &&
+  !!document.elementsFromPoint(e.clientX, e.clientY).find(el => el.id !== 'dropCover' && !el.closest('#dropCover'))?.closest('.slide');
 // pasting or dropping a picture, video or sound file into a note inserts it like 🖼 Media
 main.addEventListener('paste', e => {
   const note = e.target.closest?.('.mine'); if (!note || reading) return;
-  const files = [...(e.clipboardData?.files || [])].filter(f => /^(image|video|audio)\//.test(f.type));
+  const files = [...(e.clipboardData?.files || [])].filter(mediaFile);
   if (!files.length) return;
   e.preventDefault();
   const sel = getSelection(); insertMediaFiles(files, note, sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null);
 });
+// pasted when you are not typing in a note: on the current page, as its own box
+document.addEventListener('paste', e => {
+  if (e.defaultPrevented || reading || e.target.closest?.('input, textarea, select, [contenteditable="true"], .mine, dialog')) return;
+  const files = [...(e.clipboardData?.files || [])].filter(mediaFile), card = files.length && currentCard();
+  if (!card) return;
+  e.preventDefault(); insertPicBoxes(files, putOnPage(card));
+});
 main.addEventListener('drop', e => {
-  const note = e.target.closest?.('.mine'); if (!note || reading) return;
-  const files = [...(e.dataTransfer?.files || [])].filter(f => /^(image|video|audio)\//.test(f.type));
+  if (reading) return;
+  let note = e.target.closest?.('.mine'); if (note?.parentElement.classList.contains('picbox')) note = null;
+  if (!note) {             // dropped on a page, not into a note: each picture is its own box, where it was dropped
+    const all = [...(e.dataTransfer?.files || [])], slide = e.target.closest?.('.slide');
+    if (!slide || !all.length || !all.every(mediaFile)) return;
+    e.preventDefault(); insertPicBoxes(all, putAtPoint(slide, e.clientX, e.clientY)); return;
+  }
+  const files = [...(e.dataTransfer?.files || [])].filter(mediaFile);
   if (!files.length) return;
   e.preventDefault();
   const c = caretAt(e.clientX, e.clientY); let range = null;
@@ -7063,10 +7255,12 @@ let mediaSel = null;
 function selectMedia(el){
   clearMediaSel();
   mediaSel = el; el.classList.add('media-sel');
-  mediaBar.querySelector('[data-act=note]').hidden = !!el.closest('.mine') || !el.closest('.slide:not(.pagecard)');
+  const pb = el.closest('.picbox');
+  mediaBar.querySelector('[data-act=note]').hidden = pb ? pb.matches('.floating') || !pb.closest('.slide') : !!el.closest('.mine') || !el.closest('.slide:not(.pagecard)');
   mediaBar.hidden = false; placeMediaBar();
+  pfSync();
 }
-function clearMediaSel(){ if (mediaSel) mediaSel.classList.remove('media-sel'); mediaSel = null; mediaBar.hidden = true; }
+function clearMediaSel(){ if (mediaSel) mediaSel.classList.remove('media-sel'); mediaSel = null; mediaBar.hidden = true; pfSync(); }
 function placeMediaBar(){
   if (!mediaSel) return;
   if (!mediaSel.isConnected) { clearMediaSel(); return; }
@@ -7077,6 +7271,8 @@ function placeMediaBar(){
 function removeMedia(){
   if (!mediaSel) return;
   const el = mediaSel, note = el.closest('.mine'); clearMediaSel();
+  const pb = el.closest('.picbox');
+  if (pb) { const p = pb.parentNode; pb.remove(); mergeStrips(p); placeFloats(); if (LAYOUTS[layout]) paginateView(); updateNotesBtn(); saveSoon(); toast('Removed. Press Back (Ctrl+Z) to bring it back.'); return; }     // a picture on the page by itself goes with its box
   const nx = el.nextSibling; if (note && nx && nx.nodeType === 3 && nx.data === ' ') nx.remove();
   el.remove();
   toast('Removed. Press Back (Ctrl+Z) to bring it back.');
@@ -7086,23 +7282,368 @@ function removeMedia(){
 mediaBar.addEventListener('mousedown', e => e.preventDefault());
 mediaBar.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || !mediaSel) return;
-  if (b.dataset.w) { mediaSel.style.width = b.dataset.w; if (mediaSel.tagName === 'IMG') mediaSel.style.maxWidth = '100%'; placeMediaBar(); saveSoon(); return; }
+  if (b.dataset.w) { const s = picSizeEl(mediaSel); s.style.width = b.dataset.w; if (s.tagName === 'IMG') s.style.maxWidth = '100%'; placeFloats(); placeMediaBar(); saveSoon(); return; }
   if (b.dataset.act === 'remove') return removeMedia();
-  if (b.dataset.act === 'note') { const el = mediaSel, slide = el.closest('.slide'); clearMediaSel(); let blk = el.closest('.blk') || el; while (blk.nextElementSibling?.classList.contains('notebox')) blk = blk.nextElementSibling; addBlockNote(blk, slide); }
+  if (b.dataset.act === 'note') { const el = mediaSel, slide = el.closest('.slide'); clearMediaSel(); let blk = el.closest('.picbox, .blk') || el; while (blk.nextElementSibling?.classList.contains('notebox')) blk = blk.nextElementSibling; addBlockNote(blk, slide); }
 });
-document.addEventListener('mousedown', e => { if (mediaSel && !e.target.closest('.mediabar') && !mediaSel.contains(e.target)) clearMediaSel(); });
+document.addEventListener('mousedown', e => { if (mediaSel && !e.target.closest('.mediabar, #panel-picture, #ribbon .tabs, .pfpop, .pfcrop') && !mediaSel.contains(e.target)) clearMediaSel(); });
 document.addEventListener('keydown', e => {
-  if (!mediaSel) return;
+  if (!mediaSel || e.target.closest?.('input, textarea, select') || pfBusy()) return;      // (typing a size or alt text, a Picture Format list or a crop open: they have their own keys)
   if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); removeMedia(); }
   else if (e.key === 'Escape') clearMediaSel();
 }, true);
+
+// ================= Picture Format: crop, turn, colour and frame your own pictures, as in Word =================
+// It all stays on the picture's box as settings (and the styles they make), so the picture itself is never changed and Reset takes it all off:
+// data-crop "top right bottom left" (parts of the whole picture as it shows, turned and flipped), data-rot, data-flip, data-stretch, data-ar (the
+// picture's own width / height), data-shape, and the colours, style, border and effects below. The Picture Format tab shows while one is selected.
+const PF_KEYS = ['crop', 'ar', 'rot', 'flip', 'stretch', 'shape', 'bri', 'con', 'sharp', 'sat', 'recolor', 'trans', 'art', 'pstyle', 'bc', 'bw', 'sh', 'glow', 'soft', 'rad'];
+const PF_RECOLOR = {gray: ['Greyscale', 'grayscale(1)'], sepia: ['Sepia', 'sepia(.9)'], wash: ['Washout', 'brightness(1.45) contrast(.35) saturate(.6)'], bw: ['Black and white', 'grayscale(1) contrast(6) brightness(1.05)'],
+  blue: ['Blue', 'grayscale(1) sepia(1) hue-rotate(175deg) saturate(2.4)'], teal: ['Teal', 'grayscale(1) sepia(1) hue-rotate(140deg) saturate(2)'], green: ['Green', 'grayscale(1) sepia(1) hue-rotate(75deg) saturate(2)'],
+  gold: ['Gold', 'grayscale(1) sepia(1) saturate(2.6)'], red: ['Red', 'grayscale(1) sepia(1) hue-rotate(-35deg) saturate(3)'], purple: ['Purple', 'grayscale(1) sepia(1) hue-rotate(240deg) saturate(1.6)']};
+const PF_ART = {blur: ['Blur', 'blur(3px)'], pencil: ['Pencil sketch', 'grayscale(1) contrast(2.2) brightness(1.25)'], copy: ['Photocopy', 'grayscale(1) contrast(5) brightness(1.3)'], glow: ['Glow diffused', 'blur(1.2px) brightness(1.2) saturate(1.5)'],
+  cut: ['Cutout', 'contrast(2.4) saturate(2)'], pastel: ['Pastels', 'saturate(.55) brightness(1.15) contrast(.85)'], film: ['Old film', 'sepia(.45) contrast(1.15) brightness(.95) saturate(.8)'], neg: ['Negative', 'invert(1)']};
+// shadows: [across, down, blur, spread, darkness]
+const PF_SH = {out: ['Offset', [4, 5, 8, 0, .4]], soft: ['Soft', [0, 6, 18, 0, .35]], below: ['Below', [0, 10, 10, -4, .45]], around: ['All round', [0, 0, 10, 0, .5]], in: ['Inside', null]};
+const PF_IN = 'inset 4px 5px 10px rgba(0,0,0,.55)';
+const PF_STYLES = {simple: {n: 'Simple frame', ring: [3, '#24231f']}, white: {n: 'White frame', ring: [8, '#fff'], sh: [0, 3, 10, 0, .35]}, thick: {n: 'Thick black frame', ring: [10, '#2b2b2b']},
+  round: {n: 'Rounded', rad: 18, sh: [0, 4, 10, 0, .3]}, soft: {n: 'Soft edges', soft: 12}, shadow: {n: 'Drop shadow', sh: [6, 8, 12, 0, .45]}, oval: {n: 'Oval', oval: 1, ring: [4, '#fff'], sh: [0, 4, 12, 0, .4]},
+  bevel: {n: 'Bevel', rad: 6, inner: 'inset 3px 3px 4px rgba(255,255,255,.55),inset -3px -3px 5px rgba(0,0,0,.5)'}, polaroid: {n: 'Instant photo', ring: [7, '#fff'], foot: 22, sh: [0, 4, 12, 0, .35]},
+  metal: {n: 'Metal frame', ring: [5, '#9aa3b2'], rad: 10, inner: 'inset 0 0 0 1px rgba(0,0,0,.25)'}};
+const PF_SHAPES = {oval: ['Oval', ''], round: ['Rounded rectangle', ''], snip: ['Snipped corner', 'polygon(0 0,82% 0,100% 18%,100% 100%,0 100%)'], tri: ['Triangle', 'polygon(50% 0,100% 100%,0 100%)'],
+  diamond: ['Diamond', 'polygon(50% 0,100% 50%,50% 100%,0 50%)'], pent: ['Pentagon', 'polygon(50% 0,100% 38%,82% 100%,18% 100%,0 38%)'], hex: ['Hexagon', 'polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)'],
+  star: ['Star', 'polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)'], arrow: ['Arrow', 'polygon(0 25%,60% 25%,60% 0,100% 50%,60% 100%,60% 75%,0 75%)'],
+  bubble: ['Speech bubble', 'polygon(0 0,100% 0,100% 76%,42% 76%,18% 100%,22% 76%,0 76%)']};
+const PF_RATIOS = [['1:1', 1], ['4:3', 4 / 3], ['3:2', 1.5], ['16:9', 16 / 9], ['3:4', .75], ['2:3', 2 / 3], ['9:16', 9 / 16]];
+const PF_COLOURS = [['#24231f', 'Black'], ['#ffffff', 'White'], ['#9aa3b2', 'Grey'], ['#3552c4', 'Blue'], ['#42a5f5', 'Light blue'], ['#26a69a', 'Teal'], ['#66bb6a', 'Green'], ['#ffd54a', 'Yellow'], ['#ff9f43', 'Orange'], ['#ef5350', 'Red'], ['#f48fb1', 'Pink'], ['#ab47bc', 'Purple']];
+const PF_CLEAR = '&bc=&bw=&sh=&glow=&soft=&rad=', CM = 96 / 2.54;
+let pfPopEl = null, pfPopBtn = null, pfCrop = null, pfBack = null, pfLocked = true;
+// only your own pictures (in a note); videos, sounds and the pictures in the slides keep just the little bar
+const pfSel = () => !reading && mediaSel?.matches?.('.media') && mediaSel.querySelector(':scope > img') ? mediaSel : null;
+const pfBusy = () => !!(pfPopEl || pfCrop);
+const pfImg = m => m.querySelector(':scope > img');
+// how a picture looks, from its settings: the colours on the picture, the frame, shadow and shape on its box (k: smaller, for the lists)
+function pfLook(d, k = 1){
+  const st = PF_STYLES[d.pstyle] || {}, px = v => +(v * k).toFixed(2) + 'px', f = [];
+  if (PF_ART[d.art]) f.push(PF_ART[d.art][1]);
+  if (+d.bri) f.push(`brightness(${1 + d.bri / 100})`);
+  if (+d.con) f.push(`contrast(${1 + d.con / 100})`);
+  if (d.sat && +d.sat !== 100) f.push(`saturate(${d.sat / 100})`);
+  if (PF_RECOLOR[d.recolor]) f.push(PF_RECOLOR[d.recolor][1]);
+  if (+d.sharp > 0) f.push(`url(#pf-sharp${d.sharp > 30 ? 2 : 1})`); else if (+d.sharp < 0) f.push(`blur(${px(-d.sharp / 40)})`);
+  if (+d.trans) f.push(`opacity(${1 - d.trans / 100})`);
+  const oval = d.shape === 'oval' || (!d.shape && !!st.oval), clip = PF_SHAPES[d.shape]?.[1] || '';
+  const bw = clip ? 0 : d.bw != null ? +d.bw : d.bc ? st.ring?.[0] || 3 : st.ring?.[0] || 0, bc = d.bc || st.ring?.[1] || '#24231f', foot = bw && st.foot || 0;
+  const sh = clip ? null : d.sh ? PF_SH[d.sh]?.[1] : st.sh, inner = d.sh === 'in' ? PF_IN : d.sh ? '' : st.inner || '', g = (d.glow || '').split(' ');
+  const out = [];
+  if (bw) out.push(`0 0 0 ${px(bw)} ${bc}`);
+  if (foot) out.push(`0 ${px(foot)} 0 ${px(bw)} ${bc}`);
+  if (g[0] && !clip) out.push(`0 0 ${px(+g[1] || 10)} ${px((+g[1] || 10) / 2 + bw)} color-mix(in srgb,${g[0]} 70%,transparent)`);
+  if (sh) out.push(`${px(sh[0])} ${px(sh[1] + foot / 2)} ${px(sh[2])} ${px(sh[3] + bw)} rgba(0,0,0,${sh[4]})`);
+  const rad = d.rad != null ? +d.rad : st.rad || 0, radius = oval ? '50%' : d.shape === 'round' ? px(Math.max(rad, 24)) : rad ? px(rad) : '';
+  const soft = d.soft != null ? +d.soft : st.soft || 0, edge = (to, n) => `linear-gradient(to ${to},transparent,#000 ${n},#000 calc(100% - ${n}),transparent)`;
+  const mask = !soft ? '' : oval ? `radial-gradient(closest-side,#000 calc(100% - ${px(soft * 1.5)}),transparent)` : edge('right', px(soft)) + ',' + edge('bottom', px(soft));
+  return {filter: f.join(' '), shadow: out.join(','), radius, oval, clip, mask, inner, bw, bc, foot, sh, margin: bw || foot ? `${px(2 + bw)} ${px(bw)} ${px(2 + bw + foot)}` : ''};
+}
+function pfBox(el, L){
+  el.style.boxShadow = L.shadow; el.style.borderRadius = L.radius; el.style.clipPath = L.clip;
+  for (const p of ['mask-image', '-webkit-mask-image']) el.style.setProperty(p, L.mask);
+  el.style.setProperty('mask-composite', L.mask && !L.oval ? 'intersect' : ''); el.style.setProperty('-webkit-mask-composite', L.mask && !L.oval ? 'source-in' : '');
+  el.classList.toggle('pf-in', !!L.inner); if (L.inner) el.style.setProperty('--pf-in', L.inner); else el.style.removeProperty('--pf-in');
+}
+function pfGeo(m){
+  const d = m.dataset, im = pfImg(m), c = (d.crop || '').split(' ').map(Number);
+  return {c: c.length === 4 && c.every(v => v >= 0 && v < 1) ? c : [0, 0, 0, 0], rot: +d.rot || 0, fx: /h/.test(d.flip || '') ? -1 : 1, fy: /v/.test(d.flip || '') ? -1 : 1, st: +d.stretch || 1,
+    ar: +d.ar || (im?.naturalWidth ? im.naturalWidth / im.naturalHeight : 0) || 4 / 3};
+}
+const pfAspect = g => (g.rot % 180 ? 1 / g.ar : g.ar) * g.st;          // the whole picture's width / height, as it shows
+// where the picture sits in its box: the whole of it (turned and flipped), sized so the part you kept fills the box. A: the box's width / height
+function pfPlace(g, A){
+  const [t, r, b, l] = g.c, Wb = 100 / (1 - l - r), Hb = 100 / (1 - t - b), cx = (.5 - l) * Wb, cy = (.5 - t) * Hb, sw = g.rot % 180 !== 0;
+  const iw = sw ? Hb / A : Wb, ih = sw ? Wb * A : Hb;
+  return {left: cx - iw / 2 + '%', top: cy - ih / 2 + '%', width: iw + '%', height: ih + '%', transform: `scale(${g.fx},${g.fy}) rotate(${g.rot}deg)`};
+}
+// show a picture as its settings say (over: settings to try out, while you point at them in a list; '' takes one off)
+function pfApply(m, over){
+  const im = pfImg(m); if (!im) return;
+  const d = Object.fromEntries(Object.entries({...m.dataset, ...over}).filter(([, v]) => v !== ''));
+  const g = pfGeo(m), geo = g.c.some(Boolean) || g.rot || g.fx < 0 || g.fy < 0 || g.st !== 1;
+  m.classList.toggle('pf-geo', !!geo);
+  if (geo) {
+    if (!m.dataset.ar && im.naturalWidth) m.dataset.ar = +g.ar.toFixed(5);
+    const A = pfAspect(g) * (1 - g.c[1] - g.c[3]) / (1 - g.c[0] - g.c[2]);
+    m.style.aspectRatio = String(+A.toFixed(5)); Object.assign(im.style, pfPlace(g, A));
+  } else { m.style.aspectRatio = ''; for (const k of ['left', 'top', 'width', 'height', 'transform']) im.style[k] = ''; }
+  const L = pfLook(d); im.style.filter = L.filter; pfBox(m, L); m.style.margin = L.margin;
+  m.classList.toggle('pf-clip', !!(L.radius || L.clip || L.inner));
+}
+const pfSet = (m, set) => new URLSearchParams(set).forEach((v, k) => { if (v === '') delete m.dataset[k]; else m.dataset[k] = v; });
+const pfSetC = (m, c) => { if (c.every(v => v < .001)) delete m.dataset.crop; else m.dataset.crop = c.map(v => +v.toFixed(4)).join(' '); };
+const pfStretch = (m, s) => { if (Math.abs(s - 1) < .005) delete m.dataset.stretch; else m.dataset.stretch = +s.toFixed(4); };
+// a picture's width on the page (in a picture box, the box changes with it)
+function pfWidth(m, w){ const se = picSizeEl(m); se.style.width = Math.max(12, Math.round(se.offsetWidth + w - m.offsetWidth)) + 'px'; }
+// one change: one step for Back, and saved
+function pfDo(fn){
+  const m = pfSel(); if (!m) return;
+  if (pfCrop) pfCropEnd(true);
+  snapshot(currentDoc());
+  fn(m); pfApply(m);
+  pfShow(m); placeMediaBar(); saveSoon();
+}
+// a crop keeps the picture's scale: what you cut off goes from its size on the page
+function pfSetCrop(m, c){ const g = pfGeo(m), w = m.offsetWidth / (1 - g.c[1] - g.c[3]) * (1 - c[1] - c[3]); pfSetC(m, c); pfWidth(m, w); }
+function pfRatio(m, A){
+  const g = pfGeo(m), D = pfAspect(g);
+  pfSetCrop(m, D > A ? [0, (1 - A / D) / 2, 0, (1 - A / D) / 2] : [(1 - D / A) / 2, 0, (1 - D / A) / 2, 0]);
+}
+// turning keeps the crop on the same part of the picture, and its scale (its width becomes its height)
+function pfTurn(m, dir){
+  const g = pfGeo(m), [t, r, b, l] = g.c, one = (g.fx < 0) !== (g.fy < 0), h = m.offsetHeight;
+  pfSetC(m, dir > 0 ? [l, t, r, b] : [r, b, l, t]);
+  const rot = ((g.rot + (one ? -dir : dir) * 90) % 360 + 360) % 360; if (rot) m.dataset.rot = rot; else delete m.dataset.rot;
+  pfStretch(m, 1 / g.st); pfWidth(m, h);
+}
+function pfFlip(m, ax){
+  const [t, r, b, l] = pfGeo(m).c, f = m.dataset.flip || '', nf = f.includes(ax) ? f.replace(ax, '') : f + ax;
+  pfSetC(m, ax === 'h' ? [t, l, b, r] : [b, r, t, l]);
+  if (nf) m.dataset.flip = [...nf].sort().join(''); else delete m.dataset.flip;
+}
+// width and height in px on the page; with the ratio locked one follows the other, without it the picture stretches
+function pfSizeTo(m, w, h){
+  const g = pfGeo(m), W = m.offsetWidth, H = m.offsetHeight;
+  if (pfLocked) { pfWidth(m, w ?? h * W / H); return; }
+  let st = g.st;
+  if (w != null) { st *= w / W; pfWidth(m, w); }
+  if (h != null) st *= H / h;
+  pfStretch(m, st);
+}
+function pfReset(m, size){
+  const g = pfGeo(m), im = pfImg(m), wd = m.offsetWidth / (1 - g.c[1] - g.c[3]), w = g.rot % 180 ? wd / pfAspect(g) : wd;
+  PF_KEYS.forEach(k => delete m.dataset[k]);
+  if (!size) pfWidth(m, w);
+  else if (picSizeEl(m) === m) m.style.width = `min(100%, ${im.naturalWidth || 480}px)`;
+  else pfWidth(m, im.naturalWidth || 480);
+}
+// ---- the tab: it comes when you select a picture of yours, and the tab you were on comes back after ----
+function pfSync(){
+  if (!mediaSel && $('#tab-picture').hidden) return;          // (nothing to do, even before the ribbon is set up)
+  const m = pfSel(), tab = $('#tab-picture');
+  if (!m) {
+    pfClosePop(); if (pfCrop) pfCropEnd(false);
+    if (!tab.hidden) { tab.hidden = true; if (ribbonTab === 'picture') { ribbon.classList.remove('peek'); selectTab(pfBack || 'home'); } }
+    return;
+  }
+  if (tab.hidden) { tab.hidden = false; pfBack = ribbonTab === 'picture' ? 'home' : ribbonTab; selectTab('picture'); panelFade($('#panel-picture')); }
+  pfShow(m);
+}
+function pfShow(m){
+  for (const [id, v] of [['#pfW', m.offsetWidth], ['#pfH', m.offsetHeight]]) { const i = $(id); if (document.activeElement !== i) i.value = (v / CM).toFixed(1); }
+  const lk = $('#pfLock'); lk.setAttribute('aria-pressed', pfLocked); lk.innerHTML = icon(pfLocked ? 'lock' : 'unlock');
+}
+// the lists show your own picture with each choice, and point to the one it has
+const pfTh = (set, title, label = '') => `<button type="button" class="pf-th" data-set="${esc(set)}" title="${esc(title)}"${label ? '' : ` aria-label="${esc(title)}"`}><span class="pf-pv"><img alt=""></span>${label ? `<span>${label}</span>` : ''}</button>`;
+const pfGrid = (n, items) => `<div class="pf-g" style="--n:${n}">${items.join('')}</div>`;
+const pfMi = (act, ic, label, title) => `<button type="button" class="btn pf-mi" data-act="${act}" title="${esc(title || label)}">${icon(ic)}${label}</button>`;
+const pfPct = v => (v > 0 ? '+' : '') + v + '%';
+function pfThumbs(root, m){
+  const src = pfImg(m).src;
+  root.querySelectorAll('[data-set]').forEach(b => {
+    const over = Object.fromEntries(new URLSearchParams(b.dataset.set)), pv = b.querySelector('.pf-pv');
+    b.setAttribute('aria-pressed', Object.entries(over).every(([k, v]) => (m.dataset[k] || '') === v));
+    if (!pv) return;
+    const L = pfLook(Object.fromEntries(Object.entries({...m.dataset, ...over}).filter(([, v]) => v !== '')), .3), im = pv.firstChild;
+    pfBox(pv, L); im.style.filter = L.filter; if (im.getAttribute('src') !== src) im.src = src;
+  });
+}
+const PF_POPS = {
+  corr: () => '<h4>Sharpen or soften</h4>' + pfGrid(5, [-50, -25, 0, 25, 50].map(v => pfTh('sharp=' + (v || ''), v < 0 ? `Soften: ${-v}%` : v ? `Sharpen: ${v}%` : 'As it is: no sharper or softer', v ? pfPct(v) : '0%'))) +
+    '<h4>Brightness and contrast</h4>' + pfGrid(5, [-40, -20, 0, 20, 40].flatMap(c => [-40, -20, 0, 20, 40].map(b => pfTh(`bri=${b || ''}&con=${c || ''}`, `Brightness: ${pfPct(b)}, contrast: ${pfPct(c)}`)))),
+  color: () => '<h4>Colour saturation</h4>' + pfGrid(7, [0, 33, 66, 100, 133, 200, 300].map(v => pfTh('sat=' + (v === 100 ? '' : v), `Saturation: ${v}%` + (v ? '' : ' (grey)'), v + '%'))) +
+    '<h4>Recolour</h4>' + pfGrid(6, [['', 'No recolour'], ...Object.entries(PF_RECOLOR).map(([k, [n]]) => [k, n])].map(([k, n]) => pfTh('recolor=' + k, n, n))),
+  art: () => pfGrid(5, [['', 'None'], ...Object.entries(PF_ART).map(([k, [n]]) => [k, n])].map(([k, n]) => pfTh('art=' + k, n, n))),
+  trans: () => pfGrid(6, [0, 15, 30, 50, 65, 80].map(v => pfTh('trans=' + (v || ''), `Transparency: ${v}%`, v + '%'))),
+  styles: () => pfGrid(4, [['', 'No style'], ...Object.entries(PF_STYLES).map(([k, s]) => [k, s.n])].map(([k, n]) => pfTh('pstyle=' + k + PF_CLEAR, n, n))),
+  border: m => {
+    const bw = m.dataset.bw && m.dataset.bw !== '0' ? m.dataset.bw : '';
+    return '<h4>Colour</h4>' + pfGrid(6, PF_COLOURS.map(([c, n]) => `<button type="button" class="pf-sw" data-set="${esc(`bc=${c}&bw=${bw}`)}" style="background:${c}" title="${n}" aria-label="${n}"></button>`)) +
+      `<label class="chk" style="margin-top:8px">More colours <input type="color" id="pfBcIn" value="${/^#[0-9a-f]{6}$/i.test(m.dataset.bc || '') ? m.dataset.bc : '#24231f'}" aria-label="Border colour"></label>` +
+      '<h4>Weight</h4>' + [1, 2, 3, 4.5, 6, 8, 12].map(w => `<button type="button" class="btn pf-mi" data-set="bw=${w}" title="A border ${w} px thick"><span style="display:inline-block;width:56px;height:${w}px;background:currentColor;border-radius:1px"></span>${w} px</button>`).join('') +
+      '<button type="button" class="btn pf-mi" data-set="bw=0" title="No border round the picture">' + icon('x') + 'No border</button>';
+  },
+  fx: () => '<h4>Shadow</h4>' + pfGrid(6, [['none', 'None'], ...Object.entries(PF_SH).map(([k, [n]]) => [k, n])].map(([k, n]) => pfTh('sh=' + k, k === 'none' ? 'No shadow' : n + ' shadow', n))) +
+    '<h4>Glow</h4>' + pfGrid(6, [['', 'None'], ['#3552c4', 'Blue'], ['#ffd54a', 'Gold'], ['#66bb6a', 'Green'], ['#ef5350', 'Red'], ['#ab47bc', 'Purple']].map(([c, n]) => pfTh('glow=' + (c ? c + ' 12' : ''), c ? n + ' glow' : 'No glow', n))) +
+    '<h4>Soft edges</h4>' + pfGrid(6, [0, 3, 6, 12, 24].map(v => pfTh('soft=' + v, v ? `Soft edges: ${v} px` : 'No soft edges', v ? v + ' px' : 'None'))) +
+    '<h4>Rounded corners</h4>' + pfGrid(6, [0, 6, 14, 28].map(v => pfTh('rad=' + v, v ? `Rounded corners: ${v} px` : 'Square corners', v ? v + ' px' : 'None'))),
+  alt: m => { const im = pfImg(m); return '<h4>Alt text</h4><p class="pf-note">How would you describe this picture to someone who can\'t see it? A sentence or two is plenty.</p>' +
+    `<textarea id="pfAltIn" rows="3" aria-label="Alt text">${esc(im.alt || '')}</textarea><label class="chk"><input type="checkbox" id="pfDeco"${im.getAttribute('alt') === '' ? ' checked' : ''}> Decorative only (screen readers skip it)</label>` +
+    '<div class="pf-row"><button type="button" class="btn primary" data-act="close">Done</button></div>'; },
+  rotate: () => pfMi('rr', 'rotate-cw', 'Rotate right 90°') + pfMi('rl', 'rotate-ccw', 'Rotate left 90°') + pfMi('fv', 'flip-v', 'Flip vertical', 'Flip vertical: upside down, as in a lake') + pfMi('fh', 'flip-h', 'Flip horizontal', 'Flip horizontal: as in a mirror'),
+  reset: () => pfMi('reset', 'restore', 'Reset picture', 'Take off every crop, turn, colour, effect and frame (it keeps its size on the page)') + pfMi('resetsize', 'restore', 'Reset picture and size', 'Take everything off, and put it back to the size it came in'),
+  crop: () => pfMi('crop', 'crop', 'Crop', 'Crop: drag the black handles to cut off the edges') + '<h4>Crop to shape</h4>' +
+    pfGrid(6, [pfTh('shape=', 'Rectangle (no shape)'), ...Object.entries(PF_SHAPES).map(([k, [n]]) => pfTh('shape=' + k, n))]) + '<h4>Aspect ratio</h4>' +
+    pfGrid(4, PF_RATIOS.map(([n, a]) => `<button type="button" class="btn pf-mi" data-act="ar" data-v="${a}" title="Crop to ${n}: the most of the picture that fits, from the middle"><span class="pf-ar" style="width:${a >= 1 ? 20 : Math.round(20 * a)}px;height:${a >= 1 ? Math.round(20 / a) : 20}px"></span>${n}</button>`)) +
+    pfMi('nocrop', 'x', 'No crop', 'Show the whole picture again: no crop and no shape'),
+};
+function pfClosePop(back){
+  if (!pfPopEl) return;
+  pfPopEl.remove(); pfPopEl = null; const b = pfPopBtn; pfPopBtn = null; b?.setAttribute('aria-expanded', 'false'); if (back) b?.focus();
+  const m = pfSel(); if (m) pfApply(m);            // (a look you only pointed at goes again)
+}
+function pfOpen(btn, byKey){
+  if (pfPopBtn === btn) { pfClosePop(byKey); return; }
+  pfClosePop(); const m = pfSel(); if (!m) return;
+  if (pfCrop) pfCropEnd(true);
+  const kind = btn.dataset.pf, el = pfPopEl = document.createElement('div');
+  el.className = 'pop pfpop'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', btn.getAttribute('aria-label') || btn.textContent.trim());
+  el.innerHTML = PF_POPS[kind](m); document.body.append(el); pfPopBtn = btn; btn.setAttribute('aria-expanded', 'true');
+  pfThumbs(el, m);
+  const r = btn.getBoundingClientRect();
+  el.style.left = Math.max(8, Math.min(innerWidth - el.offsetWidth - 8, r.left)) + 'px'; el.style.top = Math.max(8, Math.min(innerHeight - el.offsetHeight - 8, r.bottom + 6)) + 'px';
+  el.addEventListener('mousedown', e => { if (!e.target.closest('input, textarea')) e.preventDefault(); });
+  el.addEventListener('pointerover', e => { const t = e.target.closest('.pf-th[data-set]'); pfApply(m, t && Object.fromEntries(new URLSearchParams(t.dataset.set))); });
+  el.addEventListener('pointerleave', () => pfApply(m));
+  el.addEventListener('click', e => {
+    const t = e.target.closest('[data-set], [data-act]'); if (!t) return;
+    if (t.dataset.act) return pfAct(t.dataset.act, t);
+    const set = t.dataset.set; pfClosePop(true); pfDo(m => pfSet(m, set));
+  });
+  if (kind === 'alt') {
+    const ta = el.querySelector('#pfAltIn'), deco = el.querySelector('#pfDeco'), im = pfImg(m); let snapped = false;
+    const put = () => {
+      if (!snapped) { snapshot(currentDoc()); snapped = true; }
+      ta.disabled = deco.checked; if (deco.checked || ta.value.trim()) im.alt = deco.checked ? '' : ta.value.trim(); else im.removeAttribute('alt');
+      saveSoon();
+    };
+    ta.disabled = deco.checked; ta.oninput = put; deco.onchange = put;
+    ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); pfClosePop(true); } });
+    if (!deco.checked) { ta.focus(); ta.select(); }
+  } else if (kind === 'border') {
+    const ci = el.querySelector('#pfBcIn'), bw = () => m.dataset.bw === '0' ? '' : m.dataset.bw || '';
+    ci.oninput = () => pfApply(m, {bc: ci.value, bw: bw()});
+    ci.onchange = () => { const v = ci.value; pfClosePop(); pfDo(m => pfSet(m, `bc=${encodeURIComponent(v)}&bw=${bw()}`)); };
+  }
+  if (byKey && kind !== 'alt') (el.querySelector('[aria-pressed="true"]') || el.querySelector('button'))?.focus();
+}
+function pfAct(act, t){
+  if (act === 'close') return pfClosePop(true);
+  pfClosePop(true);
+  if (act === 'crop') return pfCropStart();
+  if (act === 'rr' || act === 'rl') return pfDo(m => pfTurn(m, act === 'rr' ? 1 : -1));
+  if (act === 'fh' || act === 'fv') return pfDo(m => pfFlip(m, act[1]));
+  if (act === 'reset' || act === 'resetsize') return pfDo(m => pfReset(m, act === 'resetsize'));
+  if (act === 'ar') return pfDo(m => pfRatio(m, +t.dataset.v));
+  if (act === 'nocrop') return pfDo(m => { pfSetCrop(m, [0, 0, 0, 0]); delete m.dataset.shape; });
+}
+$('#panel-picture').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || !pfSel()) return;
+  if (b.dataset.pf) return pfOpen(b, e.detail === 0);
+  ({pfCrop: () => pfCrop ? pfCropEnd(true) : pfCropStart(), pfReset: () => pfDo(m => pfReset(m)), pfChange: () => $('#pfFile').click(), pfRemove: () => removeMedia(),
+    pfLock: () => { pfLocked = !pfLocked; pfShow(pfSel()); }})[b.id]?.();
+});
+for (const [id, k] of [['#pfW', 'w'], ['#pfH', 'h']]) {
+  $(id).addEventListener('change', e => {
+    const v = parseFloat(e.target.value), m = pfSel(); if (!m) return;
+    if (!(v > 0)) { pfShow(m); return; }
+    pfDo(m => pfSizeTo(m, k === 'w' ? v * CM : null, k === 'h' ? v * CM : null));
+  });
+  $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } });
+}
+// Change picture: another picture in its place, with this one's crop, colours and frame
+$('#pfFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f || !pfSel()) return;
+  if (!f.type.startsWith('image/')) { toast(`“${f.name}” isn't a picture.`); return; }
+  const url = await readAsUrl(f); let ni;
+  try { ni = await loadImg(url); } catch { toast(`“${f.name}” couldn't be read as a picture.`); return; }
+  pfDo(m => { const im = pfImg(m); if (!im.alt || /\.\w{2,5}$/.test(im.alt)) im.alt = f.name; im.src = url; m.dataset.ar = +(ni.naturalWidth / ni.naturalHeight).toFixed(5); });
+};
+// ---- Crop, as in Word: the whole picture shows dimmed round the part you keep; drag the black handles to crop a side, or the picture to move it ----
+function pfCropStart(){
+  const m = pfSel(); if (!m || pfCrop) return;
+  pfClosePop();
+  const g = pfGeo(m), r = m.getBoundingClientRect(), W = r.width / (1 - g.c[1] - g.c[3]), H = r.height / (1 - g.c[0] - g.c[2]), im = pfImg(m);
+  const el = document.createElement('div'); el.className = 'pfcrop'; el.setAttribute('aria-label', 'Crop: drag the handles; Enter keeps it, Esc puts it back');
+  el.innerHTML = '<div class="pf-full"><img alt=""><div class="pf-keep"></div></div><div class="pf-frame">' + ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map(d => `<i class="pf-h" data-d="${d}"></i>`).join('') + '</div>';
+  const ci = el.querySelector('img'); ci.src = im.src; ci.style.filter = im.style.filter; Object.assign(ci.style, pfPlace({...g, c: [0, 0, 0, 0]}, W / H));
+  pfCrop = {m, c: [...g.c], c0: g.c.join(' '), x: -g.c[3] * W, y: -g.c[0] * H, W, H, el};
+  document.body.append(el); pfCropDraw(); mediaBar.hidden = true; $('#pfCrop').setAttribute('aria-pressed', 'true');
+  el.addEventListener('pointerdown', pfCropDrag);
+  hint('Drag the black handles to crop, or the picture to move it in the frame. Enter or a click away keeps it; Esc puts it back.');
+}
+function pfCropDraw(){
+  const k = pfCrop; if (!k.m.isConnected) { pfCropEnd(false); return; }
+  const r = k.m.getBoundingClientRect(), [t, rr, b, l] = k.c, box = {left: l * 100 + '%', top: t * 100 + '%', right: rr * 100 + '%', bottom: b * 100 + '%'};
+  Object.assign(k.el.style, {left: r.left + k.x + 'px', top: r.top + k.y + 'px', width: k.W + 'px', height: k.H + 'px'});
+  Object.assign(k.el.querySelector('.pf-keep').style, box); Object.assign(k.el.querySelector('.pf-frame').style, box);
+}
+function pfCropDrag(e){
+  if (e.button > 0 || !pfCrop) return;
+  e.preventDefault(); e.stopPropagation();
+  const k = pfCrop, d = e.target.closest('.pf-h')?.dataset.d || 'move', sx = e.clientX, sy = e.clientY, [t0, r0, b0, l0] = k.c, x0 = k.x, y0 = k.y, mw = 16 / k.W, mh = 16 / k.H;
+  const cl = (v, a, b) => Math.min(b, Math.max(a, v));
+  try { k.el.setPointerCapture(e.pointerId); } catch {}
+  const mv = ev => {
+    const dx = (ev.clientX - sx) / k.W, dy = (ev.clientY - sy) / k.H; let [t, r, b, l] = [t0, r0, b0, l0];
+    if (d === 'move') { const mx = cl(dx, -r0, l0), my = cl(dy, -b0, t0); l = l0 - mx; r = r0 + mx; t = t0 - my; b = b0 + my; k.x = x0 + mx * k.W; k.y = y0 + my * k.H; }
+    else {
+      if (d.includes('n')) t = cl(t0 + dy, 0, 1 - b0 - mh);
+      if (d.includes('s')) b = cl(b0 - dy, 0, 1 - t0 - mh);
+      if (d.includes('w')) l = cl(l0 + dx, 0, 1 - r0 - mw);
+      if (d.includes('e')) r = cl(r0 - dx, 0, 1 - l0 - mw);
+    }
+    k.c = [t, r, b, l]; pfCropDraw();
+  };
+  const up = () => { k.el.removeEventListener('pointermove', mv); k.el.removeEventListener('pointerup', up); k.el.removeEventListener('pointercancel', up); };
+  k.el.addEventListener('pointermove', mv); k.el.addEventListener('pointerup', up); k.el.addEventListener('pointercancel', up);
+}
+function pfCropEnd(keep){
+  const k = pfCrop; if (!k) return;
+  pfCrop = null; k.el.remove(); $('#pfCrop').setAttribute('aria-pressed', 'false');
+  if (keep && k.m.isConnected && pfSel() === k.m && k.c.map(v => +v.toFixed(4)).join(' ') !== k.c0) pfDo(m => pfSetCrop(m, k.c));
+  if (mediaSel) { mediaBar.hidden = false; placeMediaBar(); }
+}
+document.addEventListener('pointerdown', e => {
+  if (pfCrop && !e.target.closest('.pfcrop, #pfCrop')) pfCropEnd(true);          // a click away keeps the crop
+  if (pfPopEl && !e.target.closest('.pfpop') && !pfPopBtn?.contains(e.target)) pfClosePop();
+}, true);
+document.addEventListener('keydown', e => {
+  if (pfCrop && (e.key === 'Enter' || e.key === 'Escape')) { e.preventDefault(); e.stopPropagation(); pfCropEnd(e.key === 'Enter'); }
+  else if (pfPopEl && e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); pfClosePop(true); }
+}, true);
+addEventListener('scroll', () => { if (pfCrop) pfCropDraw(); }, true);
+addEventListener('resize', () => { if (pfCrop) pfCropDraw(); });
+// the PDF: a picture of yours is drawn with its crop, turn, colours, shape, frame and shadow (not its soft edges or inner shadow)
+function pfPaint(ctx, im, ox, oy){
+  const m = im.parentElement; if (!PF_KEYS.some(k => k !== 'ar' && m.dataset[k] != null)) return false;     // (a plain picture is drawn as before)
+  const r = m.getBoundingClientRect(); if (!r.width || !im.complete) return true;
+  const w = m.offsetWidth, h = m.offsetHeight, s = r.width / (w || r.width), ic = getComputedStyle(im), L = pfLook(m.dataset), z = ctx.getTransform().a * s;
+  const pt = (v, n) => v.endsWith('%') ? parseFloat(v) / 100 * n : parseFloat(v) || 0, poly = L.clip.match(/polygon\((.*)\)/), rad = L.oval ? 0 : parseFloat(L.radius) || 0;
+  ctx.save(); ctx.translate(r.left - ox, r.top - oy); ctx.scale(s, s);
+  const path = new Path2D();
+  if (poly) poly[1].split(',').forEach((p, i) => { const [x, y] = p.trim().split(/\s+/); path[i ? 'lineTo' : 'moveTo'](pt(x, w), pt(y, h)); });
+  else if (L.oval) path.ellipse(w / 2, h / 2, w / 2, h / 2, 0, 0, 2 * Math.PI);
+  else path.roundRect(0, 0, w, h, rad);
+  if (!poly && (L.bw || L.sh)) {          // the frame, with the shadow under it
+    ctx.save();
+    if (L.sh) { ctx.shadowColor = `rgba(0,0,0,${L.sh[4]})`; ctx.shadowBlur = L.sh[2] * z; ctx.shadowOffsetX = L.sh[0] * z; ctx.shadowOffsetY = (L.sh[1] + L.foot / 2) * z; }
+    const o = new Path2D(), e = L.bw;
+    if (L.oval) o.ellipse(w / 2, h / 2, w / 2 + e, h / 2 + e, 0, 0, 2 * Math.PI); else o.roundRect(-e, -e, w + 2 * e, h + 2 * e + L.foot, rad ? rad + e : 0);
+    ctx.fillStyle = e ? L.bc : '#fff'; ctx.fill(o); ctx.restore();
+  }
+  ctx.clip(path);
+  if (ic.filter && ic.filter !== 'none') ctx.filter = ic.filter;
+  const iw = im.offsetWidth, ih = im.offsetHeight; ctx.translate(im.offsetLeft + iw / 2, im.offsetTop + ih / 2);
+  if (ic.transform && ic.transform !== 'none') { const t = new DOMMatrix(ic.transform); ctx.transform(t.a, t.b, t.c, t.d, t.e, t.f); }
+  try { ctx.drawImage(im, -iw / 2, -ih / 2, iw, ih); } catch {}
+  ctx.restore(); return true;
+}
 
 // ================= study mode: read only =================
 function applyReadMode(){
   main.classList.toggle('reading', reading); document.body.classList.toggle('reading', reading);
   if (reading) { setDrawing(false); hideAnnoBar(); }
   if (annoCur) showAnnoPop();                    // an open comment becomes read only (or editable again)
-  main.querySelectorAll('.mine').forEach(el => { el.contentEditable = reading ? 'false' : 'true'; });
+  main.querySelectorAll('.mine').forEach(el => { el.contentEditable = reading || el.parentElement?.classList.contains('picbox') ? 'false' : 'true'; });      // (a picture on the page by itself never takes typing)
   wtUpgrade();
   const b = $('#readBtn'); b.setAttribute('aria-pressed', reading);
   b.innerHTML = icon(reading ? 'pen' : 'book') + `<span class="lbl">${reading ? 'Back to editing' : 'Study mode'}</span>`;
@@ -8626,12 +9167,13 @@ document.addEventListener('keydown', e => {
 const dropCover = $('#dropCover');
 let dragDepth = 0;
 const draggingFiles = e => [...(e.dataTransfer?.types || [])].includes('Files');
-addEventListener('dragenter', e => { if (draggingFiles(e)) { dragDepth++; dropCover.hidden = !!e.target.closest?.('.mine'); } });
-addEventListener('dragover', e => { if (draggingFiles(e)) { e.preventDefault(); dropCover.hidden = !!e.target.closest?.('.mine'); } });
+// (pictures dragged over a page go on that page, so nothing covers it)
+addEventListener('dragenter', e => { if (draggingFiles(e)) { dragDepth++; dropCover.hidden = !!e.target.closest?.('.mine') || picDrop(e); } });
+addEventListener('dragover', e => { if (draggingFiles(e)) { e.preventDefault(); dropCover.hidden = !!e.target.closest?.('.mine') || picDrop(e); } });
 addEventListener('dragleave', e => { if (draggingFiles(e) && --dragDepth <= 0) { dragDepth = 0; dropCover.hidden = true; } });
 addEventListener('drop', e => {
   dragDepth = 0; dropCover.hidden = true;
-  if (!draggingFiles(e) || e.defaultPrevented) return;      // pictures dropped into a note are handled there
+  if (!draggingFiles(e) || e.defaultPrevented) return;      // pictures dropped into a note, or onto a page, are handled there
   e.preventDefault();
   openFiles([...e.dataTransfer.files]);
 });
