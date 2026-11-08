@@ -50,3 +50,20 @@ window.gapi = {load(name, opts){ setTimeout(() => {
   };
   (opts.callback || opts)();
 }, 5); }};`;
+// Drive's hidden app folder, where the app keeps settings.json: call it first in a googleapis route; it answers (giving the reply's promise) for the app
+// folder's requests only. store: {file: null | {id, body}, log: []}, shared by every browser that should see the same Google account.
+const CORS = {'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*'};
+exports.appData = (store = {file: null, log: []}) => (route, rq = route.request()) => {
+  const url = rq.url(), method = rq.method(), json = (b, status = 200) => route.fulfill({status, contentType: 'application/json', headers: CORS, body: JSON.stringify(b)});
+  const id = store.file?.id;
+  if (/\/drive\/v3\/files\?spaces=appDataFolder/.test(url)) { store.log.push('list'); return json({files: store.file ? [{id}] : []}); }
+  if (id && url.includes(`/drive/v3/files/${id}?alt=media`)) { store.log.push('get'); return route.fulfill({status: 200, contentType: 'application/json', headers: CORS, body: store.file.body}); }
+  if (id && url.includes(`/upload/drive/v3/files/${id}?uploadType=media`) && method === 'PATCH') { store.log.push('patch'); store.file.body = rq.postDataBuffer().toString('utf8'); return json({id}); }
+  const raw = /\/upload\/drive\/v3\/files\?uploadType=multipart/.test(url) && method === 'POST' && rq.postDataBuffer()?.toString('utf8');
+  if (raw && raw.includes('"appDataFolder"')) {
+    const parts = raw.split(/\r\n\r\n/), meta = JSON.parse(parts[1].split('\r\n--')[0]);
+    store.file = {id: 'appset' + Date.now().toString(36), meta, body: parts.slice(2).join('\r\n\r\n').replace(/\r\n--[^\r\n]*--\s*$/, '')};
+    store.log.push('create'); return json({id: store.file.id});
+  }
+  return false;
+};

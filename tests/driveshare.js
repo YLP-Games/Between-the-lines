@@ -1,6 +1,6 @@
 // Google Drive sharing: Picker tabs, Share dialog, general access, copy link, read-only shared notebooks. Google is mocked.
 const {open} = require('./harness');
-const {GSI, GAPI} = require('./drivemock');
+const {GSI, GAPI, appData: appDataMock} = require('./drivemock');
 const path = require('path');
 const fs = require('fs');
 const APP = process.env.APP || require('path').resolve(__dirname, '..', 'index.html');
@@ -16,6 +16,7 @@ const NB = fs.readFileSync(path.join(__dirname, 'nbfile.html'));
 
 (async () => {
   const {browser, context, page, errors} = await open(CONF);
+  const appData = appDataMock();
   const reqs = [];
   const files = {};          // id -> permissions
   const st = {n: 0, p: 0};
@@ -26,6 +27,7 @@ const NB = fs.readFileSync(path.join(__dirname, 'nbfile.html'));
   await context.route(/www\.googleapis\.com\//, async route => {
     const rq = route.request(), url = rq.url(), method = rq.method();
     if (method === 'OPTIONS') return route.fulfill({status: 204, headers: CORS});
+    const app = appData(route, rq); if (app) return app;          // settings.json in the hidden app folder
     const rec = {method, url, body: rq.postDataBuffer() ? rq.postDataBuffer().toString('latin1') : ''};
     reqs.push(rec);
     if (/\/drive\/v3\/about/.test(url)) return json(route, {user: {displayName: 'Ada Lovelace', emailAddress: 'ada@example.com'}});

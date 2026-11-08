@@ -2,7 +2,7 @@
 // Modelled on sync.js. MSAL is faked per device (odmock.MSAL); Microsoft Graph is one stateful fake that both devices talk to.
 const {open} = require('./harness');
 const {MSAL} = require('./odmock');
-const {GSI, GAPI} = require('./drivemock');
+const {GSI, GAPI, appData: appDataMock} = require('./drivemock');
 const path = require('path'); const fs = require('fs');
 const APP = process.env.APP || require('path').resolve(__dirname, '..', 'index.html');
 const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok  ' + m); };
@@ -18,7 +18,8 @@ const MSAL_URL = /cdn\.jsdelivr\.net\/npm\/@azure\/msal-browser@3\.28\.1\/lib\/m
 const one = {files: {}, n: 0, c: 0, log: [], throttle: 0, dirItems: true};
 const bump = f => { f.c = ++one.c; f.cTag = `"c:{${f.id}},${f.c}"`; f.eTag = `"{${f.id}},${f.c}"`; f.when = new Date().toISOString(); };
 const item = f => ({id: f.id, name: f.name, cTag: f.cTag, eTag: f.eTag, size: f.body.length, file: {}, lastModifiedDateTime: f.when, webUrl: 'https://contoso-my.sharepoint.com/personal/ada/' + f.id, parentReference: {driveId: 'D1', path: '/drive/root:/Between the Lines'}});
-const gdrive = {files: {}, n: 0, log: []};          // Google Drive, for switching between the clouds
+const gdrive = {files: {}, n: 0, log: []};
+const appData = appDataMock();          // its hidden app folder (settings.json)          // Google Drive, for switching between the clouds
 
 async function device(name, size){
   const d = await open(CONF, size), {context} = d;
@@ -64,6 +65,7 @@ async function device(name, size){
   await context.route(/www\.googleapis\.com\//, async route => {
     const rq = route.request(), url = rq.url(), method = rq.method();
     if (method === 'OPTIONS') return route.fulfill({status: 204, headers: CORS});
+    const app = appData(route, rq); if (app) return app;          // settings.json in the hidden app folder
     gdrive.log.push(`${name} ${method} ${url.replace(/https:\/\/www\.googleapis\.com/, '').slice(0, 90)}`);
     let m;
     if (/\/drive\/v3\/about/.test(url)) return json(route, {user: {displayName: 'Ada', emailAddress: 'ada@example.com'}});

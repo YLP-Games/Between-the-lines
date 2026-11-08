@@ -17,10 +17,11 @@ fs.writeFileSync(BLANK, src.replace(LINE, () => "const GDRIVE = {clientId: '', a
 const PDF = fs.readFileSync(path.join(__dirname, 'lecture.pdf'));
 const NB = fs.readFileSync(path.join(__dirname, 'nbfile.html'));
 
-const {GSI, GAPI} = require('./drivemock');
+const {GSI, GAPI, appData: appDataMock} = require('./drivemock');
 
 (async () => {
   const {browser, context, page, errors} = await open(CONF);
+  const appData = appDataMock();
   const reqs = [], state = {patch404: false, uploadFail: false, n: 0};
   const CORS = {'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*'};
   const json = (route, body, status = 200) => route.fulfill({status, contentType: 'application/json', headers: CORS, body: JSON.stringify(body)});
@@ -29,6 +30,7 @@ const {GSI, GAPI} = require('./drivemock');
   await context.route(/www\.googleapis\.com\//, async route => {
     const rq = route.request(), url = rq.url(), method = rq.method();
     if (method === 'OPTIONS') return route.fulfill({status: 204, headers: CORS});
+    const app = appData(route, rq); if (app) return app;          // settings.json in the hidden app folder
     const rec = {method, url, auth: rq.headers()['authorization'], body: rq.postDataBuffer() ? rq.postDataBuffer().toString('latin1') : ''};
     reqs.push(rec);
     if (url.includes('/upload/') && state.uploadFail) return route.abort('failed');

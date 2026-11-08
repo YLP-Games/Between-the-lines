@@ -2634,6 +2634,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
     <section id="driveSec">
       <h3>Google Drive</h3>
       <p class="sethint" id="driveStatus">Not connected</p>
+      <p class="sethint" id="prefCloudLine"></p>
       <p class="sethint" id="driveHint" hidden>Google Drive isn't set up for this site yet. The site owner needs to add a Google client ID and API key at the top of the page's script (see “Google Drive” in the README).</p>
       <button type="button" class="btn outline" id="driveOff" disabled title="Sign out of Google Drive on this device. Your files in Drive stay where they are.">Disconnect</button>
     </section>
@@ -3034,10 +3035,11 @@ const main = $('#main');
 // the open notebook's page list; kept here because it is taken out of the sidebar while its notebook is folded (and $ can't find it then)
 const pageList = $('#pageList');
 const icon = id => `<svg class="i" aria-hidden="true"><use href="#i-${id}"/></svg>`;
-// remembered settings (in a private window, or with storage blocked, they just aren't remembered)
+// remembered settings (in a private window, or with storage blocked, they just aren't remembered). A change to one that follows your
+// Google account (see prefSyncs, by Google Drive below) is time-stamped, so the newest change wins when this device and Drive are compared.
 const pref = {
   get(k, d = null){ try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } },
-  set(k, v){ try { localStorage.setItem(k, v); } catch {} },
+  set(k, v){ try { if (localStorage.getItem(k) === String(v)) return; localStorage.setItem(k, v); } catch { return; } if (prefSyncs(k)) prefStamp(k); },
   json(k, d){ try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
   setJson(k, v){ pref.set(k, JSON.stringify(v)); },
 };
@@ -12379,8 +12381,12 @@ function pgKey(e){ if (e.key === 'Escape' && pgDrag) { e.preventDefault(); e.sto
 // Sign-in uses Google's token client and files are chosen with Google's Picker. Only files you pick here, or that this page saves,
 // can be reached (the drive.file permission); the rest of your Drive stays out of reach. The access token is kept in memory only.
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+// drive.appdata: a hidden folder only this app can see, for your settings (settings.json). Asked for with drive.file; if it is turned down,
+// this device doesn't ask for it again and settings just stay on this device.
+const DRIVE_APPDATA = 'https://www.googleapis.com/auth/drive.appdata';
+const driveScopes = () => DRIVE_SCOPE + (pref.get('drive-appdata') === 'no' ? '' : ' ' + DRIVE_APPDATA);
 const DRIVE_API = 'https://www.googleapis.com/drive/v3', DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3';
-const drive = {token: '', expires: 0, user: null, client: null, wait: null, libs: null};
+const drive = {token: '', expires: 0, user: null, client: null, wait: null, libs: null, asked: '', appdata: false};
 class DriveError extends Error { constructor(msg, kind, status){ super(msg); this.kind = kind; this.status = status; } }
 const driveTokenOk = () => !!drive.token && Date.now() < drive.expires - 60000;
 
@@ -12413,21 +12419,25 @@ function driveToken(){
   return driveLoad().then(() => new Promise((ok, no) => {
     drive.wait = {ok, no};
     drive.client ??= google.accounts.oauth2.initTokenClient({
-      client_id: GDRIVE.clientId, scope: DRIVE_SCOPE,
+      client_id: GDRIVE.clientId, scope: driveScopes(),
       callback: r => {
         const w = drive.wait; drive.wait = null; if (!w) return;
         if (r.error) return w.no(new DriveError(r.error, r.error === 'access_denied' ? 'denied' : 'other'));
         const all = google.accounts.oauth2.hasGrantedAllScopes;
         if (all && !all(r, DRIVE_SCOPE)) return w.no(new DriveError('not allowed', 'denied'));
         drive.token = r.access_token; drive.expires = Date.now() + (+r.expires_in || 3600) * 1000;
-        w.ok(drive.token); if (!drive.user) driveWho(); else renderDrive(); setTimeout(() => { syncSoon(); syncCheck(); });
+        const asked = drive.asked.includes(DRIVE_APPDATA);
+        drive.appdata = all ? all(r, DRIVE_APPDATA) : !r.scope || r.scope.split(' ').includes(DRIVE_APPDATA);
+        if (asked && !drive.appdata) pref.set('drive-appdata', 'no');
+        w.ok(drive.token); if (!drive.user) driveWho(); else renderDrive(); setTimeout(() => { syncSoon(); syncCheck(); prefPull(); });
       },
       error_callback: er => {
         const w = drive.wait; drive.wait = null; if (!w) return;
         w.no(new DriveError(er?.type || 'sign-in failed', er?.type === 'popup_closed' ? 'closed' : er?.type === 'popup_failed_to_open' ? 'blocked' : 'other'));
       },
     });
-    drive.client.requestAccessToken(drive.user ? {prompt: ''} : {});
+    drive.asked = driveScopes();
+    drive.client.requestAccessToken(drive.user ? {prompt: '', scope: drive.asked} : {scope: drive.asked});
   }));
 }
 // who is signed in, for the Help & settings page
@@ -13125,14 +13135,152 @@ function renderDrive(){
   $('#driveStatus').textContent = on ? 'Connected' + (drive.user ? ` as ${drive.user.name}${drive.user.email ? ` (${drive.user.email})` : ''}` : '') : 'Not connected';
   $('#driveHint').hidden = !!GDRIVE.clientId;
   $('#driveOff').disabled = !on;
+  renderPrefCloud();
 }
 $('#driveOff').onclick = () => {
   const t = drive.token;
-  drive.token = ''; drive.expires = 0; drive.user = null;
+  drive.token = ''; drive.expires = 0; drive.user = null; drive.appdata = false;
   try { google.accounts.oauth2.revoke(t, () => {}); } catch {}
+  prefCloud.id = ''; prefCloud.pulled = false; prefCloud.state = '';
   renderDrive(); syncShow();
   toast('Disconnected from Google Drive. Your files in Drive have not been touched.');
 };
+
+// ---------- your settings follow your Google account ----------
+// While you're signed in to Google Drive, your settings are kept in settings.json in Drive's hidden app folder (only this app can see it),
+// and fetched again each time you sign in, so clearing this browser's data (or using another browser) doesn't lose them. Each setting
+// carries the time it was last changed, here or in Drive, and the newer one wins: a fresh browser's defaults never write over Drive's copy.
+// What counts as a setting: the Help & settings choices and the colours you keep (favourites, highlight, drawing tools, side note lines).
+// Not your notebooks, the page zoom, panels or split view you had open (they suit one screen), tips already seen, or sign-ins.
+function prefSyncs(k){ return /^(theme|ui-font|tips|tooltips|auto-align|side-hover|pptx-mode|pptx-notes|pptx-tip|pdf-layout|box-style|box-presets|fav-colors|spell-lang|spell-words|grammar|autocorrect|ac-\w+|bar-mode|bar-last|draw-settings|pen-auto|hl-colour|hl-favs|hl-preset|side-bg|side-pat|side-sync|side-links|side-line|line-click|link-match|od-pdf|wg-pat|wg-gap|wg-op|(tpl|fx)-(fav|recent))$/.test(k); }
+// (vars and functions: pref.set can run before this part of the script has)
+var prefCloud = {id: '', pulled: false, busy: false, again: false, dirty: false, timer: 0, state: '', at: 0, ready: false};
+function prefStamps(){ return pref.json('pref-stamps', {}) || {}; }
+function prefStamp(k){
+  if (!prefCloud?.ready) return;              // the page setting itself up as it opens isn't a change of yours: Drive's copy still wins
+  try { const s = prefStamps(); s[k] = Date.now(); localStorage.setItem('pref-stamps', JSON.stringify(s)); } catch {}
+  if (!prefCloud) return;
+  prefCloud.dirty = true; clearTimeout(prefCloud.timer);
+  prefCloud.timer = setTimeout(() => prefPush(), 3000);          // a few seconds after the last change
+}
+const prefCloudOk = () => !!GDRIVE.clientId && driveTokenOk() && drive.appdata;
+// a request with the token there is: this never opens Google's sign-in window
+async function prefFetch(url, opts = {}){
+  if (!prefCloudOk() || !navigator.onLine) throw new DriveError('not signed in', 'signin');
+  let res;
+  try { res = await fetch(url, {...opts, headers: {...opts.headers, Authorization: 'Bearer ' + drive.token}}); }
+  catch (err) { throw new DriveError(err?.message || 'no connection', 'network'); }
+  if (!res.ok) throw await driveHttp(res);
+  return res;
+}
+// every setting this device has, with the time each last changed (0: from before settings were kept in Drive)
+function prefLocal(){
+  const out = {}, st = prefStamps();
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (prefSyncs(k)) out[k] = {v: localStorage.getItem(k), t: +st[k] || 0}; } } catch {}
+  return out;
+}
+// fetch settings.json and take each setting that changed later there than here; then send back whatever this device has newer
+async function prefPull(){
+  if (!prefCloudOk() || prefCloud.busy) return renderPrefCloud();
+  prefCloud.busy = true; prefCloud.state = 'busy'; renderPrefCloud();
+  try {
+    if (!prefCloud.id) {
+      const q = encodeURIComponent("name='settings.json' and trashed=false");
+      const l = await (await prefFetch(`${DRIVE_API}/files?spaces=appDataFolder&q=${q}&fields=files(id,modifiedTime)&orderBy=modifiedTime%20desc&pageSize=1`)).json();
+      prefCloud.id = l.files?.[0]?.id || '';
+    }
+    let cloud = {};
+    if (prefCloud.id) {
+      try { cloud = (await (await prefFetch(`${DRIVE_API}/files/${encodeURIComponent(prefCloud.id)}?alt=media`)).json())?.prefs || {}; }
+      catch (err) { if (err.status === 404) prefCloud.id = ''; else throw err; }
+    }
+    const here = prefLocal(), st = prefStamps(), took = [];
+    let newer = false;
+    for (const [k, c] of Object.entries(cloud)) {
+      if (!prefSyncs(k) || !c || typeof c.v !== 'string') continue;
+      const h = here[k], ct = +c.t || 0;
+      if (h && h.t > ct) continue;                                   // changed here since
+      if (!h || h.v !== c.v) { try { localStorage.setItem(k, c.v); took.push(k); } catch {} }
+      st[k] = ct;
+    }
+    for (const [k, h] of Object.entries(here)) { const c = cloud[k]; if (!c || h.t > (+c.t || 0)) newer = true; }
+    try { localStorage.setItem('pref-stamps', JSON.stringify(st)); } catch {}
+    prefCloud.pulled = true; prefCloud.at = Date.now(); prefCloud.state = 'ok';
+    if (took.length) { prefsApply(took); toast('Your settings came back from your Google Drive.'); }
+    if (newer || prefCloud.dirty || !prefCloud.id) prefCloud.again = true;
+  } catch (err) { prefCloud.state = err.kind === 'signin' ? '' : 'error'; }
+  prefCloud.busy = false; renderPrefCloud();
+  if (prefCloud.again) { prefCloud.again = false; prefPush(); }
+}
+// send this device's settings to settings.json (made the first time)
+async function prefPush(){
+  clearTimeout(prefCloud.timer);
+  if (!prefCloudOk() || !navigator.onLine) return renderPrefCloud();
+  if (!prefCloud.pulled) return prefPull();                           // Drive's copy is read first, so nothing newer there is lost
+  if (prefCloud.busy) { prefCloud.again = true; return; }
+  prefCloud.busy = true; prefCloud.dirty = false; prefCloud.state = 'busy'; renderPrefCloud();
+  const blob = new Blob([JSON.stringify({app: 'Between the Lines', version: 1, saved: new Date().toISOString(), prefs: prefLocal()})], {type: 'application/json'});
+  try {
+    let done = false;
+    if (prefCloud.id) {
+      try { await prefFetch(`${DRIVE_UPLOAD}/files/${encodeURIComponent(prefCloud.id)}?uploadType=media&fields=id`, {method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: blob}); done = true; }
+      catch (err) { if (err.status === 404) prefCloud.id = ''; else throw err; }
+    }
+    if (!done) {
+      const {type, body} = driveBody({name: 'settings.json', parents: ['appDataFolder'], mimeType: 'application/json'}, blob);
+      prefCloud.id = (await (await prefFetch(`${DRIVE_UPLOAD}/files?uploadType=multipart&fields=id`, {method: 'POST', headers: {'Content-Type': type}, body})).json()).id || '';
+    }
+    prefCloud.state = 'ok'; prefCloud.at = Date.now();
+  } catch (err) { prefCloud.dirty = true; prefCloud.state = err.kind === 'signin' ? '' : 'error'; }
+  prefCloud.busy = false; renderPrefCloud();
+  if (prefCloud.again) { prefCloud.again = false; prefPush(); }
+}
+addEventListener('online', () => { if (prefCloud.dirty || !prefCloud.pulled) prefPush(); });
+addEventListener('offline', () => renderPrefCloud());
+// the line under Google Drive in Help & settings
+function renderPrefCloud(){
+  const el = $('#prefCloudLine'); if (!el) return;
+  el.hidden = !GDRIVE.clientId;
+  const on = driveTokenOk(), s = prefCloud.state;
+  el.dataset.s = !on ? 'off' : !drive.appdata ? 'local' : !navigator.onLine ? 'offline' : s || 'busy';
+  el.textContent = !on ? 'Connect to Google Drive and your settings are saved there too, so they come back after clearing this browser’s data, or in another browser.'
+    : !drive.appdata ? 'Your settings are kept on this device only: Google didn’t give this app its own folder in your Drive.'
+    : !navigator.onLine ? 'You’re offline. Your settings are saved on this device and go to your Google Drive when you’re back online.'
+    : s === 'error' ? 'Couldn’t reach your Google Drive just now. Your settings are saved on this device and go to Drive next time.'
+    : s === 'ok' ? 'Settings saved to your Google Drive.'
+    : 'Saving your settings to your Google Drive…';
+}
+// after settings come from Drive: what was read once at the start is read again, and the buttons and boxes show the new choices
+function prefsApply(keys){
+  const has = re => keys.some(k => re.test(k));
+  const step = f => { try { f(); } catch (err) { console.warn(err); } };
+  if (has(/^theme$/)) step(() => { applyTheme(themeNow()); paintTheme(); });
+  if (has(/^ui-font$/)) step(() => { if (pref.get('ui-font') === 'clean') document.documentElement.dataset.uiFont = 'clean'; else delete document.documentElement.dataset.uiFont; paintUiFont(); });
+  if (has(/^(tips|tooltips)$/)) step(paintTips);
+  if (has(/^auto-align$/)) step(() => { $('#autoAlign').checked = autoAlignOn(); });
+  if (has(/^side-hover$/)) step(paintSideHover);
+  if (has(/^pptx-(mode|notes)$/)) step(() => { syncPptxMode(); $('#setPptxNotes').checked = pptxNotesOn(); });
+  if (has(/^pdf-layout$/)) step(() => { const l = pref.get('pdf-layout', 'default'); if (l in LAYOUTS && l !== layout) { layout = l; $('#layout').value = l; paginateView(); } });
+  if (has(/^box-style$/)) step(() => { Object.assign(boxStyle, pref.json('box-style', {})); if (!noteActive()) showBox(boxStyle); });
+  if (has(/^fav-colors$/)) step(() => { favs = [].concat(pref.json('fav-colors', [])).filter(c => /^#[0-9a-f]{6}$/i.test(c)); renderFavs(); });
+  if (has(/^spell-lang$/)) step(() => { const l = pref.get('spell-lang'); if (l && l !== spellLang && (l in SPELL_DICTS || l === 'off' || l === 'device')) { spellSel.value = l; spellSel.onchange(); } });
+  if (has(/^spell-words$/)) step(() => { userWords = new Set([].concat(pref.json('spell-words', []))); spellCache = new Map(); spellAll(); });
+  if (has(/^(grammar|autocorrect|ac-)/)) step(() => { proofUi(); spellAll(); });
+  if (has(/^bar-mode$/)) step(() => { const m = pref.get('bar-mode'); if ((m === 'full' || m === 'compact' || m === 'hidden') && m !== barMode) setBar(m); });
+  if (has(/^draw-settings$/)) step(() => { Object.assign(ds, dsLoad()); updateDrawBar(); });
+  if (has(/^pen-auto$/)) step(() => { $('#penAuto').checked = penAuto(); });
+  if (has(/^hl-colour$/)) step(() => { hlCol = inkHex(pref.get('hl-colour'), '#ffe066'); });
+  if (has(/^hl-favs$/)) step(() => { hlFavs = [].concat(pref.json('hl-favs', [])).filter(c => /^#[0-9a-f]{6}$/i.test(c)); renderHlBar(); });
+  if (has(/^(hl-preset|box-presets)$/)) step(() => { $('#setHlPreset').checked = hlPresetOn(); renderPresets(); });
+  if (has(/^side-(sync|links)$/)) step(() => { side.sync = pref.get('side-sync', '1') !== '0'; side.links = pref.get('side-links', '1') !== '0'; sidePaintUi(); sideLayout(); });
+  if (has(/^side-line$/)) step(() => { paintLineSet(); sideDraw(); });
+  if (has(/^line-click$/)) step(() => setLineClick(lineClickOn()));
+  if (has(/^link-match$/)) step(() => { $('#setLinkMatch').value = linkMatch(); });
+  if (has(/^wg-/)) step(() => { wg.pat = WG_PATS.some(p => p[0] === pref.get('wg-pat')) ? pref.get('wg-pat') : 'grid'; wg.gap = wgClamp(Math.round(+pref.get('wg-gap', 28)) || 28, 12, 48); wg.op = wgClamp(Math.round(+pref.get('wg-op', 55)) || 55, 10, 100); if (wg.el) wgPaint(); });
+  if (!settingsBox.hidden) step(() => { renderDict(); renderFavManage(); fillPrefs(); renderPresets(); });
+}
+renderPrefCloud();
+setTimeout(() => { prefCloud.ready = true; });
 
 // ================= OneDrive and Microsoft 365 =================
 // Sign-in is Microsoft's MSAL.js in a pop-up (loaded only when wanted). Files are browsed with a small picker of our own, through Microsoft Graph,

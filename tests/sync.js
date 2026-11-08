@@ -1,6 +1,6 @@
 // Start on a laptop, carry on on an iPad: notebooks keep in sync through (a fake) Google Drive shared by two browsers
 const {open} = require('./harness');
-const {GSI, GAPI} = require('./drivemock');
+const {GSI, GAPI, appData: appDataMock} = require('./drivemock');
 const path = require('path'); const fs = require('fs');
 const APP = process.env.APP || require('path').resolve(__dirname, '..', 'index.html');
 const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok  ' + m); };
@@ -9,7 +9,8 @@ const CONF = path.join(__dirname, 'index.sync.html');
 fs.writeFileSync(CONF, src.replace(/const GDRIVE = \{[^}]*\};/, () => "const GDRIVE = {clientId: '123456789-abc.apps.googleusercontent.com', apiKey: 'KEY123'};"));
 const CORS = {'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*'};
 
-const drive = {files: {}, n: 0, log: []};          // the one Google Drive both devices use
+const drive = {files: {}, n: 0, log: []};
+const appData = appDataMock();          // its hidden app folder (settings.json)          // the one Google Drive both devices use
 async function device(name, size){
   const d = await open(CONF, size);
   const {context} = d;
@@ -19,6 +20,7 @@ async function device(name, size){
   await context.route(/www\.googleapis\.com\//, async route => {
     const rq = route.request(), url = rq.url(), method = rq.method();
     if (method === 'OPTIONS') return route.fulfill({status: 204, headers: CORS});
+    const app = appData(route, rq); if (app) return app;          // settings.json in the hidden app folder
     drive.log.push(`${name} ${method} ${url.replace(/https:\/\/www\.googleapis\.com/, '').slice(0, 90)}`);
     let m;
     if (/\/drive\/v3\/about/.test(url)) return json(route, {user: {displayName: 'Ada', emailAddress: 'ada@example.com'}});
