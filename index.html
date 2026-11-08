@@ -1281,8 +1281,8 @@ body:not(.side-visible) #annoBar [data-side]{display:none}
 /* the lines between a highlight and its note: faint, and bold when you point at either end */
 .sidelines{position:absolute;left:0;top:0;width:100%;height:100%;z-index:5;pointer-events:none}
 .sidelines.fixed{position:fixed;width:100vw;height:100vh}
-.sidelines .sl{fill:none;stroke-linecap:round;stroke-width:1.5px;opacity:.35}
-.sidelines .sd{opacity:.35}
+.sidelines .sl{fill:none;stroke-linecap:round;stroke-width:1.5px;opacity:.6}
+.sidelines .sd{opacity:.6}
 .sidelines .sa{display:none}
 .sidelines .hot{opacity:1}
 .sidelines .sl.hot{stroke-width:2.5px}
@@ -10733,8 +10733,19 @@ let sideHover = null, sideLayoutRaf = 0, sideDrawRaf = 0, sidePick = null;
 const sideSmall = matchMedia('(max-width: 760px)');
 const sideShown = () => main.classList.contains('side-on');
 const sideDark = hex => { const n = parseInt(hex.slice(1), 16); return 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255) < 128; };
-// the line colour: the highlight's colour, a little deeper so it shows on white
-const sideInk = c => '#' + [1, 3, 5].map(i => Math.round(parseInt(inkHex(c, '#ffe066').slice(i, i + 2), 16) * .55).toString(16).padStart(2, '0')).join('');
+// the line colour: the highlight's own hue, made deeper and richer so it shows on white (scaling the
+// pastel's RGB toward black kept it washed-out and read as grey, so it is done in HSL: same hue, strong
+// saturation, middle lightness)
+const sideInk = c => {
+  const n = parseInt(inkHex(c, '#ffe066').slice(1), 16), r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  let h = 0;
+  if (d) h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  h = (h * 60 + 360) % 360;
+  const s = d ? .75 : 0, l = d ? .42 : .45;  // a grey highlight stays a plain grey line
+  const k = x => { const t = (x + h / 30) % 12, a = s * Math.min(l, 1 - l); return Math.round((l - a * Math.max(-1, Math.min(t - 3, 9 - t, 1))) * 255); };
+  return '#' + [0, 8, 4].map(x => k(x).toString(16).padStart(2, '0')).join('');
+};
 // or a colour of its own: the setting for every line (Same as highlight at first), and any one line's own (data-lc on its note)
 const LINE_COLORS = [['hl', 'Same as highlight'], ['#6b7280', 'Grey'], ['#c62828', 'Red'], ['#e8590c', 'Orange'], ['#c2255c', 'Pink'], ['#7048e8', 'Purple'], ['#1971c2', 'Blue'], ['#0c8599', 'Teal'], ['#2b8a3e', 'Green']];
 const lineOk = c => c === 'hl' || /^#[0-9a-f]{6}$/i.test(c || '');

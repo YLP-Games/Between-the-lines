@@ -199,7 +199,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   const lines = () => page.evaluate(() => [...document.querySelectorAll('svg.sidelines path.sl')].map(p => ({id: p.dataset.id, w: getComputedStyle(p).strokeWidth, o: getComputedStyle(p).opacity, hot: p.classList.contains('hot'), stroke: p.getAttribute('stroke'), d: p.getAttribute('d')})));
   let ls = await lines();
   ok(ls.length === 1 && ls[0].id === hid && /^M[\d.]+ [\d.]+C/.test(ls[0].d), 'a line is drawn between them');
-  ok(ls[0].w === '1.5px' && ls[0].o === '0.35' && !ls[0].hot, 'faint to begin with (1.5px, 35%)');
+  ok(ls[0].w === '1.5px' && ls[0].o === '0.6' && !ls[0].hot, 'faint to begin with (1.5px, 60%)');
   ok(await page.evaluate(() => { const r = document.querySelector('svg.sidelines').getBoundingClientRect(); return r.width >= innerWidth - 1 && getComputedStyle(document.querySelector('svg.sidelines')).pointerEvents === 'none'; }), 'in an overlay that lets clicks through');
   await page.mouse.click(5, 700); await page.waitForTimeout(700);
   await page.mouse.move(5, 650); await page.waitForTimeout(200);
