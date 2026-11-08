@@ -1340,8 +1340,13 @@ body.bresizing .beside{pointer-events:none}
 .bview .bempty{margin:60px 0;text-align:center;color:var(--muted);font-size:15px}
 /* read only: no handles, no cursor in the notes, words can still be selected and copied */
 .bview .grip,.bview .nbar{display:none!important}
-.bview .slide,.bview .strip,.bview .mine,.bview .sidepage{cursor:auto}
-.bview .tl{cursor:text}
+.bview .slide,.bview .strip,.bview .sidepage{cursor:auto}
+.bview .tl,.bview .mine{cursor:text;-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+/* Copy on a note: shows while you point at the note (or after you tap it), and copies the whole note */
+.bview .notebox > .bcopy{position:absolute;top:-13px;right:-4px;z-index:6;display:none;height:26px;min-height:0;padding:0 9px;gap:4px;font-size:13px;background:var(--surface);box-shadow:1px 1px 0 rgba(47,43,36,.2)}
+.bview .notebox > .bcopy .i{width:14px;height:14px}
+.bview .notebox:hover > .bcopy,.bview .notebox.bpick > .bcopy,.bview .notebox > .bcopy:focus-visible{display:inline-flex}
+.bview .notebox.collapsed > .bcopy,.bview .notebox.inline > .bcopy{display:none!important}
 .bview .mine:empty::before{content:none}
 .bview .notebox:hover > .mine{box-shadow:none}
 .bview .notebox.collapsed > .note-chip{cursor:pointer}
@@ -11445,6 +11450,7 @@ function besideFill(html){
   for (const b of v.querySelectorAll('.notebox')) {
     if (!hasContent(b)) { b.remove(); continue; }
     besideChip(b);
+    if (!b.classList.contains('inline') && !b.classList.contains('picbox')) b.insertAdjacentHTML('beforeend', `<button type="button" class="btn bcopy" title="Copy this note" aria-label="Copy this note">${icon('copy')}<span>Copy</span></button>`);
   }
   if (!v.querySelector('.slide, .file-head')) { v.innerHTML = '<p class="bempty">This notebook has no pages yet.</p>'; }
   const sp = v.querySelector('.sidepage');
@@ -11562,8 +11568,39 @@ function restoreBeside(){
   const id = pref.get('beside', '');
   if (id && !bNarrow.matches && id !== curId && docs.some(d => d.id === id && !d.trashed)) besideShow(id);
 }
-// a pencil icon opens its note, right where it is
+// Copy on a note: its words with their formatting (plain words where that is all the clipboard takes)
+async function besideCopy(box, btn){
+  const m = box.querySelector(':scope > .mine'); if (!m) return;
+  const html = m.innerHTML, text = m.innerText.replace(/\n{3,}/g, '\n\n').trim();
+  let done = false;
+  try {
+    if (window.ClipboardItem && navigator.clipboard?.write) await navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([html], {type: 'text/html'}), 'text/plain': new Blob([text], {type: 'text/plain'})})]);
+    else await navigator.clipboard.writeText(text);
+    done = true;
+  } catch {}
+  if (!done) {                                         // (no clipboard access: copy the note as if its words were selected)
+    const s = getSelection(), r = document.createRange(); r.selectNodeContents(m); s.removeAllRanges(); s.addRange(r);
+    try { done = document.execCommand('copy'); } catch {}
+    s.removeAllRanges();
+  }
+  if (!done) { toast('Couldn’t copy. Select the words and press Ctrl+C instead.'); return; }
+  toast('Note copied');
+  btn.innerHTML = `${icon('check')}<span>Copied</span>`;
+  clearTimeout(btn._t); btn._t = setTimeout(() => { btn.innerHTML = `${icon('copy')}<span>Copy</span>`; }, 1400);
+}
+// pressing on words already selected starts a new selection (rather than dragging the old one away, which the pane doesn't allow)
+bView.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'mouse' || e.button || e.shiftKey || e.target.closest('button')) return;
+  const s = getSelection();
+  if (!s.isCollapsed && s.anchorNode && bView.contains(s.anchorNode)) s.removeAllRanges();
+});
+// a pencil icon opens its note, right where it is; Copy copies it; tapping a note shows its Copy
 bView.addEventListener('click', e => {
+  const cp = e.target.closest('.bcopy');
+  if (cp) { besideCopy(cp.parentElement, cp); return; }
+  const nb = e.target.closest('.notebox');
+  for (const x of bView.querySelectorAll('.notebox.bpick')) if (x !== nb) x.classList.remove('bpick');
+  if (nb && !nb.classList.contains('collapsed')) nb.classList.add('bpick');
   const chip = e.target.closest('.note-chip'); if (!chip) return;
   const box = chip.parentElement;
   box.classList.remove('collapsed', 'chip-moved'); ['--cdx', '--cdy'].forEach(k => box.style.removeProperty(k));

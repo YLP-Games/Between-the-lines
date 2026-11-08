@@ -132,6 +132,31 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   await page.waitForTimeout(250);
   ok(!(await page.isVisible('#annoBar')), 'but no highlight bar');
   await page.evaluate(() => getSelection().removeAllRanges());
+  // with the mouse: a text cursor over a note, dragging selects its words, and pressing in a selection starts a new one
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {});
+  const slopes = page.locator('#bView .notebox .mine').filter({hasText: 'slopes'}).first();
+  await slopes.scrollIntoViewIfNeeded(); await page.waitForTimeout(200);
+  ok(await slopes.evaluate(m => getComputedStyle(m).cursor === 'text'), 'a text cursor over a note in the pane');
+  let nb = await slopes.boundingBox();
+  const dragOver = async (x0, x1) => { await page.mouse.move(x0, nb.y + 20); await page.mouse.down(); await page.mouse.move(x1, nb.y + 20, {steps: 10}); await page.mouse.up(); await page.waitForTimeout(200); return page.evaluate(() => getSelection().toString()); };
+  const s1 = await dragOver(nb.x + 10, nb.x + nb.width * .8);
+  ok(/Elasticity/.test(s1), 'dragging over a note selects its words (' + JSON.stringify(s1) + ')');
+  await page.keyboard.press('Control+c'); await page.waitForTimeout(200);
+  ok(/Elasticity/.test(await page.evaluate(() => navigator.clipboard.readText()).catch(() => '')), 'and Ctrl+C copies them');
+  const s2 = await dragOver(nb.x + nb.width * .3, nb.x + nb.width * .5);
+  ok(s2 && s2 !== s1 && s1.includes(s2.trim()), 'pressing inside the selection starts a new one (' + JSON.stringify(s2) + ')');
+  // the note's Copy button
+  await page.evaluate(() => getSelection().removeAllRanges());
+  await slopes.hover(); await page.waitForTimeout(150);
+  const copyBtn = page.locator('#bView .notebox').filter({hasText: 'slopes'}).first().locator(':scope > .bcopy');
+  ok(await copyBtn.isVisible(), 'pointing at a note shows its Copy button');
+  await page.evaluate(() => navigator.clipboard.writeText('-')).catch(() => {});
+  await copyBtn.click(); await page.waitForTimeout(300);
+  ok(/Elasticity is about slopes/.test(await page.evaluate(() => navigator.clipboard.readText()).catch(() => '')), 'Copy puts the whole note on the clipboard');
+  ok(/Copied/.test(await copyBtn.textContent()), 'and says Copied');
+  ok(await page.evaluate(() => [...document.querySelectorAll('#bView .sidepage .notebox')].every(b => b.querySelector(':scope > .bcopy'))), 'side notes have Copy too');
+  await page.evaluate(t => { document.getElementById('bBody').scrollTop = t; }, keepPane); await page.waitForTimeout(200);
+  await page.mouse.move(300, 400); await page.waitForTimeout(150);
 
   // ---- the left is still fully editable and saves only the left ----
   await page.evaluate(() => scrollTo(0, 0));
