@@ -92,6 +92,17 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   ok(await page.evaluate(() => document.getElementById('bView').classList.contains('side-on') && getComputedStyle(document.querySelector('#bView .sidepage')).display === 'block'), 'side pages sit beside the slides, as in that notebook');
   ok(await page.evaluate(() => [...document.querySelectorAll('#bView .sidepage .notebox')].some(b => /price elasticity/.test(b.textContent))), 'with their notes');
   ok(await page.evaluate(() => { const sp = document.querySelectorAll('#bView .sidepage')[1], bx = sp.querySelector('.notebox'), a = sp.getBoundingClientRect(), c = bx.getBoundingClientRect(); return c.left >= a.left && c.right <= a.right + 1 && c.top >= a.top; }), 'a side note sits inside its side page');
+  // the pane's Side notes option: on as that notebook has them, off and on again, and beside the slides even when the pane is narrow
+  ok(await page.isVisible('#bSide') && await page.getAttribute('#bSide', 'aria-pressed') === 'true', 'the pane has a Side notes option, on');
+  const besideOf = () => page.evaluate(() => { const s = document.querySelectorAll('#bView .slide')[1], sp = s.nextElementSibling, a = s.getBoundingClientRect(), b = sp.getBoundingClientRect(); return sp.classList.contains('sidepage') && b.width > 20 && b.left >= a.right - 1 && Math.abs(b.top - a.top) < 2; });
+  await page.evaluate(() => { bs.ratio = .2; besideApply(); besideRelayout(); }); await page.waitForTimeout(700);
+  ok(await besideOf(), 'a narrow pane keeps each side page beside its slide');
+  await page.evaluate(() => { bs.ratio = .45; besideApply(); besideRelayout(); }); await page.waitForTimeout(500);
+  await page.click('#bSide'); await page.waitForTimeout(300);
+  ok(await page.getAttribute('#bSide', 'aria-pressed') === 'false' && await page.evaluate(() => getComputedStyle(document.querySelector('#bView .sidepage')).display === 'none'), 'Side notes off hides them in the pane');
+  ok(await page.evaluate(id => get('doc:' + id).then(fromStored).then(h => /data-on="1"/.test(h)), lecId), 'without changing the notebook itself');
+  await page.click('#bSide'); await page.waitForTimeout(300);
+  ok(await page.getAttribute('#bSide', 'aria-pressed') === 'true' && await besideOf(), 'and on again');
   ok(await page.evaluate(() => !document.querySelector('#main .sidelines')?.childElementCount || true), 'link lines are not drawn into the pane');
   ok(await page.evaluate(() => { const s = document.querySelector('.sidelines'); return !s || s.hidden || s.style.clipPath.includes('inset'); }), 'the line overlay is clipped to the left notebook');
   ok(await page.locator('#bPage option').count() >= 6, 'a page jump list');
@@ -161,6 +172,14 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   ok(await page.evaluate(() => document.querySelectorAll('#bView [contenteditable]').length === 0 && document.querySelectorAll('#main .mine[contenteditable="true"]').length > 0), 'the pane is read only and the left is editable');
   ok(await page.evaluate(() => [...document.querySelectorAll('#bView .notebox')].some(b => /Week two note/.test(b.textContent) && /edited/.test(b.textContent))), 'week2 in the pane has the edit made while it was on the left');
   ok(await page.locator('#main .pagecard').count() >= 6 && await page.evaluate(() => document.getElementById('main').classList.contains('side-on')), 'lecture on the left kept its side notes');
+  await page.evaluate(() => { bs.ratio = .8; besideApply(); besideRelayout(); }); await page.waitForTimeout(800);
+  ok(await page.evaluate(() => { const m = document.getElementById('main'), s = m.querySelectorAll('.slide')[1], sp = sideOf(s); return m.classList.contains('side-on') && !m.classList.contains('side-stack') && sp.getBoundingClientRect().left >= s.getBoundingClientRect().right - 1; }), 'on the left too, a narrow page column keeps side pages beside their slides');
+  ok(await page.isVisible('#bSide') && await page.getAttribute('#bSide', 'aria-pressed') === 'false', 'week2 in the pane: Side notes off, as it has none');
+  await page.click('#bSide'); await page.waitForTimeout(300);
+  ok(await page.evaluate(() => { const sl = document.querySelectorAll('#bView .slide'); return sl.length && [...sl].every(s => s.nextElementSibling?.classList.contains('sidepage')); }), 'turning them on gives week2 blank side pages beside its slides');
+  await page.screenshot({path: path.join(OUT, 'beside-sidenotes.png')});
+  await page.click('#bSide'); await page.waitForTimeout(200);
+  await page.evaluate(w => { bs.ratio = w; besideApply(); besideRelayout(); }, wSet / (await rect('#main')).w > 0 ? +(await page.evaluate(() => localStorage.getItem('beside-ratio'))) : .45); await page.waitForTimeout(600);
   ok(Math.abs((await rect('#beside')).w - wSet) < 4, 'the divider stays where it was');
   const lscroll = await page.evaluate(() => scrollY);
   ok(Math.abs(await page.evaluate(() => scrollY) - lscroll) < 2 && lscroll >= 0, 'the left keeps a scroll position (' + Math.round(lscroll) + ')');

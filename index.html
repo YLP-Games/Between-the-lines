@@ -1345,7 +1345,8 @@ body.bresizing .beside{pointer-events:none}
 .bview.side-on > .file-head{grid-column:1 / -1}
 .bview.side-on > .slide{grid-column:1;align-self:stretch}
 .bview.side-on > .sidepage{grid-column:2;align-self:stretch}
-@container (max-width:640px){.bview.side-on{grid-template-columns:minmax(0,1fr)}.bview.side-on > .sidepage{grid-column:1;align-self:start}}
+@container (max-width:640px){.bview.side-on{column-gap:10px;padding-inline:10px}}      /* (a narrow pane keeps each side page beside its slide: both just get smaller) */
+.bhead #bSide[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 #besideInfo{min-width:0;max-width:38ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bdrop{position:fixed;z-index:40;top:var(--appbar-h);bottom:var(--status-h);right:0;width:50vw;display:flex;align-items:center;justify-content:center;pointer-events:none;background:color-mix(in srgb,var(--accent) 12%,transparent);border:2px dashed var(--accent);box-sizing:border-box}
 .bdrop[hidden]{display:none}
@@ -1355,6 +1356,7 @@ body.bresizing .beside{pointer-events:none}
   .bdiv{display:none}
   .bhead select{flex-basis:110px}
   .bhead .bro{display:none}
+  .bhead #bSide span{display:none}
 }
 
 /* ================= writing tools: a temporary writing guide, tables and journal entries ================= */
@@ -2413,6 +2415,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <span class="bname" id="bName"></span>
       <span class="bro" title="You read this notebook here. Swap to write in it."><svg class="i"><use href="#i-lock"/></svg>Read only</span>
       <select id="bPage" aria-label="Jump to a page" hidden></select>
+      <button type="button" class="btn" id="bSide" aria-pressed="false" hidden title="Side notes: show each page's side notes beside it in this notebook, or hide them"><svg class="i"><use href="#i-sidepage"/></svg><span>Side notes</span></button>
       <button type="button" class="btn outline" id="bSwap" title="Swap: write in this notebook, and read the one on the left here"><svg class="i"><use href="#i-sync"/></svg><span>Swap</span></button>
       <button type="button" class="btn" id="bClose" aria-label="Close the notebook beside" title="Close (Esc)"><svg class="i"><use href="#i-x"/></svg></button>
     </div>
@@ -6468,7 +6471,7 @@ function fitPlan(W, size){
   if (vis && !sideForce) {                      // (while the PDF is made the side pages sit beside their slides, at full size)
     split = !side.sync;
     const beside = W + SIDE_GAP + SIDE_W + 32, apart = W + SIDE_W + 80;
-    stack = sideSmall.matches || room / (split ? apart : beside) < STACK_Z;
+    stack = sideSmall.matches || (room / (split ? apart : beside) < STACK_Z && !main.parentElement.classList.contains('has-beside'));      // (in split view they stay beside, smaller)
     if (stack) split = false;
     total = stack ? W + 32 : split ? apart : beside;
   } else if (vis) total = W + SIDE_GAP + SIDE_W + 32;
@@ -11252,7 +11255,7 @@ sidePaintUi();
 // saved copy with editing taken out; Swap trades places. Nothing in the pane is ever saved: currentDoc() copies #main only.
 const bEl = $('#beside'), bBody = $('#bBody'), bView = $('#bView'), bPage = $('#bPage'), bInfo = $('#besideInfo'), bDiv = $('#bDiv'), bName = $('#bName'), bDrop = $('#bDrop'), bSpace = $('.workspace');
 const bNarrow = matchMedia('(max-width: 900px)');                   // (on a phone the notebook beside covers the page; an upright tablet still has room for both)
-const bs = {id: null, token: 0, busy: false, ratio: Math.min(.8, Math.max(.2, parseFloat(pref.get('beside-ratio', '0.45')) || .45))};
+const bs = {id: null, token: 0, busy: false, sideSaved: false, sideBy: new Map(), ratio: Math.min(.8, Math.max(.2, parseFloat(pref.get('beside-ratio', '0.45')) || .45))};
 // the room the two notebooks share: the workspace less the sidebar and the notes list when they are docked
 function besideAvail(){
   const w = el => el.offsetParent !== null ? el.offsetWidth : 0;
@@ -11308,10 +11311,33 @@ function besideFill(html){
   }
   if (!v.querySelector('.slide, .file-head')) { v.innerHTML = '<p class="bempty">This notebook has no pages yet.</p>'; }
   const sp = v.querySelector('.sidepage');
-  v.classList.toggle('side-on', !!(sp && sp.dataset.on === '1' && v.querySelector('.slide')));
+  bs.sideSaved = !!(sp && sp.dataset.on === '1');
+  besideSide();
   v.querySelectorAll('.pagecard, .sidepage').forEach(renderInk);
   besidePages();
 }
+// Side notes in the pane: as that notebook has them, until you turn them on or off here (remembered for each notebook while the app is open).
+// A notebook that never had side pages gets blank ones, so its pages line up the same way.
+function besideSide(){
+  const btn = $('#bSide'), slides = [...bView.querySelectorAll(':scope > .slide')];
+  btn.hidden = !slides.length;
+  const on = !!slides.length && (bs.sideBy.has(bs.id) ? bs.sideBy.get(bs.id) : bs.sideSaved);
+  if (on) {
+    const ref = bView.querySelector('.sidepage'), d = sideDefaults(), bg = sideHex(ref?.dataset.bg) || d.bg, pat = ref?.dataset.pat || d.pat;
+    for (const s of slides) {
+      if (s.nextElementSibling?.classList.contains('sidepage')) continue;
+      const sp = document.createElement('aside'); sp.className = 'sidepage'; sp.dataset.pat = pat; sp.style.backgroundColor = bg; sp.classList.toggle('dark', sideDark(bg));
+      s.after(sp);
+    }
+  }
+  bView.classList.toggle('side-on', on);
+  btn.setAttribute('aria-pressed', on);
+}
+$('#bSide').onclick = () => {
+  if (!bs.id) return;
+  bs.sideBy.set(bs.id, !bView.classList.contains('side-on'));
+  besideSide(); besideLayout();
+};
 function besidePages(){
   const slides = [...bView.querySelectorAll('.slide')];
   bPage.replaceChildren(...slides.map((s, i) => Object.assign(document.createElement('option'), {value: i, textContent: `${i + 1}. ${(pageTitle(s) || 'Page ' + (i + 1)).slice(0, 38)}`})));
