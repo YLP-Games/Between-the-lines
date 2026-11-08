@@ -109,6 +109,14 @@ input[type=color]{width:28px;height:28px;padding:0;border:1px solid var(--line-s
 .panel::after{right:0;margin-left:-24px;background:linear-gradient(to left,var(--surface) 72%,transparent)}
 .panel.more-l::before,.panel.more-r::after{opacity:1}
 @media (prefers-reduced-motion:reduce){.panel,.panel::before,.panel::after{transition:none}}
+/* and a round arrow at that edge (as on the highlight colours) says so, and scrolls the tools along a screenful */
+.rsl{position:absolute;z-index:4;top:var(--rsl-top,62px);width:22px;height:22px;padding:0;display:none;align-items:center;justify-content:center;border:1.5px solid var(--line-strong);border-radius:50%;background:var(--surface);color:var(--ink);cursor:pointer}
+.rsl .i{width:13px;height:13px}
+.rsl[data-dir="-1"]{left:calc(var(--gutter-l) - 6px)}
+.rsl[data-dir="1"]{right:calc(var(--gutter-r) - 6px)}
+.rsl[data-dir="-1"] .i{transform:scaleX(-1)}
+.ribbon.more-l .rsl[data-dir="-1"],.ribbon.more-r .rsl[data-dir="1"]{display:flex}
+.ribbon.compact:not(.peek) .rsl{display:none}
 .ribbon.compact:not(.peek) .panel{display:none}
 .ribbon.compact.peek .panel{position:absolute;left:0;right:0;top:100%;padding:6px var(--gutter-r) 6px var(--gutter-l);background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 8px 16px rgba(16,24,40,.12)} /* taste-skill-ignore: the folded toolbar floats over the page */
 .ribbon.compact .tab[aria-selected="true"]:not(.peeking){font-weight:400;border-bottom-color:transparent;color:var(--muted)}
@@ -676,7 +684,7 @@ select{font-size:16px}
 .tab{font-size:17.5px;border-bottom:none;padding:0 12px}
 .tab{position:relative;isolation:isolate}
 .tab[aria-selected="true"]{font-weight:400;color:var(--ink)}
-.tab[aria-selected="true"]::after{content:"";position:absolute;z-index:-1;left:6px;right:4px;top:50%;height:44%;background:color-mix(in srgb,var(--accent) 22%,transparent);border-radius:3px 8px 4px 9px;transform:rotate(-1.2deg) skewX(-8deg)}
+.tab[aria-selected="true"]::after{content:"";position:absolute;z-index:-1;left:6px;right:4px;top:23%;height:56%;background:color-mix(in srgb,var(--accent) 22%,transparent);border-radius:3px 8px 4px 9px;transform:rotate(-1.2deg) skewX(-8deg)}
 .ribbon.compact .tab[aria-selected="true"]::after{display:none}
 .cap{font-size:13.5px}
 .sep{background:transparent;margin:4px 4px}
@@ -1767,7 +1775,7 @@ main.reading .cd-lang::after,main.pdfpaper .cd-lang::after{content:""}
   .chippop .cc[aria-pressed="true"],.hdot[aria-pressed="true"]{box-shadow:none;outline:2px solid var(--accent);outline-offset:-5px}
   .hdots{gap:0;padding:0}
   .hwrap{min-width:132px;max-width:264px}
-  .hsl{display:none!important}
+  .hsl,.rsl{display:none!important}
   :is(.annobar,.annopop) input[type=color]{width:44px;height:44px;border:none;padding:9px;background-clip:content-box}
   :is(.annobar,.annopop) input[type=color]::-webkit-color-swatch-wrapper{padding:0}
   :is(.annobar,.annopop) input[type=color]::-webkit-color-swatch{border:1.5px solid var(--pencil)}
@@ -7296,7 +7304,7 @@ mediaBar.addEventListener('click', e => {
   if (b.dataset.act === 'remove') return removeMedia();
   if (b.dataset.act === 'note') { const el = mediaSel, slide = el.closest('.slide'); clearMediaSel(); let blk = el.closest('.picbox, .blk') || el; while (blk.nextElementSibling?.classList.contains('notebox')) blk = blk.nextElementSibling; addBlockNote(blk, slide); }
 });
-document.addEventListener('mousedown', e => { if (mediaSel && !e.target.closest('.mediabar, #panel-picture, #ribbon .tabs, .pfpop, .pfcrop') && !mediaSel.contains(e.target)) clearMediaSel(); });
+document.addEventListener('mousedown', e => { if (mediaSel && !e.target.closest('.mediabar, #panel-picture, #ribbon .tabs, #ribbon .rsl, .pfpop, .pfcrop') && !mediaSel.contains(e.target)) clearMediaSel(); });
 document.addEventListener('keydown', e => {
   if (!mediaSel || e.target.closest?.('input, textarea, select') || pfBusy()) return;      // (typing a size or alt text, a Picture Format list or a crop open: they have their own keys)
   if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); removeMedia(); }
@@ -8998,14 +9006,24 @@ function selectTab(name, focus){
     $('#panel-' + t.dataset.tab).hidden = !on;
     if (on && focus) t.focus();
   }
+  panelFade($('#panel-' + name));
 }
 // a tab's tools scroll sideways when they don't fit: the edge with more tools beyond it fades, and the scroll bar shows only while you point at the ribbon or scroll it
 function panelFade(p){
   if (p.hidden) return;
   const max = p.scrollWidth - p.clientWidth;
   p.classList.toggle('more-l', p.scrollLeft > 2); p.classList.toggle('more-r', p.scrollLeft < max - 2);
+  ribbon.classList.toggle('more-l', p.classList.contains('more-l')); ribbon.classList.toggle('more-r', p.classList.contains('more-r'));
+  const row = p.querySelector('.grp > .row');      // (the arrows sit level with the buttons, not their captions)
+  if (row && ribbon.matches('.more-l, .more-r')) { const r = row.getBoundingClientRect(); ribbon.style.setProperty('--rsl-top', Math.round(r.top - ribbon.getBoundingClientRect().top + (r.height - 22) / 2) + 'px'); }
 }
 {
+  for (const d of [-1, 1]) ribbon.insertAdjacentHTML('beforeend', `<button type="button" class="rsl" data-dir="${d}" tabindex="-1" aria-hidden="true" title="${d < 0 ? 'Earlier tools' : 'More tools'}">${icon('right')}</button>`);
+  ribbon.addEventListener('mousedown', e => { if (e.target.closest('.rsl')) e.preventDefault(); });      // (the words you've selected stay selected)
+  ribbon.addEventListener('click', e => {
+    const b = e.target.closest('.rsl'); if (!b) return;
+    const p = ribbon.querySelector('.panel:not([hidden])'); if (p) p.scrollBy({left: b.dataset.dir * p.clientWidth * .7, behavior: matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth'});
+  });
   const panels = [...ribbon.querySelectorAll('.panel')], ro = new ResizeObserver(es => es.forEach(en => panelFade(en.target.closest('.panel') || en.target)));
   panels.forEach(p => { ro.observe(p); [...p.children].forEach(c => ro.observe(c)); });
   ribbon.addEventListener('scroll', e => {
