@@ -49,7 +49,7 @@ const docsOf = p => p.evaluate(async () => (await get('docs')).map(d => ({id: d.
   // ---- the ⋯ menu ----
   await menuOf('week2');
   const items = await page.$$eval('.docmenu button', els => els.map(e => e.textContent.trim()));
-  ok(items.join('|') === 'Rename|Add to Favourites|Duplicate|Open beside|Share via Google Drive…|Share via OneDrive…|Move to Trash', 'the menu: ' + items.join(' | '));
+  ok(items.join('|') === 'Rename|Add to Favourites|Duplicate|Copy all notes|Open beside|Share via Google Drive…|Share via OneDrive…|Move to Trash', 'the menu: ' + items.join(' | '));
   ok(await page.evaluate(() => document.activeElement.textContent.trim()) === 'Rename', 'the menu opens with Rename focused');
   await page.screenshot({path: path.join(OUT, 'trash-0-menu.png'), clip: {x: 0, y: 0, width: 560, height: 900}});
   await page.keyboard.press('Escape'); await page.waitForTimeout(100);

@@ -2001,6 +2001,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
 <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></symbol>
 <symbol id="i-star-off" viewBox="0 0 24 24"><path d="M8.34 8.34 2 9.27l5 4.87L5.82 21 12 17.77 18.18 21l-.59-3.43"/><path d="M18.42 12.76 22 9.27l-6.91-1L12 2l-1.44 2.91"/><path d="m2 2 20 20"/></symbol>
 <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+<symbol id="i-paste" viewBox="0 0 24 24"><path d="M15 2H9a1 1 0 0 0-1 1v2c0 .6.4 1 1 1h6c.6 0 1-.4 1-1V3c0-.6-.4-1-1-1Z"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2M16 4h2a2 2 0 0 1 2 2v2M11 14h10"/><path d="m17 10 4 4-4 4"/></symbol>
 <symbol id="i-restore" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
 <symbol id="i-select" viewBox="0 0 24 24"><path d="M5 3a2 2 0 0 0-2 2"/><path d="M19 3a2 2 0 0 1 2 2"/><path d="M21 19a2 2 0 0 1-2 2"/><path d="M5 21a2 2 0 0 1-2-2"/><path d="M9 3h1"/><path d="M9 21h1"/><path d="M14 3h1"/><path d="M14 21h1"/><path d="M3 9v1"/><path d="M21 9v1"/><path d="M3 14v1"/><path d="M21 14v1"/></symbol>
 <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
@@ -2264,7 +2265,13 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <span class="sep"></span>
       <div class="grp"><div class="row">
         <button class="btn" id="selAllBtn" title="Select all: every note on the current page, to restyle, move, line up or delete them together (Ctrl+A when you're not typing in a note)"><svg class="i"><use href="#i-select"/></svg>Select all</button>
+        <button class="btn" id="selBookBtn" title="Select all in notebook: every note on every page, to copy them into another notebook, restyle or delete them together (Ctrl+A twice)"><svg class="i"><use href="#i-book"/></svg>Whole notebook</button>
       </div><span class="cap">Select</span></div>
+      <span class="sep"></span>
+      <div class="grp"><div class="row">
+        <button class="btn" id="copyNotesBtn" title="Copy notes: the notes you selected, or else every note in this notebook, to paste into another notebook (Ctrl+C)"><svg class="i"><use href="#i-copy"/></svg>Copy notes</button>
+        <button class="btn" id="pasteNotesBtn" disabled title="Paste notes: the notes you copied go into this notebook, each on the page with the same number and in the same place (Ctrl+V when you're not typing in a note)"><svg class="i"><use href="#i-paste"/></svg>Paste notes</button>
+      </div><span class="cap">Copy to another notebook</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row" id="alignCtl">
         <button class="btn" id="alLeft" aria-label="Align left" title="Align left: line the selected notes up on their left edge"><svg class="i"><use href="#i-nalign-left"/></svg></button>
@@ -2456,7 +2463,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
 </footer>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
-<div id="multibar" class="pop multibar" role="toolbar" aria-label="Selected notes" hidden><span id="multiCount"></span><button type="button" class="btn" data-act="del">Delete</button><button type="button" class="btn primary" data-act="done">Done</button></div>
+<div id="multibar" class="pop multibar" role="toolbar" aria-label="Selected notes" hidden><span id="multiCount"></span><button type="button" class="btn" data-act="copy" title="Copy the selected notes, to paste them into another notebook with Paste notes (Box tab) or Ctrl+V (Ctrl+C)"><svg class="i"><use href="#i-copy"/></svg>Copy</button><button type="button" class="btn" data-act="del">Delete</button><button type="button" class="btn primary" data-act="done">Done</button></div>
 <div class="dropcover" id="dropCover" hidden><span><svg class="i" style="width:22px;height:22px"><use href="#i-upload"/></svg>Drop to open</span></div>
 
 <div class="pop settings" id="settings" role="dialog" aria-modal="false" aria-labelledby="setTitle" hidden>
@@ -8554,7 +8561,9 @@ document.addEventListener('keydown', e => {
 
 // ================= Select all: every note on the current page, to restyle, move or delete together =================
 const multi = new Set();
+let multiWhole = null;             // what Select all took: the page, or 'all' of the notebook
 function clearMulti(){
+  multiWhole = null;
   if (!multi.size) return;
   multi.forEach(b => b.classList.remove('multi-sel')); multi.clear();
   $('#multibar').hidden = true; document.body.classList.remove('multi');
@@ -8562,18 +8571,20 @@ function clearMulti(){
 }
 function selectAllNotes(card){
   if (reading) { toast('Select all works when you’re editing (not in Study mode).'); return; }
-  card = card || currentCard();
-  // (an empty note you just clicked into is about to disappear, so it isn't counted)
-  const boxes = card ? [...card.querySelectorAll('.notebox'), ...(sideShown() ? sideOf(card)?.querySelectorAll('.notebox') || [] : [])].filter(hasContent) : [];
-  if (!boxes.length) { toast('There are no notes on this page to select.'); return; }
+  const all = card === 'all'; card = all ? null : card || currentCard();
+  // (an empty note you just clicked into is about to disappear, so it isn't counted). The whole notebook: side notes only while side pages show
+  const boxes = (all ? docBoxes().filter(b => sideShown() || !b.closest('.sidepage')) : card ? [...card.querySelectorAll('.notebox'), ...(sideShown() ? sideOf(card)?.querySelectorAll('.notebox') || [] : [])] : []).filter(hasContent);
+  if (!boxes.length) { toast(`There are no notes ${all ? 'in this notebook' : 'on this page'} to select.`); return; }
   if (document.activeElement?.closest?.('.mine')) document.activeElement.blur();
   getSelection().removeAllRanges(); active = null; savedRange = null;
   clearMulti();
   boxes.forEach(b => { b.classList.add('multi-sel'); multi.add(b); });
-  $('#multiCount').textContent = `${boxes.length} note${boxes.length > 1 ? 's' : ''} selected`;
+  multiWhole = all ? 'all' : 'page';
+  $('#multiCount').textContent = `${boxes.length} note${boxes.length > 1 ? 's' : ''} selected` + (all ? ' in this notebook' : '');
   $('#multibar').hidden = false; document.body.classList.add('multi');
   showStyle(noteStyle(boxes[0].querySelector('.mine'))); showBox(boxOf(boxes[0]));
-  hint('Change the font, size or colours in the toolbar, drag a move handle or use the arrow keys to move them, line them up on the Box tab, or press Delete. Esc to finish.');
+  hint(all ? 'Copy (Ctrl+C), open the other notebook and press Paste notes on the Box tab (or Ctrl+V): each note goes on the page with the same number. You can also restyle them or press Delete. Esc to finish.'
+    : 'Change the font, size or colours in the toolbar, drag a move handle or use the arrow keys to move them, line them up on the Box tab, or press Delete. Ctrl+A again selects every note in the notebook. Esc to finish.');
 }
 function deleteMulti(){
   const n = multi.size; if (!n) return;
@@ -8624,22 +8635,128 @@ main.addEventListener('pointerdown', e => {
   if (multi.has(box) && multi.size > 1) { e.preventDefault(); e.stopImmediatePropagation(); startGroupMove(g, e); }
 }, true);
 $('#selAllBtn').onclick = () => selectAllNotes();
+$('#selBookBtn').onclick = () => selectAllNotes('all');
 $('#multibar').addEventListener('mousedown', e => e.preventDefault());       // keep the notes selected
-$('#multibar').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.act === 'del') deleteMulti(); else clearMulti(); });
+$('#multibar').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.act === 'copy') copyNotes([...multi]); else if (b.dataset.act === 'del') deleteMulti(); else clearMulti(); });
 const typingIn = t => t?.closest?.('input, textarea, select, [contenteditable="true"], .mine');
 document.addEventListener('keydown', e => {
-  // Ctrl+A / Cmd+A: inside a note the browser selects that note's text only; elsewhere it selects every note on the page
+  // Ctrl+A / Cmd+A: inside a note the browser selects that note's text only; elsewhere it selects every note on the page, and again, every note in the notebook
   if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'a') {
     if (typingIn(e.target) || reading || !main.querySelector('.notebox')) return;
-    e.preventDefault(); selectAllNotes(); return;
+    e.preventDefault(); selectAllNotes(multi.size && multiWhole === 'page' ? 'all' : undefined); return;
   }
   if (!multi.size || typingIn(e.target)) return;
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'c' && !getSelection().toString()) { e.preventDefault(); copyNotes([...multi]); return; }
   if (e.key === 'Escape') { e.preventDefault(); clearMulti(); }
   else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteMulti(); }
   else if (/^Arrow/.test(e.key)) {
     e.preventDefault(); const st = e.shiftKey ? 10 : 1;
     nudgeMulti(e.key === 'ArrowLeft' ? -st : e.key === 'ArrowRight' ? st : 0, e.key === 'ArrowUp' ? -st : e.key === 'ArrowDown' ? st : 0);
   }
+});
+// ================= Copy notes into another notebook: the selected notes (or all of a notebook's), each pasted on the page with the same number =================
+let noteClip = null;               // {from: the notebook's name, mark: what went on the clipboard, notes: [{html, page, pagecard, kind, y, at}]}
+const clipSideSlide = (root, sp) => { const p = sp.previousElementSibling; return p?.classList.contains('slide') ? p : sp.dataset.for ? root.querySelector(`.slide[data-sid="${CSS.escape(sp.dataset.for)}"]`) : null; };
+// where a note is (also in a notebook that isn't open): its page, and on it a side note, a floating one, one between the lines of a page
+// (y: where the piece of page above it ends) or one after a slide's nth block of words (at; a note in the words counts as after its block)
+function clipSpot(root, b, slides){
+  const sp = b.closest('.sidepage'), slide = sp ? clipSideSlide(root, sp) : b.closest('.slide');
+  const s = {page: Math.max(0, slides.indexOf(slide)), pagecard: !!slide?.classList.contains('pagecard')};
+  if (sp) return {...s, kind: 'side'};
+  if (b.classList.contains('floating')) return {...s, kind: 'float'};
+  if (s.pagecard) {
+    let p = b.previousElementSibling; while (p && !p.classList.contains('strip')) p = p.previousElementSibling;
+    let n = b.nextElementSibling; while (n && !n.classList.contains('strip')) n = n.nextElementSibling;
+    return {...s, kind: 'line', y: p ? +p.dataset.y1 : n ? +n.dataset.y0 : 0};
+  }
+  return {...s, kind: 'after', at: (slide ? [...slide.querySelectorAll('.blk')] : []).filter(k => k.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING).length - 1};
+}
+function clipHtml(b){
+  const c = b.cloneNode(true);
+  c.classList.remove('multi-sel', 'touched', 'moving', 'flash'); c.style.translate = '';
+  c.querySelectorAll(':scope > .grip, :scope > .nbar, :scope > .note-chip').forEach(g => g.remove());
+  c.querySelectorAll('.media-sel').forEach(m => m.classList.remove('media-sel'));
+  return c.outerHTML;
+}
+function copyNotes(boxes, root = main, name = curDoc()?.name){
+  boxes = boxes.filter(hasContent);
+  if (!boxes.length) { toast('There are no notes to copy.'); return; }
+  const slides = [...root.querySelectorAll('.slide')], n = boxes.length, what = `${n} note${n > 1 ? 's' : ''}`;
+  noteClip = {from: name || 'Untitled', mark: `${what} from “${name || 'Untitled'}” (Between the Lines)`, notes: boxes.map(b => ({html: clipHtml(b), ...clipSpot(root, b, slides)}))};
+  navigator.clipboard?.writeText(noteClip.mark).catch(() => {});      // (so Ctrl+V knows the notes are still what you copied last)
+  $('#pasteNotesBtn').disabled = false;
+  toast(`Copied ${what}. Open another notebook and press Paste notes on the Box tab (or Ctrl+V).`);
+}
+// all of a notebook's notes, from its ⋯ menu (it needn't be open)
+async function copyDocNotes(id){
+  if (id === curId) return copyNotes(docBoxes());
+  const root = document.createElement('div'); root.innerHTML = await fromStored(await get('doc:' + id)); sideJoin(root);
+  copyNotes([...root.querySelectorAll('.notebox')], root, docs.find(d => d.id === id)?.name);
+}
+// a note that sat in a slide's words comes in as a note under them
+function clipBlock(b){
+  if (!b.classList.contains('inline')) return b;
+  const d = document.createElement('div'), m = b.querySelector(':scope > .mine'), dm = document.createElement('div');
+  for (const a of b.attributes) d.setAttribute(a.name, a.value);
+  d.classList.remove('inline');
+  if (m) { for (const a of m.attributes) dm.setAttribute(a.name, a.value); dm.append(...m.childNodes); }
+  d.append(dm); return d;
+}
+function pasteNotes(){
+  if (reading) { toast('Paste notes works when you’re editing (not in Study mode).'); return; }
+  if (!noteClip?.notes.length) { toast('Copy some notes first: Box tab › Whole notebook, then Copy.'); return; }
+  if (document.activeElement?.closest?.('.mine')) document.activeElement.blur();
+  clearMulti(); clearMediaSel(); hideGap();
+  let slides = [...main.querySelectorAll('.slide')];
+  if (!slides.length) { addPageAfter(null); document.activeElement?.blur?.(); slides = [...main.querySelectorAll('.slide')]; }
+  // notes copied together keep the lines between them (with new ids, so they are their own); lines to highlights that aren't in this notebook go
+  const ids = new Map(), tmp = document.createElement('div');
+  const boxes = noteClip.notes.map(n => { tmp.innerHTML = n.html; const b = tmp.firstElementChild; if (b.dataset.nid) ids.set(b.dataset.nid, 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)); return clipBlock(b); });
+  for (const b of boxes) {
+    if (b.dataset.nid) b.dataset.nid = ids.get(b.dataset.nid);
+    const keep = linksOf(b).filter(id => ids.has(id));
+    if (!keep.length) { for (const a of ['data-link', 'data-lc', 'data-ls']) b.removeAttribute(a); continue; }
+    b.dataset.link = keep.map(id => ids.get(id)).join(' ');
+    const lc = (b.dataset.lc || '').split(' ').map(t => { const [k, v] = t.split('='); return v === undefined ? t : ids.has(k) ? ids.get(k) + '=' + v : ''; }).filter(Boolean);
+    const ls = (b.dataset.ls || '').split(' ').filter(x => ids.has(x)).map(x => ids.get(x));
+    if (lc.length) b.dataset.lc = lc.join(' '); else b.removeAttribute('data-lc');
+    if (ls.length) b.dataset.ls = ls.join(' '); else b.removeAttribute('data-ls');
+  }
+  const put = new Set(), sides = new Set();
+  const after = (ref, b) => { while (put.has(ref.nextElementSibling)) ref = ref.nextElementSibling; ref.after(b); };      // (after the ones pasted there already, so they keep their order)
+  noteClip.notes.forEach((n, i) => {
+    const b = boxes[i], card = slides[Math.min(n.page, slides.length - 1)], content = card.querySelector('.content') || card;
+    if (n.kind === 'side') {
+      let sp = sideOf(card);
+      if (!sp) { sp = document.createElement('aside'); sp.className = 'sidepage'; sp.dataset.for = sideSid(card); sideStyle(sp); card.after(sp); }
+      sp.append(b); sides.add(sp);
+    } else if (n.kind === 'float') card.append(b);
+    else if (card.classList.contains('pagecard')) { insertBoxAt(card, n.kind === 'line' ? n.y : Infinity, b); while (put.has(b.nextElementSibling)) b.nextElementSibling.after(b); }
+    else {
+      const blks = [...card.querySelectorAll('.blk')];
+      if (n.kind === 'after' && blks.length && n.at >= 0) after(blks[Math.min(n.at, blks.length - 1)], b);
+      else if (n.kind === 'after' && blks.length) { let ref = content.firstElementChild; while (put.has(ref)) ref = ref.nextElementSibling; content.insertBefore(b, ref); }
+      else content.append(b);
+    }
+    put.add(b);
+  });
+  put.forEach(addGrips); wtUpgrade();
+  placeFloats(); spreadChips(); if (sides.size) sideSoon();
+  if (LAYOUTS[layout]) paginateView();
+  updateNotesBtn(); spellAllSoon(); saveSoon();
+  const n = put.size, past = noteClip.notes.some(x => x.page >= slides.length);
+  toast(`Pasted ${n} note${n > 1 ? 's' : ''} from “${noteClip.from}”, each on the page with the same number` +
+    (past ? ` (notes from pages past this notebook’s last page are on its last page)` : '') + '.' +
+    (sides.size && !sideShown() ? ' Side notes are on the side pages: turn on Side notes in the View tab to see them.' : '') + ' Back (Ctrl+Z) takes them out again.');
+}
+$('#copyNotesBtn').onclick = () => multi.size ? copyNotes([...multi]) : copyNotes(docBoxes());
+$('#pasteNotesBtn').onclick = pasteNotes;
+// Ctrl+V on the page (not in a note): the notes you copied, while they are still what is on the clipboard
+document.addEventListener('paste', e => {
+  if (e.defaultPrevented || reading || !noteClip || typingIn(e.target) || e.target.closest?.('dialog')) return;
+  const t = e.clipboardData?.getData('text/plain');
+  if (e.clipboardData?.files.length || (t && t !== noteClip.mark)) return;
+  e.preventDefault(); pasteNotes();
 });
 // clicking anywhere else (or into a note to type) ends the selection; the toolbar and menus keep it
 document.addEventListener('mousedown', e => {
@@ -9367,6 +9484,8 @@ function openDocMenu(id, from, kind = 'doc'){
       `<button type="button" role="menuitem" data-act="fav">${icon(fav ? 'star-off' : 'star')}${fav ? 'Remove from Favourites' : 'Add to Favourites'}</button>` +
       (folders.length ? `<button type="button" role="menuitem" data-act="move" aria-expanded="false">${icon('folder')}Move to…</button>` : '') +
       `<hr><button type="button" role="menuitem" data-act="duplicate">${icon('copy')}Duplicate</button>` +
+      `<button type="button" role="menuitem" data-act="copynotes" title="Copy every note in this notebook, to paste into another one with Paste notes">${icon('copy')}Copy all notes</button>` +
+      (noteClip ? `<button type="button" role="menuitem" data-act="pastenotes" title="Paste the notes you copied (from “${esc(noteClip.from)}”) into this notebook, each on the page with the same number">${icon('paste')}Paste notes here</button>` : '') +
       (id !== curId ? `<button type="button" role="menuitem" data-act="beside">${icon('panel-right')}${id === bs.id ? 'Close beside' : 'Open beside'}</button>` : '') +
       `<button type="button" role="menuitem" data-act="share" title="Save this notebook to Google Drive and share it with people or by link">${icon('drive')}Share via Google Drive…</button><button type="button" role="menuitem" data-act="odshare" title="Save this notebook to OneDrive and share it with people or by link">${icon('onedrive')}Share via OneDrive…</button><hr><button type="button" role="menuitem" class="danger" data-act="trash">${icon('trash')}Move to Trash</button>`;
   }
@@ -9387,7 +9506,7 @@ docMenu.addEventListener('click', e => {
   closeDocMenu();
   if (b.dataset.to !== undefined) { (kind === 'folder' ? moveFolder : moveDoc)(id, b.dataset.to || null); return; }
   (kind === 'folder' ? {rename: startRenameFolder, sub: newFolder, here: newDocIn, rmfolder: deleteFolder}
-                     : {rename: startRename, duplicate: duplicateDoc, beside: toggleBeside, fav: toggleFav, share: shareDoc, odshare: shareOdDoc, trash: trashDoc})[b.dataset.act]?.(id);
+                     : {rename: startRename, duplicate: duplicateDoc, copynotes: copyDocNotes, pastenotes: async id => { await switchDoc(id); pasteNotes(); }, beside: toggleBeside, fav: toggleFav, share: shareDoc, odshare: shareOdDoc, trash: trashDoc})[b.dataset.act]?.(id);
 });
 document.addEventListener('mousedown', e => { if (!docMenu.hidden && !docMenu.contains(e.target) && !e.target.closest('[data-more], [data-fmore]')) closeDocMenu(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !docMenu.hidden) { const f = menuFrom; closeDocMenu(); f?.focus(); } });

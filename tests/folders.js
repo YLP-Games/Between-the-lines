@@ -132,7 +132,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); n++; console.log
   // ---- Move to… from the menu ----
   await menu(nbrow('Lecture 2'));
   const mitems = await page.$$eval('.docmenu button', els => els.map(e => e.textContent.trim()));
-  ok(mitems.join('|') === 'Rename|Add to Favourites|Move to…|Duplicate|Open beside|Share via Google Drive…|Share via OneDrive…|Move to Trash', 'notebook menu: ' + mitems.join(' | '));
+  ok(mitems.join('|') === 'Rename|Add to Favourites|Move to…|Duplicate|Copy all notes|Open beside|Share via Google Drive…|Share via OneDrive…|Move to Trash', 'notebook menu: ' + mitems.join(' | '));
   await page.click('.docmenu [data-act=move]'); await page.waitForTimeout(150);
   const opts = await page.$$eval('.docmenu .movelist button', els => els.map(e => e.textContent.trim() + (e.disabled ? '*' : '')));
   ok(opts.join('|') === 'Top level (here)*|Archive|Banking|Risk Management', 'the list: Top level, then the folders as a tree: ' + opts.join(' | '));
