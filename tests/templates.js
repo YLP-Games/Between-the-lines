@@ -20,8 +20,8 @@ const clearNotes = page => page.evaluate(() => { document.querySelectorAll('.not
 
 (async () => {
   // ---- the ribbon: exactly one new button ----
-  // what each ribbon tab had before there were templates
-  const baseCounts = [['panel-home', 22], ['panel-insert', 11], ['panel-box', 9], ['panel-review', 3], ['panel-view', 16]];
+  // what each ribbon tab had before there were templates (Box: and its Whole notebook, Copy notes, Paste notes and ▾ ways to paste since)
+  const baseCounts = [['panel-home', 22], ['panel-insert', 11], ['panel-box', 13], ['panel-review', 3], ['panel-picture', 16], ['panel-view', 16]];
 
   const {browser, page, errors, card} = await start();
   // the buttons the ribbon has with a mouse (Home's "A" colour button is only there on narrow touch screens, in place of the swatches)

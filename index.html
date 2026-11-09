@@ -2278,13 +2278,11 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <span class="sep"></span>
       <div class="grp"><div class="row">
         <button class="btn" id="selAllBtn" title="Select all: every note on the current page, to restyle, move, line up or delete them together (Ctrl+A when you're not typing in a note)"><svg class="i"><use href="#i-select"/></svg>Select all</button>
-        <button class="btn" id="selBookBtn" title="Select all in notebook: every note on every page, to copy them into another notebook, restyle or delete them together (Ctrl+A twice)"><svg class="i"><use href="#i-book"/></svg>Whole notebook</button>
-      </div><span class="cap">Select</span></div>
-      <span class="sep"></span>
-      <div class="grp"><div class="row">
-        <button class="btn" id="copyNotesBtn" title="Copy notes: the notes you selected, or else every note in this notebook, to paste into another notebook (Ctrl+C)"><svg class="i"><use href="#i-copy"/></svg>Copy notes</button>
-        <button class="btn" id="pasteNotesBtn" disabled title="Paste notes: the notes you copied go into this notebook, each on the page with the same number and in the same place (Ctrl+V when you're not typing in a note)"><svg class="i"><use href="#i-paste"/></svg>Paste notes</button>
-      </div><span class="cap">Copy to another notebook</span></div>
+        <button class="btn" id="selBookBtn" aria-label="Select all in notebook" title="Select all in notebook: every note on every page, to copy them into another notebook, restyle or delete them together (Ctrl+A twice)"><svg class="i"><use href="#i-book"/></svg></button>
+        <button class="btn" id="copyNotesBtn" title="Copy notes: the notes you selected, or else every note in this notebook, to paste into another notebook (Ctrl+C)"><svg class="i"><use href="#i-copy"/></svg>Copy</button>
+        <button class="btn" id="pasteNotesBtn" disabled title="Paste notes: the notes you copied go on the page you are on (Ctrl+V when you're not typing in a note). Or right-click a spot on any page and choose Paste"><svg class="i"><use href="#i-paste"/></svg>Paste</button>
+        <button class="btn" id="pasteNotesMore" disabled aria-haspopup="menu" aria-label="More ways to paste" title="More ways to paste: on this page, or each on the page with the same number as the page it came from">▾</button>
+      </div><span class="cap">Select and copy</span></div>
       <span class="sep"></span>
       <div class="grp"><div class="row" id="alignCtl">
         <button class="btn" id="alLeft" aria-label="Align left" title="Align left: line the selected notes up on their left edge"><svg class="i"><use href="#i-nalign-left"/></svg></button>
@@ -6075,6 +6073,7 @@ async function tidyAssets(){
   const stored = keys.filter(k => k.startsWith('asset:')); if (!stored.length) return;
   let used = '';
   for (const k of keys.filter(k => k.startsWith('doc:'))) used += (await get(k)) || '';
+  used += JSON.stringify((await get('noteclip')) || '');          // (and the notes you copied, which can still be pasted)
   const gone = stored.filter(k => !used.includes(ASSET + k.slice(6)));
   if (gone.length) try { const tx = db.transaction('kv', 'readwrite'); gone.forEach(k => tx.objectStore('kv').delete(k)); } catch {}
 }
@@ -8699,9 +8698,21 @@ function copyNotes(boxes, root = main, name = curDoc()?.name){
   const slides = [...root.querySelectorAll('.slide')], n = boxes.length, what = `${n} note${n > 1 ? 's' : ''}`;
   noteClip = {from: name || 'Untitled', mark: `${what} from “${name || 'Untitled'}” (Between the Lines)`, notes: boxes.map(b => ({html: clipHtml(b), ...clipSpot(root, b, slides)}))};
   navigator.clipboard?.writeText(noteClip.mark).catch(() => {});      // (so Ctrl+V knows the notes are still what you copied last)
-  $('#pasteNotesBtn').disabled = false;
-  toast(`Copied ${what}. Open another notebook and press Paste notes on the Box tab (or Ctrl+V).`);
+  clipKeep();
+  toast(`Copied ${what}. Right-click where you want ${n > 1 ? 'them' : 'it'} (this notebook or another, now or later) and choose Paste, or press Paste notes on the Box tab (Ctrl+V).`);
 }
+// what you copied is kept in this browser until you copy something else, so it can be pasted days later
+function clipKeep(){
+  $('#pasteNotesBtn').disabled = $('#pasteNotesMore').disabled = !noteClip;
+  if (db && noteClip) putAll({noteclip: {...noteClip, notes: noteClip.notes.map(n => ({...n, html: toStored(n.html)}))}});
+}
+async function clipLoad(){
+  const c = db && await get('noteclip');
+  if (!c?.notes?.length || noteClip) return;
+  noteClip = {...c, notes: await Promise.all(c.notes.map(async n => ({...n, html: await fromStored(n.html)})))};
+  $('#pasteNotesBtn').disabled = $('#pasteNotesMore').disabled = false;
+}
+const clipWhat = () => { const n = noteClip?.notes.length || 0; return `${n} note${n > 1 ? 's' : ''}`; };
 // all of a notebook's notes, from its ⋯ menu (it needn't be open)
 async function copyDocNotes(id){
   if (id === curId) return copyNotes(docBoxes());
@@ -8717,9 +8728,11 @@ function clipBlock(b){
   if (m) { for (const a of m.attributes) dm.setAttribute(a.name, a.value); dm.append(...m.childNodes); }
   d.append(dm); return d;
 }
-function pasteNotes(){
+// where: 'here' (default): all of them on one page: the one you are on, or where you right-clicked (at: {sp} a side page,
+// {box} after a note, {x, y} that spot on the page); 'same': each on the page with the same number as the one it came from
+function pasteNotes(where = 'here', at = null, card = null){
   if (reading) { toast('Paste notes works when you’re editing (not in Study mode).'); return; }
-  if (!noteClip?.notes.length) { toast('Copy some notes first: Box tab › Whole notebook, then Copy.'); return; }
+  if (!noteClip?.notes.length) { toast('Copy some notes first: right-click a note › Copy note, or Box tab › the notebook button beside Select all, then Copy.'); return; }
   if (document.activeElement?.closest?.('.mine')) document.activeElement.blur();
   clearMulti(); clearMediaSel(); hideGap();
   let slides = [...main.querySelectorAll('.slide')];
@@ -8737,11 +8750,24 @@ function pasteNotes(){
     if (lc.length) b.dataset.lc = lc.join(' '); else b.removeAttribute('data-lc');
     if (ls.length) b.dataset.ls = ls.join(' '); else b.removeAttribute('data-ls');
   }
-  const put = new Set(), sides = new Set();
+  const put = new Set(), sides = new Set(), same = where === 'same';
+  if (!same) { card = card && card.isConnected ? card : currentCard() || slides[0]; if (at?.sp && !at.sp.isConnected) at = null; }
   const after = (ref, b) => { while (put.has(ref.nextElementSibling)) ref = ref.nextElementSibling; ref.after(b); };      // (after the ones pasted there already, so they keep their order)
+  // at a spot you right-clicked: the first there, each next one under the one before (a floating note still floats on that page)
+  let prev = null;
+  const atSpot = b => {
+    if (b.classList.contains('floating')) { (at.sp || card).append(b); return; }
+    if (prev) prev.after(b);
+    else if (at.sp) at.sp.append(b);
+    else if (at.box?.isConnected && !at.box.classList.contains('inline') && !at.box.classList.contains('floating')) at.box.after(b);
+    else putAtPoint(card, at.x, at.y)(b);
+    prev = b;
+  };
   noteClip.notes.forEach((n, i) => {
-    const b = boxes[i], card = slides[Math.min(n.page, slides.length - 1)], content = card.querySelector('.content') || card;
-    if (n.kind === 'side') {
+    const b = boxes[i]; if (same) card = slides[Math.min(n.page, slides.length - 1)];
+    const content = card.querySelector('.content') || card;
+    if (at && !same) { atSpot(b); const sp = b.closest('.sidepage'); if (sp) sides.add(sp); }
+    else if (n.kind === 'side') {
       let sp = sideOf(card);
       if (!sp) { sp = document.createElement('aside'); sp.className = 'sidepage'; sp.dataset.for = sideSid(card); sideStyle(sp); card.after(sp); }
       sp.append(b); sides.add(sp);
@@ -8759,13 +8785,90 @@ function pasteNotes(){
   placeFloats(); spreadChips(); if (sides.size) sideSoon();
   if (LAYOUTS[layout]) paginateView();
   updateNotesBtn(); spellAllSoon(); saveSoon();
-  const n = put.size, past = noteClip.notes.some(x => x.page >= slides.length);
-  toast(`Pasted ${n} note${n > 1 ? 's' : ''} from “${noteClip.from}”, each on the page with the same number` +
+  const n = put.size, past = same && noteClip.notes.some(x => x.page >= slides.length);
+  toast(`Pasted ${n} note${n > 1 ? 's' : ''} from “${noteClip.from}”` + (same ? ', each on the page with the same number' : ` on page ${slides.indexOf(card) + 1}`) +
     (past ? ` (notes from pages past this notebook’s last page are on its last page)` : '') + '.' +
     (sides.size && !sideShown() ? ' Side notes are on the side pages: turn on Side notes in the View tab to see them.' : '') + ' Back (Ctrl+Z) takes them out again.');
 }
 $('#copyNotesBtn').onclick = () => multi.size ? copyNotes([...multi]) : copyNotes(docBoxes());
-$('#pasteNotesBtn').onclick = pasteNotes;
+$('#pasteNotesBtn').onclick = () => pasteNotes();
+$('#pasteNotesMore').onclick = e => { const r = e.currentTarget.getBoundingClientRect(); noteMenuOpen(pasteItems(null, null), r.left, r.bottom + 4, e.currentTarget); };
+// ---- the menu for notes: right-click a note (or press and hold on a touch screen), or a page where notes can go
+const nm = {el: null, at: 0, from: null};
+function noteMenuClose(){ if (!nm.el) return; nm.el.remove(); nm.el = null; }
+// items: [label, title, what it does], '-' for a line, or a string: a muted line of text
+function noteMenuOpen(items, x, y, from){
+  noteMenuClose(); if (!items.length) return;
+  const el = nm.el = document.createElement('div'); el.className = 'pop spellmenu notemenu'; el.setAttribute('role', 'menu'); el.setAttribute('aria-label', 'Notes');
+  for (const it of items) {
+    if (it === '-') { el.append(document.createElement('hr')); continue; }
+    if (typeof it === 'string') { const d = document.createElement('div'); d.className = 'none'; d.textContent = it; el.append(d); continue; }
+    const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.textContent = it[0]; if (it[1]) b.title = it[1];
+    b.addEventListener('click', () => { noteMenuClose(); it[2](); });
+    el.append(b);
+  }
+  document.body.append(el);
+  el.style.left = Math.max(8, Math.min(innerWidth - el.offsetWidth - 8, x)) + 'px'; el.style.top = Math.max(8, Math.min(innerHeight - el.offsetHeight - 8, y)) + 'px';
+  nm.at = performance.now(); nm.from = from || null;
+  el.addEventListener('mousedown', e => e.preventDefault());
+  el.addEventListener('keydown', e => {
+    const bs = [...el.querySelectorAll('button')], i = bs.indexOf(document.activeElement);
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); noteMenuClose(); nm.from?.focus?.(); }
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); bs[(i + (e.key === 'ArrowDown' ? 1 : bs.length - 1)) % bs.length]?.focus(); }
+    else if (e.key === 'Tab') noteMenuClose();
+  });
+  el.querySelector('button')?.focus({preventScroll: true});
+}
+document.addEventListener('mousedown', e => { if (nm.el && !e.target.closest('.notemenu') && performance.now() - nm.at > 350) noteMenuClose(); }, true);
+addEventListener('scroll', e => { if (nm.el && performance.now() - nm.at > 200 && !nm.el.contains(e.target)) noteMenuClose(); }, {capture: true, passive: true});
+addEventListener('blur', noteMenuClose);
+// the two ways to paste what you copied (here: where you right-clicked, or the page you are on)
+function pasteItems(at, card){
+  if (!noteClip?.notes.length) return [];
+  const w = clipWhat(), pages = new Set(noteClip.notes.map(n => n.page)).size;
+  return [[`Paste ${w} here`, `Paste the ${w} you copied from “${noteClip.from}” ${at ? 'here' : 'on the page you are on'} (Ctrl+V)`, () => pasteNotes('here', at, card)],
+          [pages > 1 ? 'Paste each on its own page number' : `Paste on page ${noteClip.notes[0].page + 1}`, 'Each note goes on the page with the same number as the page it came from, in the same kind of place', () => pasteNotes('same')]];
+}
+// what was right-clicked: a note, or a spot on a page or a side page
+function noteMenuFor(t, x, y){
+  if (!(t instanceof Element) || !main.contains(t) || reading || drawing) return null;
+  if (t.closest('.note-chip, .gappill, a, input, textarea, select, video, audio, td, th, .jrnl')) return null;
+  const box = t.closest('.notebox'), sp = t.closest('.sidepage'), card = box?.closest('.slide') || (sp ? sideSlide(sp) : t.closest('.slide'));
+  if (!box && !sp && !card) return null;
+  const items = [];
+  if (box) {
+    const group = multi.has(box) && multi.size > 1 ? [...multi] : [box];
+    if (group.some(hasContent)) items.push([group.length > 1 ? `Copy ${group.length} notes` : 'Copy note', 'Copy this note, to paste it on another page or in another notebook, now or later', () => copyNotes(group)]);
+  }
+  const at = box ? {box, x, y} : sp ? {sp} : {x, y};
+  const paste = card ? pasteItems(at, card) : [];
+  if (paste.length) { if (items.length) items.push('-'); items.push(...paste); }
+  if (!box && card) {
+    const side = sp || (sideShown() ? sideOf(card) : null);
+    const here = [...card.querySelectorAll('.notebox'), ...(side ? side.querySelectorAll('.notebox') : [])].filter(hasContent);
+    if (here.length) { if (items.length) items.push('-'); items.push([`Copy this page’s ${here.length} note${here.length > 1 ? 's' : ''}`, 'Copy every note on this page (and its side page), to paste elsewhere', () => copyNotes(here)]); }
+  }
+  if (items.length && t.closest('.mine')) items.push('-', 'Shift + right-click: the menu for the words');
+  return items.length ? items : null;
+}
+main.addEventListener('contextmenu', e => {
+  if (e.defaultPrevented || e.shiftKey) return;
+  const sel = getSelection(), box = e.target instanceof Element && e.target.closest('.notebox');
+  if (box && !sel.isCollapsed && box.contains(sel.anchorNode)) return;        // words selected in a note: the browser's menu (copy, paste)
+  let x = e.clientX, y = e.clientY;
+  if (!x && !y && e.target instanceof Element) { const r = e.target.getBoundingClientRect(); x = r.left + 8; y = r.top + 16; }
+  const items = noteMenuFor(e.target, x, y); if (!items) return;
+  e.preventDefault(); noteMenuOpen(items, x, y);
+});
+// press and hold on a touch screen: on a note's edge or a spot on a page (not in the words, where holding selects them)
+main.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'touch' || reading || !(e.target instanceof Element) || e.target.closest('.mine')) return;
+  const x = e.clientX, y = e.clientY, t = e.target;
+  const stop = () => { clearTimeout(tm); removeEventListener('pointerup', stop); removeEventListener('pointercancel', stop); removeEventListener('pointermove', far); };
+  const far = ev => { if (Math.hypot(ev.clientX - x, ev.clientY - y) > 10) stop(); };
+  const tm = setTimeout(() => { stop(); const items = noteMenuFor(t, x, y); if (items) noteMenuOpen(items, x, y + 10); }, 600);
+  addEventListener('pointerup', stop); addEventListener('pointercancel', stop); addEventListener('pointermove', far);
+});
 // Ctrl+V on the page (not in a note): the notes you copied, while they are still what is on the clipboard
 document.addEventListener('paste', e => {
   if (e.defaultPrevented || reading || !noteClip || typingIn(e.target) || e.target.closest?.('dialog')) return;
@@ -9510,7 +9613,7 @@ function openDocMenu(id, from, kind = 'doc'){
       (folders.length ? `<button type="button" role="menuitem" data-act="move" aria-expanded="false">${icon('folder')}Move to…</button>` : '') +
       `<hr><button type="button" role="menuitem" data-act="duplicate">${icon('copy')}Duplicate</button>` +
       `<button type="button" role="menuitem" data-act="copynotes" title="Copy every note in this notebook, to paste into another one with Paste notes">${icon('copy')}Copy all notes</button>` +
-      (noteClip ? `<button type="button" role="menuitem" data-act="pastenotes" title="Paste the notes you copied (from “${esc(noteClip.from)}”) into this notebook, each on the page with the same number">${icon('paste')}Paste notes here</button>` : '') +
+      (noteClip ? `<button type="button" role="menuitem" data-act="pastenotes" title="Open this notebook and paste the notes you copied (from “${esc(noteClip.from)}”) on the page it opens at">${icon('paste')}Paste notes here</button><button type="button" role="menuitem" data-act="pastesame" title="Open this notebook and paste the notes you copied (from “${esc(noteClip.from)}”), each on the page with the same number">${icon('paste')}Paste on the same page numbers</button>` : '') +
       (id !== curId ? `<button type="button" role="menuitem" data-act="beside">${icon('panel-right')}${id === bs.id ? 'Close beside' : 'Open beside'}</button>` : '') +
       `<button type="button" role="menuitem" data-act="share" title="Save this notebook to Google Drive and share it with people or by link">${icon('drive')}Share via Google Drive…</button><button type="button" role="menuitem" data-act="odshare" title="Save this notebook to OneDrive and share it with people or by link">${icon('onedrive')}Share via OneDrive…</button><hr><button type="button" role="menuitem" class="danger" data-act="trash">${icon('trash')}Move to Trash</button>`;
   }
@@ -9531,7 +9634,7 @@ docMenu.addEventListener('click', e => {
   closeDocMenu();
   if (b.dataset.to !== undefined) { (kind === 'folder' ? moveFolder : moveDoc)(id, b.dataset.to || null); return; }
   (kind === 'folder' ? {rename: startRenameFolder, sub: newFolder, here: newDocIn, rmfolder: deleteFolder}
-                     : {rename: startRename, duplicate: duplicateDoc, copynotes: copyDocNotes, pastenotes: async id => { await switchDoc(id); pasteNotes(); }, beside: toggleBeside, fav: toggleFav, share: shareDoc, odshare: shareOdDoc, trash: trashDoc})[b.dataset.act]?.(id);
+                     : {rename: startRename, duplicate: duplicateDoc, copynotes: copyDocNotes, pastenotes: async id => { await switchDoc(id); pasteNotes(); }, pastesame: async id => { await switchDoc(id); pasteNotes('same'); }, beside: toggleBeside, fav: toggleFav, share: shareDoc, odshare: shareOdDoc, trash: trashDoc})[b.dataset.act]?.(id);
 });
 document.addEventListener('mousedown', e => { if (!docMenu.hidden && !docMenu.contains(e.target) && !e.target.closest('[data-more], [data-fmore]')) closeDocMenu(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !docMenu.hidden) { const f = menuFrom; closeDocMenu(); f?.focus(); } });
@@ -17192,6 +17295,7 @@ restorePanels();
     if (s) { style = s; showStyle(style); }
     docs = Array.isArray(list) ? list.filter(d => d && d.id) : [];
     folders = Array.isArray(fl) ? fl : []; tidyFolders();
+    clipLoad().catch(() => {});
     await purgeOldTrash();
     if (!liveDocs().length) {               // first visit, or notes saved before there were notebooks
       const d = makeDoc();

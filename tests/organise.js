@@ -74,7 +74,7 @@ const cornerOnIn = pg => pg.evaluate(() => { const b = document.getElementById('
   ok(await page.$eval('#panel-insert', p => !p.querySelector('.cap + #delPageBtn') && ![...p.querySelectorAll('.grp')].find(g => g.querySelector('.cap').textContent === 'Pages').contains(p.querySelector('#delPageBtn'))), 'and out of the Pages group');
   await page.click('#tab-box');
   c = await caps('box');
-  ok(c.join('|') === 'Outline|Fill|Minimised icon|Select|Align|New notes|Lines', 'Box groups: ' + c.join(', '));
+  ok(c.join('|') === 'Outline|Fill|Minimised icon|Select and copy|Align|New notes|Lines', 'Box groups: ' + c.join(', '));
   ok(await page.$eval('#alignCtl', a => ['alLeft', 'alCenter', 'alRight', 'alWidth', 'alDist', 'alTidy'].every(id => a.querySelector('#' + id))), 'the Align group has left, centre, right, same width, distribute and tidy page');
   ok(await page.isChecked('#autoAlign') && (await page.textContent('#panel-box')).includes('Auto-align notes'), 'Auto-align notes is on by default, in the Box tab');
   ok(await page.$eval('#selAllBtn', b => b.textContent.trim()) === 'Select all', 'Select all is short');
@@ -91,7 +91,7 @@ const cornerOnIn = pg => pg.evaluate(() => { const b = document.getElementById('
   await page.evaluate(() => { document.querySelector('#docList [data-more]').click(); });
   await page.waitForTimeout(200);
   const dm = await page.$eval('.docmenu', m => [...m.children].map(x => x.tagName === 'HR' ? '-' : x.dataset.act + (x.classList.contains('danger') ? '!' : '')));
-  ok(dm.join(',') === 'rename,fav,-,duplicate,share,odshare,-,trash!' || dm.join(',') === 'rename,fav,move,-,duplicate,share,odshare,-,trash!', 'notebook menu: organise, copy and share, then Trash (red) apart at the end: ' + dm.join(' '));
+  ok(dm.join(',') === 'rename,fav,-,duplicate,copynotes,share,odshare,-,trash!' || dm.join(',') === 'rename,fav,move,-,duplicate,copynotes,share,odshare,-,trash!', 'notebook menu: organise, copy and share, then Trash (red) apart at the end: ' + dm.join(' '));
   await page.keyboard.press('Escape'); await page.waitForTimeout(100);
   // the sidebar's actions: the cloud rows sit together under one heading
   const side = await page.$eval('.sideacts', a => [...a.children].map(x => x.id + (x.classList.contains('cloud') ? '*' : '')));
