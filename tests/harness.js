@@ -25,14 +25,16 @@ const MAP = [
 ];
 const TYPES = {js: 'text/javascript', css: 'text/css', aff: 'text/plain', dic: 'text/plain', woff2: 'font/woff2', json: 'application/json'};
 
-async function open(file, {width = 1440, height = 900, colorScheme = 'light', storage, contextOptions = {}, url} = {}){
+async function open(file, {width = 1440, height = 900, colorScheme = 'light', storage, contextOptions = {}, url, init} = {}){
   fs.mkdirSync(path.join(__dirname, 'shots'), {recursive: true});
   const browser = await engine.launch(process.env.SHOWBARS && engine === playwright.chromium ? {ignoreDefaultArgs: ['--hide-scrollbars']} : {});
   const context = await browser.newContext({viewport: {width, height}, colorScheme, acceptDownloads: true, ...(storage ? {storageState: storage} : {}), ...contextOptions});
-  const errors = [];
+  const errors = [], net = [];                 // net: every address asked for that is not a local file
+  if (init) await context.addInitScript(init);
   await context.route('**/*', route => {
     const url = route.request().url();
     if (url.startsWith('file:') || url.startsWith('http://127.0.0.1')) return route.continue();
+    net.push(url);
     for (const [re, rel] of MAP) {
       const m = url.match(re);
       if (m) {
@@ -55,6 +57,6 @@ async function open(file, {width = 1440, height = 900, colorScheme = 'light', st
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
   await page.goto(url || 'file://' + file);
-  return {browser, context, page, errors};
+  return {browser, context, page, errors, net};
 }
 module.exports = {open};

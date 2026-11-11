@@ -739,6 +739,8 @@ kbd{border-color:var(--pencil)}
 #sideDrive{margin-top:26px;position:relative}
 #sideDrive::before{content:"Open from the cloud";position:absolute;left:8px;top:-22px;font-size:12px;letter-spacing:.04em;color:var(--muted)}
 .srow.cloud{padding-left:14px}
+/* the iPad app: Google and Microsoft don't let an app's own page sign in, and Drive and OneDrive are in the iPad's file picker and Share anyway */
+.in-app :is([data-drive-open],[data-drive],[data-od-open],[data-od],[data-act="odshare"],#driveSec,#odSec,.mhead.cloud){display:none!important}
 #sideOdNbs{margin-bottom:6px}
 .srow .i{width:17px;height:17px;color:var(--muted)}
 .sidesec{display:flex;align-items:baseline;gap:8px;padding:10px 14px 4px;font:700 15px var(--display);color:var(--muted)}
@@ -2106,11 +2108,11 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
             <option value="none">Left out</option>
           </select>
         </label>
-        <div class="mhead">Google Drive</div>
+        <div class="mhead cloud">Google Drive</div>
         <button type="button" data-drive="notebook"><strong>Notebook to Drive</strong><small>Saves the notebook file in Google Drive; next time it updates the same file</small></button>
         <button type="button" data-drive="pdf"><strong>PDF to Drive</strong><small>The PDF, with notes as chosen above, saved in Google Drive</small></button>
         <button type="button" data-drive="share"><strong>Share…</strong><small>Saves it to Google Drive, then lets you add people or copy a link</small></button>
-        <div class="mhead">OneDrive</div>
+        <div class="mhead cloud">OneDrive</div>
         <button type="button" data-od="save"><strong>Save to OneDrive</strong><small>Saves the notebook file in your OneDrive (in a “Between the Lines” folder); next time it updates the same file</small></button>
         <button type="button" data-od="share"><strong>Share via OneDrive…</strong><small>Saves it to OneDrive, then lets you add people or copy a link</small></button>
       </div>
@@ -2996,13 +2998,20 @@ const GDRIVE = {clientId: '275073737192-soj2udsunimvb3lubkjkf1u3fbc8stbg.apps.go
 const ONEDRIVE = {clientId: '531a58bc-8111-4127-ba82-2d4870f48acc'};
 
 // a copy of this app as it is before anything is opened, for the downloadable notebook file
+// In the iPad app (the ios folder) the libraries come inside the app, so it works with no connection: BTL_LIBS, put in by the app's own
+// copy of this page, pairs each library's web address with the app's copy. On the web there is none, and every address stays as it is.
+const LIBS = window.BTL_LIBS || [], nativeApp = !!window.webkit?.messageHandlers?.btl;
+const lib = u => { for (const [web, own] of LIBS) if (u.startsWith(web)) return new URL(own + u.slice(web.length), document.baseURI).href; return u; };
 const APP_HTML = (() => {
   const c = document.documentElement.cloneNode(true);
   c.removeAttribute('data-theme'); c.removeAttribute('data-ui-font');     // the saved look belongs to this browser, not the notebook file
   c.querySelector('#notebook-data')?.remove();
+  c.querySelector('#btl-libs')?.remove();                 // (made in the app: the notebook file gets the web addresses back, to open anywhere)
+  for (const e of LIBS.length ? c.querySelectorAll('link[href], script[src]') : []) { const a = e.hasAttribute('href') ? 'href' : 'src', u = e.getAttribute(a), l = LIBS.find(l => u.startsWith(l[1])); if (l) e.setAttribute(a, l[0] + u.slice(l[1].length)); }
   const m = c.querySelector('#main'); if (m) m.innerHTML = '';
   return '<!doctype html>\n' + c.outerHTML;
 })();
+document.documentElement.classList.toggle('in-app', nativeApp);      // (after APP_HTML is taken, as with the look below)
 // The pages are scaled with CSS zoom, and everything that measures them expects the box as it is on screen (as Chrome, Edge and Firefox
 // give it). Safari before its standard zoom (on the iPad too) gives a zoomed box, and the boxes and text inside it, in unzoomed pixels
 // (and less the page's scroll only after that). There, the measuring is put right once, here, so a tap, a pen stroke or a dragged note
@@ -4849,9 +4858,9 @@ return {deck: ppDeck, render: ppRender};
 
 // ---------- PDF: the real page, background graphics removed, opened up where you add notes ----------
 // fonts a PDF leaves out (Symbol, Times…) and the character maps of Chinese, Japanese and Korean text come from the pdf.js package
-const PDF_LIB = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/';
+const PDF_LIB = lib('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/');
 // (reading happens in a Web Worker, so a big PDF doesn't freeze the page; if the browser won't make one, pdf.js reads on the page)
-const pdfOpen = buf => (pdfjsLib.GlobalWorkerOptions.workerSrc ||= 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js', pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false, cMapUrl: PDF_LIB + 'cmaps/', cMapPacked: true, standardFontDataUrl: PDF_LIB + 'standard_fonts/'}).promise);
+const pdfOpen = buf => (pdfjsLib.GlobalWorkerOptions.workerSrc ||= lib('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'), pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false, cMapUrl: PDF_LIB + 'cmaps/', cMapPacked: true, standardFontDataUrl: PDF_LIB + 'standard_fonts/'}).promise);
 const PDF_S = 2;                         // a PDF page's picture: pixels per point (sharp at the fit on a 2× screen; zoomed in, sharpen() draws it again)
 async function readPdf(buf, name){
   const home = curId;                    // switching notebook while it reads stops it (the pages would go into the other notebook)
@@ -5037,7 +5046,7 @@ async function addPageCard(cv, S, W, H, gaps, items, quality = 0.88, home = curI
   const urls = new Map(), urlOf = b => urls.get(b) || urls.set(b, addAsset(b)).get(b);        // (a GIF used twice on a page is stored once)
   if (gifs.length) card.dataset.gifs = JSON.stringify(await Promise.all(gifs.map(async ([b, ...box]) => [await urlOf(b), ...box.map(v => +v.toFixed(1))])));
   const pic = own || await new Promise(r => cv.toBlob(r, 'image/jpeg', quality));
-  card.style.setProperty('--pg', `url(${pic ? await addAsset(pic) : cv.toDataURL('image/jpeg', quality)})`);
+  card.style.setProperty('--pg', `url("${pic ? await addAsset(pic) : cv.toDataURL('image/jpeg', quality)}")`);
   card.dataset.text = JSON.stringify(items);
   card.append(makeStrip(card, 0, H));
   away(home); putPage(card);
@@ -5276,7 +5285,7 @@ function paperColour(ref){
     const c = ref.style.backgroundColor || ref.style.background ? getComputedStyle(ref).backgroundColor : '';      // (as '#rrggbb', or '' for the theme's colour)
     return Promise.resolve(c && !/^rgba\(.*,\s*0\)$/.test(c) ? toHex(c) : '');
   }
-  const url = ref.style.getPropertyValue('--pg').match(/url\(["']?(.*?)["']?\)$/)?.[1];
+  const url = pgUrl(ref);
   if (!url) return Promise.resolve('#ffffff');
   return new Promise(res => {
     const im = new Image();
@@ -5729,7 +5738,7 @@ function templateRun(pages, n, edge, under){
 // a library from the internet; if it fails, it is asked for once more, past any saved copy (which could be a broken download)
 function loadScript(src, again){
   return new Promise((res, rej) => {
-    const s = document.createElement('script'); s.crossOrigin = 'anonymous'; s.src = again ? src + '?again=' + Date.now() : src;
+    const s = document.createElement('script'); s.crossOrigin = 'anonymous'; s.src = lib(src) + (again ? '?again=' + Date.now() : '');
     s.onload = res;
     s.onerror = () => { s.remove(); if (again) rej(new Error('couldn’t download ' + src.split('/').pop())); else loadScript(src, true).then(res, rej); };
     document.head.append(s);
@@ -6022,6 +6031,11 @@ function useAsset(id, blob){
   assetUrl.set(id, url); assetOf.set(url, id); assetBlob.set(id, blob);
   return url;
 }
+// A page's picture is in its --pg. Safari writes an unquoted url() there back with a \ before each : / . and so on (blob\:https\:\/\/…),
+// which nothing that looks for a blob: or data: address would find: so it is set in quotes (kept as written), read here without the \s,
+// and what a page saved the old way holds is put right as the notebook is written out (plainUrls).
+const pgUrl = el => (el.style.getPropertyValue('--pg').trim().match(/^url\(["']?(.*?)["']?\)$/)?.[1] || '').replace(/\\(.)/g, '$1');
+const plainUrls = html => html.includes('\\:') ? html.replace(/url\(((?:blob|data)\\:(?:\\.|[^)\\])*)\)/g, (m, u) => 'url(' + u.replace(/\\(.)/g, '$1') + ')') : html;
 async function addAsset(blob){
   const id = 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   await putAll({['asset:' + id]: blob});
@@ -6037,8 +6051,8 @@ const bigData = u => !!u && u.length > 1500 && /^data:[^,]*;base64,/.test(u);
 async function assetize(root = main){
   let n = 0;
   for (const el of root.querySelectorAll('.pagecard[style*="data:"]')) {
-    const m = el.style.getPropertyValue('--pg').match(/^url\(["']?(data:[^"')]+)["']?\)$/);
-    if (m && bigData(m[1])) { el.style.setProperty('--pg', `url(${await addAsset(dataToBlob(m[1]))})`); n++; }
+    const u = pgUrl(el);
+    if (bigData(u)) { el.style.setProperty('--pg', `url("${await addAsset(dataToBlob(u))}")`); n++; }
   }
   for (const el of root.querySelectorAll('.pagecard[data-gifs*="data:"]')) {
     try { el.dataset.gifs = JSON.stringify(await Promise.all(JSON.parse(el.dataset.gifs).map(async g => bigData(g[0]) ? (n++, [await addAsset(dataToBlob(g[0])), ...g.slice(1)]) : g))); } catch {}
@@ -6074,7 +6088,8 @@ async function tidyAssets(){
   let used = '';
   for (const k of keys.filter(k => k.startsWith('doc:'))) used += (await get(k)) || '';
   used += JSON.stringify((await get('noteclip')) || '');          // (and the notes you copied, which can still be pasted)
-  const gone = stored.filter(k => !used.includes(ASSET + k.slice(6)));
+  // (not one put in or shown since this start: a file being opened right now has its pictures stored before its pages are saved)
+  const gone = stored.filter(k => !used.includes(ASSET + k.slice(6)) && !assetUrl.has(k.slice(6)));
   if (gone.length) try { const tx = db.transaction('kv', 'readwrite'); gone.forEach(k => tx.objectStore('kv').delete(k)); } catch {}
 }
 // the note beside the file name: saving, saved, or (storage full or blocked) not saved
@@ -6195,7 +6210,7 @@ function currentDoc(file = false){
   sideJoin(c);                                  // each side page is stored right after its slide, whichever way it is shown
   flatten(c);
   c.querySelectorAll('svg.ink, .gifpic').forEach(x => x.remove());          // drawn again from data-ink and data-gifs
-  return c.innerHTML;
+  return plainUrls(c.innerHTML);
 }
 async function saveFile(filename, blob){
   let dl = null;
@@ -6247,9 +6262,9 @@ async function paintCard(card, scale, side){
   if (sr0) { ctx.fillStyle = side.dataset.bg || '#fff'; ctx.fillRect(sr0.left - ox, sr0.top - oy, sr0.width, sr0.height); ctx.strokeStyle = '#8f8d86'; ctx.lineWidth = 1; ctx.strokeRect(sr0.left - ox + .5, sr0.top - oy + .5, sr0.width - 1, sr0.height - 1); paintSideInk(ctx, side, sr0.left - ox, sr0.top - oy); }
   const pcs = card.classList.contains('pagecard') ? [card] : [...card.querySelectorAll('.pagecard')];
   for (const pc of pcs) {
-    const m = pc.style.getPropertyValue('--pg').match(/url\(["']?(.*?)["']?\)$/);
-    if (!m) continue;
-    const img = await loadImg(m[1]), H = +pc.dataset.h;
+    const pg = pgUrl(pc);
+    if (!pg) continue;
+    const img = await loadImg(pg), H = +pc.dataset.h;
     for (const s of pc.querySelectorAll(':scope > .strip')) {
       const sr = s.getBoundingClientRect(), y0 = +s.dataset.y0, y1 = +s.dataset.y1;
       ctx.drawImage(img, 0, y0 / H * img.naturalHeight, img.naturalWidth, (y1 - y0) / H * img.naturalHeight, sr.left - ox, sr.top - oy, sr.width, sr.height);
@@ -7728,7 +7743,7 @@ const spellBox = async () => { try { return window.caches ? await caches.open('b
 async function spellFetch(url){
   const box = await spellBox(), hit = box && await box.match(url).catch(() => null);
   if (hit) return hit.text();
-  const r = await fetch(url); if (!r.ok) throw new Error(r.status);
+  const r = await fetch(lib(url)); if (!r.ok) throw new Error(r.status);
   if (box) box.put(url, r.clone()).catch(() => {});
   return r.text();
 }
@@ -10063,13 +10078,29 @@ drawBtn.onclick = () => setDrawing(!drawing);
 drawBar.addEventListener('mousedown', e => { if (!e.target.closest('input, select')) e.preventDefault(); });
 drawFab.addEventListener('mousedown', e => e.preventDefault());
 drawFab.onclick = () => { ds.minimised = false; dsChanged(); };
+/* ================= the iPad app (the ios folder): what the app itself calls ================= */
+let toolBefore = null;          // the drawing tool in hand before the last change (the Pencil's double tap goes back to it)
+window.btlApp = {
+  // a file handed over by the Files app, or by another app's Share: the app serves it at url
+  async open(url, name, type){ const b = await (await fetch(url)).blob(); await openFiles([new File([b], name, {type: type || b.type})]); },
+  // the Pencil's double tap or squeeze, as chosen in the iPad's Settings: 'eraser' swaps the tool in hand with the eraser and back,
+  // 'previous' goes back to the tool before, 'palette' shows the drawing tools or puts them away
+  pencil(act){
+    if (reading) return;
+    if (act === 'palette') return setDrawing(!drawing);
+    const t = ds.activeTool, back = toolBefore && toolBefore !== t ? toolBefore : null;
+    const to = act === 'eraser' ? (t === 'er' ? (back || 'pen') : 'er') : back || (t === 'pen' ? 'er' : 'pen');
+    toolBefore = t; ds.activeTool = to; dsChanged();
+    if (!drawing || ds.minimised) toast(DTOOLS[to][1]);          // (with the tools away, say which one it is now)
+  },
+};
 drawBar.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || b.disabled) return;
   if (dfHeld) { dfHeld = false; return; }          // (the click after pressing and holding a favourite)
   const t = ds.activeTool;
   if (b.classList.contains('dfav')) { if (b.classList.contains('del') || e.target.closest('.dfx')) favDrop(b.dataset.id); else favUse(b.dataset.id); return; }
   dfDel = null;
-  if (b.dataset.tool) ds.activeTool = b.dataset.tool;
+  if (b.dataset.tool) { if (b.dataset.tool !== t) toolBefore = t; ds.activeTool = b.dataset.tool; }
   else if (b.dataset.c) ds.colors[t] = b.dataset.c;
   else if (b.dataset.em) ds.eraserMode = b.dataset.em;
   else if ('fav' in b.dataset) return favAdd();
@@ -14786,7 +14817,7 @@ function endDrag(commit){
 
 // ================= install as an app (when it is served from the web) =================
 let installEvt = null;
-if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !nativeApp) {         // (the app has the page and its libraries inside it)
   navigator.serviceWorker.register('sw.js').then(() => {
     if (!document.querySelector('link[rel=manifest]')) document.head.append(Object.assign(document.createElement('link'), {rel: 'manifest', href: 'manifest.webmanifest'}));
   }).catch(() => {});               // e.g. a preview with no sw.js: it just isn't installable there

@@ -77,6 +77,13 @@ A simple web page for taking notes on lecture slides.
 - Buttons, tabs and menu entries grow to fingertip size (44 px) on touch screens, and the page keeps your place when you turn the iPad round. The keyboard never covers the note you are typing in, and Safari does not zoom in when you tap into a note or a box.
 - Made light for Safari: no paper-grain layer over the screen, no grey flash or double-tap zoom on what you tap, no buttons left lit after a tap, nothing on the page that holds up scrolling, and each PDF page's drawing is let go of as soon as it is stored (a long PDF no longer runs Safari out of canvas memory). It is made to run on Safari 15 and later (iPadOS and iOS 15).
 
+### The iPad app
+
+The `ios` folder is an iPad app around this same page, for what a web page can't do: it works with no connection from the first
+start, the Apple Pencil's double tap and squeeze swap tools, files can be sent to it from the Files app or another app's Share
+sheet, Download goes to the Share sheet, and notebooks are kept in the app's own storage. How to put it on an iPad is in
+[ios/README.md](ios/README.md).
+
 ## Saving
 
 - Everything is saved automatically in your browser; the title bar says if the browser's storage is full or blocked.
