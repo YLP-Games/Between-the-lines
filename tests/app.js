@@ -22,8 +22,6 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   // Safari's way of writing a page picture's address back, and the quoted way it is now set
   ok(await page.evaluate(() => plainUrls('<div style="--pg: url(blob\\:https\\:\\/\\/a\\.b\\/1f-2c);"></div><i style="--pg: url(data\\:image\\/png\;base64\\,AA\\+\\/\\=)">') === '<div style="--pg: url(blob:https://a.b/1f-2c);"></div><i style="--pg: url(data:image/png;base64,AA+/=)">'), 'an address Safari wrote with backslashes is put back as it was');
   ok(await page.evaluate(() => { const d = document.createElement('div'), all = []; for (const v of ['url("blob:https://a.b/1f-2c")', 'url(blob\\:https\\:\\/\\/a\\.b\\/1f-2c)', 'url(blob:https://a.b/1f-2c)']) { d.style.setProperty('--pg', v); all.push(pgUrl(d)); } return all.every(u => u === 'blob:https://a.b/1f-2c'); }), 'and a page\'s picture is read the same however it was written');
-  // a file opened the moment the app starts (Open with): its pictures are not cleared away as unused before its pages are saved
-  ok(await page.evaluate(async () => { await addAsset(new Blob(['new'])); await putAll({'asset:aold1': new Blob(['old'])}); const n = (await allKeys()).filter(k => String(k).startsWith('asset:')).length; await tidyAssets(); await new Promise(r => setTimeout(r, 300)); const left = (await allKeys()).filter(k => String(k).startsWith('asset:')); return n === 2 && left.length === 1 && left[0] !== 'asset:aold1'; }), 'tidying up removes a picture nothing uses, but not one stored since the page started');
   ok(!errors.length, 'no page errors on the web: ' + errors.join(' | '));
   await browser.close();
 
@@ -55,6 +53,9 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   await page.evaluate(async () => { await spellFetch(SPELL_LIB); await spellFetch(SPELL_DICTS['en-US'][0] + '.aff'); await spellFetch(SPELL_DICTS['en-GB'][0] + '.dic'); await spellFetch(SPELL_TIERS + 'english-words-10.json'); await loadScript('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js'); await loadScript(DOCX_LIB); await loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js'); });
   ok(await page.evaluate(() => typeof katex === 'object' && typeof docx === 'object' && typeof mammoth === 'object'), 'the maths, Word and spelling libraries load from the app');
   ok(net.length === 0, 'nothing at all was asked of the web' + (net.length ? ': ' + [...new Set(net)].slice(0, 6).join(' , ') : ''));
+  // a file opened the moment the app starts (Open with): its pictures are not cleared away as unused before its pages are saved
+  // (Playwright's WebKit runs as a private window, which can't store pictures at all: the iPad itself can, and Chromium checks this)
+  if (process.env.BROWSER !== 'webkit') ok(await page.evaluate(async () => { const id = assetOf.get(await addAsset(new Blob(['new']))); await putAll({'asset:aold1': new Blob(['old'])}); const had = (await allKeys()).filter(k => String(k).startsWith('asset:')); await tidyAssets(); await new Promise(r => setTimeout(r, 300)); const left = (await allKeys()).filter(k => String(k).startsWith('asset:')); return had.includes('asset:aold1') && !left.includes('asset:aold1') && left.includes('asset:' + id) && left.length === had.length - 1; }), 'tidying up removes a picture nothing uses, but not one stored since the page started, nor the open notebook\'s');
   // the Pencil's double tap
   const tool = () => page.evaluate(() => ds.activeTool);
   await page.evaluate(() => { ds.activeTool = 'hl'; toolBefore = null; dsChanged(); btlApp.pencil('eraser'); });

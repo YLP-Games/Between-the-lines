@@ -162,7 +162,7 @@ const near = (a, b, d = 2) => Math.abs(a - b) <= d;
   // ---- alt text ----
   await page.click('#pfAlt'); await page.waitForTimeout(150);
   ok(await page.evaluate(() => document.activeElement?.id === 'pfAltIn' && document.activeElement.value === 'quads.png'), 'Alt text opens ready to type, with the file name to start with');
-  await page.keyboard.press('Control+a'); await page.keyboard.type('Four coloured squaresx'); await page.keyboard.press('Backspace'); await page.keyboard.press('Enter'); await page.waitForTimeout(250);
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('Four coloured squaresx'); await page.keyboard.press('Backspace'); await page.keyboard.press('Enter'); await page.waitForTimeout(250);
   ok(await pic.evaluate(m => m.querySelector('img').alt === 'Four coloured squares') && !(await page.locator('.pfpop').count()) && await pic.evaluate(m => m.classList.contains('media-sel')), 'the picture gets its alt text (Backspace while typing it did not remove the picture)');
 
   // ---- size: the ratio locked, and not ----

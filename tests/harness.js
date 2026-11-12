@@ -33,7 +33,7 @@ async function open(file, {width = 1440, height = 900, colorScheme = 'light', st
   if (init) await context.addInitScript(init);
   await context.route('**/*', route => {
     const url = route.request().url();
-    if (url.startsWith('file:') || url.startsWith('http://127.0.0.1')) return route.continue();
+    if (url.startsWith('file:') || url.startsWith('http://127.0.0.1') || url.startsWith('blob:') || url.startsWith('data:')) return route.continue();      // (WebKit asks for the page's own blob: addresses here too)
     net.push(url);
     for (const [re, rel] of MAP) {
       const m = url.match(re);

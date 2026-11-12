@@ -141,7 +141,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   const dragOver = async (x0, x1) => { await page.mouse.move(x0, nb.y + 20); await page.mouse.down(); await page.mouse.move(x1, nb.y + 20, {steps: 10}); await page.mouse.up(); await page.waitForTimeout(200); return page.evaluate(() => getSelection().toString()); };
   const s1 = await dragOver(nb.x + 10, nb.x + nb.width * .8);
   ok(/Elasticity/.test(s1), 'dragging over a note selects its words (' + JSON.stringify(s1) + ')');
-  await page.keyboard.press('Control+c'); await page.waitForTimeout(200);
+  await page.keyboard.press('ControlOrMeta+c'); await page.waitForTimeout(200);
   ok(/Elasticity/.test(await page.evaluate(() => navigator.clipboard.readText()).catch(() => '')), 'and Ctrl+C copies them');
   const s2 = await dragOver(nb.x + nb.width * .3, nb.x + nb.width * .5);
   ok(s2 && s2 !== s1 && s1.includes(s2.trim()), 'pressing inside the selection starts a new one (' + JSON.stringify(s2) + ')');
