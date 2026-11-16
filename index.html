@@ -14911,6 +14911,13 @@ window.btlReceive = async ({name, type, parts, from}) => {
   toast(`Opened “${name}”${from ? ' from ' + from : ''}.`);
 };
 if ('launchQueue' in window) launchQueue.setConsumer(async p => { if (p.files?.length) openFiles(await Promise.all(p.files.map(h => h.getFile()))); });
+// Android Share: sw.js keeps the shared files in the bts-share cache and redirects here with ?shared=
+if (/[?&]shared=/.test(location.search) && window.caches) (async () => {
+  const none = /shared=none/.test(location.search); history.replaceState(null, '', location.pathname);
+  const c = await caches.open('bts-share'), fs = [];
+  for (const r of await c.keys()) { const x = await c.match(r); fs.push(new File([await x.blob()], decodeURIComponent(x.headers.get('x-name') || 'shared'), {type: x.headers.get('content-type') || ''})); await c.delete(r); }
+  if (fs.length) openFiles(fs); else if (none) toast('Only files can be shared to Between the Lines.');
+})();
 
 
 // ================= writing tools: a temporary writing guide, tables and journal entries =================
