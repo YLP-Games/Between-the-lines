@@ -1,0 +1,27 @@
+<!doctype html>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>Opening in Between the Lines</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body{min-height:100vh;display:grid;place-items:center;padding:24px}
+  .card{max-width:440px;width:100%;background:var(--surface);border:1.5px solid var(--pencil);border-radius:16px 10px 18px 9px / 9px 18px 10px 16px;box-shadow:4px 5px 0 var(--pencil);padding:22px 24px;display:flex;flex-direction:column;gap:12px}
+  .head{display:flex;gap:12px;align-items:center}
+  .head img{width:40px;height:40px;flex:none}
+  #name{font-size:20px;overflow-wrap:anywhere}
+  #from{font-size:14px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  label{display:flex;gap:8px;align-items:center;font-size:15px}
+  #state{min-height:1.4em}
+  [hidden]{display:none!important}
+</style>
+<div class="card" role="main">
+  <div class="head"><img src="icons/128.png" alt=""><div><h1 id="name">PDF</h1><div id="from" class="muted"></div></div></div>
+  <p id="state" role="status" aria-live="polite">Opening it in Between the Lines…</p>
+  <div id="ask" class="row" hidden>
+    <button class="btn primary" id="open" type="button">Open in Between the Lines</button>
+    <button class="btn" id="native" type="button">View in Chrome</button>
+  </div>
+  <label id="rem" hidden><input type="checkbox" id="remember"> Remember my choice</label>
+</div>
+<script src="common.js"></script>
+<script src="viewer.js"></script>

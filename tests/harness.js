@@ -29,7 +29,7 @@ const TYPES = {js: 'text/javascript', css: 'text/css', aff: 'text/plain', dic: '
 async function libs(context, net = []){
   await context.route('**/*', route => {
     const url = route.request().url();
-    if (url.startsWith('file:') || url.startsWith('http://127.0.0.1') || url.startsWith('blob:') || url.startsWith('data:')) return route.continue();      // (WebKit asks for the page's own blob: addresses here too)
+    if (/^(file:|blob:|data:|chrome-extension:|http:\/\/127\.0\.0\.1)/.test(url)) return route.continue();      // (WebKit asks for the page's own blob: addresses here too)
     net.push(url);
     for (const [re, rel] of MAP) {
       const m = url.match(re);

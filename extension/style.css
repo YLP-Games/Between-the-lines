@@ -1,0 +1,13 @@
+/* the paper-and-pencil look of the app */
+:root{--bg:#eeede9;--surface:#fbfbf8;--ink:#24231f;--muted:#605d55;--line:#dad7cd;--pencil:#2f2b24;--accent:#3552c4;--accent-ink:#fff;--hover:#e6e4dd;
+  --wob:10px 7px 11px 6px / 6px 11px 7px 10px;--ui:"Patrick Hand","Segoe Print","Comic Sans MS",system-ui,sans-serif;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#1d2320;--surface:#242b26;--ink:#ece6d6;--muted:#aaa594;--line:#38423b;--pencil:#ddd6c4;--accent:#a4b6ff;--accent-ink:#141a2e;--hover:#2f3832;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 var(--ui)}
+h1,h2{font-weight:700;margin:0}
+.btn{font:inherit;border:1.5px solid var(--pencil);border-radius:var(--wob);background:var(--surface);color:var(--ink);padding:7px 14px;cursor:pointer;box-shadow:2px 2px 0 var(--pencil)}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:default;box-shadow:none}
+.btn:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.muted{color:var(--muted)}

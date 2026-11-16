@@ -14903,6 +14903,13 @@ document.addEventListener('touchend', e => {
 }, {passive: true});
 document.addEventListener('touchcancel', () => { tap2 = null; }, {passive: true});
 // installed: PDFs, PowerPoints and Word files can be opened with it from your computer
+// the Between the Lines browser extension hands over a PDF you opened in the browser, or a document you downloaded:
+// its bytes come in base64 pieces (each decoded on its own), and it opens as if you had picked it with Open
+window.btlReceive = async ({name, type, parts, from}) => {
+  const bufs = parts.map(p => { const b = atob(p), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; });
+  await openFiles([new File(bufs, name, {type})]);
+  toast(`Opened “${name}”${from ? ' from ' + from : ''}.`);
+};
 if ('launchQueue' in window) launchQueue.setConsumer(async p => { if (p.files?.length) openFiles(await Promise.all(p.files.map(h => h.getFile()))); });
 
 

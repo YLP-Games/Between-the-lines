@@ -1,0 +1,41 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Between the Lines</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body{width:340px;padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px}
+  .head{display:flex;gap:10px;align-items:center}
+  .head img{width:30px;height:30px}
+  h1{font-size:19px}
+  fieldset{border:1.5px solid var(--line);border-radius:var(--wob);padding:8px 12px 10px;margin:0}
+  legend{padding:0 4px;font-size:15px}
+  label{display:flex;gap:8px;align-items:center;padding:2px 0;font-size:15px}
+  .acts{display:flex;flex-direction:column;gap:8px}
+  .acts .btn{width:100%;text-align:left}
+  #old{font-size:13px;margin:0}
+  details{font-size:14px} details input{width:100%;font:inherit;padding:4px 6px;margin-top:4px}
+  [hidden]{display:none!important}
+</style>
+<div class="head"><img src="icons/48.png" alt=""><h1>Between the Lines</h1></div>
+<div class="acts">
+  <button class="btn primary" id="thisTab" type="button">Open this tab in Between the Lines</button>
+  <button class="btn" id="viewLast" type="button" hidden></button>
+  <button class="btn" id="app" type="button">Go to Between the Lines</button>
+</div>
+<div class="acts" id="offers" hidden></div>
+<fieldset>
+  <legend>PDFs you open in the browser</legend>
+  <label><input type="radio" name="pdf" value="open"> Open them in Between the Lines</label>
+  <label><input type="radio" name="pdf" value="ask"> Ask me each time</label>
+  <label><input type="radio" name="pdf" value="chrome"> Keep the browser’s own viewer</label>
+  <p id="old" class="muted" hidden>Your browser is older than Chrome 151, so PDFs stay in its viewer: use the button above, or right-click a link and choose “Open link in Between the Lines”.</p>
+</fieldset>
+<fieldset>
+  <legend>PDF, PowerPoint and Word files you download</legend>
+  <label><input type="radio" name="downloads" value="ask"> Offer to open them (a notification)</label>
+  <label><input type="radio" name="downloads" value="open"> Open them straight away</label>
+  <label><input type="radio" name="downloads" value="off"> Leave them be</label>
+</fieldset>
+<details><summary>Where Between the Lines is</summary><input id="appUrl" type="url" spellcheck="false" aria-label="Address of Between the Lines"></details>
+<script src="common.js"></script>
+<script src="popup.js"></script>
