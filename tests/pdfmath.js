@@ -12,7 +12,7 @@ const pt = b => b.map(x => x * 0.75);           // CSS pixels on a 960px slide t
 // slides, each line a picture of its equation on a white frame (T_A the same picture every time, T_B new numbers each slide, T_M
 // the same picture on three slides in a row near the bottom); KaTeX, an SVG equation and a white box behind text on the first slide
 async function buildDeck(){
-  const b = await chromium.launch(), p = await b.newPage();
+  const b = await chromium.launch(require('./harness').launchOpts()), p = await b.newPage();
   const png = async (html, css) => { await p.setContent(`<body style="margin:0"><div id=e style="display:inline-block;${css}">${html}</div></body>`); return 'data:image/png;base64,' + (await (await p.$('#e')).screenshot({omitBackground: true})).toString('base64'); };
   const eq = (v, a, c, r) => png(`<i>T</i><sub>${v}</sub> = (${a} − 7.31)/${c} = ${r}`, 'font:italic 30px serif;padding:4px 8px;background:#fff');
   const bg = await png('', 'width:480px;height:270px;background:linear-gradient(135deg,#d3def2,#f2e6cf)');

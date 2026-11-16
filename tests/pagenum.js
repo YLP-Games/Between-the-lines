@@ -6,7 +6,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
 (async () => {
   const PDF = path.join(__dirname, 'numbers.pdf');
   if (!fs.existsSync(PDF)) {
-    const b = await chromium.launch(); const p = await b.newPage();
+    const b = await chromium.launch(require('./harness').launchOpts()); const p = await b.newPage();
     const slide = n => `<section><h1>Market indices ${n}</h1><p>Points scored in the session.</p>
       <table><tr><td>Top</td><td>40</td><td>-0.92%</td></tr><tr><td>Industrial</td><td>25</td><td>${n + 1}</td></tr><tr><td>Resources</td><td>10</td><td>7</td></tr></table>
       <div class="lone">250</div><div class="num">${n}</div></section>`;
