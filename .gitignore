@@ -5,3 +5,6 @@ tests/shots/
 tests/nbfile.html
 tests/index.*.html
 tests/package-lock.json
+
+# temporary copies of the project made by Claude Code agents
+.claude/worktrees/
