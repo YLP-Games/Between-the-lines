@@ -29,8 +29,18 @@ self.addEventListener('activate', e => {
 });
 self.addEventListener('fetch', e => {
   const req = e.request;
-  if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  if (req.method === 'POST' && url.origin === location.origin && url.pathname.endsWith('/share-target')) {      // Android Share: keep the files for the page to pick up, then go to it
+    e.respondWith((async () => {
+      const c = await caches.open('bts-share');
+      for (const k of await c.keys()) await c.delete(k);
+      const fs = (await req.formData()).getAll('files').filter(f => f.name);
+      await Promise.all(fs.map((f, i) => c.put('./share/' + i, new Response(f, {headers: {'content-type': f.type || 'application/octet-stream', 'x-name': encodeURIComponent(f.name)}}))));
+      return Response.redirect('./?shared=' + (fs.length ? 1 : 'none'), 303);
+    })());
+    return;
+  }
+  if (req.method !== 'GET') return;
   // Microsoft sign-in and Microsoft Graph (OneDrive) go straight to the network and are never saved; neither is the blank page the sign-in pop-up returns to
   if (/(^|\.)(graph\.microsoft\.com|login\.microsoftonline\.com|login\.live\.com)$/.test(url.hostname) || (url.origin === location.origin && url.pathname.endsWith('/msal-redirect.html'))) return;
   if (url.origin === location.origin) {                 // the app: fresh when online, saved copy when offline

@@ -27,7 +27,7 @@ const TYPES = {js: 'text/javascript', css: 'text/css', aff: 'text/plain', dic: '
 
 async function open(file, {width = 1440, height = 900, colorScheme = 'light', storage, contextOptions = {}, url, init} = {}){
   fs.mkdirSync(path.join(__dirname, 'shots'), {recursive: true});
-  const browser = await engine.launch(process.env.SHOWBARS && engine === playwright.chromium ? {ignoreDefaultArgs: ['--hide-scrollbars']} : {});
+  const browser = await engine.launch({...(process.env.SHOWBARS && engine === playwright.chromium ? {ignoreDefaultArgs: ['--hide-scrollbars']} : {}), ...(process.env.CHROME_PATH && engine === playwright.chromium ? {executablePath: process.env.CHROME_PATH} : {})});
   const context = await browser.newContext({viewport: {width, height}, colorScheme, acceptDownloads: true, ...(storage ? {storageState: storage} : {}), ...contextOptions});
   const errors = [], net = [];                 // net: every address asked for that is not a local file
   if (init) await context.addInitScript(init);
