@@ -25,12 +25,8 @@ const MAP = [
 ];
 const TYPES = {js: 'text/javascript', css: 'text/css', aff: 'text/plain', dic: 'text/plain', woff2: 'font/woff2', json: 'application/json'};
 
-async function open(file, {width = 1440, height = 900, colorScheme = 'light', storage, contextOptions = {}, url, init} = {}){
-  fs.mkdirSync(path.join(__dirname, 'shots'), {recursive: true});
-  const browser = await engine.launch(process.env.SHOWBARS && engine === playwright.chromium ? {ignoreDefaultArgs: ['--hide-scrollbars']} : {});
-  const context = await browser.newContext({viewport: {width, height}, colorScheme, acceptDownloads: true, ...(storage ? {storageState: storage} : {}), ...contextOptions});
-  const errors = [], net = [];                 // net: every address asked for that is not a local file
-  if (init) await context.addInitScript(init);
+// the CDN libraries and web fonts the app asks for, served from node_modules (anything else from the internet is refused)
+async function libs(context, net = []){
   await context.route('**/*', route => {
     const url = route.request().url();
     if (url.startsWith('file:') || url.startsWith('http://127.0.0.1') || url.startsWith('blob:') || url.startsWith('data:')) return route.continue();      // (WebKit asks for the page's own blob: addresses here too)
@@ -48,6 +44,16 @@ async function open(file, {width = 1440, height = 900, colorScheme = 'light', st
       return route.fulfill({status: 200, body: fs.readFileSync(path.join(NM, f)), contentType: 'font/woff2', headers: {'access-control-allow-origin': '*'}}); }
     return route.abort();
   });
+}
+// CHROME_PATH=/path/to/chrome uses that Chrome instead of Playwright's own (e.g. where only a newer Chrome is installed)
+const launchOpts = () => ({...(process.env.SHOWBARS && engine === playwright.chromium ? {ignoreDefaultArgs: ['--hide-scrollbars']} : {}), ...(process.env.CHROME_PATH && engine === playwright.chromium ? {executablePath: process.env.CHROME_PATH} : {})});
+async function open(file, {width = 1440, height = 900, colorScheme = 'light', storage, contextOptions = {}, url, init} = {}){
+  fs.mkdirSync(path.join(__dirname, 'shots'), {recursive: true});
+  const browser = await engine.launch(launchOpts());
+  const context = await browser.newContext({viewport: {width, height}, colorScheme, acceptDownloads: true, ...(storage ? {storageState: storage} : {}), ...contextOptions});
+  const errors = [], net = [];                 // net: every address asked for that is not a local file
+  if (init) await context.addInitScript(init);
+  await libs(context, net);
   const page = await context.newPage();
   // on a Mac, Home and End scroll the page instead of moving the cursor: in a text they get the Mac's keys for the same move
   if (process.platform === 'darwin') {
@@ -59,4 +65,4 @@ async function open(file, {width = 1440, height = 900, colorScheme = 'light', st
   await page.goto(url || 'file://' + file);
   return {browser, context, page, errors, net};
 }
-module.exports = {open};
+module.exports = {open, libs, launchOpts};
