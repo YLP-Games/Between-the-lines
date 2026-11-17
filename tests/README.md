@@ -13,7 +13,10 @@ npm run test:webkit                      # everything that can run in WebKit
 node run.js tablet sideink               # just some tests
 node tablet.js                           # one test on its own (prints every check)
 BROWSER=webkit node e2e.js               # one test in WebKit
+CHROME_PATH=/path/to/chrome node run.js  # use an installed Chrome (the extension test needs Chrome 151+)
 ```
+
+`SWEEP-PROMPT.md` is a prompt for a coding agent to do a complete test sweep and analysis of the app.
 
 Screenshots that tests take go to `tests/shots/` (not saved in git).
 
