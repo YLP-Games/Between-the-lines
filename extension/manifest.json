@@ -3,7 +3,7 @@
   "name": "Between the Lines: open PDFs to take notes",
   "short_name": "Between the Lines",
   "description": "PDFs you open in your browser, and PDF, PowerPoint and Word files you download, open in Between the Lines, ready for notes.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "minimum_chrome_version": "116",
   "icons": {
     "16": "icons/16.png",
@@ -27,6 +27,17 @@
       "handler_url": "viewer.html"
     }
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://ylp-games.github.io/Between-the-lines/*"
+      ],
+      "js": [
+        "mark.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
   "permissions": [
     "contextMenus",
     "downloads",

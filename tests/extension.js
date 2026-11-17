@@ -54,6 +54,7 @@ const TYPES = {html: 'text/html', js: 'text/javascript', css: 'text/css', json: 
   await cards(t1, 6);
   ok(await t1.evaluate(() => document.querySelectorAll('#main .pagecard').length) === 6, 'with the PDF’s six pages in it, ready for notes');
   ok(await toastHas(t1, 'Opened “lecture.pdf” from 127.0.0.1'), 'it says where the PDF came from');
+  ok(await t1.evaluate(() => document.documentElement.dataset.btlExt) === JSON.parse(fs.readFileSync(path.join(EXT, 'manifest.json'), 'utf8')).version, 'the app can tell the extension is installed (and which version), so it doesn’t suggest it');
 
   // ---- Between the Lines already open: the next PDF goes into that tab, and the PDF's tab goes back to where it was ----
   const t2 = await ctx.newPage();

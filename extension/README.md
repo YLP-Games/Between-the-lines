@@ -11,7 +11,9 @@ Files are fetched with your browser's own sign-ins (so course websites work), ha
 
 ## Install it (no store needed)
 
-1. Download this folder: on GitHub, **Code → Download ZIP**, unzip it, and keep the `extension` folder somewhere permanent.
+The easy way: in Between the Lines, open **Help & settings → Get the browser extension** (or press Ctrl+K and type "extension"). It downloads the extension as one zip and shows these steps.
+
+1. Download it: **Download the extension** in Between the Lines (or, on GitHub, **Code → Download ZIP** and use its `extension` folder). Unzip it and keep the folder somewhere permanent.
 2. Open `chrome://extensions` (Edge: `edge://extensions`), switch on **Developer mode** (top right), and press **Load unpacked**.
 3. Choose the `extension` folder. Pin **Between the Lines** to the toolbar (the puzzle-piece menu → pin).
 4. For PDFs on your own computer (`file://…`), open the extension's **Details** and switch on **Allow access to file URLs**.

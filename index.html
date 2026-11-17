@@ -1842,6 +1842,9 @@ html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;text-
 .a2-k{white-space:nowrap}
 .a2-note{margin:10px 0 0;font-size:14.5px;color:var(--muted)}
 .a2-act{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+:is(.a2-steps,.a2-note) code{font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:0 4px;white-space:nowrap}
+.a2-steps .btn.mini{height:auto;min-height:0;padding:1px 8px;font-size:14px;vertical-align:1px}
+.a2-steps .btn.primary{margin-right:4px}
 @media (pointer:coarse){
   body::after{display:none}            /* the paper grain: a layer over the whole screen that a tablet redraws as you scroll */
   :is(.btn:not(.primary),.pg,.side .srow,.docrow,.ncard,.tbtn):active:not(:disabled){background:var(--hover)}      /* a tap shows while you press, and nothing stays lit after it */
@@ -2530,6 +2533,11 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <h3>Install as an app</h3>
       <p class="sethint">Between the Lines then opens like an app, in its own window or full screen from your Home Screen, and works offline.</p>
       <button type="button" class="btn outline" id="installHow"><svg class="i"><use href="#i-download"/></svg>How to install</button>
+    </section>
+    <section id="extSec">
+      <h3>Open PDFs straight from your browser</h3>
+      <p class="sethint" id="extHint">With the Between the Lines extension, PDFs you open in Chrome, Edge or another Chromium browser on a computer, and PDF, PowerPoint and Word files you download, open here ready for notes.</p>
+      <button type="button" class="btn outline" id="extHow"><svg class="i"><use href="#i-download"/></svg>Get the browser extension</button>
     </section>
     <section>
       <h3>Keyboard shortcuts</h3>
@@ -5935,7 +5943,7 @@ async function openFiles(picked, here = false){
   if (after && added && !saidNotes) toast(`Added after page ${nth}. Press Back (Ctrl+Z) to take it out again.`);
 }
 let addHere = false;             // the next file picked is added to this notebook (true: at the end; a page: right after that page)
-$('#file').onchange = e => { const picked = [...e.target.files]; e.target.value = ''; openFiles(picked, addHere); addHere = false; };
+$('#file').onchange = e => { const picked = [...e.target.files]; e.target.value = ''; openFiles(picked, addHere).then(() => extNudge(picked)); addHere = false; };
 const pickFiles = here => { addHere = here; $('#file').click(); };
 $('#openBtn').onclick = () => pickFiles(false);
 $('#addHereBtn').onclick = () => pickFiles(true);
@@ -9044,7 +9052,7 @@ $('#dictAddForm').addEventListener('submit', e => {
   toast(words.length === 1 ? `“${words[0]}” added to your dictionary.` : `${words.length} words added to your dictionary.`);
 });
 $('#favManage').addEventListener('click', e => { const b = e.target.closest('button[data-c]'); if (b) removeFav(b.dataset.c); });
-function openSettings(fromKeys){ renderDict(); renderFavManage(); fillPrefs(); renderPresets(); renderDrive(); renderOd(); settingsBox.hidden = false; helpBtn.setAttribute('aria-expanded', 'true'); if (fromKeys) $('#setClose').focus(); }
+function openSettings(fromKeys){ renderDict(); renderFavManage(); fillPrefs(); renderPresets(); renderDrive(); renderOd(); paintExt(); settingsBox.hidden = false; helpBtn.setAttribute('aria-expanded', 'true'); if (fromKeys) $('#setClose').focus(); }
 function closeSettings(back){ if (settingsBox.hidden) return; settingsBox.hidden = true; helpBtn.setAttribute('aria-expanded', 'false'); if (back) helpBtn.focus(); }
 // a click with detail 0 came from the keyboard (Enter or Space)
 helpBtn.onclick = e => settingsBox.hidden ? openSettings(e.detail === 0) : closeSettings();
@@ -9438,7 +9446,7 @@ addEventListener('drop', e => {
   dragDepth = 0; dropCover.hidden = true;
   if (!draggingFiles(e) || e.defaultPrevented) return;      // pictures dropped into a note, or onto a page, are handled there
   e.preventDefault();
-  openFiles([...e.dataTransfer.files]);
+  const picked = [...e.dataTransfer.files]; openFiles(picked).then(() => extNudge(picked));
 });
 
 // pop-ups follow what they belong to when the page scrolls or resizes
@@ -14064,6 +14072,7 @@ const CK_ACTIONS = [
   {id: 'zoomfit', label: 'Fit the pages to the window', ico: 'monitor', words: 'zoom reset whole page 100', ok: ckPages, run: () => setPageZoom(1)},
   {id: 'sidebg', label: 'Side page background', ico: 'palette', words: 'side notes paper colour pattern lined grid dots cream dark', run: () => openSideBg($('#sideBgBtn'))},
   {id: 'install', label: 'Install as an app', ico: 'download', words: 'add to home screen ipad iphone android dock offline app pwa', run: () => installNow()},
+  {id: 'extension', label: 'Get the browser extension', ico: 'download', words: 'chrome edge brave extension add-on plugin open pdf from browser downloads', run: () => showExt(false)},
   {id: 'tips', label: 'Show tips on or off', ico: 'lightbulb', words: 'help hints coach teaching messages', run: () => setTips(!tipsOn())},
   {id: 'tooltips', label: 'Button tooltips on or off', ico: 'help', words: 'hover pop up labels help', run: () => setTooltips(!qtipsOn())},
   {id: 'sidehover', label: 'Open sidebar on hover on or off', ico: 'hide-left', words: 'sidebar peek left edge point mouse hover automatically show hidden settings', run: () => setSideHover(!sideHoverOn())},
@@ -14881,6 +14890,78 @@ function hideInstall(){
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && a2El && !a2El.hidden) hideInstall(); });
 addEventListener('load', () => setTimeout(() => { if (a2Due() && settingsBox.hidden) showInstall(true); }, 2500));
+// ================= the browser extension: PDFs opened in Chrome, Edge or another Chromium browser on a computer come straight here =================
+// installed, it marks this page with its version (extension/mark.js). The card says how to add it, and its download is a zip made here from extension/
+const EXT_VER = '1.1.0', EXT_FILES = ['manifest.json', 'background.js', 'common.js', 'mark.js', 'viewer.html', 'viewer.js', 'popup.html', 'popup.js', 'style.css', 'README.md', 'icons/16.png', 'icons/32.png', 'icons/48.png', 'icons/128.png'];
+const EXT_GH = 'https://github.com/YLP-Games/Between-the-lines/tree/main/extension';
+const extHas = () => document.documentElement.dataset.btlExt || '';
+const extOld = v => { const a = v.split('.').map(Number), b = EXT_VER.split('.').map(Number); for (let i = 0; i < 3; i++) if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) < (b[i] || 0); return false; };
+const extBrowser = isIOS || nativeApp || /Android|Mobile/.test(ua) || !/Chrome\//.test(ua) ? '' : /Edg\//.test(ua) ? 'Edge' : navigator.brave ? 'Brave' : /OPR\//.test(ua) ? 'Opera' : 'Chrome';
+const chromeVer = +(ua.match(/Chrome\/(\d+)/)?.[1] || 0);
+let extEl = null;
+function showExt(auto){
+  if (!auto) closeSettings();
+  const b = extBrowser || 'Chrome', page = ({Edge: 'edge', Brave: 'brave', Opera: 'opera'}[extBrowser] || 'chrome') + '://extensions', v = extHas(), old = v && extOld(v);
+  if (!extEl) {
+    extEl = Object.assign(document.createElement('div'), {className: 'pop a2hs', id: 'extCard', hidden: true});
+    extEl.setAttribute('role', 'dialog'); extEl.setAttribute('aria-labelledby', 'extT');
+    extEl.addEventListener('click', e => {
+      const t = e.target.closest('[data-ext]'); if (!t) return;
+      if (t.dataset.ext === 'zip') extZip(t);
+      else if (t.dataset.ext === 'copy') navigator.clipboard?.writeText(t.dataset.copy).then(() => toast('Copied. Paste it into a new tab’s address bar.'), () => toast(`Type ${t.dataset.copy} into a new tab’s address bar.`));
+      else hideExt();
+    });
+    document.body.append(extEl);
+  }
+  const steps = extBrowser && (!v || old) ? [
+    `<button type="button" class="btn primary mini" data-ext="zip">${icon('download')}Download the extension</button> then unzip it into a folder that can stay put (in Documents, say)`,
+    `Open <code>${page}</code> <button type="button" class="btn outline mini" data-ext="copy" data-copy="${page}">Copy</button> in a new tab and switch on <b>Developer mode</b> (top right)`,
+    'Press <b>Load unpacked</b>, choose the unzipped folder, and pin it from the puzzle-piece menu'] : [];
+  extEl.innerHTML = `<div class="a2-head">${$('#pagesPanel .brand svg')?.outerHTML || ''}<div><h2 id="extT">Open PDFs straight from ${b}</h2>`
+    + `<p>PDFs you open in the browser, and PDF, PowerPoint and Word files you download, open here ready for notes.</p></div><button type="button" class="btn" data-ext="x" aria-label="Close">${icon('x')}</button></div>`
+    + (!extBrowser ? '<p class="a2-note">The extension is for Chrome, Edge, Brave and other Chromium browsers on a computer. On an iPad, use the Between the Lines app; on Android, share a file to the installed app.</p>' : '')
+    + (v && !old ? `<p class="a2-note">The extension is installed (version ${esc(v)}). Its button in the toolbar chooses what it does with PDFs and downloads.</p>` : '')
+    + (old ? `<p class="a2-note">There’s a newer version of the extension (${EXT_VER}; you have ${esc(v)}). Download it, put its files in place of the old ones, then press the reload arrow on its card in <code>${page}</code>.</p>` : '')
+    + (steps.length ? `<ol class="a2-steps">${steps.map(t => `<li><span>${t}</span></li>`).join('')}</ol>` : '')
+    + (steps.length && chromeVer && chromeVer < 151 ? `<p class="a2-note">PDFs come here by themselves from ${b} 151 (you have ${chromeVer}). Until then, right-click a link and choose <b>Open link in Between the Lines</b>, or press Alt+Shift+B.</p>` : '')
+    + `<div class="a2-act">${auto ? '<button type="button" class="btn outline" data-ext="no">Not now</button>' : ''}<button type="button" class="btn primary" data-ext="ok">${steps.length ? 'Done' : 'Got it'}</button></div>`;
+  extEl.dataset.auto = auto ? '1' : '';
+  extEl.hidden = false;
+  if (auto) { const k = pref.json('ext-tip', {}); pref.setJson('ext-tip', {no: k.no || 0, at: Date.now()}); }
+  else (extEl.querySelector('[data-ext=zip]') || extEl.querySelector('.a2-act .primary')).focus();
+}
+function hideExt(){
+  if (!extEl || extEl.hidden) return;
+  extEl.hidden = true;
+  if (extEl.dataset.auto) { const k = pref.json('ext-tip', {}); pref.setJson('ext-tip', {no: (k.no || 0) + 1, at: Date.now()}); }
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && extEl && !extEl.hidden) hideExt(); });
+// the extension's files, zipped here (they are served next to this page), so it is one download
+async function extZip(btn){
+  const was = btn.innerHTML; btn.disabled = true; btn.textContent = 'Preparing…';
+  try {
+    if (!onWeb) throw new Error('this copy was opened from a file');
+    if (!await ensureReader('pptx')) throw new Error('the zip maker didn’t load');
+    const z = new JSZip(), dir = z.folder('between-the-lines-extension');
+    for (const f of EXT_FILES) { const r = await fetch('extension/' + f, {cache: 'no-cache'}); if (!r.ok) throw new Error(f + ' is missing'); dir.file(f, await r.blob()); }
+    await saveFile('between-the-lines-extension.zip', await z.generateAsync({type: 'blob'}));
+    toast('Downloaded “between-the-lines-extension.zip”. Unzip it, then do steps 2 and 3.');
+  } catch (e) { toast(`The download couldn’t be made (${e.message}). The extension’s folder is on GitHub: ${EXT_GH}`); }
+  btn.disabled = false; btn.innerHTML = was;
+}
+function paintExt(){
+  const v = extHas(), old = v && extOld(v);
+  $('#extHow').lastChild.textContent = v && !old ? 'About the browser extension' : old ? 'Update the browser extension' : 'Get the browser extension';
+  $('#extHint').textContent = v && !old ? 'The extension is installed: PDFs you open in the browser, and the documents you download, come straight here.'
+    : 'With the Between the Lines extension, PDFs you open in Chrome, Edge or another Chromium browser on a computer, and PDF, PowerPoint and Word files you download, open here ready for notes.';
+}
+$('#extHow').onclick = () => showExt(false);
+// a gentle nudge, once in a while: after you open a PDF the long way in a desktop Chromium browser without the extension (with Show tips on; never after closing it twice)
+function extNudge(files){
+  const k = pref.json('ext-tip', {});
+  if (!extBrowser || extHas() || !onWeb || !tipsOn() || (k.no || 0) >= 2 || Date.now() - (k.at || 0) < 14 * 864e5 || !files.some(f => /\.pdf$/i.test(f.name))) return;
+  setTimeout(() => { if (settingsBox.hidden && (!a2El || a2El.hidden)) showExt(true); }, 1500);
+}
 // two fingers tapped on the page together, as in GoodNotes: Back one step (three fingers: Forward). A pinch or a two-finger scroll moves, and a press lasts: neither is a tap
 let tap2 = null;
 document.addEventListener('touchstart', e => {

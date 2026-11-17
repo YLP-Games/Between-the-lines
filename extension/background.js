@@ -77,8 +77,19 @@ chrome.runtime.onConnect.addListener(port => {
   });
 });
 
+// ---------- the app's page learns the extension is there (mark.js): on the web address in the manifest, or on the one set in the pop-up ----------
+async function markApp(){
+  const {app} = await BTL.settings(); let m;
+  try { const u = new URL(app); m = `${u.protocol}//${u.hostname}${u.pathname.replace(/[^/]*$/, '')}*`; } catch { return; }
+  await chrome.scripting.unregisterContentScripts({ids: ['mark']}).catch(() => {});
+  if (m !== 'https://ylp-games.github.io/Between-the-lines/*') await chrome.scripting.registerContentScripts([{id: 'mark', matches: [m], js: ['mark.js'], runAt: 'document_start'}]).catch(() => {});
+}
+chrome.runtime.onStartup.addListener(markApp);
+chrome.storage.onChanged.addListener(c => { if (c.app) markApp(); });
+
 // ---------- right-click a link, the toolbar button, the keyboard shortcut ----------
 chrome.runtime.onInstalled.addListener(() => {
+  markApp();
   chrome.contextMenus.create({id: 'link', title: 'Open link in Between the Lines', contexts: ['link']});
   chrome.contextMenus.create({id: 'page', title: 'Open this PDF in Between the Lines', contexts: ['page', 'frame'], documentUrlPatterns: ['*://*/*.pdf*', 'file:///*.pdf', '*://*/*.PDF*']});
 });

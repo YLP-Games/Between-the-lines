@@ -153,6 +153,7 @@ Open it at **https://ylp-games.github.io/Between-the-lines/**, or open `index.ht
 - **iPad and iPhone**: in Safari, tap **Share** (at the top right on an iPad, at the bottom on an iPhone), choose **Add to Home Screen**, then **Add**. It opens full screen from its icon and works offline.
 - **Chrome or Edge** (computer or Android): **Install as an app** opens the browser's own install prompt (or use the install icon in the address bar). It then opens in its own window, works offline, and appears in "Open with" for PDF, PowerPoint and Word files.
 - **Android**: once installed, tap **Share** on a PDF, PowerPoint or Word file (in Chrome's downloads, Files or Gmail) and choose **Between the Lines** to open it.
+- **Browser extension** (Chrome, Edge, Brave and other Chromium browsers on a computer): PDFs you open in the browser, and PDF, PowerPoint and Word files you download, open in Between the Lines ready for notes. **Help & settings → Get the browser extension** (or Ctrl+K, "extension") downloads it as one zip and shows the three steps to add it; the app also suggests it, now and then, after you open a PDF with Open (at most twice, never with Show tips off, and never once it is installed). See [extension/README.md](extension/README.md).
 - **Safari on a Mac** (17 or later): File › Add to Dock.
 
 `manifest.webmanifest`, `sw.js` (the offline cache) and `icons/` (with `apple-touch-icon.png`, the Home Screen icon for iOS) make this work; they are only used when the site is served from the web.
