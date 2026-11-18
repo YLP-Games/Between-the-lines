@@ -1,5 +1,5 @@
 // Split view: a second notebook to read beside the one you write in, a divider, Swap, and the ways to open it
-const {open} = require('./harness'); const APP = process.env.APP || require('path').resolve(__dirname, '..', 'index.html');
+const {open, clipText, copyKeys} = require('./harness'); const APP = process.env.APP || require('path').resolve(__dirname, '..', 'index.html');
 const path = require('path');
 const fs = require('fs');
 const OUT = path.join(__dirname, 'shots');
@@ -141,8 +141,8 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   const dragOver = async (x0, x1) => { await page.mouse.move(x0, nb.y + 20); await page.mouse.down(); await page.mouse.move(x1, nb.y + 20, {steps: 10}); await page.mouse.up(); await page.waitForTimeout(200); return page.evaluate(() => getSelection().toString()); };
   const s1 = await dragOver(nb.x + 10, nb.x + nb.width * .8);
   ok(/Elasticity/.test(s1), 'dragging over a note selects its words (' + JSON.stringify(s1) + ')');
-  await page.keyboard.press('ControlOrMeta+c'); await page.waitForTimeout(200);
-  ok(/Elasticity/.test(await page.evaluate(() => navigator.clipboard.readText()).catch(() => '')), 'and Ctrl+C copies them');
+  await copyKeys(page); await page.waitForTimeout(200);
+  ok(/Elasticity/.test(await clipText(page)), 'and Ctrl+C copies them');
   const s2 = await dragOver(nb.x + nb.width * .3, nb.x + nb.width * .5);
   ok(s2 && s2 !== s1 && s1.includes(s2.trim()), 'pressing inside the selection starts a new one (' + JSON.stringify(s2) + ')');
   // the note's Copy button
@@ -152,7 +152,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   ok(await copyBtn.isVisible(), 'pointing at a note shows its Copy button');
   await page.evaluate(() => navigator.clipboard.writeText('-')).catch(() => {});
   await copyBtn.click(); await page.waitForTimeout(300);
-  ok(/Elasticity is about slopes/.test(await page.evaluate(() => navigator.clipboard.readText()).catch(() => '')), 'Copy puts the whole note on the clipboard');
+  ok(/Elasticity is about slopes/.test(await clipText(page)), 'Copy puts the whole note on the clipboard');
   ok(/Copied/.test(await copyBtn.textContent()), 'and says Copied');
   ok(await page.evaluate(() => [...document.querySelectorAll('#bView .sidepage .notebox')].every(b => b.querySelector(':scope > .bcopy'))), 'side notes have Copy too');
   await page.evaluate(t => { document.getElementById('bBody').scrollTop = t; }, keepPane); await page.waitForTimeout(200);

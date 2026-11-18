@@ -94,4 +94,18 @@ async function open(file, {width = 1440, height = 900, colorScheme = 'light', st
   await page.goto(url || 'file://' + file);
   return {browser, context, page, errors, net};
 }
-module.exports = {open, libs, launchOpts};
+// what is on the clipboard, pasted into a box of the test's own: that works in every engine (Playwright's WebKit lets a page read it no other way)
+async function clipText(page){
+  await page.evaluate(() => { const t = document.createElement('textarea'); t.id = 'clipTest'; t.style.cssText = 'position:fixed;left:0;top:0;opacity:0'; document.body.append(t); t.focus(); });
+  await page.keyboard.press('ControlOrMeta+v');
+  return page.evaluate(() => { const t = document.getElementById('clipTest'), v = t.value; t.remove(); return v; });
+}
+// Ctrl+C (⌘C on a Mac). Playwright's WebKit on Linux copies with it only in editable text, while Safari's ⌘C copies any selection:
+// there, unless the page took the key itself, the copy runs as Safari's would
+async function copyKeys(page){
+  if (engine !== playwright.webkit) return page.keyboard.press('ControlOrMeta+c');
+  await page.evaluate(() => { const k = window.__ck = {key: false, copy: false}; k.kd = e => { if (e.key.toLowerCase() === 'c') k.key = !e.defaultPrevented; }; k.cp = () => { k.copy = true; }; addEventListener('keydown', k.kd); addEventListener('copy', k.cp, true); });
+  await page.keyboard.press('ControlOrMeta+c');
+  await page.evaluate(() => { const k = __ck; removeEventListener('keydown', k.kd); removeEventListener('copy', k.cp, true); if (k.key && !k.copy) document.execCommand('copy'); });
+}
+module.exports = {open, libs, launchOpts, clipText, copyKeys};
