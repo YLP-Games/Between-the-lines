@@ -31,7 +31,7 @@ const close = (a, b, t = 12) => a.every((v, i) => Math.abs(v - b[i]) <= t);
     const t = await words(page, i);
     ok(w.every(x => t.includes(x)), `slide ${i + 1} has its words to select: ${w[0]}…`);
   }
-  ok(await page.evaluate(() => getComputedStyle(document.querySelector('.pagecard .tl')).userSelect !== 'none'), 'the words can be selected');
+  ok(await page.evaluate(() => (s => s.userSelect ?? s.webkitUserSelect)(getComputedStyle(document.querySelector('.pagecard .tl'))) !== 'none'), 'the words can be selected');
   ok(await page.locator('.pptx-tip').count() === 1 && (await page.textContent('.pptx-tip span')).includes('as the slides look') && (await page.textContent('.pptx-tip span')).includes('SmartArt'), 'the tip says it opens as it looks and that SmartArt and animations may differ');
   // notes between the lines
   const strip = page.locator('.pagecard').first().locator('.strip').first(); await strip.scrollIntoViewIfNeeded();
