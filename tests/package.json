@@ -8,7 +8,7 @@
     "test:firefox": "node run.js --browser=firefox"
   },
   "devDependencies": {
-    "playwright": "1.56.1",
+    "@axe-core/playwright": "^4.14.0",
     "@fontsource/bricolage-grotesque": "^5.3.0",
     "@fontsource/caveat": "^5.3.0",
     "@fontsource/kalam": "^5.3.0",
@@ -20,6 +20,7 @@
     "katex": "0.16.9",
     "mammoth": "1.6.0",
     "pdfjs-dist": "3.11.174",
+    "playwright": "1.56.1",
     "typo-js": "1.2.4"
   }
 }

@@ -93,7 +93,8 @@ input[type=color]{width:28px;height:28px;padding:0;border:1px solid var(--line-s
 .menu small{color:var(--muted);font-size:12px}
 .menu label{display:flex;flex-direction:column;gap:4px;padding:6px 10px 10px;font-size:12px;color:var(--muted);margin-bottom:6px}
 .ribbon{position:relative;padding:0 var(--gutter-r) 0 var(--gutter-l)}
-.tabs{display:flex;align-items:center;gap:2px}
+.tabs,.tlist{display:flex;align-items:center;gap:2px}
+.tlist{min-width:0;overflow:auto hidden;scrollbar-width:none;padding-bottom:1px;margin-bottom:-1px}.tlist::-webkit-scrollbar{display:none}
 .tab{height:36px;padding:0 14px;border:none;border-bottom:2px solid transparent;background:none;font:inherit;font-size:13.5px;color:var(--muted);cursor:pointer;margin-bottom:-1px}
 .tab:hover{color:var(--ink)}
 .tab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
@@ -1773,7 +1774,7 @@ main.reading .cd-lang::after,main.pdfpaper .cd-lang::after{content:""}
   :is(.mediabar,.annobar,.annopop,.pptx-tip,.bhead) .btn,.bhead select,.fkeys button,.fhead .btn{min-width:44px;height:44px}
   .fkeys button{min-width:44px}
   .tab{height:44px;padding-inline:16px}
-  @media (max-width:430px){.tab{padding-inline:13px}.tabs{gap:0}}
+  @media (max-width:430px){.tab{padding-inline:13px}.tabs,.tlist{gap:0}}
   @media (max-width:350px){.tab{padding-inline:9px}}
   :is(select,#size,.newrow input[type=number],.tbtn){height:44px}
   .sw,.chippop .cc,input[type=color],.chippop input[type=color]{width:44px;height:44px}
@@ -2129,13 +2130,15 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
   </div>
 
   <div class="ribbon" id="ribbon">
-    <div class="tabs" role="tablist" aria-label="Tools">
-      <button class="tab" role="tab" id="tab-home" data-tab="home" data-edit aria-selected="true" aria-controls="panel-home">Home</button>
-      <button class="tab" role="tab" id="tab-insert" data-tab="insert" data-edit aria-selected="false" aria-controls="panel-insert" tabindex="-1">Insert</button>
-      <button class="tab" role="tab" id="tab-box" data-tab="box" data-edit aria-selected="false" aria-controls="panel-box" tabindex="-1">Box</button>
-      <button class="tab" role="tab" id="tab-review" data-tab="review" data-edit aria-selected="false" aria-controls="panel-review" tabindex="-1">Review</button>
-      <button class="tab" role="tab" id="tab-view" data-tab="view" aria-selected="false" aria-controls="panel-view" tabindex="-1">View</button>
-      <button class="tab" role="tab" id="tab-picture" data-tab="picture" data-edit aria-selected="false" aria-controls="panel-picture" tabindex="-1" hidden title="Picture Format: crop, turn, colour and frame the picture you've selected">Picture Format</button>
+    <div class="tabs">
+      <div class="tlist" role="tablist" aria-label="Tools">
+        <button class="tab" role="tab" id="tab-home" data-tab="home" data-edit aria-selected="true" aria-controls="panel-home">Home</button>
+        <button class="tab" role="tab" id="tab-insert" data-tab="insert" data-edit aria-selected="false" aria-controls="panel-insert" tabindex="-1">Insert</button>
+        <button class="tab" role="tab" id="tab-box" data-tab="box" data-edit aria-selected="false" aria-controls="panel-box" tabindex="-1">Box</button>
+        <button class="tab" role="tab" id="tab-review" data-tab="review" data-edit aria-selected="false" aria-controls="panel-review" tabindex="-1">Review</button>
+        <button class="tab" role="tab" id="tab-view" data-tab="view" aria-selected="false" aria-controls="panel-view" tabindex="-1">View</button>
+        <button class="tab" role="tab" id="tab-picture" data-tab="picture" data-edit aria-selected="false" aria-controls="panel-picture" tabindex="-1" hidden title="Picture Format: crop, turn, colour and frame the picture you've selected">Picture Format</button>
+      </div>
       <span class="spacer"></span>
       <button class="btn" id="ribbonFold" aria-label="Show tabs only" title="Show tabs only (click a tab to open its tools)"><svg class="i" style="width:16px;height:16px"><use href="#i-up"/></svg></button>
     </div>
@@ -2190,9 +2193,9 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
         <button class="btn" id="i" aria-label="Italic" title="Italic (Ctrl+I)" style="font-style:italic;font-family:Georgia,serif">I</button>
         <button class="btn" id="u" aria-label="Underline" title="Underline (Ctrl+U)" style="text-decoration:underline">U</button>
         <button class="btn" data-cmd="strikeThrough" aria-label="Strikethrough" title="Strikethrough" style="text-decoration:line-through">S</button>
-        <button class="btn" data-cmd="superscript" aria-label="Superscript" title="Superscript">x²</button>
-        <button class="btn" data-cmd="subscript" aria-label="Subscript" title="Subscript">x₂</button>
-        <button class="btn" data-cmd="hiliteColor" id="hlBtn" aria-label="Highlight" title="Highlight the selected words"><span class="hlswatch">ab</span></button>
+        <button class="btn" data-cmd="superscript" aria-label="Superscript x²" title="Superscript">x²</button>
+        <button class="btn" data-cmd="subscript" aria-label="Subscript x₂" title="Subscript">x₂</button>
+        <button class="btn" data-cmd="hiliteColor" id="hlBtn" aria-label="Highlight ab" title="Highlight the selected words"><span class="hlswatch">ab</span></button>
         <input type="color" id="hlColor" value="#fff176" aria-label="Highlight colour" title="Highlight colour">
         <button class="btn" data-cmd="removeFormat" aria-label="Clear formatting" title="Clear formatting of the selected words"><svg class="i"><use href="#i-eraser"/></svg></button>
       </div><span class="cap">Text</span></div>
@@ -2610,7 +2613,7 @@ if (!window.structuredClone) window.structuredClone = function (v, o) {
       <div class="ldots" id="setLine" role="group" aria-label="Line colour"></div>
       <label class="chk setchk" for="setLineClick"><input type="checkbox" id="setLineClick" checked> Clickable lines</label>
       <p class="sethint">Click a line for its colour, Go to side note and Unlink. Off: lines let clicks through, so words under them are easy to select (also in the Box tab). One line can let clicks through on its own, from its pop-up.</p>
-      <div class="newrow lkset"><span class="lbl" id="linkMatchLbl">Link to side note</span><select id="setLinkMatch" aria-labelledby="linkMatchLbl" title="What Link to side note does with the colours: ask each time, or always one way"><option value="ask">Ask each time</option><option value="note">Note matches the highlight</option><option value="hl">Highlight matches the note</option><option value="none">Keep both as they are</option></select></div>
+      <div class="newrow lkset"><label class="lbl" for="setLinkMatch">Link to side note</label><select id="setLinkMatch" title="What Link to side note does with the colours: ask each time, or always one way"><option value="ask">Ask each time</option><option value="note">Note matches the highlight</option><option value="hl">Highlight matches the note</option><option value="none">Keep both as they are</option></select></div>
       <p class="sethint">Note matches the highlight: its words and pencil icon take the highlight's colour (deeper, to read). Highlight matches the note: the highlight takes the colour of the note's words, and so does its pencil icon.</p>
       <button type="button" class="btn outline" id="setLineAll" title="Make every line in this notebook clickable again, including the ones set to let clicks through">Make every line clickable again</button>
     </section>
@@ -9138,6 +9141,7 @@ function selectTab(name, focus){
     t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1;
     $('#panel-' + t.dataset.tab).hidden = !on;
     if (on && focus) t.focus();
+    if (on && t.offsetParent) t.scrollIntoView({block: 'nearest', inline: 'nearest'});
   }
   panelFade($('#panel-' + name));
 }
@@ -9287,9 +9291,9 @@ function renderPages(){
     }
     if (notes) { const c = document.createElement('span'); c.className = 'n'; c.textContent = notes; th.append(c); }
     const label = document.createElement('span'); label.className = 'pgl';
-    label.append(Object.assign(document.createElement('span'), {textContent: i + 1}), Object.assign(document.createElement('span'), {textContent: title}));
+    label.append(Object.assign(document.createElement('span'), {textContent: i + 1}), ' ', Object.assign(document.createElement('span'), {textContent: title}));
     b.append(th, label);
-    b.setAttribute('aria-label', `Page ${i + 1}: ${title}${notes ? `, ${notes} note${notes > 1 ? 's' : ''}` : ''}`);
+    b.setAttribute('aria-label', `${i + 1} ${title}${notes ? `, ${notes} note${notes > 1 ? 's' : ''}` : ''}`);
     li.append(b); frag.append(li);
   }
   list.replaceChildren(frag); pageMark = -1; trackPage();
