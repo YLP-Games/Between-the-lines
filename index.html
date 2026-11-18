@@ -1270,10 +1270,11 @@ main.fit.side-on:not(.side-split):not(.side-stack) > .sidepage{grid-column:2;ali
 .srow > .sheet{flex:none}
 .srow > .sidepage{width:var(--sidew);flex:none}
 main.paged > .sidepage{width:var(--sidew);flex:none}
-/* sync scrolling off: the side pages stand in a column of their own on the right, which scrolls by itself (the column's sizes are divided by --z, as main is zoomed) */
+/* sync scrolling off: the side pages stand in a column of their own on the right, which scrolls by itself (the column's sizes are divided by --z, as main is zoomed;
+   100dvh by --vz, which is 1 where a zoomed box keeps it the window's height, as in Safari) */
 main.side-split{--sw:calc(var(--sidew) + 32px);padding-right:calc(var(--sw) + 32px)}
 .sidewrap{position:absolute;top:0;bottom:0;right:16px;width:var(--sw);pointer-events:none}
-.sidecol{position:sticky;top:calc(var(--appbar-h) / var(--z,1));height:calc((100dvh - var(--appbar-h) - var(--status-h)) / var(--z,1));overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;pointer-events:auto;display:flex;flex-direction:column;gap:18px;padding:14px 8px 80px 24px;box-sizing:border-box}
+.sidecol{position:sticky;top:calc(var(--appbar-h) / var(--z,1));height:calc(100dvh / var(--vz, var(--z,1)) - (var(--appbar-h) + var(--status-h)) / var(--z,1));overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;pointer-events:auto;display:flex;flex-direction:column;gap:18px;padding:14px 8px 80px 24px;box-sizing:border-box}
 main.side-split .sidepage{flex:none}
 main.side-split .sidepage::before{display:block}
 /* joining a highlight to a note: click the note */
@@ -1896,7 +1897,7 @@ html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;text-
   .side,.beside{height:calc(100vh - var(--appbar-h) - var(--status-h))}
   @media (max-width:900px),(pointer:coarse) and (orientation:portrait) and (max-width:1100px){.side{height:auto}}
   @media (max-width:900px){.beside{height:auto}}
-  .sidecol{height:calc((100vh - var(--appbar-h) - var(--status-h)) / var(--z,1))}
+  .sidecol{height:calc(100vh / var(--vz, var(--z,1)) - (var(--appbar-h) + var(--status-h)) / var(--z,1))}
   .settings{max-height:calc(100vh - var(--appbar-h) - var(--status-h) - 24px)}
   #saveMenu{max-height:calc(100vh - 76px)}
   .sharebox{max-height:calc(100vh - max(16px,7vh) - 12px)}
@@ -6527,6 +6528,8 @@ function fitPlan(W, size){
   const z = sideForce || !room ? fz : +(fz * pageZoom).toFixed(4);           // (the page zoom never reaches the PDF)
   return {vis, split, stack, fluid, z, fz, W, key: [vis, split, stack].join()};
 }
+// in a zoomed box Chrome zooms 100vh with it, Safari keeps it the window's height: there the side column's height (.sidecol) isn't divided by the zoom
+{ const p = document.createElement('div'); p.style.cssText = 'position:fixed;top:0;height:100vh;zoom:.5;visibility:hidden'; document.body.append(p); if (p.getBoundingClientRect().height > innerHeight * .75) main.style.setProperty('--vz', 1); p.remove(); }
 // set main up for a plan; returns how much the zoom changed (the scroll position follows it)
 function fitApply(p, paged){
   const old = viewZoom, has = !!main.querySelector('.slide');
