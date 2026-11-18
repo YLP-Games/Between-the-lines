@@ -45,6 +45,20 @@ async function libs(context, net = []){
     return route.abort();
   });
 }
+// Playwright's WebKit doesn't show a route the body of a request sent as a Blob (postData() is null), so the fake Google Drive and
+// OneDrive couldn't read an upload: there the page sends the same bytes as an ArrayBuffer instead (with the Blob's type, as the browser would).
+function blobBodies(){
+  const bytes = b => b instanceof Blob ? b.arrayBuffer() : null;
+  const typed = (h, b) => { h = new Headers(h); if (b.type && !h.has('content-type')) h.set('content-type', b.type); return h; };
+  const f = window.fetch;
+  window.fetch = async (u, o) => o?.body instanceof Blob ? f(u, {...o, headers: typed(o.headers, o.body), body: await bytes(o.body)}) : f(u, o);
+  const X = XMLHttpRequest.prototype, send = X.send, set = X.setRequestHeader;
+  X.setRequestHeader = function(k, v){ if (/^content-type$/i.test(k)) this._ct = true; return set.call(this, k, v); };
+  X.send = function(b){
+    if (!(b instanceof Blob)) return send.call(this, b);
+    bytes(b).then(a => { if (b.type && !this._ct) set.call(this, 'Content-Type', b.type); send.call(this, a); });
+  };
+}
 // CHROME_PATH=/path/to/chrome uses that Chrome instead of Playwright's own (e.g. where only a newer Chrome is installed)
 const launchOpts = () => ({...(process.env.SHOWBARS && engine === playwright.chromium ? {ignoreDefaultArgs: ['--hide-scrollbars']} : {}), ...(process.env.CHROME_PATH && engine === playwright.chromium ? {executablePath: process.env.CHROME_PATH} : {})});
 async function open(file, {width = 1440, height = 900, colorScheme = 'light', storage, contextOptions = {}, url, init} = {}){
@@ -52,6 +66,7 @@ async function open(file, {width = 1440, height = 900, colorScheme = 'light', st
   const browser = await engine.launch(launchOpts());
   const context = await browser.newContext({viewport: {width, height}, colorScheme, acceptDownloads: true, ...(storage ? {storageState: storage} : {}), ...contextOptions});
   const errors = [], net = [];                 // net: every address asked for that is not a local file
+  if (engine === playwright.webkit) await context.addInitScript(blobBodies);
   if (init) await context.addInitScript(init);
   await libs(context, net);
   const page = await context.newPage();
