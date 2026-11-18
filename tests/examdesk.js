@@ -52,6 +52,12 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); n++; console.log
   ok(p.length === 2 && p[1].includes('R58 907.50'), 'and it is saved');
   await page.screenshot({path: require('path').join(__dirname, 'shots', 'examdesk.png')});
 
+  // opened by Exam Desk (window.opener set): the app still starts, and says it is ready
+  const ctx = page.context(), [pop] = await Promise.all([ctx.waitForEvent('page'), page.evaluate(() => { window.__ready = 0; addEventListener('message', e => { if (e.data?.type === 'btl-ready') window.__ready++; }); window.open(location.href, '_blank'); })]);
+  const perr = []; pop.on('pageerror', e => perr.push(e.message));
+  await pop.waitForLoadState(); await page.waitForFunction(() => window.__ready > 0, null, {timeout: 15000});
+  ok(!perr.length && await pop.evaluate(() => !!document.querySelector('#main') && typeof wgSet === 'function'), 'a tab opened by another page starts up fully and posts btl-ready');
+  await pop.close();
   ok(!errors.length, 'no page errors' + (errors.length ? ': ' + errors.join(' | ') : ''));
   console.log(n + ' checks passed');
   await browser.close();

@@ -15104,7 +15104,7 @@ addEventListener('message', e => {
     err => { reportError(err, 'filing an Exam Desk answer'); e.source?.postMessage({type: 'exam-desk-ack', id: m.id, ok: false}, e.origin); });
 });
 // opened by Exam Desk: say so once the notebooks are loaded, so it sends what it was holding
-if (window.opener) ready.then(() => { try { window.opener.postMessage({type: 'btl-ready'}, '*'); } catch {} });
+if (window.opener) setTimeout(() => ready.then(() => { try { window.opener.postMessage({type: 'btl-ready'}, '*'); } catch {} }));     // (after the whole script has run: ready is made at the end)
 
 // ================= writing tools: a temporary writing guide, tables and journal entries =================
 // Insert › Writing guide, Table and Journal entry (also in the add menu, the / menu and Ctrl+K). Kept apart from the rest: the
