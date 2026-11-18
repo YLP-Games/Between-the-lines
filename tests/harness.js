@@ -59,6 +59,9 @@ function blobBodies(){
     bytes(b).then(a => { if (b.type && !this._ct) set.call(this, 'Content-Type', b.type); send.call(this, a); });
   };
 }
+// Playwright's WebKit opens a menu of its own for a right-click the page leaves alone, and then takes no more mouse input at all (Safari's
+// menu goes at the next click): there it is kept closed, once the page has had the right-click
+function noNativeMenu(){ addEventListener('contextmenu', () => addEventListener('contextmenu', e => e.preventDefault(), {once: true}), true); }
 // Playwright's WebKit, set offline, also refuses the page's own blob: addresses and can't read a Blob, which Safari never does (they are
 // in memory): there going offline is done by hand, as Safari has it. Requests to the internet fail, and navigator.onLine and its events follow.
 function offlineByHand(context){
@@ -77,7 +80,7 @@ async function open(file, {width = 1440, height = 900, colorScheme = 'light', st
   const browser = await engine.launch(launchOpts());
   const context = await browser.newContext({viewport: {width, height}, colorScheme, acceptDownloads: true, ...(storage ? {storageState: storage} : {}), ...contextOptions});
   const errors = [], net = [];                 // net: every address asked for that is not a local file
-  if (engine === playwright.webkit) { await context.addInitScript(blobBodies); offlineByHand(context); }
+  if (engine === playwright.webkit) { await context.addInitScript(blobBodies); await context.addInitScript(noNativeMenu); offlineByHand(context); }
   if (init) await context.addInitScript(init);
   await libs(context, net);
   const page = await context.newPage();
