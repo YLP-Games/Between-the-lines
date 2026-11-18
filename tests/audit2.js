@@ -169,8 +169,10 @@ section('ribbon', async () => {
   const probe = () => page.evaluate(() => {
     const p = [...document.querySelectorAll('.panel')].find(p => p.offsetParent), a = document.getElementById('appbar').getBoundingClientRect(), pr = p.getBoundingClientRect();
     const miss = [], hits = []; for (let x = 40; x < innerWidth - 20; x += 90) { const e = document.elementFromPoint(x, a.bottom + 2); hits.push(e && e.closest('.panel') ? 'panel' : e?.tagName); }
-    const btns = [...p.querySelectorAll('button, select, input')].filter(b => b.offsetParent && !b.disabled && b.getBoundingClientRect().right < innerWidth && b.getBoundingClientRect().left > 0).map(b => { const r = b.getBoundingClientRect(), t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); const hit = t === b || b.contains(t); if (!hit) miss.push((b.id || b.className) + ' under ' + (t && (t.id || t.getAttribute('class') || t.tagName)) + ' at ' + Math.round(r.left)); return hit; });
-    return {over: p.scrollWidth - p.clientWidth, spill: Math.round(pr.bottom - a.bottom), hits, btns, miss, id: p.id};
+    // (a button cut by the panel's edge, or under the round arrow that says there is more that way, is at the edge: the arrow takes that corner and scrolls the button clear)
+    const rs = [...document.querySelectorAll('.rsl')].filter(x => getComputedStyle(x).display !== 'none').map(x => x.getBoundingClientRect()), edge = [];
+    const btns = [...p.querySelectorAll('button, select, input')].filter(b => b.offsetParent && !b.disabled && b.getBoundingClientRect().right < innerWidth && b.getBoundingClientRect().left > 0).filter(b => { const r = b.getBoundingClientRect(), at = r.right > pr.right || r.left < pr.left || rs.some(x => r.left < x.right && r.right > x.left); if (at) { b.dataset.edge = '1'; edge.push(b.id || b.className); } else delete b.dataset.edge; return !at; }).map(b => { const r = b.getBoundingClientRect(), t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); const hit = t === b || b.contains(t); if (!hit) miss.push((b.id || b.className) + ' under ' + (t && (t.id || t.getAttribute('class') || t.tagName)) + ' at ' + Math.round(r.left)); return hit; });
+    return {over: p.scrollWidth - p.clientWidth, spill: Math.round(pr.bottom - a.bottom), hits, btns, miss, edge, id: p.id};
   });
   let r = await probe();
   ok(r.over <= 0 && r.spill > 0, 'the Home tab fits at 1440px, and its panel reaches ' + r.spill + 'px past the toolbar');
@@ -183,7 +185,12 @@ section('ribbon', async () => {
   await page.setViewportSize({width: 820, height: 900}); await page.waitForTimeout(500); await page.click('#tab-view'); await page.waitForTimeout(400);
   r = await probe();
   ok(r.over > 50 && r.hits.includes('panel'), 'at 820px the View tab scrolls (' + r.over + 'px over): the strip under it is the scroll bar and takes the pointer');
-  ok(r.btns.every(Boolean), 'and its buttons still take the pointer ' + r.miss.join('; '));
+  ok(r.btns.length > 5 && r.btns.every(Boolean), 'and its ' + r.btns.length + ' buttons clear of the edges still take the pointer ' + r.miss.join('; '));
+  // the one at the edge, under the arrow, is not lost: a click on the arrow scrolls the tools along and it comes clear
+  ok(r.edge.length > 0 && await page.locator('.rsl[data-dir="1"]').isVisible(), 'the right arrow shows, with ' + r.edge.length + ' button at the edge under it (' + r.edge + ')');
+  await page.click('.rsl[data-dir="1"]'); await page.waitForTimeout(900);
+  const moved = await page.evaluate(() => [...document.querySelectorAll('[data-edge]')].map(b => { const r = b.getBoundingClientRect(), t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return t === b || b.contains(t) || r.right < 0 || r.left > innerWidth; }));
+  ok(moved.length > 0 && moved.every(Boolean), 'and clicking the arrow scrolls it clear: it takes the pointer, or has gone from view');
   // tabs only: the tools open as a pop-over, which must still block the page under it
   await page.setViewportSize({width: 1440, height: 900}); await page.waitForTimeout(400);
   await page.click('#ribbonFold'); await page.click('#tab-home'); await page.waitForTimeout(400);
@@ -276,7 +283,7 @@ section('beside', async () => {
   await newNote(page, 'alpha beta gamma'); const a = await page.evaluate(() => curId);
   await newNote(page, 'delta epsilon zeta');
   await page.evaluate(id => openBeside(id), a); await page.waitForTimeout(900);
-  const pane = () => page.$eval('#bView', e => e.innerHTML);
+  const pane = () => page.$eval('#bView', e => e.innerHTML.replace(/ bpick/g, ''));      // (the note you select in the pane shows its copy button, with a class of its own: not a change to the note)
   const before = await pane();
   const mine = await page.locator('#bView .mine').first().boundingBox();
   const inPane = () => page.evaluate(() => !!active && !!active.closest('#bView'));

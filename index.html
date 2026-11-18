@@ -1923,6 +1923,7 @@ html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;text-
   main,main.fit,main.paged{display:block!important;max-width:none!important;margin:0!important;padding:0!important;background:none!important;zoom:.72!important}
   main.paged{zoom:1!important}
   main > *{margin:0 auto 16px!important}
+  main.paged > :last-child{margin-bottom:0!important}      /* (the last sheet's gap would spill onto a blank page after it) */
   main.fit > :not(.sidewrap):not(.sidepage){width:var(--cw)!important}
   main > .sidepage{width:var(--sidew)!important}
   main.side-split .sidewrap{position:static;width:auto;pointer-events:auto}      /* (side pages that scroll by themselves come after the pages) */
