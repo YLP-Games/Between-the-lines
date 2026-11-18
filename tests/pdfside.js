@@ -27,6 +27,45 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
     else ok(r1.boxes.every(m => Math.abs(m[0] - 595.28) < .1 && m[1] < 595.28 * 1.2), 'Default: A4 wide pages that hold the slide and its side page, so less tall than the slide alone: ' + r1.boxes[0]);
     ok(r1.after.shown && r1.after.z < 1, lay + ': the screen goes back to its scaled layout afterwards');
   }
+  // a side page keeps its drawing in every mode; its notes follow the mode, as the slide's do (page: painted, comments: PDF comments, none: left out)
+  await page.selectOption('#layout', 'default'); await page.waitForTimeout(800);
+  await page.click('#tab-insert'); await page.click('#drawBtn'); await page.waitForTimeout(150);
+  await page.locator('.sidepage').nth(1).scrollIntoViewIfNeeded();
+  const sb = await page.locator('.sidepage').nth(1).boundingBox();
+  await page.mouse.move(sb.x + sb.width * .2, sb.y + sb.height * .8); await page.mouse.down();
+  await page.mouse.move(sb.x + sb.width * .8, sb.y + sb.height * .85, {steps: 8}); await page.mouse.up();
+  await page.click('#drawBtn'); await page.waitForTimeout(200);
+  await page.evaluate(() => { const sp = document.querySelectorAll('.sidepage')[1]; sp.dataset.ink = sp.dataset.ink.replace(/"c":"[^"]*"/g, '"c":"#00ff00"'); renderInk(sp); });
+  ok(await page.locator('.sidepage').nth(1).evaluate(s => /#00ff00/.test(s.dataset.ink || '')), 'a green stroke is on the second side page');
+  const modes = {};
+  for (const m of ['page', 'comments', 'none']) {
+    await page.evaluate(v => { $('#pdfNotes').value = v; }, m);
+    modes[m] = await page.evaluate(async () => {
+      const old = paintCard, got = [];
+      paintCard = async (card, k, sd) => {
+        const c = await old(card, k, sd); if (!sd) { got.push(null); return c; }
+        const cr = card.getBoundingClientRect(), sr = sd.getBoundingClientRect(), x0 = Math.round((sr.left - Math.min(cr.left, sr.left)) * k), y0 = Math.round((sr.top - Math.min(cr.top, sr.top)) * k);
+        const d = c.getContext('2d').getImageData(x0 + 4, y0 + 4, Math.round(sr.width * k) - 8, Math.round(sr.height * k) - 8).data; let g = 0, t = 0;
+        for (let i = 0; i < d.length; i += 4) { if (d[i + 1] > 200 && d[i] < 80 && d[i + 2] < 80) g++; else if (d[i] < 120 && d[i + 1] < 120) t++; }
+        got.push({g, t, w: c.width}); return c;
+      };
+      let f; try { f = await pdfFile(); } finally { paintCard = old; }
+      const t = new TextDecoder('latin1').decode(new Uint8Array(await f.blob.arrayBuffer()));
+      return {got, notes: t.includes(utf16('A side note for the PDF').slice(1, -1)), annots: (t.match(/\/Subtype \/Text/g) || []).length, pages: (t.match(/\/Type \/Page /g) || []).length};
+    });
+    const r = modes[m], s1 = r.got[1];
+    console.log(m, JSON.stringify({annots: r.annots, notes: r.notes, side1: s1, sides: r.got.filter(Boolean).length}));
+    ok(r.got.filter(Boolean).length === 6 && r.pages === 6, m + ': every page is made with its side page beside it');
+    ok(s1 && s1.g > 200, m + ': the drawing on the side page is in the PDF');
+    if (m === 'page') ok(s1.t > 100 && !r.notes && r.annots === 0, 'page: the side note is painted, not a comment');
+    if (m === 'comments') ok(s1.t < modes.page.got[1].t / 4 && r.notes, 'comments: the side note is a PDF comment, not painted');
+    if (m === 'none') ok(s1.t < modes.page.got[1].t / 4 && !r.notes && r.annots === 0, 'none: the side note is left out');
+  }
+  // printing (Ctrl+P) has no choice of notes: side pages print with their notes and drawing, as the slides do
+  await page.emulateMedia({media: 'print'});
+  const pr = await page.evaluate(() => { const sp = document.querySelectorAll('.sidepage')[1], n = sp.querySelector('.notebox .mine'); return {d: getComputedStyle(sp).display, h: sp.getBoundingClientRect().height, note: getComputedStyle(n).display, ink: !!sp.querySelector(':scope > svg.ink path') && getComputedStyle(sp.querySelector(':scope > svg.ink')).display}; });
+  await page.emulateMedia({media: 'screen'});
+  ok(pr.d === 'block' && pr.h > 100 && pr.note !== 'none' && pr.ink && pr.ink !== 'none', 'print: the side page, its note and its drawing are printed ' + JSON.stringify(pr));
   ok(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.join(' | ') : ''));
   await browser.close();
   console.log('no page errors');
