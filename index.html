@@ -12007,7 +12007,7 @@ function slashChanged(){
   ins.range.setEnd(c.startContainer, c.startOffset);
   if (!ins.range.toString().startsWith('/')) { closeInsMenu(); return; }
   renderIns();
-  if (!ins.shown.length && /\s$|.{13}/.test(insQuery() + (ins.range.toString().endsWith(' ') ? ' ' : ''))) { closeInsMenu(); return; }
+  if (!ins.shown.length && /\s$|.{13}/.test(insQuery() + (/\s$/.test(ins.range.toString()) ? ' ' : ''))) { closeInsMenu(); return; }      // (Safari types a space at the end as a no-break one)
   placeInsMenu();
 }
 document.addEventListener('selectionchange', () => { if (ins?.mode === 'slash' && !slashCaret()) closeInsMenu(); });
