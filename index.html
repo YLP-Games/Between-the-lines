@@ -15042,6 +15042,69 @@ if (/[?&]shared=/.test(location.search) && window.caches) (async () => {
   if (fs.length) openFiles(fs); else if (none) toast('Only files can be shared to Between the Lines.');
 })();
 
+// ================= Exam Desk: each marked answer filed in a notebook, a folder per course and a notebook per paper =================
+// Exam Desk (its own site) opens this page in a tab and posts {type: 'exam-desk-answer', ...}; only its two sites (and a local copy) are listened to.
+// A required has one page, found again by its data-ed key, so a re-marked answer replaces the page instead of adding another.
+const ED_FROM = /^(https:\/\/(tax2-examiner|ylp-exam-desk)\.vercel\.app|http:\/\/(localhost|127\.0\.0\.1)(:\d+)?)$/;
+let edChain = Promise.resolve();
+function edNoteHtml(m){
+  const e = x => esc(String(x ?? '')), lines = x => e(x).split('\n').map(l => `<div>${l.trim() ? l : '<br>'}</div>`).join('');
+  const fb = (Array.isArray(m.feedback) ? m.feedback : []).filter(Boolean);
+  return `<div><b>${e(m.paper)} · Required ${e(m.part)}</b>${m.marks ? ` · ${e(m.score)} / ${e(m.marks)}` : ''}</div>` +
+    (m.question ? `<div><i>${lines(m.question)}</i></div>` : '') +
+    `<div><br></div><div><b>My answer</b></div>${lines(m.answer || '(no answer)')}` +
+    (fb.length ? `<div><br></div><div><b>Examiner's feedback</b></div><ul>${fb.map(f => `<li>${e(f)}</li>`).join('')}</ul>` : '') +
+    `<div><br></div><div style="font-size:0.8em;color:#6b7280">Marked on Exam Desk, ${e(new Date(m.at || Date.now()).toLocaleString([], {dateStyle: 'medium', timeStyle: 'short'}))}</div>`;
+}
+// put the answer's page into a notebook's pages (root: the open notebook, or a copy of a stored one), in the paper's order
+function edPlace(root, m){
+  const key = String(m.part), {page, note} = blankPage(null);
+  page.style.aspectRatio = '210 / 297'; page.dataset.ed = key; page.dataset.edOrder = String(+m.order || 0);
+  note.innerHTML = edNoteHtml(m);
+  root.querySelectorAll('.welcome, .empty').forEach(x => x.remove());
+  const old = [...root.querySelectorAll('.slide[data-ed]')].find(x => x.dataset.ed === key);
+  if (old) { old.replaceWith(page); return 'updated'; }
+  const after = [...root.querySelectorAll('.slide[data-ed]')].find(x => +x.dataset.edOrder > +page.dataset.edOrder);
+  if (after) after.before(page); else root.append(page);
+  return 'added';
+}
+async function edReceive(m){
+  await ready;
+  const course = String(m.course || 'Exam Desk').slice(0, 120), paper = String(m.paper || 'Paper').slice(0, 120);
+  let f = folders.find(x => x.ed === course) || folders.find(x => !x.parent && x.name === course);
+  if (!f) { f = {id: newFolderId(), name: course, parent: null, open: true}; folders.push(f); }
+  f.ed = course;
+  const dkey = course + '|' + (m.paperId || paper);
+  let d = docs.find(x => x.ed === dkey && !x.trashed), made = false;
+  if (!d) { d = makeDoc(undefined, paper); Object.assign(d, {named: true, folder: f.id, ed: dkey}); made = true; }
+  let how;
+  if (d.id === curId) {
+    how = edPlace(main, m);
+    if (LAYOUTS[layout]) paginateView();
+    upgradeNotes(); saveSoon();
+  } else {
+    const box = document.createElement('div');
+    box.innerHTML = made ? '' : await fromStored(await get('doc:' + d.id));
+    how = edPlace(box, m);
+    if (db) await assetize(box);
+    Object.assign(d, {pages: box.querySelectorAll('.slide').length, notes: box.querySelectorAll('.notebox').length, updated: Date.now()});
+    if (cloudOf(d)) { d.driveDirty = 1; sync.gen++; }
+    await putAll({['doc:' + d.id]: toStored(plainUrls(box.innerHTML))});
+  }
+  openFolders(f.id);
+  await putAll({docs, folders});
+  renderDocs(); syncSoon();
+  toast(`${paper}, required ${m.part}: page ${how} in ${course}.`);
+  return how;
+}
+addEventListener('message', e => {
+  const m = e.data;
+  if (!m || m.type !== 'exam-desk-answer' || !ED_FROM.test(e.origin)) return;
+  edChain = edChain.then(() => edReceive(m)).then(how => e.source?.postMessage({type: 'exam-desk-ack', id: m.id, ok: true, how}, e.origin),
+    err => { reportError(err, 'filing an Exam Desk answer'); e.source?.postMessage({type: 'exam-desk-ack', id: m.id, ok: false}, e.origin); });
+});
+// opened by Exam Desk: say so once the notebooks are loaded, so it sends what it was holding
+if (window.opener) ready.then(() => { try { window.opener.postMessage({type: 'btl-ready'}, '*'); } catch {} });
 
 // ================= writing tools: a temporary writing guide, tables and journal entries =================
 // Insert › Writing guide, Table and Journal entry (also in the add menu, the / menu and Ctrl+K). Kept apart from the rest: the
