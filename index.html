@@ -6014,16 +6014,25 @@ document.addEventListener('change', e => { if (e.target.matches?.('.pptx-mode-se
 
 /* ================= remember in this browser ================= */
 let db = null, timer = null;
+const otherTabs = window.BroadcastChannel ? new BroadcastChannel('between-the-lines') : null;     // this page in other tabs: told what this one writes (see "two tabs")
 function openDb(){ return new Promise(res => { try { const r = indexedDB.open('between-slides-text', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch { res(null); } }); }
 function get(k){ return new Promise(res => { try { const r = db.transaction('kv').objectStore('kv').get(k); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch { res(null); } }); }
-// store several values at once; true once they are safely written
-function putAll(values){
+// store several values at once; true once they are safely written.
+// check: [key, value] writes them only if that key still holds that value (no other tab has saved over it since), else nothing, and gives 'clash'
+function putAll(values, check){
   return new Promise(res => {
     if (!db) return res(false);
     try {
-      const tx = db.transaction('kv', 'readwrite'), store = tx.objectStore('kv');
-      for (const [k, v] of Object.entries(values)) store.put(v, k);
-      tx.oncomplete = () => res(true); tx.onerror = tx.onabort = () => res(false);
+      const tx = db.transaction('kv', 'readwrite'), store = tx.objectStore('kv'), put = () => { for (const [k, v] of Object.entries(values)) store.put(v, k); };
+      let clash = false;
+      if (check) store.get(check[0]).onsuccess = e => { const v = e.target.result; if (v === check[1] || v === values[check[0]]) put(); else clash = true; };
+      else put();
+      tx.oncomplete = () => {
+        res(clash ? 'clash' : true);
+        const told = clash ? [] : Object.keys(values).filter(k => k === 'docs' || k === 'folders' || k.startsWith('doc:'));
+        if (told.length) otherTabs?.postMessage(told);
+      };
+      tx.onerror = tx.onabort = () => res(false);
     } catch { res(false); }
   });
 }
@@ -6205,10 +6214,12 @@ function saveSoon(){
   timer = setTimeout(saveNow, 500);
 }
 const coarseScreen = matchMedia('(pointer:coarse)').matches; let storageAsked = false;
-let lastStored = {id: null, html: null};     // what was last written for the open notebook, so an unchanged notebook isn't written again
-const sync = {timer: 0, first: 0, busy: false, again: false, gen: 0, err: null, quiet: false, checked: 0};     // keeping a notebook that's in Google Drive or OneDrive up to date there
-let snapping = null;          // a save still taking its Back step (Back waits for it)
-async function saveNow(now){
+let lastStored = {id: null, html: null};     // what was last written for the open notebook (or read, opening it), so an unchanged notebook isn't written again
+let seen = {id: null, html: null};           // what is stored for it as this tab last read or wrote it (another tab may have saved it since)
+const sync = {timer: 0, first: 0, busy: false, again: false, err: null, quiet: false, checked: 0, left: new Set()};     // keeping a notebook that's in Google Drive or OneDrive up to date there
+let snapping = null, saving = 0;          // a save still taking its Back step (Back waits for it); saves still being written
+async function saveNow(now){ saving++; try { await saveNow0(now); } finally { if (!--saving && tabNews) docFromStore(); } }
+async function saveNow0(now){
   if (penLive && now !== true) { timer = setTimeout(saveNow, 400); return; }      // (never while the pen is writing)
   timer = null;
   if (coarseScreen && !storageAsked) { storageAsked = true; navigator.storage?.persist?.().catch(() => {}); }      // (so the browser doesn't clear notebooks to make room)
@@ -6228,9 +6239,10 @@ async function saveNow(now){
   const same = lastStored.id === d.id && lastStored.html === stored;
   if (same && d.name === name && d.pages === pages && d.notes === notes) { inkWaitClear(); if (!timer) setSaveState('saved'); return; }
   Object.assign(d, {name, pages, notes}); if (!same) d.updated = Date.now();
-  if (!same && cloudOf(d) && lastStored.id === d.id && !sync.quiet) { d.driveDirty = 1; sync.gen++; }       // (not for the first write after opening it, nor for changes fetched from the cloud)
-  const ok = await putAll({...(same ? {} : {['doc:' + d.id]: stored}), docs, cur: curId, style});
-  if (ok) { lastStored = {id: d.id, html: stored}; inkWaitClear(); }
+  if (!same && cloudOf(d) && lastStored.id === d.id && !sync.quiet) d.driveDirty = (d.driveDirty || 0) + 1;       // (a count, so an upload knows if more came while it went; not for a notebook just made from a file, nor for changes fetched from the cloud)
+  let ok = await putAll({...(same ? {} : {['doc:' + d.id]: stored}), docs, cur: curId, style}, !same && seen.id === d.id ? ['doc:' + d.id, seen.html] : null);
+  if (ok === 'clash') ok = await forkDoc(d, stored);         // another tab saved this notebook meanwhile: what is here becomes a copy instead of going over that
+  if (ok) { lastStored = {id: curId, html: stored}; seen = {id: curId, html: stored}; inkWaitClear(); }
   if (!timer) setSaveState(ok ? 'saved' : 'error');
   renderDocs();
   if (ok && d.driveDirty) syncSoon();
@@ -6271,10 +6283,17 @@ async function saveFile(filename, blob){
 }
 
 // Notebook file: this whole app plus your pages and notes, in one .html file you can open anywhere
-async function notebookFile(){
-  const data = JSON.stringify({v: 2, id: curId, name: notebookName(), named: !!curDoc()?.named, doc: await inlineAssets(currentDoc(true)), style, favs}).replace(/</g, '\\u003c');
+// (d: a notebook that isn't open, as it is stored: one you left before its changes went to the cloud)
+async function notebookFile(d = curDoc()){
+  let doc, name = notebookName();
+  if (d && d.id !== curId) {
+    const t = document.createElement('template'); t.innerHTML = await fromStored(await get('doc:' + d.id));
+    t.content.querySelectorAll('[data-pdfsrc]').forEach(x => { x.removeAttribute('data-pdfsrc'); x.removeAttribute('data-pdf'); });
+    doc = t.innerHTML; name = d.name.replace(/[\\/:*?"<>|]+/g, ' ').slice(0, 80).trim() || 'My notes';
+  } else doc = currentDoc(true);
+  const data = JSON.stringify({v: 2, id: d?.id || curId, name, named: !!d?.named, doc: await inlineAssets(doc), style, favs}).replace(/</g, '\\u003c');
   const html = APP_HTML.replace(/<body[^>]*>/, m => `${m}\n<script id="notebook-data" type="application/json">${data}<\/script>`);
-  return {name: notebookName() + ' (notes).html', blob: new Blob([html], {type: 'text/html'})};
+  return {name: name + ' (notes).html', blob: new Blob([html], {type: 'text/html'})};
 }
 async function downloadNotebook(){ const f = await notebookFile(); await saveFile(f.name, f.blob); }
 function readNotebookHtml(text){
@@ -9601,16 +9620,18 @@ async function switchDoc(id){
   if (id && id === curId) return;
   const prevId = curId;
   await flushSave();
+  if (curDoc()?.driveDirty) sync.left.add(curId);          // its changes still go to the cloud once you have left it (syncDue)
   if (curId) { histByDoc.set(curId, {stack: hist.stack, i: hist.i}); scrollByDoc.set(curId, scrollY); }
   if (document.activeElement?.closest?.('.mine')) document.activeElement.blur();
   hideGap(); closeInsMenu(); clearMediaSel(); clearMulti(); closeChipPop(); closeSpellMenu(); hideGuides(); fPanel.hidden = true;
   active = null; savedRange = null;
-  let html = '';
-  if (id) html = await fromStored(await get('doc:' + id)); else id = makeDoc().id;
-  curId = id; revealDoc(id);               // a notebook inside closed folders opens them
+  let html = '', raw;
+  if (id) html = await fromStored(raw = await get('doc:' + id)); else id = makeDoc().id;
+  curId = id; seen = {id, html: raw}; revealDoc(id);               // a notebook inside closed folders opens them
   showDocHtml(html);
-  const h = histByDoc.get(id);
-  if (h) { hist.stack = h.stack; hist.i = h.i; updateUndoBtns(); } else resetHistory(main.querySelector('.welcome') ? '' : currentDoc());
+  const h = histByDoc.get(id), now = main.querySelector('.welcome') ? '' : currentDoc();
+  if (now) lastStored = {id, html: toStored(now)};          // (so the first change after opening it counts as one, for the cloud too)
+  if (h) { hist.stack = h.stack; hist.i = h.i; updateUndoBtns(); } else resetHistory(now);
   scrollTo(0, scrollByDoc.get(id) || 0);
   putAll({docs, cur: curId});
   refreshPanels(); syncSoon(); syncCheck();
@@ -9757,6 +9778,60 @@ panelEl.pages.addEventListener('mouseleave', e => {
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key === '\\') { e.preventDefault(); setPanel('pages', !panelOpen.pages); }
 });
+
+// ================= two tabs: the same notebooks open twice, and neither saves over what the other wrote =================
+// Each tab tells the others what it has written (putAll, through otherTabs). The others take the newer list of notebooks, and the newer copy of
+// the notebook they show if nothing of theirs is waiting to be saved. If something is (both changed it at once), that save finds the notebook
+// changed (putAll's check) and what is on that tab's screen becomes a copy instead (forkDoc): neither tab's words are written over.
+let tabNews = false, tabQ = Promise.resolve();
+if (otherTabs) otherTabs.onmessage = e => {
+  const k = Array.isArray(e.data) ? e.data : [];
+  tabQ = tabQ.then(() => ready).then(async () => {
+    if (k.includes('docs') || k.includes('folders')) await docsFromStore(k);
+    if (k.includes('doc:' + curId)) { tabNews = true; await docFromStore(); }
+  }).catch(err => console.error(err));
+};
+// the list (and folders) as another tab left it: entries are updated in place (code may hold one), new ones come in and deleted ones go,
+// but the notebook open here stays, with this tab's own count of changes still to go to the cloud
+async function docsFromStore(k = ['docs']){
+  const [list, fl] = await Promise.all([k.includes('docs') && get('docs'), k.includes('folders') && get('folders')]);
+  if (Array.isArray(fl)) { folders = fl; tidyFolders(); }
+  if (Array.isArray(list)) {
+    const had = new Map(docs.map(d => [d.id, d])), open = curDoc(), dirty = open?.driveDirty;
+    docs = list.filter(n => n?.id).map(n => { const d = had.get(n.id); if (!d) return n; for (const x in d) if (!(x in n)) delete d[x]; return Object.assign(d, n); });
+    if (open) { if (!docs.includes(open)) docs.unshift(open); if (dirty) open.driveDirty = dirty; else delete open.driveDirty; }
+  }
+  renderDocs(); syncShow();
+}
+// another tab saved the notebook open here: it is shown as it is now (Back brings back what was here), unless something here is waiting to be
+// saved or being saved; then that save keeps it as a copy (forkDoc), or once it is done this looks again (saveNow)
+async function docFromStore(){
+  const id = curId, busy = () => id !== curId || timer || saving || penLive || hist.hold;
+  if (busy()) return;
+  const raw = await get('doc:' + id);
+  if (id === curId && raw === seen.html) { tabNews = false; return; }
+  const html = await fromStored(raw);
+  if (busy()) return;
+  tabNews = false;
+  const y = scrollY;
+  if (document.activeElement?.closest?.('.mine')) document.activeElement.blur();
+  hideGap(); closeInsMenu(); clearMediaSel(); clearMulti(); active = null; savedRange = null;
+  showDocHtml(html); scrollTo(0, y);
+  const now = main.querySelector('.welcome') ? '' : currentDoc();
+  seen = {id, html: raw}; lastStored = {id, html: toStored(now)}; snapshot(now);
+  refreshPanels();
+  toast('Updated with the changes made in another tab. Back brings back what was here.');
+}
+// both tabs changed the notebook: what is on this tab's screen is saved as a copy, and this tab carries on in it
+async function forkDoc(d, stored){
+  const c = copyEntry(d);
+  docs.unshift(c); curId = c.id;
+  await docsFromStore();              // (the notebook it came from, as the other tab saved it)
+  const ok = await putAll({['doc:' + c.id]: stored, docs, cur: curId});
+  refreshPanels();
+  toast(`“${d.name}” was also changed in another tab, so what you wrote here is kept as a separate notebook: “${c.name}”.`);
+  return ok;
+}
 
 // ================= annotate: draw on PDF pages, highlight and comment on words =================
 // What is drawn or highlighted on a PDF page is kept on its card (data-ink) as a list in page units, and drawn as an svg over each
@@ -12801,15 +12876,15 @@ async function syncHold(fn){
   try { return await fn(); }
   finally {
     sync.busy = false; sync.checked = Date.now(); syncShow();
-    if (sync.again || curDoc()?.driveDirty) { sync.again = false; setTimeout(syncSoon); }      // changes made while it was saving go up next
+    if (sync.again || syncDue()) { sync.again = false; setTimeout(syncSoon); }      // changes made while it was saving go up next
   }
 }
-function driveStore(kind, quiet, auto){ return kind === 'notebook' ? syncHold(() => driveStore0(kind, quiet, auto)) : driveStore0(kind, quiet, auto); }
-async function driveStore0(kind, quiet, auto){
+// (d: the notebook to save, if not the open one: syncing one you left)
+function driveStore(kind, quiet, auto, d){ return kind === 'notebook' ? syncHold(() => driveStore0(kind, quiet, auto, d)) : driveStore0(kind, quiet, auto); }
+async function driveStore0(kind, quiet, auto, d){
   const key = kind === 'pdf' ? 'drivePdf' : 'driveNb';
   await flushSave();
-  const gen = sync.gen;
-  const doc = curDoc(), file = kind === 'pdf' ? await pdfFile() : await notebookFile();
+  const doc = d || curDoc(), gen = doc?.driveDirty, file = kind === 'pdf' ? await pdfFile() : await notebookFile(doc);
   let last = -1;
   const progress = quiet || file.blob.size < 1.5e6 ? null : f => { const n = Math.round(f * 100); if (n !== last) { last = n; toast(`Uploading “${file.name}” to Google Drive: ${n}%`); } };
   if (!quiet) toast(progress ? `Uploading “${file.name}” to Google Drive…` : 'Saving to Google Drive…');
@@ -12831,7 +12906,7 @@ async function driveStore0(kind, quiet, auto){
     doc[key] = out.id;
     if (mine) { delete doc.driveNbRO; doc.driveFolder = out.parents?.[0] || ''; }
     else if (!doc.driveFolder && out.parents?.[0]) doc.driveFolder = out.parents[0];
-    if (kind === 'notebook') { from = relink(doc, 'google'); doc.driveVer = driveRev(out); delete doc.driveStop; if (sync.gen === gen) delete doc.driveDirty; if (doc === curDoc()) syncShow(); }
+    if (kind === 'notebook') { from = relink(doc, 'google'); doc.driveVer = driveRev(out); delete doc.driveStop; if (doc.driveDirty === gen) delete doc.driveDirty; if (doc === curDoc()) syncShow(); }
     putAll({docs});
   }
   return {id: out.id, name: out.name || file.name, copy: mine, from};
@@ -12855,9 +12930,9 @@ async function driveSave(kind){
 const CLOUD = {google: {
   key: 'google', name: 'Google Drive', short: 'Drive', account: 'Google', ico: 'drive', bin: 'bin', ver: 'driveVer', lock: 'You can no longer change this file in Google Drive.',
   hasLink: d => !!d.driveNb, linkOf: d => d.driveNb, tokenOk: driveTokenOk, quiet: async () => driveTokenOk(), token: driveToken, say: driveSay, setUp: driveSetUp,
-  async meta(d){ const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=${DRIVE_REV},trashed&supportsAllDrives=true`)).json(); return {ver: driveRev(r), gone: !!r.trashed}; },
+  async meta(d){ const r = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(d.driveNb)}?fields=${DRIVE_REV},version,trashed&supportsAllDrives=true`)).json(); return {ver: driveRev(r), old: r.version, gone: !!r.trashed}; },
   known: driveRevKnown,
-  upload: d => driveStore('notebook', true, true),
+  upload: d => driveStore('notebook', true, true, d),
   download: d => driveDownload({id: d.driveNb, name: d.name + '.html', mime: 'text/html'}),
   save: () => driveSave('notebook'),
   stops: err => err.status === 404 ? 'gone' : err.status === 403 && !/rate|quota/i.test(err.message) ? 'locked' : '',
@@ -12881,26 +12956,38 @@ function relink(doc, to){
 }
 const relinked = from => from ? ` It used to sync with ${from}; that file stays as it was.` : '';
 
+// what goes up next: a notebook you switched away from before its changes went (sync.left, from switchDoc), else the open one
+function syncDue(){
+  const due = x => x && x.driveDirty && !x.driveStop && cloudOf(x);
+  for (const id of sync.left) {
+    const x = docs.find(d => d.id === id);
+    if (x === curDoc() || !due(x)) sync.left.delete(id); else if (cloudOf(x).tokenOk()) return x;
+  }
+  const d = curDoc(); return due(d) && cloudOf(d).tokenOk() ? d : null;
+}
+// has the file changed since this notebook last had it? A version remembered the old way (Drive's plain version number) is compared with
+// the file's own of that kind. (Drive also raises that one itself after an upload, so this may ask once too often, but never writes over a change.)
+const syncMoved = (P, d, r) => !!r.ver && (P.known(d[P.ver]) ? String(r.ver) !== String(d[P.ver]) : !!d[P.ver] && r.old != null && String(r.old) !== String(d[P.ver]));
 function syncSoon(now){
-  const d = curDoc(), P = cloudOf(d); syncShow();
-  if (!P || !d.driveDirty || d.driveStop || !navigator.onLine || !P.tokenOk()) return;
+  syncShow();
+  const d = syncDue(); if (!d || !navigator.onLine) return;
   const t = Date.now(); sync.first ||= t;
   clearTimeout(sync.timer);
-  sync.timer = setTimeout(syncNow, now ? 0 : Math.max(0, Math.min(5000, sync.first + 60000 - t)));       // 5 s after the last change, at least once a minute
+  sync.timer = setTimeout(syncNow, now || d !== curDoc() ? 0 : Math.max(0, Math.min(5000, sync.first + 60000 - t)));       // 5 s after the last change, at least once a minute (one you left: now)
 }
 async function syncNow(){
   sync.timer = 0;
-  const d = curDoc(), P = cloudOf(d);
-  if (!P || !d.driveDirty || d.driveStop || !navigator.onLine || !P.tokenOk()) return syncShow();
+  const d = syncDue(), P = cloudOf(d);
+  if (!d || !navigator.onLine) return syncShow();
   if (sync.busy) { sync.again = true; return; }
-  sync.busy = true; sync.first = 0; sync.err = null; syncShow();
+  sync.busy = true; if (d === curDoc()) sync.first = 0; sync.err = null; syncShow();
   try {
     // someone else changed it in the cloud since: don't write over their work
     if (await P.quiet()) {
       const r = await P.meta(d, true);
       if (r.gone) d.driveStop = 'gone';
-      else if (P.known(d[P.ver]) && r.ver && String(r.ver) !== String(d[P.ver])) d.driveStop = 'changed';
-      else if (curDoc() === d) await P.upload(d);
+      else if (syncMoved(P, d, r)) d.driveStop = 'changed';
+      else await P.upload(d);               // (the open one, or one you left: each to its own file)
     }
   } catch (err) {
     const st = P.stops(err);
@@ -12909,8 +12996,10 @@ async function syncNow(){
   }
   if (d.driveStop) putAll({docs});
   sync.busy = false; syncShow();
-  if (sync.again) { sync.again = false; syncSoon(); }
+  const next = syncDue();
+  if (sync.again || next && next !== d) { sync.again = false; syncSoon(); }
   else if (sync.err && navigator.onLine) { clearTimeout(sync.timer); sync.timer = setTimeout(syncNow, 30000); }       // try again in a while
+  if (d !== curDoc()) syncCheck();          // (the open one's check waits while another goes up)
 }
 const syncSay = P => ({
   synced: ['saved', `Synced to ${P.short}`, `This notebook is in your ${P.name} and every change goes there by itself.`],
@@ -12955,7 +13044,7 @@ async function syncCheck(){
     if (curDoc() !== d || sync.busy) return;
     if (r.gone) { d.driveStop = 'gone'; putAll({docs}); return syncShow(); }
     if (!r.ver || String(r.ver) === String(d[P.ver] || '')) return;
-    if (!P.known(d[P.ver])) { d[P.ver] = String(r.ver); putAll({docs}); return; }       // nothing to compare with yet
+    if (!syncMoved(P, d, r)) { d[P.ver] = String(r.ver); putAll({docs}); return; }       // nothing to compare with yet, or the same file remembered the old way
     if (d.driveDirty) { d.driveStop = 'changed'; putAll({docs}); return syncShow(); }
     await syncPull(d, r.ver);
     toast(`Updated with the latest changes from ${P.name}.`);
@@ -13605,7 +13694,7 @@ CLOUD.onedrive = {
   hasLink: d => !!d.odNb, linkOf: d => d.odNb, setUp: odSetUp, token: odToken, say: odSay, quiet: odQuiet,
   tokenOk: () => odTokenOk() || od.silent !== false,          // a quiet renewal is still worth trying
   meta: (d, quiet) => odMeta(d.odDrive, d.odNb, quiet), known: v => !!v,
-  upload: d => odStore(true, true),
+  upload: d => odStore(true, true, d),
   download: d => odDownload({id: d.odNb, drive: d.odDrive, name: d.name + '.html'}, false, true),
   save: odSave,
   stops: err => err.status === 404 ? 'gone' : err.status === 403 && !/limit|quota|throttl/i.test(err.code + ' ' + err.message) ? 'locked' : '',
@@ -13883,11 +13972,10 @@ async function odUpload(t, blob, progress, quiet){
 // The first save makes "<name> (notes).html" in the Between the Lines folder; after that the same file is updated.
 // A notebook you can't change (shared with you to view only) is saved as a copy in your own OneDrive instead. Gives back {id, drive, name, url, copy}.
 // auto: syncing by itself (no sign-in window, no new files or copies; it stops and says so instead)
-function odStore(quiet, auto){ return syncHold(() => odStore0(quiet, auto)); }
-async function odStore0(quiet, auto){
+function odStore(quiet, auto, d){ return syncHold(() => odStore0(quiet, auto, d)); }
+async function odStore0(quiet, auto, d){
   await flushSave();
-  const gen = sync.gen;
-  const doc = curDoc(), file = await notebookFile();
+  const doc = d || curDoc(), gen = doc?.driveDirty, file = await notebookFile(doc);
   let last = -1;
   const progress = quiet || file.blob.size <= OD_SIMPLE ? null : f => { const n = Math.round(f * 100); if (n !== last) { last = n; toast(`Uploading “${file.name}” to OneDrive: ${n}%`); } };
   if (!quiet) toast(progress ? `Uploading “${file.name}” to OneDrive…` : 'Saving to OneDrive…');
@@ -13906,7 +13994,7 @@ async function odStore0(quiet, auto){
   const drive = out.parentReference?.driveId || (same ? doc.odDrive : await odMyDrive());
   if (doc && docs.includes(doc)) {
     doc.odNb = out.id; doc.odDrive = drive; from = relink(doc, 'onedrive');
-    doc.odVer = out.cTag || out.eTag || ''; delete doc.driveStop; if (sync.gen === gen) delete doc.driveDirty; if (doc === curDoc()) syncShow();
+    doc.odVer = out.cTag || out.eTag || ''; delete doc.driveStop; if (doc.driveDirty === gen) delete doc.driveDirty; if (doc === curDoc()) syncShow();
     putAll({docs});
   }
   return {id: out.id, drive, name: out.name || file.name, url: out.webUrl || '', copy: mine, from};
@@ -14539,13 +14627,17 @@ function toggleFav(id){
   if (d.fav) delete d.fav; else d.fav = true;
   putAll({docs}); renderDocs();
 }
+// a copy's entry in the list: named as a copy, and with its own files in Google Drive and OneDrive (none yet)
+function copyEntry(d){
+  const c = {...d, id: newId(), name: d.name.slice(0, 112) + ' (copy)', named: true, copiedFrom: d.id, updated: Date.now()};
+  for (const k of ['fav', 'trashed', 'driveNb', 'driveNbRO', 'drivePdf', 'driveVer', 'driveDirty', 'driveStop', 'odNb', 'odDrive', 'odVer']) delete c[k];
+  return c;
+}
 // a copy of a notebook, right after it in the list (the copy is not opened)
 async function duplicateDoc(id){
   const d = docs.find(x => x.id === id); if (!d) return;
   if (id === curId) await flushSave();                    // so the copy has what is on the page now
-  const html = (await get('doc:' + id)) || '';
-  const copy = {...d, id: newId(), name: d.name.slice(0, 112) + ' (copy)', named: true, copiedFrom: id, updated: Date.now()};
-  delete copy.fav; delete copy.trashed; delete copy.driveNb; delete copy.driveNbRO; delete copy.drivePdf; delete copy.driveVer; delete copy.driveDirty; delete copy.driveStop; delete copy.odNb; delete copy.odDrive; delete copy.odVer;       // a copy gets its own files in Google Drive and OneDrive
+  const html = (await get('doc:' + id)) || '', copy = copyEntry(d);
   docs.splice(docs.indexOf(d) + 1, 0, copy);
   await putAll({['doc:' + copy.id]: html, docs});
   renderDocs();
@@ -17484,7 +17576,9 @@ restorePanels();
       }
     }
     revealDoc(curId);
-    showDocHtml(db ? await fromStored(await get('doc:' + curId)) : safeHtml(data?.doc));
+    const raw = db ? await get('doc:' + curId) : undefined;
+    showDocHtml(db ? await fromStored(raw) : safeHtml(data?.doc));
+    seen = {id: curId, html: raw}; if (!main.querySelector('.welcome')) lastStored = {id: curId, html: toStored(currentDoc())};
     inkBack = await inkWaitRead();
   } catch (err) { reportError(err, 'loading your saved notebooks'); }
   requestAnimationFrame(() => {
