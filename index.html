@@ -5260,16 +5260,16 @@ gapPill.addEventListener('click', e => {
   const {strip, y} = pending; hideGap();
   if (strip.isConnected) insertAt(strip, y);
 });
-let moveQueued = null;          // the latest move (several can come between two frames, as in Safari: the last one counts)
+let moveQueued = null, movePen = false;          // the latest move (several can come between two frames, as in Safari: the last one counts), and was a pen among them
 const gapHover = e => {
   if (ins?.mode === 'gap') return;
   if (e.buttons) { if (pending && !pillPress) hideGap(); return; }       // selecting words (or moving something): out of the way at once
-  const q = moveQueued; moveQueued = e; if (q) return;
+  const q = moveQueued; moveQueued = e; movePen ||= e.pointerType === 'pen'; if (q) return;
   requestAnimationFrame(() => {
-    const e = moveQueued; moveQueued = null;
+    const e = moveQueued, pen = movePen; moveQueued = null; movePen = false;
     if (e.target.closest('.gappill')) return;
     const strip = !reading && !drawing && annoBar.hidden && !annoCur && e.target.closest('.strip');
-    if (strip) { showGap(strip, e.clientY, e.clientX); gapPill.classList.toggle('ghost', e.pointerType === 'pen'); } else hideGap();      // (a hovering pen only previews it: the pen is about to write)
+    if (strip) { showGap(strip, e.clientY, e.clientX); gapPill.classList.toggle('ghost', pen); } else hideGap();      // (a hovering pen only previews it: the pen is about to write; its mousemove has no pointerType)
   });
 };
 main.addEventListener('mousemove', gapHover);
