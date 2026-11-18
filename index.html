@@ -843,7 +843,7 @@ body.focus .peekzone{display:none}
 .preset .pname{flex:1 1 120px;min-width:0;height:34px;box-sizing:border-box;padding:0 8px;background:var(--surface);border:1.5px solid var(--pencil);border-radius:var(--wob);overflow:hidden;text-overflow:ellipsis}
 .preset .pc{display:inline-flex;align-items:center;gap:3px;font-size:13px;color:var(--muted)}
 .preset .pc .i{width:15px;height:15px}
-.preset .pfmt{display:flex;align-items:center;gap:4px;flex-basis:100%}
+.preset .pfmt{display:flex;align-items:center;gap:4px;flex-basis:100%;min-width:0}      /* (Safari counts the font list's longest name in the row's own minimum width: 0 lets it fit a phone) */
 .preset .pfont{flex:1 1 0;width:0;min-width:80px}
 .preset .psize{width:58px;height:32px;box-sizing:border-box;flex:none;font:inherit;font-size:15px;color:var(--ink);background:var(--surface-2);border:1.5px solid var(--pencil);border-radius:var(--wob);padding:0 6px}
 .preset .tg{min-width:32px;height:32px;padding:0;font-family:Georgia,serif;font-size:16px} /* taste-skill-ignore: B, I and U drawn as the style they stand for */
@@ -851,7 +851,7 @@ body.focus .peekzone{display:none}
 .preset .x:hover{background:var(--danger);color:var(--danger-ink)}
 .preset .tag{font-size:12px;color:var(--muted)}
 /* the highlight colour a preset is joined to (Highlight shortcuts): a dot of that colour, then the list */
-.preset .phl{display:flex;align-items:center;gap:6px;flex-basis:100%;font-size:13px;color:var(--muted)}
+.preset .phl{display:flex;align-items:center;gap:6px;flex-basis:100%;min-width:0;font-size:13px;color:var(--muted)}
 .preset .phl select{flex:1 1 0;width:0;min-width:80px}
 .preset .phdot{flex:none;width:18px;height:18px;border-radius:50%;background:var(--c);border:1.5px solid var(--line-strong)}
 .preset .phdot.none{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--line-strong) 3px 4px)}
