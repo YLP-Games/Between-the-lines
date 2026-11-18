@@ -6076,11 +6076,48 @@ async function assetize(root = main){
 const toStored = html => html.replace(/blob:[^"')\s&]+/g, u => assetOf.has(u) ? ASSET + assetOf.get(u) : u);
 // … and is shown with them in place again (fetching any not yet loaded)
 async function fromStored(html){
-  if (!html || !html.includes(ASSET)) return html || '';
+  html = safeHtml(html);
+  if (!html.includes(ASSET)) return html;
   const re = new RegExp(ASSET.replace(/[-:]/g, '\\$&') + '(a[0-9a-z]+)', 'g');
   const ids = [...new Set([...html.matchAll(re)].map(m => m[1]))].filter(id => !assetUrl.has(id));
   await Promise.all(ids.map(async id => { const b = await get('asset:' + id); if (b) useAsset(id, b); }));
   return html.replace(re, (m, id) => assetUrl.get(id) || m);
+}
+// a notebook's pages are HTML that may have come from someone else (a shared or downloaded notebook file, a copy synced
+// from the cloud): before it goes on screen, anything that could run is taken out (scripts, frames, on… handlers,
+// javascript: links), and names that would hide the page's own (document.querySelector, an id the app uses) go too.
+// It is read in a document of its own, where nothing loads or runs, and read again until nothing more comes out,
+// so what goes on screen is exactly what was checked.
+const SAFE_DROP = /^(script|style|iframe|frame|frameset|object|embed|applet|base|meta|link|noscript|noembed|noframes|template|portal|form|xmp|plaintext|foreignobject|animate|animatemotion|animatetransform|set|discard|handler|listener)$/i;
+const SAFE_URL = /^(href|src|xlink:href|poster|data|cite|background|lowsrc|dynsrc)$/i;
+const SAFE_NAMES = /^(katex|google|gapi|msal|mammoth|JSZip|pdfjsLib|docx|claude|webkit|BTL_LIBS|btlReceive|btlApp)$/;
+let safeDoc = null;
+function safeClean(root){
+  let n = 0;
+  for (const el of [...root.querySelectorAll('*')]) {
+    if (!root.contains(el)) continue;
+    if (SAFE_DROP.test(el.localName)) { el.remove(); n++; continue; }
+    for (const {name, value} of [...el.attributes]) {
+      const v = value.replace(/[\0-\x20\x7f-\x9f]+/g, ''), scheme = /^([a-z][a-z\d+.-]*):/i.exec(v)?.[1].toLowerCase();
+      const bad = /^on/i.test(name) || /^(srcdoc|formaction|action|ping)$/i.test(name)
+        || SAFE_URL.test(name) && (el.localName === 'use' ? v && v[0] !== '#'
+          : scheme && !/^(https?|mailto|tel|blob|bts-asset)$/.test(scheme) && !(scheme === 'data' && /^(src|poster)$/i.test(name) && /^data:image\//i.test(v)))
+        || /^(id|name)$/i.test(name) && value && (value in document || value in window || SAFE_NAMES.test(value) || document.getElementById(value)?.closest('main, .bview') === null);
+      if (bad) { el.removeAttribute(name); n++; }
+    }
+  }
+  return n;
+}
+function safeHtml(html){
+  if (!html) return '';
+  safeDoc ||= document.implementation.createHTMLDocument('');
+  const box = safeDoc.createElement('div');
+  for (let i = 0; i < 6; i++) {
+    box.innerHTML = html;
+    if (!safeClean(box)) return html;          // (this exact text has nothing in it that could run)
+    html = box.innerHTML;
+  }
+  return '';
 }
 // a notebook file has to carry its pictures inside it
 async function inlineAssets(html){
@@ -6244,8 +6281,9 @@ function readNotebookHtml(text){
 }
 function loadNotebook(data, replace){
   notebookPrefs(data);
-  if (replace) main.innerHTML = data.doc || '';
-  else { main.querySelector('.welcome')?.remove(); main.insertAdjacentHTML('beforeend', data.doc || ''); }
+  const html = safeHtml(data.doc);
+  if (replace) main.innerHTML = html;
+  else { main.querySelector('.welcome')?.remove(); main.insertAdjacentHTML('beforeend', html); }
   main.querySelectorAll('.slide-label, .gapline, .gappill').forEach(e => e.remove());
   upgradeNotes(); applyReadMode(); renderAllInk();
   if (!main.children.length) showEmpty();
@@ -17438,11 +17476,11 @@ restorePanels();
       if (known) { delete known.trashed; curId = known.id; }          // opening a file brings it back from the Trash
       else {
         const d = makeDoc(data.id || undefined, data.name || 'My notes'); d.named = !!data.named; curId = d.id;
-        await putAll({['doc:' + d.id]: data.doc || ''});
+        await putAll({['doc:' + d.id]: safeHtml(data.doc)});
       }
     }
     revealDoc(curId);
-    showDocHtml(db ? await fromStored(await get('doc:' + curId)) : data?.doc || '');
+    showDocHtml(db ? await fromStored(await get('doc:' + curId)) : safeHtml(data?.doc));
     inkBack = await inkWaitRead();
   } catch (err) { reportError(err, 'loading your saved notebooks'); }
   requestAnimationFrame(() => {
