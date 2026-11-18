@@ -6044,9 +6044,12 @@ function useAsset(id, blob){
 // and what a page saved the old way holds is put right as the notebook is written out (plainUrls).
 const pgUrl = el => (el.style.getPropertyValue('--pg').trim().match(/^url\(["']?(.*?)["']?\)$/)?.[1] || '').replace(/\\(.)/g, '$1');
 const plainUrls = html => html.includes('\\:') ? html.replace(/url\(((?:blob|data)\\:(?:\\.|[^)\\])*)\)/g, (m, u) => 'url(' + u.replace(/\\(.)/g, '$1') + ')') : html;
+// Safari's private windows can't keep a Blob in IndexedDB ("Error preparing Blob/File data"): there a picture's bytes are kept instead
+let keepBytes = false;
+const asBlob = v => v?.bytes instanceof ArrayBuffer ? new Blob([v.bytes], {type: v.type}) : v;
 async function addAsset(blob){
-  const id = 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-  await putAll({['asset:' + id]: blob});
+  const id = 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), k = 'asset:' + id;
+  if (db && (keepBytes || !await putAll({[k]: blob}))) keepBytes = await putAll({[k]: {type: blob.type, bytes: await blob.arrayBuffer()}}) || keepBytes;
   return useAsset(id, blob);
 }
 function dataToBlob(u){
@@ -6079,7 +6082,7 @@ async function fromStored(html){
   if (!html || !html.includes(ASSET)) return html || '';
   const re = new RegExp(ASSET.replace(/[-:]/g, '\\$&') + '(a[0-9a-z]+)', 'g');
   const ids = [...new Set([...html.matchAll(re)].map(m => m[1]))].filter(id => !assetUrl.has(id));
-  await Promise.all(ids.map(async id => { const b = await get('asset:' + id); if (b) useAsset(id, b); }));
+  await Promise.all(ids.map(async id => { const b = asBlob(await get('asset:' + id)); if (b) useAsset(id, b); }));
   return html.replace(re, (m, id) => assetUrl.get(id) || m);
 }
 // a notebook file has to carry its pictures inside it

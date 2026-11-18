@@ -2,7 +2,7 @@
 const {open} = require('./harness'); const path = require('path'); const fs = require('fs');
 const APP = process.env.APP || require('path').resolve(__dirname, '..', 'index.html');
 const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok  ' + m); };
-const store = p => p.evaluate(() => new Promise(res => { const r = indexedDB.open('between-slides-text', 1); r.onsuccess = () => { const t = r.result.transaction('kv').objectStore('kv'), out = {}; const c = t.openCursor(); c.onsuccess = () => { const x = c.result; if (!x) return res(out); out[x.key] = typeof x.value === 'string' ? x.value.length : x.value instanceof Blob ? 'blob' : 'other'; x.continue(); }; }; }));
+const store = p => p.evaluate(() => new Promise(res => { const r = indexedDB.open('between-slides-text', 1); r.onsuccess = () => { const t = r.result.transaction('kv').objectStore('kv'), out = {}; const c = t.openCursor(); c.onsuccess = () => { const x = c.result; if (!x) return res(out); out[x.key] = typeof x.value === 'string' ? x.value.length : x.value instanceof Blob || x.value?.bytes instanceof ArrayBuffer ? 'blob' : 'other'; x.continue(); }; }; }));
 const storedDoc = p => p.evaluate(() => new Promise(res => { const r = indexedDB.open('between-slides-text', 1); r.onsuccess = () => { const t = r.result.transaction('kv').objectStore('kv'); let all = ''; const c = t.openCursor(); c.onsuccess = () => { const x = c.result; if (!x) return res(all); if (String(x.key).startsWith('doc:') && typeof x.value === 'string') all += x.value; x.continue(); }; }; }));
 // what a page picture holds: how much it varies, and the colour at some points (as fractions of its width and height)
 const pixels = (p, n, pts = []) => p.evaluate(async ([n, pts]) => {
