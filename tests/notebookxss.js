@@ -19,7 +19,7 @@ const TRAPS = [
   `<img name="querySelector" src="x:none"><img id="getElementById" name="getElementById" src="x:none"><span id="file">clobber</span>`,
   `<video src="x:none" onerror="${HIT}('video')"></video><audio><source src="x:none" onerror="${HIT}('source')"></audio>`,
 ];
-const LEGIT = `<p class="legit"><b>Bold</b> <span style="color: rgb(200, 0, 0)">red</span> <a href="https://example.com/x">a link</a> <a href="#top">jump</a> <a href="mailto:a@b.c">mail</a> <img alt="dot" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="></p>`;
+const LEGIT = `<p class="legit"><b>Bold</b> <span style="color: rgb(200, 0, 0)">red</span> <a href="https://example.com/x">a link</a> <a href="#top">jump</a> <a href="mailto:a@b.c">mail</a> <img alt="dot" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="> <audio controls src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="></audio></p>`;
 const pwned = p => p.evaluate(() => window.__pwned || []);
 (async () => {
   const {browser, page, errors} = await open(APP);
@@ -64,9 +64,9 @@ const pwned = p => p.evaluate(() => window.__pwned || []);
     if (!legit) return;
     const kept = await page.evaluate(r => {
       const p = document.querySelector(r + ' .legit'); if (!p) return null;
-      return {b: !!p.querySelector('b'), red: !!p.querySelector('span[style*="color"]'), https: p.querySelector('a[href^="https://"]')?.href, hash: !!p.querySelector('a[href="#top"]'), mail: !!p.querySelector('a[href^="mailto:"]'), img: p.querySelector('img')?.src.startsWith('data:image/png')};
+      return {b: !!p.querySelector('b'), red: !!p.querySelector('span[style*="color"]'), https: p.querySelector('a[href^="https://"]')?.href, hash: !!p.querySelector('a[href="#top"]'), mail: !!p.querySelector('a[href^="mailto:"]'), img: p.querySelector('img')?.src.startsWith('data:image/png'), audio: p.querySelector('audio')?.getAttribute('src')?.startsWith('data:audio/wav')};
     }, root);
-    ok(kept && kept.b && kept.red && kept.https === 'https://example.com/x' && kept.hash && kept.mail && kept.img, `${where}: what is ordinary stays (bold, colour, links, a picture)`);
+    ok(kept && kept.b && kept.red && kept.https === 'https://example.com/x' && kept.hash && kept.mail && kept.img && kept.audio, `${where}: what is ordinary stays (bold, colour, links, a picture, a recording)`);
   };
 
   // 1. opened as a file

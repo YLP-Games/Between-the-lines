@@ -6101,7 +6101,7 @@ function safeClean(root){
       const v = value.replace(/[\0-\x20\x7f-\x9f]+/g, ''), scheme = /^([a-z][a-z\d+.-]*):/i.exec(v)?.[1].toLowerCase();
       const bad = /^on/i.test(name) || /^(srcdoc|formaction|action|ping)$/i.test(name)
         || SAFE_URL.test(name) && (el.localName === 'use' ? v && v[0] !== '#'
-          : scheme && !/^(https?|mailto|tel|blob|bts-asset)$/.test(scheme) && !(scheme === 'data' && /^(src|poster)$/i.test(name) && /^data:image\//i.test(v)))
+          : scheme && !/^(https?|mailto|tel|blob|bts-asset)$/.test(scheme) && !(scheme === 'data' && /^(src|poster)$/i.test(name) && /^data:(image|video|audio)\//i.test(v)))
         || /^(id|name)$/i.test(name) && value && (value in document || value in window || SAFE_NAMES.test(value) || document.getElementById(value)?.closest('main, .bview') === null);
       if (bad) { el.removeAttribute(name); n++; }
     }
