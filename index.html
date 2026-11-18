@@ -5259,13 +5259,13 @@ gapPill.addEventListener('click', e => {
   const {strip, y} = pending; hideGap();
   if (strip.isConnected) insertAt(strip, y);
 });
-let moveQueued = false;
+let moveQueued = null;          // the latest move (several can come between two frames, as in Safari: the last one counts)
 const gapHover = e => {
   if (ins?.mode === 'gap') return;
   if (e.buttons) { if (pending && !pillPress) hideGap(); return; }       // selecting words (or moving something): out of the way at once
-  if (moveQueued) return; moveQueued = true;
+  const q = moveQueued; moveQueued = e; if (q) return;
   requestAnimationFrame(() => {
-    moveQueued = false;
+    const e = moveQueued; moveQueued = null;
     if (e.target.closest('.gappill')) return;
     const strip = !reading && !drawing && annoBar.hidden && !annoCur && e.target.closest('.strip');
     if (strip) { showGap(strip, e.clientY, e.clientX); gapPill.classList.toggle('ghost', e.pointerType === 'pen'); } else hideGap();      // (a hovering pen only previews it: the pen is about to write)
