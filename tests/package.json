@@ -17,7 +17,7 @@
     "dictionary-en-gb": "^3.0.0",
     "docx-preview": "0.3.7",
     "jszip": "3.10.1",
-    "katex": "0.16.9",
+    "katex": "0.18.2",
     "mammoth": "1.6.0",
     "pdfjs-dist": "3.11.174",
     "playwright": "1.56.1",
