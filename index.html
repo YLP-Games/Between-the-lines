@@ -6050,7 +6050,7 @@ let keepBytes = false;
 const asBlob = v => v?.bytes instanceof ArrayBuffer ? new Blob([v.bytes], {type: v.type}) : v;
 async function addAsset(blob){
   const id = 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), k = 'asset:' + id;
-  if (db && (keepBytes || !await putAll({[k]: blob}))) keepBytes = await putAll({[k]: {type: blob.type, bytes: await blob.arrayBuffer()}}) || keepBytes;
+  if (db && (keepBytes || !await putAll({[k]: blob}))) try { keepBytes = await putAll({[k]: {type: blob.type, bytes: await blob.arrayBuffer()}}) || keepBytes; } catch {}
   return useAsset(id, blob);
 }
 function dataToBlob(u){

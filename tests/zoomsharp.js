@@ -78,7 +78,7 @@ function makePdf(file, n){
   const kept = await page.evaluate(async () => {
     const cards = [...document.querySelectorAll('.pagecard')], srcs = new Set(cards.map(c => c.dataset.pdfsrc));
     const how = cards.map(c => JSON.parse(c.dataset.pdf || 'null'));
-    const id = assetOf.get([...srcs][0]), blob = id && await get('asset:' + id);
+    const id = assetOf.get([...srcs][0]), blob = id && asBlob(await get('asset:' + id));      // (a Blob, or in Safari's private windows its bytes)
     return {srcs: srcs.size, src: [...srcs][0], pages: how.map(h => h?.p).join(), type: blob?.type, size: blob?.size, out: how[1]?.out?.length, bg: how[1]?.bg};
   });
   ok(kept.srcs === 1 && /^blob:/.test(kept.src), 'every page of the PDF names the one copy of it kept in this browser');
