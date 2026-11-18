@@ -59,6 +59,17 @@ function blobBodies(){
     bytes(b).then(a => { if (b.type && !this._ct) set.call(this, 'Content-Type', b.type); send.call(this, a); });
   };
 }
+// Playwright's WebKit, set offline, also refuses the page's own blob: addresses and can't read a Blob, which Safari never does (they are
+// in memory): there going offline is done by hand, as Safari has it. Requests to the internet fail, and navigator.onLine and its events follow.
+function offlineByHand(context){
+  let off = false;
+  const cut = route => /^(file:|blob:|data:)/.test(route.request().url()) ? route.fallback() : route.abort('internetdisconnected');
+  context.setOffline = async o => {
+    if (!o === !off) return; off = !!o;
+    await (off ? context.route('**/*', cut) : context.unroute('**/*', cut));
+    for (const p of context.pages()) await p.evaluate(o => { Object.defineProperty(navigator, 'onLine', {configurable: true, get: () => !o}); dispatchEvent(new Event(o ? 'offline' : 'online')); }, off).catch(() => {});
+  };
+}
 // CHROME_PATH=/path/to/chrome uses that Chrome instead of Playwright's own (e.g. where only a newer Chrome is installed)
 const launchOpts = () => ({...(process.env.SHOWBARS && engine === playwright.chromium ? {ignoreDefaultArgs: ['--hide-scrollbars']} : {}), ...(process.env.CHROME_PATH && engine === playwright.chromium ? {executablePath: process.env.CHROME_PATH} : {})});
 async function open(file, {width = 1440, height = 900, colorScheme = 'light', storage, contextOptions = {}, url, init} = {}){
@@ -66,7 +77,7 @@ async function open(file, {width = 1440, height = 900, colorScheme = 'light', st
   const browser = await engine.launch(launchOpts());
   const context = await browser.newContext({viewport: {width, height}, colorScheme, acceptDownloads: true, ...(storage ? {storageState: storage} : {}), ...contextOptions});
   const errors = [], net = [];                 // net: every address asked for that is not a local file
-  if (engine === playwright.webkit) await context.addInitScript(blobBodies);
+  if (engine === playwright.webkit) { await context.addInitScript(blobBodies); offlineByHand(context); }
   if (init) await context.addInitScript(init);
   await libs(context, net);
   const page = await context.newPage();

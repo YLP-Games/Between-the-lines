@@ -87,6 +87,7 @@ const CORS = {'access-control-allow-origin': '*', 'access-control-allow-headers'
   ok(!other.length, 'no other Drive requests: ' + other.join(', '));
 
   // ---- offline: fails quietly ----
+  await page.waitForFunction(() => spellDict?.tier, null, {timeout: 60000});      // (the spell checker's word lists come first: offline half-way, the rest fail to load)
   await context.setOffline(true);
   await page.evaluate(() => { dispatchEvent(new Event('offline')); setTheme('light'); });
   await page.waitForTimeout(3500);
