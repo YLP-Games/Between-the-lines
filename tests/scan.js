@@ -12,7 +12,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
 // a "scan": off-white paper, faint blue rules every 40px, handwriting on some lines, a blank stretch (600-1000px) and grey specks all over
 const SCAN = path.join(OUT, 'scan.jpg'), SW = 1000, SH = 1400;
 async function makeScan(){
-  const b = await chromium.launch(require('./harness').launchOpts()), p = await b.newPage({viewport: {width: SW, height: SH}});
+  const b = await chromium.launch(require('./harness').launchOpts(chromium)), p = await b.newPage({viewport: {width: SW, height: SH}});
   await p.setContent(`<body style="margin:0"><canvas id=c width=${SW} height=${SH}></canvas><script>
     const x = c.getContext('2d'); x.fillStyle = '#f6f3ea'; x.fillRect(0, 0, ${SW}, ${SH});
     x.fillStyle = '#bcd0e8'; for (let y = 120; y < ${SH}; y += 40) x.fillRect(60, y, ${SW - 120}, 2);

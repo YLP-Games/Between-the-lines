@@ -7,7 +7,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
 (async () => {
   const DARK = path.join(__dirname, 'darkslides.pdf');
   if (!fs.existsSync(DARK)) {
-    const b = await chromium.launch(require('./harness').launchOpts()); const p = await b.newPage();
+    const b = await chromium.launch(require('./harness').launchOpts(chromium)); const p = await b.newPage();
     await p.setContent('<style>@page{size:960px 540px;margin:0}body{margin:0;font:28px sans-serif}section{height:540px;padding:60px;box-sizing:border-box;background:#1e2a44;color:#fff;page-break-after:always}</style>' + [1, 2, 3].map(i => `<section><h1>Dark slide ${i}</h1><p>White words on a navy slide.</p></section>`).join(''));
     await p.pdf({path: DARK, width: '960px', height: '540px', printBackground: true}); await b.close();
   }

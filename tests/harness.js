@@ -73,8 +73,9 @@ function offlineByHand(context){
     for (const p of context.pages()) await p.evaluate(o => { Object.defineProperty(navigator, 'onLine', {configurable: true, get: () => !o}); dispatchEvent(new Event(o ? 'offline' : 'online')); }, off).catch(() => {});
   };
 }
-// CHROME_PATH=/path/to/chrome uses that Chrome instead of Playwright's own (e.g. where only a newer Chrome is installed)
-const launchOpts = () => ({...(process.env.SHOWBARS && engine === playwright.chromium ? {ignoreDefaultArgs: ['--hide-scrollbars']} : {}), ...(process.env.CHROME_PATH && engine === playwright.chromium ? {executablePath: process.env.CHROME_PATH} : {})});
+// CHROME_PATH=/path/to/chrome uses that Chrome instead of Playwright's own (e.g. where only a newer Chrome is installed);
+// launchOpts(chromium) for a Chromium a test starts itself (to make a PDF, say), whichever engine the test runs in
+const launchOpts = (e = engine) => ({...(process.env.SHOWBARS && e === playwright.chromium ? {ignoreDefaultArgs: ['--hide-scrollbars']} : {}), ...(process.env.CHROME_PATH && e === playwright.chromium ? {executablePath: process.env.CHROME_PATH} : {})});
 async function open(file, {width = 1440, height = 900, colorScheme = 'light', storage, contextOptions = {}, url, init} = {}){
   fs.mkdirSync(path.join(__dirname, 'shots'), {recursive: true});
   const browser = await engine.launch(launchOpts());

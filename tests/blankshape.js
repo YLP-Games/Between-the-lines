@@ -6,7 +6,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
 (async () => {
   const PORTRAIT = path.join(__dirname, 'portrait.pdf');
   if (!fs.existsSync(PORTRAIT)) {
-    const b = await chromium.launch(require('./harness').launchOpts()); const p = await b.newPage();
+    const b = await chromium.launch(require('./harness').launchOpts(chromium)); const p = await b.newPage();
     await p.setContent('<style>body{font:16px serif;margin:0}section{height:100vh;padding:60px;box-sizing:border-box;page-break-after:always}</style>' + [1, 2, 3].map(i => `<section><h1>Handout page ${i}</h1><p>Some lecture text on a portrait A4 page, line one.</p><p>Line two of the handout, with more words.</p></section>`).join(''));
     await p.pdf({path: PORTRAIT, format: 'A4'}); await b.close();
   }
