@@ -16,6 +16,8 @@ BROWSER=webkit node e2e.js               # one test in WebKit
 CHROME_PATH=/path/to/chrome node run.js  # use an installed Chrome (the extension test needs Chrome 151+)
 ```
 
+The extension test needs **Chrome for Testing** or **Chromium** 151 or newer. Google Chrome itself (137 and newer) refuses to load an extension from the command line, so with it the test says so and skips. Get Chrome for Testing with `npx @puppeteer/browsers install chrome@stable` and point `CHROME_PATH` at the `chrome` it prints.
+
 `SWEEP-PROMPT.md` is a prompt for a coding agent to do a complete test sweep and analysis of the app.
 
 Screenshots that tests take go to `tests/shots/` (not saved in git).

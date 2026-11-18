@@ -19,9 +19,9 @@ for (const t of list) {
   const r = spawnSync(process.execPath, [path.join(__dirname, t + '.js')], {encoding: 'utf8', env: {...process.env, BROWSER: browser}, timeout: 400000});
   const out = (r.stdout || '') + (r.stderr || ''), oks = (out.match(/^ok /gm) || []).length;
   const fail = (out.match(/FAILED:.*|ERRORS:[\s\S]{0,300}|Error: .*/) || [''])[0].split('\n')[0];
-  const passed = r.status === 0 && !fail;
-  rows.push({t, passed, oks, fail}); console.log(`${passed ? 'PASS' : 'FAIL'}  ${t.padEnd(12)} ${String(oks).padStart(4)} checks  ${fail}`);
+  const passed = r.status === 0 && !fail, skip = passed && (out.match(/^skipped: (.*)/m) || [])[1];
+  rows.push({t, passed, oks, fail, skip}); console.log(`${skip ? 'SKIP' : passed ? 'PASS' : 'FAIL'}  ${t.padEnd(12)} ${String(oks).padStart(4)} checks  ${skip || fail}`);
 }
-const bad = rows.filter(r => !r.passed);
-console.log(`\n${rows.length - bad.length}/${rows.length} passed in ${browser}` + (browser !== 'chromium' && !pick.length ? ` (skipped Chromium-only: ${[...CHROMIUM_ONLY].join(', ')})` : ''));
+const bad = rows.filter(r => !r.passed), skipped = rows.filter(r => r.skip).length;
+console.log(`\n${rows.length - bad.length - skipped}/${rows.length - skipped} passed in ${browser}` + (skipped ? `, ${skipped} skipped` : '') + (browser !== 'chromium' && !pick.length ? ` (skipped Chromium-only: ${[...CHROMIUM_ONLY].join(', ')})` : ''));
 process.exit(bad.length ? 1 : 0);

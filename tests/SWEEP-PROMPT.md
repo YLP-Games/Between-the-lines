@@ -46,10 +46,10 @@ node run.js --browser=webkit        # everything that can run in WebKit (Safari'
 node run.js --browser=firefox       # and in Firefox
 ```
 
-- The extension test needs Chrome 151 or newer (Playwright's own Chromium is older, so the test skips). Point it at an installed Chrome:
-  - macOS: `CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" node run.js extension extprompt`
+- The extension test needs Chrome 151 or newer (Playwright's own Chromium is older, so the test skips), and it must be **Chrome for Testing** or Chromium: Google Chrome itself (137 and newer) refuses to load an extension from the command line, so with it the test skips and says why. Get Chrome for Testing with `npx @puppeteer/browsers install chrome@stable`, then `CHROME_PATH=<the chrome it prints> node run.js extension extprompt`. Test the extension in your everyday Google Chrome by hand instead (Load unpacked, section 3).
+- `CHROME_PATH` works for every test, and is the way to run the whole suite in a real Chrome too:
+  - macOS: `CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" node run.js`
   - Windows: `CHROME_PATH="C:\Program Files\Google\Chrome\Application\chrome.exe"`
-- `CHROME_PATH` works for every test, and is the way to run the whole suite in a real Chrome too.
 - **Known failures**, so you don't chase them blindly. Do confirm them and say whether they are bugs in the app or in the test:
   - `pdfscan`: a photo of a hand-drawn table has no blank row between two of its rows of writing.
   - `audit2`: at 820 px the toolbar's right-hand scroll arrow covers part of a button ("btn under rsl").

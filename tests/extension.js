@@ -34,7 +34,9 @@ const TYPES = {html: 'text/html', js: 'text/javascript', css: 'text/css', json: 
   // PDFs reach an extension only from Chrome 151 (mime_types_handler): an older Chrome (such as Playwright's own) skips this test
   const ver = +(ctx.browser()?.version() || (await (await ctx.newPage()).evaluate(() => navigator.userAgent)).match(/Chrome\/(\d+)/)?.[1] || 0);
   if (ver && ver < 151) { console.log(`skipped: Chrome ${ver} can't hand PDFs to an extension; run with CHROME_PATH set to Chrome 151 or newer`); await ctx.close(); srv.close(); app.close(); return; }
-  let [sw] = ctx.serviceWorkers(); if (!sw) sw = await ctx.waitForEvent('serviceworker');
+  // Google Chrome itself (137 and newer) won't load an extension from the command line: use Chrome for Testing or Chromium
+  let [sw] = ctx.serviceWorkers(); if (!sw) sw = await ctx.waitForEvent('serviceworker', {timeout: 15000}).catch(() => null);
+  if (!sw) { console.log(`skipped: Chrome ${ver} didn’t load the extension. Google Chrome (137 and newer) refuses --load-extension; set CHROME_PATH to Chrome for Testing (npx @puppeteer/browsers install chrome@stable) or Chromium, 151 or newer`); await ctx.close(); srv.close(); app.close(); return; }
   const id = sw.url().split('/')[2];
   ok(/^[a-p]{32}$/.test(id), 'the extension loads (' + id + ')');
   const set = o => sw.evaluate(o => chrome.storage.sync.set(o), o);
