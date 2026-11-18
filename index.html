@@ -4868,8 +4868,9 @@ return {deck: ppDeck, render: ppRender};
 // ---------- PDF: the real page, background graphics removed, opened up where you add notes ----------
 // fonts a PDF leaves out (Symbol, Times…) and the character maps of Chinese, Japanese and Korean text come from the pdf.js package
 const PDF_LIB = lib('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/');
-// (reading happens in a Web Worker, so a big PDF doesn't freeze the page; if the browser won't make one, pdf.js reads on the page)
-const pdfOpen = buf => (pdfjsLib.GlobalWorkerOptions.workerSrc ||= lib('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'), pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false, cMapUrl: PDF_LIB + 'cmaps/', cMapPacked: true, standardFontDataUrl: PDF_LIB + 'standard_fonts/'}).promise);
+// (reading happens in a Web Worker, so a big PDF doesn't freeze the page; if the browser won't make one, pdf.js reads on the page.
+// In Safari the pictures the worker makes on an OffscreenCanvas can come out blank, so there they are made on the page)
+const pdfOpen = buf => (pdfjsLib.GlobalWorkerOptions.workerSrc ||= lib('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'), pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false, ...(/^Apple/.test(navigator.vendor) ? {isOffscreenCanvasSupported: false} : {}), cMapUrl: PDF_LIB + 'cmaps/', cMapPacked: true, standardFontDataUrl: PDF_LIB + 'standard_fonts/'}).promise);
 const PDF_S = 2;                         // a PDF page's picture: pixels per point (sharp at the fit on a 2× screen; zoomed in, sharpen() draws it again)
 async function readPdf(buf, name){
   const home = curId;                    // switching notebook while it reads stops it (the pages would go into the other notebook)
