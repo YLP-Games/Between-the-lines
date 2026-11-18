@@ -69,6 +69,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   // ---- paste into a notebook with the same pages: same pages, same places ----
   await page.setInputFiles('#file', path.join(__dirname, 'long.pdf'));
   await page.waitForFunction(() => document.querySelectorAll('#docList .nb').length === 3 && document.querySelectorAll('.pagecard').length >= 4, null, {timeout: 60000}); await page.waitForTimeout(900);
+  await page.waitForFunction(() => document.querySelectorAll('.pagecard').length >= 44, null, {timeout: 120000}); await page.waitForTimeout(600);      // (all 44 pages read: their progress would cover the toasts checked below)
   await page.click('#tab-box'); await page.click('#pasteNotesMore'); await page.waitForTimeout(150);
   ok(await page.isVisible('.notemenu'), 'the ▾ beside Paste notes offers the ways to paste: ' + await page.textContent('.notemenu'));
   await page.click('.notemenu button:has-text("Paste each on its own page number")'); await page.waitForTimeout(900);
