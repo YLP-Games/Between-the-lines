@@ -1911,6 +1911,18 @@ html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;text-
   .wt-selbox{background:rgba(47,95,214,.2)}
   .foldkids{border-left:1px solid var(--line)}
   .wguide{outline:1px dashed var(--wg-ink)}
+  /* the lines that give templates their shape (tables, truth tables, flowcharts, the blanks you fill in), and a diagram's box, which would be solid black */
+  .tpl .th,.tpl-bank .th.sec,.ck-head,.tt-h,.cd-head{border-bottom:1px solid var(--line-strong)}
+  .tpl .inl,.dp-in .tf,.np-in .tf,.pn-in .tf,.pt-line .tf,.cv .tf,.tt-line .tf,.ce-in,.sm-d{border-bottom:1px dashed var(--line-strong)}
+  .tpl-fc,.pn-c,.tpv-in table.wtable td,.tpl-code,.tui,.tpl .flag,.tpl .ce-bal{border:1px solid var(--line-strong)}
+  .pn-corner{border-top-color:transparent;border-left-color:transparent}
+  .tt-c.first,.tpl-pf .pf-r{border-left:1px solid var(--line-strong)}
+  .fc-a{border-top:1px dashed var(--line-strong)}
+  .tpl .cd-ln{border-right:1px solid var(--line-strong)}
+  .sv .bx{fill:currentColor;fill-opacity:.09}
+  /* where you are: the current page in the list, the field you type in, where a dropped file goes */
+  .pg[aria-current="true"],.dropcover,.bdrop{background:var(--accent-soft)}
+  .jrnl [contenteditable="true"]:focus,.tpl .tf[contenteditable="true"]:focus,.tpl .tf[contenteditable="plaintext-only"]:focus{outline:1px solid var(--line-strong)}
 }
 /* ================= printing (Ctrl+P): just the pages and notes, drawn the way the PDF download draws them ================= */
 @page{margin:12mm}
