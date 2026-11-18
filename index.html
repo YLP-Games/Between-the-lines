@@ -5033,7 +5033,7 @@ async function readPdf(buf, name){
     }
     px = ctx.getImageData(0, 0, cv.width, cv.height).data;
     // (a scan's paper has specks on its blank rows, as a picture's does, and lines drawn down it: a table's columns, the margin)
-    const gaps = scan ? blankGaps(cv, S, withoutDownLines(cv, S, inked), true) : blankGaps(cv, S, inked);
+    const gaps = scan ? blankGaps(cv, S, withoutDownLines(cv, S, inked, W), true) : blankGaps(cv, S, inked);
     await addPageCard(cv, S, W, H, gaps, tc.items.filter(i => i.str && i.str.trim() && !isSlideNo(i)).map(i => {
       const t = i.transform, [x, y] = v.convertToViewportPoint(t[4], t[5]);
       return [i.str, +(x / S).toFixed(1), +(y / S).toFixed(1), +(Math.hypot(t[2], t[3]) || i.height || 10).toFixed(1), +(i.width).toFixed(1), i.hasEOL ? 1 : 0];
@@ -5073,10 +5073,10 @@ function nearlyBlank(px){
   return ink < all * 0.005;
 }
 // On handwritten paper, lines drawn down the page (a table's columns, the margin) cross every row, so no row between two lines
-// of writing would be blank. Ink that runs down more than 40 page units without a break is such a line, not writing, and
+// of writing would be blank. Ink that runs down more than 40 units (on an A4 page, 595 wide; a page of another width in proportion, as a photo is always 960 wide: a letter with the tail of a y under it is longer than 40 of those) without a break is such a line, not writing, and
 // is left out when looking for blank rows (looked for three pixels wide, for a line that slants, and left out five wide)
-function withoutDownLines(cv, S, inked){
-  const w = cv.width, h = cv.height, line = new Uint8Array(w * h), min = 40 * S;
+function withoutDownLines(cv, S, inked, W){
+  const w = cv.width, h = cv.height, line = new Uint8Array(w * h), min = 40 * W / 595 * S;
   const at = (x, y) => x >= 0 && x < w && inked((y * w + x) * 4);
   for (let x = 0; x < w; x += 3) {
     let start = -1, last = -1;
@@ -5862,7 +5862,7 @@ async function readImage(file, home = curId){
     // an animated GIF is kept as it came, so it moves on its page (the gaps between lines are found on its first frame,
     // and the downloaded PDF shows that frame). One too big for an iPad to hold is kept still, like any other picture.
     const own = iw * ih <= PIC_PX && await gifAnimated(file) ? new Blob([file], {type: 'image/gif'}) : null;
-    await addPageCard(cv, S, W, H, blankGaps(cv, S, withoutDownLines(cv, S, inked), true), [], 0.92, home, {own});
+    await addPageCard(cv, S, W, H, blankGaps(cv, S, withoutDownLines(cv, S, inked, W), true), [], 0.92, home, {own});
   } finally { cv.width = cv.height = 0; }
 }
 // a GIF with more than one picture in it. A GIF doesn't say up front how many it holds, so its blocks are counted:
