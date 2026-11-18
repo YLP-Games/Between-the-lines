@@ -6217,7 +6217,7 @@ function currentDoc(file = false){
   if (file) c.querySelectorAll('[data-pdfsrc]').forEach(x => { x.removeAttribute('data-pdfsrc'); x.removeAttribute('data-pdf'); });
   c.querySelectorAll('.gapline, .gappill, .welcome, .empty, .cardbar, .pptx-tip, canvas.sharp').forEach(x => x.remove());
   c.querySelectorAll('.media-sel, .target-page, .multi-sel, .flash, .drop-target, .touched, .headx-on').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel', 'flash', 'drop-target', 'touched', 'headx-on'));
-  c.querySelectorAll('.mine').forEach(x => { x.contentEditable = x.parentElement?.classList.contains('picbox') ? 'false' : 'true'; });
+  c.querySelectorAll('.mine').forEach(x => { x.contentEditable = x.parentElement?.classList.contains('picbox') ? 'false' : 'true'; x.removeAttribute('spellcheck'); });     // (spellcheck follows the spell checker as it loads: not a change to the notes)
   c.querySelectorAll('.tpl .rev').forEach(x => x.classList.remove('rev'));
   sideJoin(c);                                  // each side page is stored right after its slide, whichever way it is shown
   flatten(c);
