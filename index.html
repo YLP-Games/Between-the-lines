@@ -15776,8 +15776,9 @@ function jKey(e){
     if (f.classList.contains('j-date')) jFocus(b.querySelector('.j-acct'));
     else if (f.classList.contains('j-desc')) jExit(b);
     else { row.insertAdjacentHTML('afterend', jRowHtml(row.dataset.s)); jFocus(row.nextElementSibling.querySelector('.j-acct')); jCheck(b); saveSoon(); }
-  } else if (e.key === 'Backspace' && f.matches('.j-acct, .j-amt') && !f.textContent && row && !row.querySelector('.j-acct').textContent && !row.querySelector('.j-amt:not(.off)').textContent && b.querySelectorAll('.j-row').length > 1) {
-    stop();
+  } else if ((e.key === 'Backspace' || e.key === 'Delete') && jCaret(f, e.key === 'Backspace')) {
+    stop();        // (nothing to take away at that end of the field: Safari would take it from the field next to it, and move there)
+    if (e.key === 'Delete' || !f.matches('.j-acct, .j-amt') || !row || row.querySelector('.j-acct').textContent || row.querySelector('.j-amt:not(.off)').textContent || b.querySelectorAll('.j-row').length < 2) return;
     const prev = row.previousElementSibling, to = prev?.classList.contains('j-row') ? prev.querySelector('.j-acct') : b.querySelector('.j-date');
     row.remove(); jFocus(to); jCheck(b); saveSoon();
   }
