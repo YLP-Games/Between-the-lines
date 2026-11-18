@@ -6412,7 +6412,7 @@ async function pdfFile(){
   main.classList.add('pdfpaper');              // (templates) buttons, handles and typing lines are left out
   try {
     const size = LAYOUTS[layout];
-    sideForce = true;              // side pages sit beside their slides while the PDF is made
+    sideForce = true;              // side pages sit beside their slides while the PDF is made (in every mode: their drawings and pictures stay, and their notes follow the mode)
     paginateView();
     const cards = size ? [...main.querySelectorAll('.sheet')] : [...main.querySelectorAll('.slide')];
     const pages = [];
@@ -6420,16 +6420,17 @@ async function pdfFile(){
       toast(`Making your PDF: page ${i + 1} of ${cards.length}`);
       const card = cards[i], cr = card.getBoundingClientRect();
       const annots = [], sp = sideShown() ? sideOf(size ? card.querySelector('.slide') : card) : null;
+      const sr = sp?.getBoundingClientRect(), ux = sr ? Math.min(cr.left, sr.left) : cr.left, uy = sr ? Math.min(cr.top, sr.top) : cr.top, uw = sr ? Math.max(cr.right, sr.right) - ux : cr.width, uh = sr ? Math.max(cr.bottom, sr.bottom) - uy : cr.height;      // (comments are placed on the page as drawn: the slide with its side page)
       if (mode === 'comments') for (const b of [...card.querySelectorAll('.notebox'), ...(sp ? sp.querySelectorAll('.notebox') : [])]) {
         const text = (b.querySelector('.mine')?.innerText || '').trim(); if (!text) continue;
         const br = b.getBoundingClientRect();
-        annots.push({fx: (br.left - cr.left) / cr.width, fy: (br.top - cr.top) / cr.height, text, color: chipOf(b)});
+        annots.push({fx: (br.left - ux) / uw, fy: (br.top - uy) / uh, text, color: chipOf(b)});
       }
       if (mode === 'comments') for (const pg of card.matches('.slide') ? [card] : card.querySelectorAll('.slide')) for (const c of openComments(pg)) {
         const mr = markRect(pg, c.id); if (!mr) continue;
-        annots.push({fx: (mr.left - cr.left) / cr.width, fy: (mr.top - cr.top) / cr.height, text: `${c.text}\n\nOn: “${c.quote}”`, color: c.color});
+        annots.push({fx: (mr.left - ux) / uw, fy: (mr.top - uy) / uh, text: `${c.text}\n\nOn: “${c.quote}”`, color: c.color});
       }
-      const withSide = mode === 'page' ? sp : null, canvas = await paintCard(card, 2 / viewZoom, withSide);
+      const withSide = sp, canvas = await paintCard(card, 2 / viewZoom, withSide);
       const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
       // a printed page with its side page beside it is wider than A4: the sheet keeps its true size, and the page grows to hold both
       pages.push({w: canvas.width, h: canvas.height, pw: size && (withSide ? canvas.width * .375 : size[0]), ph: size && (withSide ? canvas.height * .375 : size[1]), annots, jpeg: new Uint8Array(await blob.arrayBuffer())});
