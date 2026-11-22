@@ -13,6 +13,8 @@ fs.writeFileSync(CONF, fs.readFileSync(APP, 'utf8')
   .replace(/const GDRIVE = \{[^}]*\};/, () => "const GDRIVE = {clientId: '123456789-abc.apps.googleusercontent.com', apiKey: 'KEY123'};"));
 const CORS = {'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*', 'access-control-expose-headers': 'Retry-After'};
 const until = (p, fn, arg, ms = 15000) => p.waitForFunction(fn, arg, {timeout: ms}).then(() => true, () => false);
+// the same for a check that reads the store (waitForFunction takes a promise as true at once)
+const untilStored = async (p, fn, arg, ms = 8000) => { for (const end = Date.now() + ms; Date.now() < end; await p.waitForTimeout(150)) if (await p.evaluate(fn, arg).catch(() => false)) return true; return false; };
 // (for something on this side, the fake cloud: true once fn() is, or false after ms)
 const poll = (fn, ms = 15000) => new Promise(r => { const t0 = Date.now(), i = setInterval(() => { const y = fn(); if (y || Date.now() - t0 > ms) { clearInterval(i); r(!!y); } }, 200); });
 const state = p => p.evaluate(() => { const b = document.querySelector('#driveSync'); return b.hidden ? '' : b.dataset.s; });
@@ -89,14 +91,23 @@ async function lectureInDrive(page, words){
   ok(await waitState(page, 'synced'), 'a notebook saved to Google Drive is in sync');
   return page.evaluate(() => curId);
 }
-// the app in two tabs of one browser, both on a notebook X with a few words in it
+// the app in two tabs of one browser, both on a notebook X with a few words in it. It is served from a web address, as the app is:
+// Safari (WebKit) doesn't pass messages between two tabs of a file opened from the disk, so the tabs would not hear of each other's saves
+let home = null;
+async function served(){
+  if (home) return home;
+  const server = require('http').createServer((q, r) => { if (new URL(q.url, 'http://x').pathname !== '/') { r.writeHead(404); return r.end(); } r.writeHead(200, {'content-type': 'text/html'}); r.end(fs.readFileSync(CONF)); });
+  await new Promise(res => server.listen(0, '127.0.0.1', res)); server.unref();
+  return home = 'http://127.0.0.1:' + server.address().port + '/';
+}
 async function twoTabs(){
-  const {browser, context, page: a, errors} = await open(CONF);
+  const url = await served();
+  const {browser, context, page: a, errors} = await open(CONF, {url});
   await a.waitForTimeout(800);
   await a.click('#newDocBtn'); await a.waitForTimeout(400);
   await a.keyboard.type('Alpha from tab A'); await a.waitForTimeout(900);
   const b = await context.newPage(); b.on('pageerror', e => errors.push('pageerror: ' + e.message));
-  await b.goto('file://' + CONF); await b.waitForTimeout(1200);
+  await b.goto(url); await b.waitForTimeout(1200);
   const X = await a.evaluate(() => curId);
   ok(await b.evaluate(X => curId === X, X) && (await text(b)).includes('Alpha from tab A'), 'a second tab opens on the same notebook');
   return {browser, a, b, X, errors};
@@ -129,7 +140,10 @@ const PARTS = {
     const stored = () => a.evaluate(async X => await get('doc:' + X), X);
     // one tab saves, then the other: the second takes the newer copy before it saves, so it doesn't write over the first
     await a.bringToFront(); await a.keyboard.type(' and more from A'); await a.waitForTimeout(900);
-    await b.bringToFront(); await b.waitForTimeout(300); await b.click('.mine'); await b.keyboard.press('End'); await b.keyboard.type(' Beta from B'); await b.waitForTimeout(900);
+    // (once tab A's save has reached tab B: typing there sooner is changing it in both tabs at once, which comes next)
+    await b.bringToFront(); await until(b, () => document.querySelector('main').innerText.includes('and more from A'), null, 8000); await b.waitForTimeout(300);
+    await b.click('.mine'); await b.keyboard.press('End'); await b.keyboard.type(' Beta from B');
+    await untilStored(a, X => get('doc:' + X).then(h => (h || '').includes('Beta from B')), X);
     const s1 = await stored();
     ok(s1.includes('and more from A') && s1.includes('Beta from B'), 'tab B’s save keeps the words tab A saved (it doesn’t write over them)');
     ok((await text(b)).includes('and more from A'), 'tab B showed tab A’s words before it saved');
@@ -160,12 +174,26 @@ const PARTS = {
     // a notebook made in one tab is not lost when the other saves
     await a.bringToFront(); await a.click('#newDocBtn'); await a.waitForTimeout(400); await a.keyboard.type('Gamma notebook from A'); await a.waitForTimeout(900);
     const G = await a.evaluate(() => curId);
-    await b.bringToFront(); await b.click('.mine'); await b.keyboard.press('End'); await b.keyboard.type(' and B goes on'); await b.waitForTimeout(900);
+    await b.bringToFront(); await b.click('.mine'); await b.keyboard.press('End'); await b.keyboard.type(' and B goes on');
+    await untilStored(a, () => get('docs').then(l => Promise.all(l.map(d => get('doc:' + d.id)))).then(h => h.some(x => (x || '').includes('and B goes on'))));      // (tab B's save is in)
     const list = await a.evaluate(async () => (await get('docs')).map(d => d.id));
     ok(list.includes(G) && (await a.evaluate(async G => await get('doc:' + G), G) || '').includes('Gamma notebook from A'), 'a notebook made in tab A stays in the list after tab B saves');
     ok(await b.evaluate(G => docs.some(d => d.id === G) && !!document.querySelector(`#docList [data-doc="${G}"]`), G), 'and tab B’s sidebar shows it');
     await b.reload(); await b.waitForTimeout(1200);
     ok(await b.evaluate(n => docs.filter(d => !d.trashed).length === n, list.length) && list.length === 2, 'after a reload, both notebooks are still there');
+    // tab B saves before tab A's news has reached it (a busy computer): the notebook made in tab A stays in the list all the same
+    await b.evaluate(() => { const h = otherTabs.onmessage, late = []; otherTabs.onmessage = e => late.push(e); window.__hear = () => { otherTabs.onmessage = h; late.forEach(h); }; });
+    await a.bringToFront(); await a.click('#newDocBtn'); await a.waitForTimeout(400); await a.keyboard.type('Delta notebook from A');
+    await untilStored(a, () => get('doc:' + curId).then(h => (h || '').includes('Delta notebook')));
+    const D = await a.evaluate(() => curId);
+    await b.bringToFront(); await b.click('.mine'); await b.keyboard.press('End'); await b.keyboard.type(' and B, not told yet');
+    await untilStored(a, () => get('docs').then(l => Promise.all(l.map(d => get('doc:' + d.id)))).then(h => h.some(x => (x || '').includes('not told yet'))));
+    const list2 = await a.evaluate(async () => (await get('docs')).map(d => d.id));
+    ok(list2.includes(D) && list2.length === 3, 'a notebook made in tab A stays in the list when tab B saves before it has heard of it');
+    await b.evaluate(() => __hear());
+    ok(await until(b, D => !!document.querySelector(`#docList [data-doc="${D}"]`), D, 4000), 'and tab B lists it');
+    await b.reload(); await b.waitForTimeout(1200);
+    ok(await b.evaluate(() => docs.filter(d => !d.trashed).length) === 3, 'after a reload, all three notebooks are there');
     await browser.close();
     return errors;
   },
@@ -262,7 +290,7 @@ const PARTS = {
     try { errs.push(...await PARTS[k]()); }
     catch (e) { fails.push(e.message); console.log(e.message.startsWith('FAILED') ? e.message : 'FAILED: ' + k + ': ' + e.message); }
   }
-  const real = errs.filter(e => !/ERR_FAILED|net::|ERR_INTERNET_DISCONNECTED|Failed to load resource/.test(e));
+  const real = errs.filter(e => !/ERR_FAILED|net::|ERR_INTERNET_DISCONNECTED|Failed to load resource|bad HTTP response code \(404\)/.test(e));      // (served from a web address, the app asks for its sw.js, which isn't there)
   console.log(real.length ? 'ERRORS:\n' + real.join('\n') : 'no page errors');
   process.exit(fails.length || real.length ? 1 : 0);
 })();

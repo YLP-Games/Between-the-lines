@@ -6032,16 +6032,28 @@ let db = null, timer = null;
 const otherTabs = window.BroadcastChannel ? new BroadcastChannel('between-the-lines') : null;     // this page in other tabs: told what this one writes (see "two tabs")
 function openDb(){ return new Promise(res => { try { const r = indexedDB.open('between-slides-text', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch { res(null); } }); }
 function get(k){ return new Promise(res => { try { const r = db.transaction('kv').objectStore('kv').get(k); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch { res(null); } }); }
+// every notebook this tab has had in its list (read or written): one in the stored list that isn't among them was added by another tab since
+const docsKnown = new Set(), knowDocs = list => { for (const d of list) if (d?.id) docsKnown.add(d.id); };
 // store several values at once; true once they are safely written.
 // check: [key, value] writes them only if that key still holds that value (no other tab has saved over it since), else nothing, and gives 'clash'
+// The list of notebooks keeps any that another tab has added and this one hasn't heard of yet (its news may still be on the way): they go
+// into this tab's list too, where they were. One this tab took out (deleted for good) it knew, so that stays out.
 function putAll(values, check){
   return new Promise(res => {
     if (!db) return res(false);
     try {
       const tx = db.transaction('kv', 'readwrite'), store = tx.objectStore('kv'), put = () => { for (const [k, v] of Object.entries(values)) store.put(v, k); };
       let clash = false;
-      if (check) store.get(check[0]).onsuccess = e => { const v = e.target.result; if (v === check[1] || v === values[check[0]]) put(); else clash = true; };
-      else put();
+      const write = () => {
+        if (check) store.get(check[0]).onsuccess = e => { const v = e.target.result; if (v === check[1] || v === values[check[0]]) put(); else clash = true; };
+        else put();
+      };
+      if (Array.isArray(values.docs)) store.get('docs').onsuccess = e => {
+        const list = values.docs; knowDocs(list);
+        (Array.isArray(e.target.result) ? e.target.result : []).forEach((n, i) => { if (n?.id && !docsKnown.has(n.id)) { list.splice(Math.min(i, list.length), 0, n); docsKnown.add(n.id); } });
+        write();
+      };
+      else write();
       tx.oncomplete = () => {
         res(clash ? 'clash' : true);
         const told = clash ? [] : Object.keys(values).filter(k => k === 'docs' || k === 'folders' || k.startsWith('doc:'));
@@ -9819,7 +9831,7 @@ async function docsFromStore(k = ['docs']){
   if (Array.isArray(fl)) { folders = fl; tidyFolders(); }
   if (Array.isArray(list)) {
     const had = new Map(docs.map(d => [d.id, d])), open = curDoc(), dirty = open?.driveDirty;
-    docs = list.filter(n => n?.id).map(n => { const d = had.get(n.id); if (!d) return n; for (const x in d) if (!(x in n)) delete d[x]; return Object.assign(d, n); });
+    docs = list.filter(n => n?.id).map(n => { const d = had.get(n.id); if (!d) return n; for (const x in d) if (!(x in n)) delete d[x]; return Object.assign(d, n); }); knowDocs(docs);
     if (open) { if (!docs.includes(open)) docs.unshift(open); if (dirty) open.driveDirty = dirty; else delete open.driveDirty; }
   }
   renderDocs(); syncShow();
@@ -17638,7 +17650,7 @@ restorePanels();
     if (!db) setSaveState('error');
     const [list, cur, s, legacy, fl] = db ? await Promise.all([get('docs'), get('cur'), get('style'), get('doc'), get('folders')]) : [];
     if (s) { style = s; showStyle(style); }
-    docs = Array.isArray(list) ? list.filter(d => d && d.id) : [];
+    docs = Array.isArray(list) ? list.filter(d => d && d.id) : []; knowDocs(docs);
     folders = Array.isArray(fl) ? fl : []; tidyFolders();
     clipLoad().catch(() => {});
     await purgeOldTrash();
