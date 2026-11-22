@@ -82,7 +82,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   await page.keyboard.press('Escape'); await page.waitForTimeout(50);
   ok(await tip() === null, 'Esc hides it');
   // a note's toolbar buttons
-  await page.locator('.notebox:not(.sticky)').first().scrollIntoViewIfNeeded(); await page.evaluate(() => scrollBy(0, -120)); await page.waitForTimeout(200);
+  await page.locator('.notebox:not(.sticky)').first().evaluate(b => b.scrollIntoView({block: 'center'})); await page.waitForTimeout(200);      // (one just inside the bottom edge is left where it is by scrollIntoViewIfNeeded)
   const n = await page.locator('.notebox:not(.sticky)').first().boundingBox();
   await page.mouse.move(n.x + 50, n.y + n.height / 2, {steps: 3}); await page.waitForTimeout(200);
   const fr = await page.$eval('.notebox:not(.sticky) .g-float', g => { const r = g.getBoundingClientRect(); return {x: r.x + r.width / 2, y: r.y + r.height / 2}; });
