@@ -2,7 +2,8 @@
 const {open} = require('./harness'); const path = require('path'); const fs = require('fs');
 const APP = process.env.APP || require('path').resolve(__dirname, '..', 'index.html');
 const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok  ' + m); };
-const store = p => p.evaluate(() => new Promise(res => { const r = indexedDB.open('between-slides-text', 1); r.onsuccess = () => { const t = r.result.transaction('kv').objectStore('kv'), out = {}; const c = t.openCursor(); c.onsuccess = () => { const x = c.result; if (!x) return res(out); out[x.key] = typeof x.value === 'string' ? x.value.length : x.value instanceof Blob ? 'blob' : 'other'; x.continue(); }; }; }));
+// (a stored picture is a Blob, or in a private window in Safari, as in WebKit here, its bytes)
+const store = p => p.evaluate(() => new Promise(res => { const r = indexedDB.open('between-slides-text', 1); r.onsuccess = () => { const t = r.result.transaction('kv').objectStore('kv'), out = {}; const c = t.openCursor(); c.onsuccess = () => { const x = c.result; if (!x) return res(out); out[x.key] = typeof x.value === 'string' ? x.value.length : x.value instanceof Blob || x.value?.bytes instanceof ArrayBuffer ? 'blob' : 'other'; x.continue(); }; }; }));
 const pagesShow = p => p.evaluate(async () => { const urls = [...document.querySelectorAll('.pagecard')].map(c => (c.style.getPropertyValue('--pg').match(/url\(["']?(.*?)["']?\)$/) || [])[1]); for (const u of urls) { if (!u) return false; const r = await fetch(u); if (!r.ok || (await r.blob()).size < 1000) return false; } return urls.length > 0; });
 const blobs = st => Object.values(st).filter(v => v === 'blob').length;
 (async () => {

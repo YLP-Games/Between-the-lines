@@ -12,7 +12,8 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
     const {browser, page, errors} = await open(APP, {width: 1600, height: 900, colorScheme: scheme});
     await page.waitForTimeout(600);
     await page.click('#tab-view'); await page.waitForTimeout(400);
-    const info = () => page.evaluate(() => { const p = document.getElementById('panel-view'), c = getComputedStyle(p); return {over: p.scrollWidth - p.clientWidth, left: p.scrollLeft, color: c.scrollbarColor, l: p.classList.contains('more-l'), r: p.classList.contains('more-r'), fl: +getComputedStyle(p, '::before').opacity, fr: +getComputedStyle(p, '::after').opacity, scrolling: p.classList.contains('scrolling')}; });
+    // (Safari has no scrollbar-color: there the thumb is coloured with ::-webkit-scrollbar-thumb, on a clear track)
+    const info = () => page.evaluate(() => { const p = document.getElementById('panel-view'), c = getComputedStyle(p); return {over: p.scrollWidth - p.clientWidth, left: p.scrollLeft, color: c.scrollbarColor ?? getComputedStyle(p, '::-webkit-scrollbar-thumb').backgroundColor + ' rgba(0, 0, 0, 0)', l: p.classList.contains('more-l'), r: p.classList.contains('more-r'), fl: +getComputedStyle(p, '::before').opacity, fr: +getComputedStyle(p, '::after').opacity, scrolling: p.classList.contains('scrolling')}; });
     const clear = c => /rgba\(0, 0, 0, 0\) rgba\(0, 0, 0, 0\)|transparent transparent/.test(c);
     await page.mouse.move(800, 500); await page.waitForTimeout(500);
     let i = await info();
@@ -39,7 +40,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
     await page.screenshot({path: path.join(OUT, `fix-ribbon-end-${scheme}.png`), clip: {x: 0, y: 0, width: 1600, height: 160}});
     // shift + wheel (a mouse)
     await page.keyboard.down('Shift'); await page.mouse.wheel(0, -300); await page.keyboard.up('Shift'); await page.waitForTimeout(300);
-    if (process.platform !== 'darwin') ok((await info()).left < i.left, scheme + ': Shift + wheel scrolls it back');      // (on a Mac the system turns it sideways, before the browser, so a test can't send it)
+    if (process.platform !== 'darwin' && process.env.BROWSER !== 'webkit') ok((await info()).left < i.left, scheme + ': Shift + wheel scrolls it back');      // (on a Mac the system turns it sideways, before the browser, so a test can't send it; WebKit leaves it to the system everywhere)
     // a swipe by touch: the panel still takes horizontal pans
     ok(await page.evaluate(() => { const p = document.getElementById('panel-view'), c = getComputedStyle(p); return c.overflowX === 'auto' && (c.touchAction === 'auto' || /pan-x/.test(c.touchAction)); }), scheme + ': touch swipes are left to the browser (overflow auto, touch-action auto)');
     // a tab that fits has no fades

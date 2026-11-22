@@ -844,7 +844,7 @@ body.focus .peekzone{display:none}
 .preset .pname{flex:1 1 120px;min-width:0;height:34px;box-sizing:border-box;padding:0 8px;background:var(--surface);border:1.5px solid var(--pencil);border-radius:var(--wob);overflow:hidden;text-overflow:ellipsis}
 .preset .pc{display:inline-flex;align-items:center;gap:3px;font-size:13px;color:var(--muted)}
 .preset .pc .i{width:15px;height:15px}
-.preset .pfmt{display:flex;align-items:center;gap:4px;flex-basis:100%}
+.preset .pfmt{display:flex;align-items:center;gap:4px;flex-basis:100%;min-width:0}      /* (Safari counts the font list's longest name in the row's own minimum width: 0 lets it fit a phone) */
 .preset .pfont{flex:1 1 0;width:0;min-width:80px}
 .preset .psize{width:58px;height:32px;box-sizing:border-box;flex:none;font:inherit;font-size:15px;color:var(--ink);background:var(--surface-2);border:1.5px solid var(--pencil);border-radius:var(--wob);padding:0 6px}
 .preset .tg{min-width:32px;height:32px;padding:0;font-family:Georgia,serif;font-size:16px} /* taste-skill-ignore: B, I and U drawn as the style they stand for */
@@ -852,7 +852,7 @@ body.focus .peekzone{display:none}
 .preset .x:hover{background:var(--danger);color:var(--danger-ink)}
 .preset .tag{font-size:12px;color:var(--muted)}
 /* the highlight colour a preset is joined to (Highlight shortcuts): a dot of that colour, then the list */
-.preset .phl{display:flex;align-items:center;gap:6px;flex-basis:100%;font-size:13px;color:var(--muted)}
+.preset .phl{display:flex;align-items:center;gap:6px;flex-basis:100%;min-width:0;font-size:13px;color:var(--muted)}
 .preset .phl select{flex:1 1 0;width:0;min-width:80px}
 .preset .phdot{flex:none;width:18px;height:18px;border-radius:50%;background:var(--c);border:1.5px solid var(--line-strong)}
 .preset .phdot.none{background:repeating-linear-gradient(135deg,transparent 0 3px,var(--line-strong) 3px 4px)}
@@ -1271,10 +1271,11 @@ main.fit.side-on:not(.side-split):not(.side-stack) > .sidepage{grid-column:2;ali
 .srow > .sheet{flex:none}
 .srow > .sidepage{width:var(--sidew);flex:none}
 main.paged > .sidepage{width:var(--sidew);flex:none}
-/* sync scrolling off: the side pages stand in a column of their own on the right, which scrolls by itself (the column's sizes are divided by --z, as main is zoomed) */
+/* sync scrolling off: the side pages stand in a column of their own on the right, which scrolls by itself (the column's sizes are divided by --z, as main is zoomed;
+   100dvh by --vz, which is 1 where a zoomed box keeps it the window's height, as in Safari) */
 main.side-split{--sw:calc(var(--sidew) + 32px);padding-right:calc(var(--sw) + 32px)}
 .sidewrap{position:absolute;top:0;bottom:0;right:16px;width:var(--sw);pointer-events:none}
-.sidecol{position:sticky;top:calc(var(--appbar-h) / var(--z,1));height:calc((100dvh - var(--appbar-h) - var(--status-h)) / var(--z,1));overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;pointer-events:auto;display:flex;flex-direction:column;gap:18px;padding:14px 8px 80px 24px;box-sizing:border-box}
+.sidecol{position:sticky;top:calc(var(--appbar-h) / var(--z,1));height:calc(100dvh / var(--vz, var(--z,1)) - (var(--appbar-h) + var(--status-h)) / var(--z,1));overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;pointer-events:auto;display:flex;flex-direction:column;gap:18px;padding:14px 8px 80px 24px;box-sizing:border-box}
 main.side-split .sidepage{flex:none}
 main.side-split .sidepage::before{display:block}
 /* joining a highlight to a note: click the note */
@@ -1897,7 +1898,7 @@ html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;text-
   .side,.beside{height:calc(100vh - var(--appbar-h) - var(--status-h))}
   @media (max-width:900px),(pointer:coarse) and (orientation:portrait) and (max-width:1100px){.side{height:auto}}
   @media (max-width:900px){.beside{height:auto}}
-  .sidecol{height:calc((100vh - var(--appbar-h) - var(--status-h)) / var(--z,1))}
+  .sidecol{height:calc(100vh / var(--vz, var(--z,1)) - (var(--appbar-h) + var(--status-h)) / var(--z,1))}
   .settings{max-height:calc(100vh - var(--appbar-h) - var(--status-h) - 24px)}
   #saveMenu{max-height:calc(100vh - 76px)}
   .sharebox{max-height:calc(100vh - max(16px,7vh) - 12px)}
@@ -1911,6 +1912,18 @@ html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;text-
   .wt-selbox{background:rgba(47,95,214,.2)}
   .foldkids{border-left:1px solid var(--line)}
   .wguide{outline:1px dashed var(--wg-ink)}
+  /* the lines that give templates their shape (tables, truth tables, flowcharts, the blanks you fill in), and a diagram's box, which would be solid black */
+  .tpl .th,.tpl-bank .th.sec,.ck-head,.tt-h,.cd-head{border-bottom:1px solid var(--line-strong)}
+  .tpl .inl,.dp-in .tf,.np-in .tf,.pn-in .tf,.pt-line .tf,.cv .tf,.tt-line .tf,.ce-in,.sm-d{border-bottom:1px dashed var(--line-strong)}
+  .tpl-fc,.pn-c,.tpv-in table.wtable td,.tpl-code,.tui,.tpl .flag,.tpl .ce-bal{border:1px solid var(--line-strong)}
+  .pn-corner{border-top-color:transparent;border-left-color:transparent}
+  .tt-c.first,.tpl-pf .pf-r{border-left:1px solid var(--line-strong)}
+  .fc-a{border-top:1px dashed var(--line-strong)}
+  .tpl .cd-ln{border-right:1px solid var(--line-strong)}
+  .sv .bx{fill:currentColor;fill-opacity:.09}
+  /* where you are: the current page in the list, the field you type in, where a dropped file goes */
+  .pg[aria-current="true"],.dropcover,.bdrop{background:var(--accent-soft)}
+  .jrnl [contenteditable="true"]:focus,.tpl .tf[contenteditable="true"]:focus,.tpl .tf[contenteditable="plaintext-only"]:focus{outline:1px solid var(--line-strong)}
 }
 /* ================= printing (Ctrl+P): just the pages and notes, drawn the way the PDF download draws them ================= */
 @page{margin:12mm}
@@ -4871,8 +4884,9 @@ return {deck: ppDeck, render: ppRender};
 // ---------- PDF: the real page, background graphics removed, opened up where you add notes ----------
 // fonts a PDF leaves out (Symbol, Times…) and the character maps of Chinese, Japanese and Korean text come from the pdf.js package
 const PDF_LIB = lib('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/');
-// (reading happens in a Web Worker, so a big PDF doesn't freeze the page; if the browser won't make one, pdf.js reads on the page)
-const pdfOpen = buf => (pdfjsLib.GlobalWorkerOptions.workerSrc ||= lib('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'), pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false, cMapUrl: PDF_LIB + 'cmaps/', cMapPacked: true, standardFontDataUrl: PDF_LIB + 'standard_fonts/'}).promise);
+// (reading happens in a Web Worker, so a big PDF doesn't freeze the page; if the browser won't make one, pdf.js reads on the page.
+// In Safari the pictures the worker makes on an OffscreenCanvas can come out blank, so there they are made on the page)
+const pdfOpen = buf => (pdfjsLib.GlobalWorkerOptions.workerSrc ||= lib('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'), pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false, ...(/^Apple/.test(navigator.vendor) ? {isOffscreenCanvasSupported: false} : {}), cMapUrl: PDF_LIB + 'cmaps/', cMapPacked: true, standardFontDataUrl: PDF_LIB + 'standard_fonts/'}).promise);
 const PDF_S = 2;                         // a PDF page's picture: pixels per point (sharp at the fit on a 2× screen; zoomed in, sharpen() draws it again)
 async function readPdf(buf, name){
   const home = curId;                    // switching notebook while it reads stops it (the pages would go into the other notebook)
@@ -5263,16 +5277,16 @@ gapPill.addEventListener('click', e => {
   const {strip, y} = pending; hideGap();
   if (strip.isConnected) insertAt(strip, y);
 });
-let moveQueued = false;
+let moveQueued = null, movePen = false;          // the latest move (several can come between two frames, as in Safari: the last one counts), and was a pen among them
 const gapHover = e => {
   if (ins?.mode === 'gap') return;
   if (e.buttons) { if (pending && !pillPress) hideGap(); return; }       // selecting words (or moving something): out of the way at once
-  if (moveQueued) return; moveQueued = true;
+  const q = moveQueued; moveQueued = e; movePen ||= e.pointerType === 'pen'; if (q) return;
   requestAnimationFrame(() => {
-    moveQueued = false;
+    const e = moveQueued, pen = movePen; moveQueued = null; movePen = false;
     if (e.target.closest('.gappill')) return;
     const strip = !reading && !drawing && annoBar.hidden && !annoCur && e.target.closest('.strip');
-    if (strip) { showGap(strip, e.clientY, e.clientX); gapPill.classList.toggle('ghost', e.pointerType === 'pen'); } else hideGap();      // (a hovering pen only previews it: the pen is about to write)
+    if (strip) { showGap(strip, e.clientY, e.clientX); gapPill.classList.toggle('ghost', pen); } else hideGap();      // (a hovering pen only previews it: the pen is about to write; its mousemove has no pointerType)
   });
 };
 main.addEventListener('mousemove', gapHover);
@@ -6057,9 +6071,12 @@ function useAsset(id, blob){
 // and what a page saved the old way holds is put right as the notebook is written out (plainUrls).
 const pgUrl = el => (el.style.getPropertyValue('--pg').trim().match(/^url\(["']?(.*?)["']?\)$/)?.[1] || '').replace(/\\(.)/g, '$1');
 const plainUrls = html => html.includes('\\:') ? html.replace(/url\(((?:blob|data)\\:(?:\\.|[^)\\])*)\)/g, (m, u) => 'url(' + u.replace(/\\(.)/g, '$1') + ')') : html;
+// Safari's private windows can't keep a Blob in IndexedDB ("Error preparing Blob/File data"): there a picture's bytes are kept instead
+let keepBytes = false;
+const asBlob = v => v?.bytes instanceof ArrayBuffer ? new Blob([v.bytes], {type: v.type}) : v;
 async function addAsset(blob){
-  const id = 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-  await putAll({['asset:' + id]: blob});
+  const id = 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), k = 'asset:' + id;
+  if (db && (keepBytes || !await putAll({[k]: blob}))) try { keepBytes = await putAll({[k]: {type: blob.type, bytes: await blob.arrayBuffer()}}) || keepBytes; } catch {}
   return useAsset(id, blob);
 }
 function dataToBlob(u){
@@ -6093,7 +6110,7 @@ async function fromStored(html){
   if (!html.includes(ASSET)) return html;
   const re = new RegExp(ASSET.replace(/[-:]/g, '\\$&') + '(a[0-9a-z]+)', 'g');
   const ids = [...new Set([...html.matchAll(re)].map(m => m[1]))].filter(id => !assetUrl.has(id));
-  await Promise.all(ids.map(async id => { const b = await get('asset:' + id); if (b) useAsset(id, b); }));
+  await Promise.all(ids.map(async id => { const b = asBlob(await get('asset:' + id)); if (b) useAsset(id, b); }));
   return html.replace(re, (m, id) => assetUrl.get(id) || m);
 }
 // a notebook's pages are HTML that may have come from someone else (a shared or downloaded notebook file, a copy synced
@@ -6266,7 +6283,7 @@ function currentDoc(file = false){
   if (file) c.querySelectorAll('[data-pdfsrc]').forEach(x => { x.removeAttribute('data-pdfsrc'); x.removeAttribute('data-pdf'); });
   c.querySelectorAll('.gapline, .gappill, .welcome, .empty, .cardbar, .pptx-tip, canvas.sharp').forEach(x => x.remove());
   c.querySelectorAll('.media-sel, .target-page, .multi-sel, .flash, .drop-target, .touched, .headx-on').forEach(x => x.classList.remove('media-sel', 'target-page', 'target-del', 'multi-sel', 'flash', 'drop-target', 'touched', 'headx-on'));
-  c.querySelectorAll('.mine').forEach(x => { x.contentEditable = x.parentElement?.classList.contains('picbox') ? 'false' : 'true'; });
+  c.querySelectorAll('.mine').forEach(x => { x.contentEditable = x.parentElement?.classList.contains('picbox') ? 'false' : 'true'; x.removeAttribute('spellcheck'); });     // (spellcheck follows the spell checker as it loads: not a change to the notes)
   c.querySelectorAll('.tpl .rev').forEach(x => x.classList.remove('rev'));
   sideJoin(c);                                  // each side page is stored right after its slide, whichever way it is shown
   flatten(c);
@@ -6586,6 +6603,8 @@ function fitPlan(W, size){
   const z = sideForce || !room ? fz : +(fz * pageZoom).toFixed(4);           // (the page zoom never reaches the PDF)
   return {vis, split, stack, fluid, z, fz, W, key: [vis, split, stack].join()};
 }
+// in a zoomed box Chrome zooms 100vh with it, Safari keeps it the window's height: there the side column's height (.sidecol) isn't divided by the zoom
+{ const p = document.createElement('div'); p.style.cssText = 'position:fixed;top:0;height:100vh;zoom:.5;visibility:hidden'; document.body.append(p); if (p.getBoundingClientRect().height > innerHeight * .75) main.style.setProperty('--vz', 1); p.remove(); }
 // set main up for a plan; returns how much the zoom changed (the scroll position follows it)
 function fitApply(p, paged){
   const old = viewZoom, has = !!main.querySelector('.slide');
@@ -12123,7 +12142,7 @@ function slashChanged(){
   ins.range.setEnd(c.startContainer, c.startOffset);
   if (!ins.range.toString().startsWith('/')) { closeInsMenu(); return; }
   renderIns();
-  if (!ins.shown.length && /\s$|.{13}/.test(insQuery() + (ins.range.toString().endsWith(' ') ? ' ' : ''))) { closeInsMenu(); return; }
+  if (!ins.shown.length && /\s$|.{13}/.test(insQuery() + (/\s$/.test(ins.range.toString()) ? ' ' : ''))) { closeInsMenu(); return; }      // (Safari types a space at the end as a no-break one)
   placeInsMenu();
 }
 document.addEventListener('selectionchange', () => { if (ins?.mode === 'slash' && !slashCaret()) closeInsMenu(); });
@@ -15969,8 +15988,9 @@ function jKey(e){
     if (f.classList.contains('j-date')) jFocus(b.querySelector('.j-acct'));
     else if (f.classList.contains('j-desc')) jExit(b);
     else { row.insertAdjacentHTML('afterend', jRowHtml(row.dataset.s)); jFocus(row.nextElementSibling.querySelector('.j-acct')); jCheck(b); saveSoon(); }
-  } else if (e.key === 'Backspace' && f.matches('.j-acct, .j-amt') && !f.textContent && row && !row.querySelector('.j-acct').textContent && !row.querySelector('.j-amt:not(.off)').textContent && b.querySelectorAll('.j-row').length > 1) {
-    stop();
+  } else if ((e.key === 'Backspace' || e.key === 'Delete') && jCaret(f, e.key === 'Backspace')) {
+    stop();        // (nothing to take away at that end of the field: Safari would take it from the field next to it, and move there)
+    if (e.key === 'Delete' || !f.matches('.j-acct, .j-amt') || !row || row.querySelector('.j-acct').textContent || row.querySelector('.j-amt:not(.off)').textContent || b.querySelectorAll('.j-row').length < 2) return;
     const prev = row.previousElementSibling, to = prev?.classList.contains('j-row') ? prev.querySelector('.j-acct') : b.querySelector('.j-date');
     row.remove(); jFocus(to); jCheck(b); saveSoon();
   }

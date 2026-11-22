@@ -94,7 +94,7 @@ const layer = (page, n) => page.evaluate(async n => {
       for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const k = ((Y + dy) * cv.width + X + dx) * 4; if (px[k] + px[k + 1] + px[k + 2] < 600 || Math.abs(px[k] - px[k + 2]) > 40) { inked++; dy = dx = 9; } }
     }
     return {t: sp.textContent, mid: [(mx - sr.left) / sr.width * W, y0 + (my - sr.top) / sr.height * (y1 - y0)], hit: hit === sp, on: hit ? hit.className || hit.tagName : null,
-      sel: cs.userSelect !== 'none' && cs.pointerEvents !== 'none' && cs.visibility !== 'hidden', ink: inked / all, rot: parseFloat(cs.rotate) || 0};
+      sel: (cs.userSelect ?? cs.webkitUserSelect) !== 'none' && cs.pointerEvents !== 'none' && cs.visibility !== 'hidden', ink: inked / all, rot: parseFloat(cs.rotate) || 0};
   });
 }, n);
 
@@ -162,7 +162,7 @@ const layer = (page, n) => page.evaluate(async n => {
 
   // ---- ink: Draw writes over the turned words instead of selecting them, and they can be selected again after ----
   await page.click('#tab-insert'); await page.click('#drawBtn'); await page.waitForTimeout(150);
-  ok(await page.evaluate(() => document.body.classList.contains('drawing') && getComputedStyle(document.querySelector('#main .pagecard .tl[style*="rotate"]')).userSelect === 'none'), 'while drawing, the words aren’t selected');
+  ok(await page.evaluate(() => document.body.classList.contains('drawing') && (s => s.userSelect ?? s.webkitUserSelect)(getComputedStyle(document.querySelector('#main .pagecard .tl[style*="rotate"]'))) === 'none'), 'while drawing, the words aren’t selected');      // (Safari has user-select only as -webkit-user-select)
   const [x0, y0] = await spanAt(1, 'Tilted words here'); await page.waitForTimeout(150);
   await page.mouse.move(x0 - 60, y0); await page.mouse.down(); for (let k = 1; k <= 8; k++) await page.mouse.move(x0 - 60 + k * 15, y0 + (k % 2 ? 6 : -6)); await page.mouse.up(); await page.waitForTimeout(250);
   const inkN = await page.evaluate(() => { try { return JSON.parse(document.querySelectorAll('#main .pagecard')[1].dataset.ink || '[]').length; } catch { return -1; } });

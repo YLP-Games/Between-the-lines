@@ -45,13 +45,43 @@ async function libs(context, net = []){
     return route.abort();
   });
 }
-// CHROME_PATH=/path/to/chrome uses that Chrome instead of Playwright's own (e.g. where only a newer Chrome is installed)
-const launchOpts = () => ({...(process.env.SHOWBARS && engine === playwright.chromium ? {ignoreDefaultArgs: ['--hide-scrollbars']} : {}), ...(process.env.CHROME_PATH && engine === playwright.chromium ? {executablePath: process.env.CHROME_PATH} : {})});
+// Playwright's WebKit doesn't show a route the body of a request sent as a Blob (postData() is null), so the fake Google Drive and
+// OneDrive couldn't read an upload: there the page sends the same bytes as an ArrayBuffer instead (with the Blob's type, as the browser would).
+function blobBodies(){
+  const bytes = b => b instanceof Blob ? b.arrayBuffer() : null;
+  const typed = (h, b) => { h = new Headers(h); if (b.type && !h.has('content-type')) h.set('content-type', b.type); return h; };
+  const f = window.fetch;
+  window.fetch = async (u, o) => o?.body instanceof Blob ? f(u, {...o, headers: typed(o.headers, o.body), body: await bytes(o.body)}) : f(u, o);
+  const X = XMLHttpRequest.prototype, send = X.send, set = X.setRequestHeader;
+  X.setRequestHeader = function(k, v){ if (/^content-type$/i.test(k)) this._ct = true; return set.call(this, k, v); };
+  X.send = function(b){
+    if (!(b instanceof Blob)) return send.call(this, b);
+    bytes(b).then(a => { if (b.type && !this._ct) set.call(this, 'Content-Type', b.type); send.call(this, a); });
+  };
+}
+// Playwright's WebKit opens a menu of its own for a right-click the page leaves alone, and then takes no more mouse input at all (Safari's
+// menu goes at the next click): there it is kept closed, once the page has had the right-click
+function noNativeMenu(){ addEventListener('contextmenu', () => addEventListener('contextmenu', e => e.preventDefault(), {once: true}), true); }
+// Playwright's WebKit, set offline, also refuses the page's own blob: addresses and can't read a Blob, which Safari never does (they are
+// in memory): there going offline is done by hand, as Safari has it. Requests to the internet fail, and navigator.onLine and its events follow.
+function offlineByHand(context){
+  let off = false;
+  const cut = route => /^(file:|blob:|data:)/.test(route.request().url()) ? route.fallback() : route.abort('internetdisconnected');
+  context.setOffline = async o => {
+    if (!o === !off) return; off = !!o;
+    await (off ? context.route('**/*', cut) : context.unroute('**/*', cut));
+    for (const p of context.pages()) await p.evaluate(o => { Object.defineProperty(navigator, 'onLine', {configurable: true, get: () => !o}); dispatchEvent(new Event(o ? 'offline' : 'online')); }, off).catch(() => {});
+  };
+}
+// CHROME_PATH=/path/to/chrome uses that Chrome instead of Playwright's own (e.g. where only a newer Chrome is installed);
+// launchOpts(chromium) for a Chromium a test starts itself (to make a PDF, say), whichever engine the test runs in
+const launchOpts = (e = engine) => ({...(process.env.SHOWBARS && e === playwright.chromium ? {ignoreDefaultArgs: ['--hide-scrollbars']} : {}), ...(process.env.CHROME_PATH && e === playwright.chromium ? {executablePath: process.env.CHROME_PATH} : {})});
 async function open(file, {width = 1440, height = 900, colorScheme = 'light', storage, contextOptions = {}, url, init} = {}){
   fs.mkdirSync(path.join(__dirname, 'shots'), {recursive: true});
   const browser = await engine.launch(launchOpts());
   const context = await browser.newContext({viewport: {width, height}, colorScheme, acceptDownloads: true, ...(storage ? {storageState: storage} : {}), ...contextOptions});
   const errors = [], net = [];                 // net: every address asked for that is not a local file
+  if (engine === playwright.webkit) { await context.addInitScript(blobBodies); await context.addInitScript(noNativeMenu); offlineByHand(context); }
   if (init) await context.addInitScript(init);
   await libs(context, net);
   const page = await context.newPage();
@@ -65,4 +95,18 @@ async function open(file, {width = 1440, height = 900, colorScheme = 'light', st
   await page.goto(url || 'file://' + file);
   return {browser, context, page, errors, net};
 }
-module.exports = {open, libs, launchOpts};
+// what is on the clipboard, pasted into a box of the test's own: that works in every engine (Playwright's WebKit lets a page read it no other way)
+async function clipText(page){
+  await page.evaluate(() => { const t = document.createElement('textarea'); t.id = 'clipTest'; t.style.cssText = 'position:fixed;left:0;top:0;opacity:0'; document.body.append(t); t.focus(); });
+  await page.keyboard.press('ControlOrMeta+v');
+  return page.evaluate(() => { const t = document.getElementById('clipTest'), v = t.value; t.remove(); return v; });
+}
+// Ctrl+C (⌘C on a Mac). Playwright's WebKit on Linux copies with it only in editable text, while Safari's ⌘C copies any selection:
+// there, unless the page took the key itself, the copy runs as Safari's would
+async function copyKeys(page){
+  if (engine !== playwright.webkit) return page.keyboard.press('ControlOrMeta+c');
+  await page.evaluate(() => { const k = window.__ck = {key: false, copy: false}; k.kd = e => { if (e.key.toLowerCase() === 'c') k.key = !e.defaultPrevented; }; k.cp = () => { k.copy = true; }; addEventListener('keydown', k.kd); addEventListener('copy', k.cp, true); });
+  await page.keyboard.press('ControlOrMeta+c');
+  await page.evaluate(() => { const k = __ck; removeEventListener('keydown', k.kd); removeEventListener('copy', k.cp, true); if (k.key && !k.copy) document.execCommand('copy'); });
+}
+module.exports = {open, libs, launchOpts, clipText, copyKeys};

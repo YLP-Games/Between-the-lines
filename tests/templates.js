@@ -9,6 +9,8 @@ const gal = page => page.locator('.tplbox');
 const cards = page => page.$$eval('.tplbox .tcard .tname', e => e.map(x => x.textContent));
 const focusIn = page => page.evaluate(() => { const a = document.activeElement; return a ? (a.className || a.tagName) : ''; });
 const openGallery = async page => { await page.click('#tab-insert'); await page.click('#tplBtn'); await page.waitForSelector('.tplbox:not([hidden])'); await page.waitForTimeout(150); };
+// a label in a diagram, clicked where it is on screen (Playwright's WebKit places an SVG text in a scaled drawing at the drawing's corner)
+const clickLabel = async (page, sel) => { const p = await page.locator(sel).evaluate(t => { t.scrollIntoView({block: 'nearest'}); const r = t.getBoundingClientRect(); return {x: r.left + r.width / 2, y: r.top + r.height / 2}; }); await page.mouse.click(p.x, p.y); };
 const subject = async (page, name) => { await page.locator('.tplnav .tn', {hasText: name}).first().click(); await page.waitForTimeout(120); };
 const pick = async (page, name) => { await page.locator('.tplbox .tcard', {hasText: name}).first().locator('.tmain').click(); await page.waitForTimeout(350); };
 // insert a template through the gallery
@@ -527,11 +529,11 @@ const clearNotes = page => page.evaluate(() => { document.querySelectorAll('.not
   await drag('.tpl-sd .hnd[data-k="s-move"]', 40, 30);
   const s2 = await sd();
   ok(s2.s !== s1.s && +s2.s.split(' ')[0] > +s1.s.split(' ')[0] && +s2.s.split(' ')[1] > +s1.s.split(' ')[1], `dragging the supply curve moves it (${s1.s} → ${s2.s})`);
-  await page.locator('.tpl-sd svg text.ed[data-e="xl"]').click(); await page.waitForTimeout(100);
+  await clickLabel(page, '.tpl-sd svg text.ed[data-e="xl"]'); await page.waitForTimeout(100);
   ok(await page.locator('.sv-in').count() === 1, 'clicking an axis name opens a small box to rename it');
   await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('Cups'); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
   ok(await page.getAttribute('.tpl-sd', 'data-xl') === 'Cups' && (await sd()).labs.includes('Cups') && await page.locator('.sv-in').count() === 0, 'the new name is in the drawing');
-  await page.locator('.tpl-sd svg text.ed[data-e="dl"]').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('D₀'); await page.keyboard.press('Escape'); await page.waitForTimeout(100);
+  await clickLabel(page, '.tpl-sd svg text.ed[data-e="dl"]'); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('D₀'); await page.keyboard.press('Escape'); await page.waitForTimeout(100);
   ok(!(await sd()).labs.includes('D₀'), 'Esc leaves the name as it was');
   await page.screenshot({path: path.join(OUT, 'tpl-use-supplydemand-shifted.png'), clip: await page.locator('.notebox').first().boundingBox()});
 
@@ -567,7 +569,7 @@ const clearNotes = page => page.evaluate(() => { document.querySelectorAll('.not
     svg.dispatchEvent(new PointerEvent('pointerdown', at(60, 60))); svg.dispatchEvent(new PointerEvent('pointermove', at(90, 80))); svg.dispatchEvent(new PointerEvent('pointermove', at(120, 70))); svg.dispatchEvent(new PointerEvent('pointerup', at(120, 70)));
   });
   ok((await gp()).ink.length === 1, 'a pen (Apple Pencil) always draws on the graph, with Draw on or off');
-  await page.locator('.tpl-axes svg text.ed[data-e="yl"]').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('f(x)'); await page.keyboard.press('Enter');
+  await clickLabel(page, '.tpl-axes svg text.ed[data-e="yl"]'); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('f(x)'); await page.keyboard.press('Enter');
   ok(await page.getAttribute('.tpl-axes', 'data-yl') === 'f(x)', 'the axis names can be changed');
 
   // ---- free-body diagram ----
@@ -585,7 +587,7 @@ const clearNotes = page => page.evaluate(() => { document.querySelectorAll('.not
   await drag('.tpl-fbd .hnd[data-k="f2"]', 0, -40);
   let f1 = await fb();
   ok(f1.f[2][0] === f0.f[2][0] + 0 && f1.f[2][1] < f0.f[2][1] || f1.f[2][0] !== f0.f[2][0] || f1.f[2][1] !== f0.f[2][1], `dragging an arrow’s tip turns and stretches it (${JSON.stringify(f0.f[2])} → ${JSON.stringify(f1.f[2])})`);
-  await page.locator('.tpl-fbd svg text.ed[data-e="f0"]').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('mg'); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
+  await clickLabel(page, '.tpl-fbd svg text.ed[data-e="f0"]'); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.type('mg'); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
   ok((await fb()).f[0][2] === 'mg' && (await fb()).labs.includes('mg'), 'clicking a label renames it (W becomes mg)');
   await page.click('.tpl-fbd [data-act="del"]');
   f1 = await fb();
