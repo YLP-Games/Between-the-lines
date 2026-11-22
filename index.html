@@ -5280,11 +5280,11 @@ gapPill.addEventListener('click', e => {
 let moveQueued = null, movePen = false;          // the latest move (several can come between two frames, as in Safari: the last one counts), and was a pen among them
 const gapHover = e => {
   if (ins?.mode === 'gap') return;
-  if (e.buttons) { if (pending && !pillPress) hideGap(); return; }       // selecting words (or moving something): out of the way at once
+  if (e.buttons) { moveQueued = null; movePen = false; if (pending && !pillPress) hideGap(); return; }       // selecting words (or moving something): out of the way at once, and a hover still waiting for its frame is dropped
   const q = moveQueued; moveQueued = e; movePen ||= e.pointerType === 'pen'; if (q) return;
   requestAnimationFrame(() => {
     const e = moveQueued, pen = movePen; moveQueued = null; movePen = false;
-    if (e.target.closest('.gappill')) return;
+    if (!e || e.target.closest('.gappill')) return;
     const strip = !reading && !drawing && annoBar.hidden && !annoCur && e.target.closest('.strip');
     if (strip) { showGap(strip, e.clientY, e.clientX); gapPill.classList.toggle('ghost', pen); } else hideGap();      // (a hovering pen only previews it: the pen is about to write; its mousemove has no pointerType)
   });

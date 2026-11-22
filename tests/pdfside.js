@@ -6,7 +6,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAILED: ' + m); console.log('ok 
   const {browser, page, errors} = await setup(APP, {width: 1280, pages: [1]});
   await page.click('#tab-view'); await page.click('#sideBtn'); await page.waitForTimeout(600);
   const sp = await page.locator('.sidepage').nth(1).boundingBox();
-  await page.locator('.pagecard').nth(1).scrollIntoViewIfNeeded(); await page.waitForTimeout(300);
+  await page.locator('.pagecard').nth(1).evaluate(c => c.scrollIntoView({block: 'center'})); await page.waitForTimeout(300);      // (below the ribbon: WebKit scrolls a card to the very top)
   const b = await page.locator('.sidepage').nth(1).boundingBox();
   await page.mouse.click(b.x + 40, b.y + 100); await page.keyboard.type('A side note for the PDF'); await page.mouse.click(5, 700); await page.waitForTimeout(500);
   const boxes = async () => page.evaluate(async () => {
